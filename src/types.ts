@@ -26,6 +26,7 @@ export type DataTypes = {
   summary: string;
   description: string;
   paramsType: string;
+  pathParamsType: string;
   bodyType: string;
   responseType: string;
   isOpenApi: boolean;
@@ -43,7 +44,7 @@ export type RouteDefinition = {
 };
 
 export type Property = {
-  in?: "query";
+  in?: "query" | "path";
   name?: string;
   type?: string;
   description?: string;

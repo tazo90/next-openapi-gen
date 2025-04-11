@@ -16,6 +16,10 @@ export class RouteProcessor {
   private schemaProcessor: SchemaProcessor;
   private config: OpenApiConfig;
 
+  private directoryCache: Record<string, string[]> = {};
+  private statCache: Record<string, fs.Stats> = {};
+  private processFileTracker: Record<string, boolean> = {};
+
   constructor(config: OpenApiConfig) {
     this.config = config;
     this.schemaProcessor = new SchemaProcessor(config.schemaDir);
@@ -26,6 +30,9 @@ export class RouteProcessor {
   }
 
   private processFile(filePath: string) {
+    // Check if the file has already been processed
+    if (this.processFileTracker[filePath]) return;
+  
     const content = fs.readFileSync(filePath, "utf-8");
     const ast = parse(content, {
       sourceType: "module",
@@ -42,7 +49,9 @@ export class RouteProcessor {
         ) {
           const dataTypes = extractJSDocComments(path);
           if (this.isRoute(declaration.id.name)) {
-            this.addRouteToPaths(declaration.id.name, filePath, dataTypes);
+            // Don't bother adding routes for processing if only including OpenAPI routes and the route is not OpenAPI
+            if (!this.config.includeOpenApiRoutes || (this.config.includeOpenApiRoutes && dataTypes.isOpenApi))
+              this.addRouteToPaths(declaration.id.name, filePath, dataTypes);
           }
         }
 
@@ -50,25 +59,38 @@ export class RouteProcessor {
           declaration.declarations.forEach((decl) => {
             if (t.isVariableDeclarator(decl) && t.isIdentifier(decl.id)) {
               if (this.isRoute(decl.id.name)) {
-                this.addRouteToPaths(
-                  decl.id.name,
-                  filePath,
-                  extractJSDocComments(path)
-                );
+                const dataTypes = extractJSDocComments(path);
+                // Don't bother adding routes for processing if only including OpenAPI routes and the route is not OpenAPI
+                if (!this.config.includeOpenApiRoutes || (this.config.includeOpenApiRoutes && dataTypes.isOpenApi))
+                  this.addRouteToPaths(
+                    decl.id.name,
+                    filePath,
+                    dataTypes
+                  );
               }
             }
           });
         }
       },
     });
+
+    this.processFileTracker[filePath] = true;
   }
 
   public scanApiRoutes(dir: string) {
-    const files = fs.readdirSync(dir);
+    let files = this.directoryCache[dir];
+    if (!files) {
+      files = fs.readdirSync(dir);
+      this.directoryCache[dir] = files;
+    }
 
     files.forEach((file) => {
       const filePath = path.join(dir, file);
-      const stat = fs.statSync(filePath);
+      let stat = this.statCache[filePath];
+      if (!stat) {
+        stat = fs.statSync(filePath);
+        this.statCache[filePath] = stat;
+      }
 
       if (stat.isDirectory()) {
         this.scanApiRoutes(filePath);
@@ -99,7 +121,7 @@ export class RouteProcessor {
       this.swaggerPaths[routePath] = {};
     }
 
-    const { params, body, responses } =
+    const { params, pathParams, body, responses } =
       this.schemaProcessor.getSchemaContent(dataTypes);
 
     const definition: RouteDefinition = {
@@ -118,9 +140,14 @@ export class RouteProcessor {
       ];
     }
 
+    definition.parameters = [];
     if (params) {
       definition.parameters =
         this.schemaProcessor.createRequestParamsSchema(params);
+    }
+    if (pathParams) {
+      const moreParams = this.schemaProcessor.createRequestParamsSchema(pathParams, true);
+      definition.parameters.push(...moreParams);
     }
 
     // Add request body
@@ -142,7 +169,10 @@ export class RouteProcessor {
     return suffixPath
       .replace("route.ts", "")
       .replaceAll("\\", "/")
-      .replace(/\/$/, "");
+      .replace(/\/$/, "")
+      // Turns NextJS-style dynamic routes into OpenAPI-style dynamic routes
+      .replaceAll("[", "{")
+      .replaceAll("]", "}");
   }
 
   private getSortedPaths(paths: Record<string, any>) {

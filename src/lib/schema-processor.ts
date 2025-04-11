@@ -11,6 +11,10 @@ export class SchemaProcessor {
   private typeDefinitions: any = {};
   private openapiDefinitions: any = {};
   private contentType: string = "";
+  
+  private directoryCache: Record<string, string[]> = {};
+  private statCache: Record<string, fs.Stats> = {};
+  private processSchemaTracker: Record<string, boolean> = {};
 
   constructor(schemaDir: string) {
     this.schemaDir = path.resolve(schemaDir);
@@ -28,11 +32,19 @@ export class SchemaProcessor {
   }
 
   private scanSchemaDir(dir: string, schemaName: string) {
-    const files = fs.readdirSync(dir);
+    let files = this.directoryCache[dir];
+    if (typeof files === "undefined") {
+      files = fs.readdirSync(dir);
+      this.directoryCache[dir] = files;
+    }
 
     files.forEach((file) => {
       const filePath = path.join(dir, file);
-      const stat = fs.statSync(filePath);
+      let stat = this.statCache[filePath];
+      if (typeof stat === "undefined") {
+        stat = fs.statSync(filePath);
+        this.statCache[filePath] = stat;
+      }
 
       if (stat.isDirectory()) {
         this.scanSchemaDir(filePath, schemaName);
@@ -112,10 +124,27 @@ export class SchemaProcessor {
     return {};
   }
 
+  private isDateString(node) {
+    if (t.isStringLiteral(node)) {
+      const dateRegex = /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2}(\.\d{3})?Z)?$/;
+      return dateRegex.test(node.value);
+    }
+    return false;
+  }
+
+  private isDateObject(node) {
+    return t.isNewExpression(node) && t.isIdentifier(node.callee, { name: "Date" });
+  }
+
+  private isDateNode(node) {
+    return this.isDateString(node) || this.isDateObject(node);
+  }
+
   resolveTSNodeType(node) {
     if (t.isTSStringKeyword(node)) return { type: "string" };
     if (t.isTSNumberKeyword(node)) return { type: "number" };
     if (t.isTSBooleanKeyword(node)) return { type: "boolean" };
+    if (this.isDateNode(node)) return { type: "Date" };
 
     if (t.isTSTypeReference(node) && t.isIdentifier(node.typeName)) {
       const typeName = node.typeName.name;
@@ -162,6 +191,9 @@ export class SchemaProcessor {
   }
 
   private processSchemaFile(filePath: string, schemaName: string) {
+    // Check if the file has already been processed
+    if (this.processSchemaTracker[`${filePath}-${schemaName}`]) return;
+
     // Recognizes different elements of TS like variable, type, interface, enum
     const content = fs.readFileSync(filePath, "utf-8");
     const ast = parse(content, {
@@ -174,6 +206,7 @@ export class SchemaProcessor {
     const definition = this.resolveType(schemaName);
     this.openapiDefinitions[schemaName] = definition;
 
+    this.processSchemaTracker[`${filePath}-${schemaName}`] = true;
     return definition;
   }
 
@@ -232,13 +265,13 @@ export class SchemaProcessor {
     return options;
   }
 
-  public createRequestParamsSchema(params: Params) {
+  public createRequestParamsSchema(params: Params, isPathParam = false) {
     const queryParams = [];
 
     if (params.properties) {
       for (let [name, value] of Object.entries(params.properties)) {
         const param: Property = {
-          in: "query",
+          in: isPathParam ? "path" : "query",
           name,
           schema: {
             type: value.type,
@@ -284,17 +317,35 @@ export class SchemaProcessor {
     };
   }
 
-  public getSchemaContent({ paramsType, bodyType, responseType }) {
-    this.findSchemaDefinition(paramsType, "params");
-    this.findSchemaDefinition(bodyType, "body");
-    this.findSchemaDefinition(responseType, "response");
+  public getSchemaContent({ paramsType, pathParamsType, bodyType, responseType }) {
+    let params = this.openapiDefinitions[paramsType];
+    let pathParams = this.openapiDefinitions[pathParamsType];
+    let body = this.openapiDefinitions[bodyType];
+    let responses = this.openapiDefinitions[responseType];
 
-    const params = this.openapiDefinitions[paramsType];
-    const body = this.openapiDefinitions[bodyType];
-    const responses = this.openapiDefinitions[responseType];
+    if (paramsType && !params) {
+      this.findSchemaDefinition(paramsType, "params");
+      params = this.openapiDefinitions[paramsType];
+    }
+
+    if (pathParamsType && !pathParams) {
+      this.findSchemaDefinition(pathParamsType, "pathParams");
+      pathParams = this.openapiDefinitions[pathParamsType];
+    }
+      
+    if (bodyType && ! body) {
+      this.findSchemaDefinition(bodyType, "body");
+      body = this.openapiDefinitions[bodyType];
+    }
+
+    if (responseType && !responses) {
+      this.findSchemaDefinition(responseType, "response");
+      responses = this.openapiDefinitions[responseType];
+    }
 
     return {
       params,
+      pathParams,
       body,
       responses,
     };
