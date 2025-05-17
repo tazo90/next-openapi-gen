@@ -4,29 +4,72 @@ import { parse } from "@babel/parser";
 import traverse from "@babel/traverse";
 import * as t from "@babel/types";
 
-import { Params, Property } from "../types";
+import { ZodSchemaConverter } from "./zod-converter";
+import {
+  ContentType,
+  OpenAPIDefinition,
+  ParamSchema,
+  PropertyOptions,
+  SchemaType,
+} from "../types";
 
 export class SchemaProcessor {
   private schemaDir: string;
-  private typeDefinitions: any = {};
-  private openapiDefinitions: any = {};
-  private contentType: string = "";
+  private typeDefinitions: Record<string, any> = {};
+  private openapiDefinitions: Record<string, OpenAPIDefinition> = {};
+  private contentType: ContentType = "";
 
   private directoryCache: Record<string, string[]> = {};
   private statCache: Record<string, fs.Stats> = {};
   private processSchemaTracker: Record<string, boolean> = {};
-  private processingTypes = new Set();
+  private processingTypes: Set<string> = new Set();
 
-  constructor(schemaDir: string) {
+  private zodSchemaConverter: ZodSchemaConverter | null;
+  private schemaType: SchemaType;
+
+  constructor(schemaDir: string, schemaType: SchemaType = "typescript") {
     this.schemaDir = path.resolve(schemaDir);
+    this.schemaType = schemaType;
+
+    if (schemaType === "zod") {
+      this.zodSchemaConverter = new ZodSchemaConverter(schemaDir);
+    }
   }
 
-  public findSchemaDefinition(schemaName: string, contentType: string) {
+  /**
+   * Get all defined schemas (for components.schemas section)
+   */
+  public getDefinedSchemas(): Record<string, OpenAPIDefinition> {
+    return this.openapiDefinitions;
+  }
+
+  public findSchemaDefinition(
+    schemaName: string,
+    contentType: ContentType
+  ): OpenAPIDefinition {
     let schemaNode: t.Node | null = null;
 
-    // assign type that is actually processed
+    // Assign type that is actually processed
     this.contentType = contentType;
 
+    // Check if we should use Zod schemas
+    if (this.schemaType === "zod") {
+      console.log(`Looking for Zod schema: ${schemaName}`);
+      // Try to convert Zod schema
+      const zodSchema =
+        this.zodSchemaConverter.convertZodSchemaToOpenApi(schemaName);
+      if (zodSchema) {
+        console.log(`Found and processed Zod schema: ${schemaName}`);
+        this.openapiDefinitions[schemaName] = zodSchema;
+        return zodSchema;
+      }
+
+      console.log(
+        `No Zod schema found for ${schemaName}, trying TypeScript fallback`
+      );
+    }
+
+    // Fall back to TypeScript types
     this.scanSchemaDir(this.schemaDir, schemaName);
 
     return schemaNode;
@@ -49,53 +92,101 @@ export class SchemaProcessor {
 
       if (stat.isDirectory()) {
         this.scanSchemaDir(filePath, schemaName);
-      } else if (file.endsWith(".ts")) {
+      } else if (file.endsWith(".ts") || file.endsWith(".tsx")) {
         this.processSchemaFile(filePath, schemaName);
       }
     });
   }
 
-  private collectTypeDefinitions(ast, schemaName) {
+  private collectTypeDefinitions(ast: any, schemaName: string): void {
     traverse.default(ast, {
-      VariableDeclarator: (path) => {
+      VariableDeclarator: (path: any) => {
         if (t.isIdentifier(path.node.id, { name: schemaName })) {
           const name = path.node.id.name;
           this.typeDefinitions[name] = path.node.init || path.node;
         }
       },
-      TSTypeAliasDeclaration: (path) => {
+      TSTypeAliasDeclaration: (path: any) => {
         if (t.isIdentifier(path.node.id, { name: schemaName })) {
           const name = path.node.id.name;
           this.typeDefinitions[name] = path.node.typeAnnotation;
         }
       },
-      TSInterfaceDeclaration: (path) => {
+      TSInterfaceDeclaration: (path: any) => {
         if (t.isIdentifier(path.node.id, { name: schemaName })) {
           const name = path.node.id.name;
           this.typeDefinitions[name] = path.node;
         }
       },
-      TSEnumDeclaration: (path) => {
+      TSEnumDeclaration: (path: any) => {
         if (t.isIdentifier(path.node.id, { name: schemaName })) {
           const name = path.node.id.name;
           this.typeDefinitions[name] = path.node;
+        }
+      },
+      // Collect exported zod schemas
+      ExportNamedDeclaration: (path: any) => {
+        if (t.isVariableDeclaration(path.node.declaration)) {
+          path.node.declaration.declarations.forEach((declaration: any) => {
+            if (
+              t.isIdentifier(declaration.id) &&
+              declaration.id.name === schemaName &&
+              declaration.init
+            ) {
+              // Check if is Zod schema
+              if (
+                t.isCallExpression(declaration.init) &&
+                t.isMemberExpression(declaration.init.callee) &&
+                t.isIdentifier(declaration.init.callee.object) &&
+                declaration.init.callee.object.name === "z"
+              ) {
+                const name = declaration.id.name;
+                this.typeDefinitions[name] = declaration.init;
+              }
+            }
+          });
         }
       },
     });
   }
 
-  private resolveType(typeName: string) {
+  private resolveType(typeName: string): OpenAPIDefinition {
     if (this.processingTypes.has(typeName)) {
       // Return reference to type to avoid infinite recursion
       return { $ref: `#/components/schemas/${typeName}` };
     }
-
-    // Add type to precessing types
+    // Add type to processing types
     this.processingTypes.add(typeName);
 
     try {
+      // If we are using Zod and the given type is not found yet, try using Zod converter first
+      if (this.schemaType === "zod" && !this.openapiDefinitions[typeName]) {
+        const zodSchema =
+          this.zodSchemaConverter.convertZodSchemaToOpenApi(typeName);
+        if (zodSchema) {
+          this.openapiDefinitions[typeName] = zodSchema;
+          return zodSchema;
+        }
+      }
+
       const typeNode = this.typeDefinitions[typeName.toString()];
       if (!typeNode) return {};
+
+      // Check if node is Zod
+      if (
+        t.isCallExpression(typeNode) &&
+        t.isMemberExpression(typeNode.callee) &&
+        t.isIdentifier(typeNode.callee.object) &&
+        typeNode.callee.object.name === "z"
+      ) {
+        if (this.schemaType === "zod") {
+          const zodSchema = this.zodSchemaConverter.processZodNode(typeNode);
+          if (zodSchema) {
+            this.openapiDefinitions[typeName] = zodSchema;
+            return zodSchema;
+          }
+        }
+      }
 
       if (t.isTSEnumDeclaration(typeNode)) {
         const enumValues = this.processEnum(typeNode);
@@ -103,10 +194,10 @@ export class SchemaProcessor {
       }
 
       if (t.isTSTypeLiteral(typeNode) || t.isTSInterfaceBody(typeNode)) {
-        const properties = {};
+        const properties: Record<string, any> = {};
 
         if ("members" in typeNode) {
-          (typeNode.members || []).forEach((member) => {
+          (typeNode.members || []).forEach((member: any) => {
             if (t.isTSPropertySignature(member) && t.isIdentifier(member.key)) {
               const propName = member.key.name;
               const options = this.getPropertyOptions(member);
@@ -140,7 +231,7 @@ export class SchemaProcessor {
     }
   }
 
-  private isDateString(node) {
+  private isDateString(node: any): boolean {
     if (t.isStringLiteral(node)) {
       const dateRegex = /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2}(\.\d{3})?Z)?$/;
       return dateRegex.test(node.value);
@@ -148,17 +239,17 @@ export class SchemaProcessor {
     return false;
   }
 
-  private isDateObject(node) {
+  private isDateObject(node: any): boolean {
     return (
       t.isNewExpression(node) && t.isIdentifier(node.callee, { name: "Date" })
     );
   }
 
-  private isDateNode(node) {
+  private isDateNode(node: any): boolean {
     return this.isDateString(node) || this.isDateObject(node);
   }
 
-  resolveTSNodeType(node) {
+  resolveTSNodeType(node: any): OpenAPIDefinition {
     if (!node) return { type: "object" }; // Default type for undefined/null
 
     if (t.isTSStringKeyword(node)) return { type: "string" };
@@ -262,8 +353,8 @@ export class SchemaProcessor {
     }
 
     if (t.isTSTypeLiteral(node)) {
-      const properties = {};
-      node.members.forEach((member) => {
+      const properties: Record<string, any> = {};
+      node.members.forEach((member: any) => {
         if (t.isTSPropertySignature(member) && t.isIdentifier(member.key)) {
           const propName = member.key.name;
           properties[propName] = this.resolveTSNodeType(
@@ -276,13 +367,15 @@ export class SchemaProcessor {
 
     if (t.isTSUnionType(node)) {
       // Handle union types with literal types, like "admin" | "member" | "guest"
-      const literals = node.types.filter((type) => t.isTSLiteralType(type));
+      const literals = node.types.filter((type: any) =>
+        t.isTSLiteralType(type)
+      );
 
       // Check if all union elements are literals
       if (literals.length === node.types.length) {
         // All union members are literals, convert to enum
         const enumValues = literals
-          .map((type) => {
+          .map((type: any) => {
             if (t.isTSLiteralType(type) && t.isStringLiteral(type.literal)) {
               return type.literal.value;
             } else if (
@@ -298,12 +391,14 @@ export class SchemaProcessor {
             }
             return null;
           })
-          .filter((value) => value !== null);
+          .filter((value: any) => value !== null);
 
         if (enumValues.length > 0) {
           // Check if all enum values are of the same type
           const firstType = typeof enumValues[0];
-          const sameType = enumValues.every((val) => typeof val === firstType);
+          const sameType = enumValues.every(
+            (val: any) => typeof val === firstType
+          );
 
           if (sameType) {
             return {
@@ -316,14 +411,14 @@ export class SchemaProcessor {
 
       // Handling null | undefined in type union
       const nullableTypes = node.types.filter(
-        (type) =>
+        (type: any) =>
           t.isTSNullKeyword(type) ||
           t.isTSUndefinedKeyword(type) ||
           t.isTSVoidKeyword(type)
       );
 
       const nonNullableTypes = node.types.filter(
-        (type) =>
+        (type: any) =>
           !t.isTSNullKeyword(type) &&
           !t.isTSUndefinedKeyword(type) &&
           !t.isTSVoidKeyword(type)
@@ -342,26 +437,25 @@ export class SchemaProcessor {
       return {
         oneOf: node.types
           .filter(
-            (type) =>
+            (type: any) =>
               !t.isTSNullKeyword(type) &&
               !t.isTSUndefinedKeyword(type) &&
               !t.isTSVoidKeyword(type)
           )
-          .map((subNode) => this.resolveTSNodeType(subNode)),
+          .map((subNode: any) => this.resolveTSNodeType(subNode)),
       };
     }
 
     if (t.isTSIntersectionType(node)) {
       // For intersection types, we combine properties
-      const allProperties = {};
-      const requiredProperties = [];
+      const allProperties: Record<string, any> = {};
+      const requiredProperties: string[] = [];
 
-      node.types.forEach((typeNode) => {
+      node.types.forEach((typeNode: any) => {
         const resolvedType = this.resolveTSNodeType(typeNode);
         if (resolvedType.type === "object" && resolvedType.properties) {
           Object.entries(resolvedType.properties).forEach(([key, value]) => {
             allProperties[key] = value;
-            // @ts-ignore
             if (value.required) {
               requiredProperties.push(key);
             }
@@ -386,7 +480,10 @@ export class SchemaProcessor {
     return { type: "object" }; // By default we return an object
   }
 
-  private processSchemaFile(filePath: string, schemaName: string) {
+  private processSchemaFile(
+    filePath: string,
+    schemaName: string
+  ): OpenAPIDefinition | undefined {
     // Check if the file has already been processed
     if (this.processSchemaTracker[`${filePath}-${schemaName}`]) return;
 
@@ -402,7 +499,6 @@ export class SchemaProcessor {
 
       // Reset the set of processed types before each schema processing
       this.processingTypes.clear();
-
       const definition = this.resolveType(schemaName);
       this.openapiDefinitions[schemaName] = definition;
 
@@ -417,15 +513,15 @@ export class SchemaProcessor {
     }
   }
 
-  private processEnum(enumNode: t.TSEnumDeclaration): object {
+  private processEnum(enumNode: any): OpenAPIDefinition {
     // Initialization OpenAPI enum object
-    const enumSchema = {
+    const enumSchema: OpenAPIDefinition = {
       type: "string",
       enum: [],
     };
 
     // Iterate throught enum members
-    enumNode.members.forEach((member) => {
+    enumNode.members.forEach((member: any) => {
       if (t.isTSEnumMember(member)) {
         // @ts-ignore
         const name = member.id?.name;
@@ -439,14 +535,16 @@ export class SchemaProcessor {
 
         const targetValue = value || name;
 
-        enumSchema.enum.push(targetValue);
+        if (enumSchema.enum) {
+          enumSchema.enum.push(targetValue);
+        }
       }
     });
 
     return enumSchema;
   }
 
-  private getPropertyOptions(node) {
+  private getPropertyOptions(node: any): PropertyOptions {
     const isOptional = !!node.optional; // check if property is optional
 
     let description = null;
@@ -455,7 +553,7 @@ export class SchemaProcessor {
       description = node.trailingComments[0].value.trim(); // get first comment
     }
 
-    const options: Property = {};
+    const options: PropertyOptions = {};
 
     if (description) {
       options.description = description;
@@ -480,13 +578,13 @@ export class SchemaProcessor {
       paramName.endsWith("Id") ||
       paramName.endsWith("_id")
     ) {
-      return type === "string" ? "123abc" : 123;
+      return type === "string" ? "123" : 123;
     }
 
     // For specific common parameter names
     switch (paramName.toLowerCase()) {
       case "slug":
-        return "example-slug";
+        return "slug";
       case "uuid":
         return "123e4567-e89b-12d3-a456-426614174000";
       case "username":
@@ -494,11 +592,13 @@ export class SchemaProcessor {
       case "email":
         return "user@example.com";
       case "name":
-        return "example-name";
+        return "name";
       case "date":
         return "2023-01-01";
       case "page":
         return 1;
+      case "role":
+        return "admin";
       default:
         // Default examples by type
         if (type === "string") return "example";
@@ -511,10 +611,10 @@ export class SchemaProcessor {
   /**
    * Create a default schema for path parameters when no schema is defined
    */
-  public createDefaultPathParamsSchema(paramNames: string[]): any[] {
+  public createDefaultPathParamsSchema(paramNames: string[]): ParamSchema[] {
     return paramNames.map((paramName) => {
       // Guess the parameter type based on the name
-      let type: string = "string";
+      let type = "string";
       if (
         paramName === "id" ||
         paramName.endsWith("Id") ||
@@ -541,12 +641,15 @@ export class SchemaProcessor {
     });
   }
 
-  public createRequestParamsSchema(params: Params, isPathParam = false) {
-    const queryParams = [];
+  public createRequestParamsSchema(
+    params: OpenAPIDefinition,
+    isPathParam: boolean = false
+  ): ParamSchema[] {
+    const queryParams: ParamSchema[] = [];
 
     if (params.properties) {
       for (let [name, value] of Object.entries(params.properties)) {
-        const param: Property = {
+        const param: ParamSchema = {
           in: isPathParam ? "path" : "query",
           name,
           schema: {
@@ -576,7 +679,7 @@ export class SchemaProcessor {
     return queryParams;
   }
 
-  public createRequestBodySchema(body: Record<string, any>) {
+  public createRequestBodySchema(body: OpenAPIDefinition): any {
     return {
       content: {
         "application/json": {
@@ -586,7 +689,7 @@ export class SchemaProcessor {
     };
   }
 
-  public createResponseSchema(responses: Record<string, any>) {
+  public createResponseSchema(responses: OpenAPIDefinition): any {
     return {
       200: {
         description: "Successful response",
@@ -604,30 +707,37 @@ export class SchemaProcessor {
     pathParamsType,
     bodyType,
     responseType,
-  }) {
-    let params = this.openapiDefinitions[paramsType];
-    let pathParams = this.openapiDefinitions[pathParamsType];
-    let body = this.openapiDefinitions[bodyType];
-    let responses = this.openapiDefinitions[responseType];
+  }: any): {
+    params: OpenAPIDefinition;
+    pathParams: OpenAPIDefinition;
+    body: OpenAPIDefinition;
+    responses: OpenAPIDefinition;
+  } {
+    let params = paramsType ? this.openapiDefinitions[paramsType] : {};
+    let pathParams = pathParamsType
+      ? this.openapiDefinitions[pathParamsType]
+      : {};
+    let body = bodyType ? this.openapiDefinitions[bodyType] : {};
+    let responses = responseType ? this.openapiDefinitions[responseType] : {};
 
     if (paramsType && !params) {
       this.findSchemaDefinition(paramsType, "params");
-      params = this.openapiDefinitions[paramsType];
+      params = this.openapiDefinitions[paramsType] || {};
     }
 
     if (pathParamsType && !pathParams) {
       this.findSchemaDefinition(pathParamsType, "pathParams");
-      pathParams = this.openapiDefinitions[pathParamsType];
+      pathParams = this.openapiDefinitions[pathParamsType] || {};
     }
 
     if (bodyType && !body) {
       this.findSchemaDefinition(bodyType, "body");
-      body = this.openapiDefinitions[bodyType];
+      body = this.openapiDefinitions[bodyType] || {};
     }
 
     if (responseType && !responses) {
       this.findSchemaDefinition(responseType, "response");
-      responses = this.openapiDefinitions[responseType];
+      responses = this.openapiDefinitions[responseType] || {};
     }
 
     return {

@@ -1,7 +1,7 @@
 {
   "name": "next-openapi-gen",
   "version": "0.3.3",
-  "description": "Super fast and easy way to generate OpenAPI documentation automatically from API routes in NextJS.",
+  "description": "🚀 Super fast and easy way to generate OpenAPI documentation automatically from API routes in NextJS. Supports TypeScript types & Zod schemas with zero config required!",
   "type": "module",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
@@ -21,13 +21,16 @@
     "url": "git+ssh://git@github.com/tazo90/next-openapi-gen.git"
   },
   "keywords": [
-    "react",
     "nextjs",
     "openapi",
-    "scalar",
     "swagger",
-    "docs",
+    "typescript",
+    "zod",
+    "api-docs",
     "api",
+    "docs",
+    "react",
+    "scalar",
     "redoc"
   ],
   "publishConfig": {

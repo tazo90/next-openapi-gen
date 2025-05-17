@@ -30,11 +30,18 @@ export class RouteProcessor {
     this.schemaProcessor = new SchemaProcessor(config.schemaDir);
   }
 
-  private isRoute(varName: string) {
+  /**
+   * Get the SchemaProcessor instance
+   */
+  public getSchemaProcessor(): SchemaProcessor {
+    return this.schemaProcessor;
+  }
+
+  private isRoute(varName: string): boolean {
     return HTTP_METHODS.includes(varName);
   }
 
-  private processFile(filePath: string) {
+  private processFile(filePath: string): void {
     // Check if the file has already been processed
     if (this.processFileTracker[filePath]) return;
 
@@ -58,8 +65,22 @@ export class RouteProcessor {
             if (
               !this.config.includeOpenApiRoutes ||
               (this.config.includeOpenApiRoutes && dataTypes.isOpenApi)
-            )
+            ) {
+              // Check for URL parameters in the route path
+              const routePath = this.getRoutePath(filePath);
+              const pathParams = extractPathParameters(routePath);
+
+              // If we have path parameters but no pathParamsType defined, we should log a warning
+              if (pathParams.length > 0 && !dataTypes.pathParams) {
+                console.warn(
+                  `Route ${routePath} contains path parameters ${pathParams.join(
+                    ", "
+                  )} but no @pathParams type is defined.`
+                );
+              }
+
               this.addRouteToPaths(declaration.id.name, filePath, dataTypes);
+            }
           }
         }
 
@@ -72,8 +93,20 @@ export class RouteProcessor {
                 if (
                   !this.config.includeOpenApiRoutes ||
                   (this.config.includeOpenApiRoutes && dataTypes.isOpenApi)
-                )
+                ) {
+                  const routePath = this.getRoutePath(filePath);
+                  const pathParams = extractPathParameters(routePath);
+
+                  if (pathParams.length > 0 && !dataTypes.pathParams) {
+                    console.warn(
+                      `Route ${routePath} contains path parameters ${pathParams.join(
+                        ", "
+                      )} but no @pathParams type is defined.`
+                    );
+                  }
+
                   this.addRouteToPaths(decl.id.name, filePath, dataTypes);
+                }
               }
             }
           });
@@ -84,7 +117,7 @@ export class RouteProcessor {
     this.processFileTracker[filePath] = true;
   }
 
-  public scanApiRoutes(dir: string) {
+  public scanApiRoutes(dir: string): void {
     let files = this.directoryCache[dir];
     if (!files) {
       files = fs.readdirSync(dir);
@@ -138,6 +171,7 @@ export class RouteProcessor {
       summary: summary,
       description: description,
       tags: [rootPath],
+      parameters: [],
     };
 
     // Add auth
@@ -149,7 +183,6 @@ export class RouteProcessor {
       ];
     }
 
-    definition.parameters = [];
     if (params) {
       definition.parameters =
         this.schemaProcessor.createRequestParamsSchema(params);
@@ -225,7 +258,7 @@ export class RouteProcessor {
       .replace(/\/\[\.\.\.(.*)\]/g, "/{$1}"); // Replace [...param] with {param}
   }
 
-  private getSortedPaths(paths: Record<string, any>) {
+  private getSortedPaths(paths: Record<string, any>): Record<string, any> {
     function comparePaths(a, b) {
       const aMethods = this.swaggerPaths[a] || {};
       const bMethods = this.swaggerPaths[b] || {};
@@ -265,7 +298,7 @@ export class RouteProcessor {
       }, {});
   }
 
-  public getSwaggerPaths() {
+  public getSwaggerPaths(): Record<string, any> {
     const paths = this.getSortedPaths(this.swaggerPaths);
 
     return this.getSortedPaths(paths);

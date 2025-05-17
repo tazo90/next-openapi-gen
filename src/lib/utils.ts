@@ -26,10 +26,10 @@ export function extractJSDocComments(path: NodePath): DataTypes {
   const comments = path.node.leadingComments;
   let summary = "";
   let description = "";
-  let paramsType = "";
-  let pathParamsType = "";
-  let bodyType = "";
-  let responseType = "";
+  let params = "";
+  let pathParams = "";
+  let body = "";
+  let response = "";
   let auth = "";
   let isOpenApi = false;
 
@@ -66,19 +66,19 @@ export function extractJSDocComments(path: NodePath): DataTypes {
       }
 
       if (commentValue.includes("@params")) {
-        paramsType = extractTypeFromComment(commentValue, "@params");
+        params = extractTypeFromComment(commentValue, "@params");
       }
 
       if (commentValue.includes("@pathParams")) {
-        pathParamsType = extractTypeFromComment(commentValue, "@pathParams");
+        pathParams = extractTypeFromComment(commentValue, "@pathParams");
       }
 
       if (commentValue.includes("@body")) {
-        bodyType = extractTypeFromComment(commentValue, "@body");
+        body = extractTypeFromComment(commentValue, "@body");
       }
 
       if (commentValue.includes("@response")) {
-        responseType = extractTypeFromComment(commentValue, "@response");
+        response = extractTypeFromComment(commentValue, "@response");
       }
     });
   }
@@ -87,10 +87,10 @@ export function extractJSDocComments(path: NodePath): DataTypes {
     auth,
     summary,
     description,
-    paramsType,
-    pathParamsType,
-    bodyType,
-    responseType,
+    params,
+    pathParams,
+    body,
+    response,
     isOpenApi,
   };
 }
