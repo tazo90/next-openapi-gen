@@ -1,0 +1,1490 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "API Documentation",
+    "version": "1.0.0",
+    "description": "This is the OpenAPI specification for your project."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000/api",
+      "description": "Local development server"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "schemas": {
+      "OrdersQueryParams": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true,
+            "nullable": true,
+            "default": 1,
+            "description": "Page number"
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true,
+            "maximum": 100,
+            "nullable": true,
+            "default": 20,
+            "description": "Results per page"
+          },
+          "status": {
+            "type": "object",
+            "description": "Filter by status"
+          },
+          "dateFrom": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "Filter orders from date"
+          },
+          "dateTo": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "Filter orders to date"
+          },
+          "sort": {
+            "type": "string",
+            "enum": [
+              "date_asc",
+              "date_desc",
+              "total_asc",
+              "total_desc"
+            ],
+            "nullable": true,
+            "default": "date_desc",
+            "description": "Sort results"
+          }
+        }
+      },
+      "OrdersResponse": {
+        "type": "object",
+        "properties": {
+          "orders": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            },
+            "description": "List of orders"
+          },
+          "pagination": {
+            "type": "object",
+            "properties": {
+              "total": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "Total number of orders"
+              },
+              "pages": {
+                "type": "integer",
+                "minimum": 0,
+                "exclusiveMinimum": true,
+                "description": "Total number of pages"
+              },
+              "page": {
+                "type": "integer",
+                "minimum": 0,
+                "exclusiveMinimum": true,
+                "description": "Current page"
+              },
+              "limit": {
+                "type": "integer",
+                "minimum": 0,
+                "exclusiveMinimum": true,
+                "description": "Results per page"
+              }
+            },
+            "required": [
+              "total",
+              "pages",
+              "page",
+              "limit"
+            ],
+            "description": "Pagination information"
+          }
+        },
+        "required": [
+          "orders",
+          "pagination"
+        ]
+      },
+      "CreateOrderBody": {},
+      "OrderSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Order ID"
+          },
+          "userId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "User ID"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            },
+            "description": "Purchased products"
+          },
+          "shippingAddress": {
+            "type": "object"
+          },
+          "billingAddress": {
+            "type": "object"
+          },
+          "paymentMethod": {
+            "type": "object"
+          },
+          "status": {
+            "type": "object"
+          },
+          "subtotal": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Subtotal (without discount and shipping)"
+          },
+          "discountAmount": {
+            "type": "number",
+            "minimum": 0,
+            "default": 0,
+            "description": "Discount amount"
+          },
+          "shippingCost": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Shipping cost"
+          },
+          "tax": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Tax"
+          },
+          "total": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Total amount"
+          },
+          "notes": {
+            "type": "string",
+            "nullable": true,
+            "description": "Additional notes"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Order creation date"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Last update date"
+          },
+          "paymentDate": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "Payment date"
+          },
+          "shippingDate": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "Shipping date"
+          },
+          "deliveryDate": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "Delivery date"
+          }
+        },
+        "required": [
+          "id",
+          "userId",
+          "items",
+          "shippingAddress",
+          "billingAddress",
+          "paymentMethod",
+          "status",
+          "subtotal",
+          "discountAmount",
+          "shippingCost",
+          "tax",
+          "total",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "OrderIdParams": {},
+      "UpdateOrderStatusBody": {},
+      "ProductQueryParams": {
+        "type": "object",
+        "properties": {
+          "include_variants": {
+            "type": "boolean",
+            "nullable": true,
+            "description": "Whether to include product variants"
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "USD",
+              "EUR",
+              "PLN"
+            ],
+            "default": "USD",
+            "description": "Currency for prices"
+          }
+        },
+        "required": [
+          "currency"
+        ]
+      },
+      "ProductIdParams": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique product identifier"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "ProductResponseSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Unique product identifier"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 3,
+            "description": "Product name"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true,
+            "description": "Product description"
+          },
+          "price": {
+            "type": "number",
+            "minimum": 0,
+            "exclusiveMinimum": true,
+            "description": "Base product price"
+          },
+          "image_url": {
+            "type": "string",
+            "format": "uri",
+            "nullable": true,
+            "description": "URL to main product image"
+          },
+          "gallery": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uri"
+            },
+            "description": "Product image gallery"
+          },
+          "categories": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            },
+            "description": "Product categories"
+          },
+          "variants": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            },
+            "nullable": true,
+            "description": "Product variants"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Product creation date"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Product last update date"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "published",
+              "archived"
+            ],
+            "description": "Product status"
+          },
+          "average_rating": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 5,
+            "nullable": true,
+            "description": "Average product rating"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "price",
+          "gallery",
+          "categories",
+          "created_at",
+          "updated_at",
+          "status"
+        ]
+      },
+      "UpdateProductSchema": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 3,
+            "nullable": true,
+            "description": "Product name"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true,
+            "description": "Product description"
+          },
+          "price": {
+            "type": "number",
+            "minimum": 0,
+            "exclusiveMinimum": true,
+            "nullable": true,
+            "description": "Base product price"
+          },
+          "image_url": {
+            "type": "string",
+            "format": "uri",
+            "nullable": true,
+            "description": "URL to main product image"
+          },
+          "gallery": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uri"
+            },
+            "nullable": true,
+            "description": "Product image gallery"
+          },
+          "category_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true,
+            "description": "Product category identifiers"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "published",
+              "archived"
+            ],
+            "nullable": true,
+            "description": "Product status"
+          }
+        }
+      },
+      "UserFieldsQuery": {
+        "type": "object",
+        "properties": {
+          "fields": {
+            "type": "string",
+            "nullable": true,
+            "description": "Comma-separated list of fields to include"
+          }
+        }
+      },
+      "UserIdParams": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "User ID"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "UserDetailedSchema": {},
+      "UpdateUserBody": {}
+    }
+  },
+  "schemaType": "zod",
+  "paths": {
+    "/orders": {
+      "get": {
+        "operationId": "get-orders",
+        "summary": "Get orders list",
+        "description": "Retrieves a paginated list of orders with filtering and sorting options",
+        "tags": [
+          "Orders"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "integer",
+              "description": "Page number"
+            },
+            "description": "Page number"
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "integer",
+              "description": "Results per page"
+            },
+            "description": "Results per page"
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "schema": {
+              "type": "object",
+              "description": "Filter by status"
+            },
+            "description": "Filter by status"
+          },
+          {
+            "in": "query",
+            "name": "dateFrom",
+            "schema": {
+              "type": "string",
+              "description": "Filter orders from date"
+            },
+            "description": "Filter orders from date"
+          },
+          {
+            "in": "query",
+            "name": "dateTo",
+            "schema": {
+              "type": "string",
+              "description": "Filter orders to date"
+            },
+            "description": "Filter orders to date"
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "date_asc",
+                "date_desc",
+                "total_asc",
+                "total_desc"
+              ],
+              "description": "Sort results"
+            },
+            "description": "Sort results"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "orders": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      },
+                      "description": "List of orders"
+                    },
+                    "pagination": {
+                      "type": "object",
+                      "properties": {
+                        "total": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "description": "Total number of orders"
+                        },
+                        "pages": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "exclusiveMinimum": true,
+                          "description": "Total number of pages"
+                        },
+                        "page": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "exclusiveMinimum": true,
+                          "description": "Current page"
+                        },
+                        "limit": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "exclusiveMinimum": true,
+                          "description": "Results per page"
+                        }
+                      },
+                      "required": [
+                        "total",
+                        "pages",
+                        "page",
+                        "limit"
+                      ],
+                      "description": "Pagination information"
+                    }
+                  },
+                  "required": [
+                    "orders",
+                    "pagination"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "post-orders",
+        "summary": "Create order",
+        "description": "Creates a new order from cart",
+        "tags": [
+          "Orders"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid",
+                      "description": "Order ID"
+                    },
+                    "userId": {
+                      "type": "string",
+                      "format": "uuid",
+                      "description": "User ID"
+                    },
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      },
+                      "description": "Purchased products"
+                    },
+                    "shippingAddress": {
+                      "type": "object"
+                    },
+                    "billingAddress": {
+                      "type": "object"
+                    },
+                    "paymentMethod": {
+                      "type": "object"
+                    },
+                    "status": {
+                      "type": "object"
+                    },
+                    "subtotal": {
+                      "type": "number",
+                      "minimum": 0,
+                      "description": "Subtotal (without discount and shipping)"
+                    },
+                    "discountAmount": {
+                      "type": "number",
+                      "minimum": 0,
+                      "default": 0,
+                      "description": "Discount amount"
+                    },
+                    "shippingCost": {
+                      "type": "number",
+                      "minimum": 0,
+                      "description": "Shipping cost"
+                    },
+                    "tax": {
+                      "type": "number",
+                      "minimum": 0,
+                      "description": "Tax"
+                    },
+                    "total": {
+                      "type": "number",
+                      "minimum": 0,
+                      "description": "Total amount"
+                    },
+                    "notes": {
+                      "type": "string",
+                      "nullable": true,
+                      "description": "Additional notes"
+                    },
+                    "createdAt": {
+                      "type": "string",
+                      "format": "date-time",
+                      "description": "Order creation date"
+                    },
+                    "updatedAt": {
+                      "type": "string",
+                      "format": "date-time",
+                      "description": "Last update date"
+                    },
+                    "paymentDate": {
+                      "type": "string",
+                      "format": "date-time",
+                      "nullable": true,
+                      "description": "Payment date"
+                    },
+                    "shippingDate": {
+                      "type": "string",
+                      "format": "date-time",
+                      "nullable": true,
+                      "description": "Shipping date"
+                    },
+                    "deliveryDate": {
+                      "type": "string",
+                      "format": "date-time",
+                      "nullable": true,
+                      "description": "Delivery date"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "userId",
+                    "items",
+                    "shippingAddress",
+                    "billingAddress",
+                    "paymentMethod",
+                    "status",
+                    "subtotal",
+                    "discountAmount",
+                    "shippingCost",
+                    "tax",
+                    "total",
+                    "createdAt",
+                    "updatedAt"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/orders/{id}": {
+      "get": {
+        "operationId": "get-orders-{id}",
+        "summary": "Get order by ID",
+        "description": "Retrieves detailed order information",
+        "tags": [
+          "Orders"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid",
+                      "description": "Order ID"
+                    },
+                    "userId": {
+                      "type": "string",
+                      "format": "uuid",
+                      "description": "User ID"
+                    },
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      },
+                      "description": "Purchased products"
+                    },
+                    "shippingAddress": {
+                      "type": "object"
+                    },
+                    "billingAddress": {
+                      "type": "object"
+                    },
+                    "paymentMethod": {
+                      "type": "object"
+                    },
+                    "status": {
+                      "type": "object"
+                    },
+                    "subtotal": {
+                      "type": "number",
+                      "minimum": 0,
+                      "description": "Subtotal (without discount and shipping)"
+                    },
+                    "discountAmount": {
+                      "type": "number",
+                      "minimum": 0,
+                      "default": 0,
+                      "description": "Discount amount"
+                    },
+                    "shippingCost": {
+                      "type": "number",
+                      "minimum": 0,
+                      "description": "Shipping cost"
+                    },
+                    "tax": {
+                      "type": "number",
+                      "minimum": 0,
+                      "description": "Tax"
+                    },
+                    "total": {
+                      "type": "number",
+                      "minimum": 0,
+                      "description": "Total amount"
+                    },
+                    "notes": {
+                      "type": "string",
+                      "nullable": true,
+                      "description": "Additional notes"
+                    },
+                    "createdAt": {
+                      "type": "string",
+                      "format": "date-time",
+                      "description": "Order creation date"
+                    },
+                    "updatedAt": {
+                      "type": "string",
+                      "format": "date-time",
+                      "description": "Last update date"
+                    },
+                    "paymentDate": {
+                      "type": "string",
+                      "format": "date-time",
+                      "nullable": true,
+                      "description": "Payment date"
+                    },
+                    "shippingDate": {
+                      "type": "string",
+                      "format": "date-time",
+                      "nullable": true,
+                      "description": "Shipping date"
+                    },
+                    "deliveryDate": {
+                      "type": "string",
+                      "format": "date-time",
+                      "nullable": true,
+                      "description": "Delivery date"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "userId",
+                    "items",
+                    "shippingAddress",
+                    "billingAddress",
+                    "paymentMethod",
+                    "status",
+                    "subtotal",
+                    "discountAmount",
+                    "shippingCost",
+                    "tax",
+                    "total",
+                    "createdAt",
+                    "updatedAt"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "operationId": "patch-orders-{id}",
+        "summary": "Update order status",
+        "description": "Updates the status of an order",
+        "tags": [
+          "Orders"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid",
+                      "description": "Order ID"
+                    },
+                    "userId": {
+                      "type": "string",
+                      "format": "uuid",
+                      "description": "User ID"
+                    },
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      },
+                      "description": "Purchased products"
+                    },
+                    "shippingAddress": {
+                      "type": "object"
+                    },
+                    "billingAddress": {
+                      "type": "object"
+                    },
+                    "paymentMethod": {
+                      "type": "object"
+                    },
+                    "status": {
+                      "type": "object"
+                    },
+                    "subtotal": {
+                      "type": "number",
+                      "minimum": 0,
+                      "description": "Subtotal (without discount and shipping)"
+                    },
+                    "discountAmount": {
+                      "type": "number",
+                      "minimum": 0,
+                      "default": 0,
+                      "description": "Discount amount"
+                    },
+                    "shippingCost": {
+                      "type": "number",
+                      "minimum": 0,
+                      "description": "Shipping cost"
+                    },
+                    "tax": {
+                      "type": "number",
+                      "minimum": 0,
+                      "description": "Tax"
+                    },
+                    "total": {
+                      "type": "number",
+                      "minimum": 0,
+                      "description": "Total amount"
+                    },
+                    "notes": {
+                      "type": "string",
+                      "nullable": true,
+                      "description": "Additional notes"
+                    },
+                    "createdAt": {
+                      "type": "string",
+                      "format": "date-time",
+                      "description": "Order creation date"
+                    },
+                    "updatedAt": {
+                      "type": "string",
+                      "format": "date-time",
+                      "description": "Last update date"
+                    },
+                    "paymentDate": {
+                      "type": "string",
+                      "format": "date-time",
+                      "nullable": true,
+                      "description": "Payment date"
+                    },
+                    "shippingDate": {
+                      "type": "string",
+                      "format": "date-time",
+                      "nullable": true,
+                      "description": "Shipping date"
+                    },
+                    "deliveryDate": {
+                      "type": "string",
+                      "format": "date-time",
+                      "nullable": true,
+                      "description": "Delivery date"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "userId",
+                    "items",
+                    "shippingAddress",
+                    "billingAddress",
+                    "paymentMethod",
+                    "status",
+                    "subtotal",
+                    "discountAmount",
+                    "shippingCost",
+                    "tax",
+                    "total",
+                    "createdAt",
+                    "updatedAt"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "delete-orders-{id}",
+        "summary": "Cancel order",
+        "description": "Cancels an order if it's not already delivered",
+        "tags": [
+          "Orders"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [],
+        "responses": {}
+      }
+    },
+    "/products/{id}": {
+      "get": {
+        "operationId": "get-products-{id}",
+        "summary": "Get product",
+        "description": "Retrieves detailed product information by ID",
+        "tags": [
+          "Products"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "include_variants",
+            "schema": {
+              "type": "boolean",
+              "description": "Whether to include product variants"
+            },
+            "description": "Whether to include product variants"
+          },
+          {
+            "in": "query",
+            "name": "currency",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "USD",
+                "EUR",
+                "PLN"
+              ],
+              "description": "Currency for prices"
+            },
+            "description": "Currency for prices"
+          },
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string",
+              "description": "Unique product identifier"
+            },
+            "required": true,
+            "description": "Unique product identifier",
+            "example": "123abc"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid",
+                      "description": "Unique product identifier"
+                    },
+                    "name": {
+                      "type": "string",
+                      "minLength": 3,
+                      "description": "Product name"
+                    },
+                    "description": {
+                      "type": "string",
+                      "nullable": true,
+                      "description": "Product description"
+                    },
+                    "price": {
+                      "type": "number",
+                      "minimum": 0,
+                      "exclusiveMinimum": true,
+                      "description": "Base product price"
+                    },
+                    "image_url": {
+                      "type": "string",
+                      "format": "uri",
+                      "nullable": true,
+                      "description": "URL to main product image"
+                    },
+                    "gallery": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "format": "uri"
+                      },
+                      "description": "Product image gallery"
+                    },
+                    "categories": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      },
+                      "description": "Product categories"
+                    },
+                    "variants": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      },
+                      "nullable": true,
+                      "description": "Product variants"
+                    },
+                    "created_at": {
+                      "type": "string",
+                      "format": "date-time",
+                      "description": "Product creation date"
+                    },
+                    "updated_at": {
+                      "type": "string",
+                      "format": "date-time",
+                      "description": "Product last update date"
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "draft",
+                        "published",
+                        "archived"
+                      ],
+                      "description": "Product status"
+                    },
+                    "average_rating": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 5,
+                      "nullable": true,
+                      "description": "Average product rating"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "name",
+                    "price",
+                    "gallery",
+                    "categories",
+                    "created_at",
+                    "updated_at",
+                    "status"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "operationId": "patch-products-{id}",
+        "summary": "Update product",
+        "description": "Updates an existing product",
+        "tags": [
+          "Products"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string",
+              "description": "Unique product identifier"
+            },
+            "required": true,
+            "description": "Unique product identifier",
+            "example": "123abc"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 3,
+                    "nullable": true,
+                    "description": "Product name"
+                  },
+                  "description": {
+                    "type": "string",
+                    "nullable": true,
+                    "description": "Product description"
+                  },
+                  "price": {
+                    "type": "number",
+                    "minimum": 0,
+                    "exclusiveMinimum": true,
+                    "nullable": true,
+                    "description": "Base product price"
+                  },
+                  "image_url": {
+                    "type": "string",
+                    "format": "uri",
+                    "nullable": true,
+                    "description": "URL to main product image"
+                  },
+                  "gallery": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "uri"
+                    },
+                    "nullable": true,
+                    "description": "Product image gallery"
+                  },
+                  "category_ids": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "nullable": true,
+                    "description": "Product category identifiers"
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "draft",
+                      "published",
+                      "archived"
+                    ],
+                    "nullable": true,
+                    "description": "Product status"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid",
+                      "description": "Unique product identifier"
+                    },
+                    "name": {
+                      "type": "string",
+                      "minLength": 3,
+                      "description": "Product name"
+                    },
+                    "description": {
+                      "type": "string",
+                      "nullable": true,
+                      "description": "Product description"
+                    },
+                    "price": {
+                      "type": "number",
+                      "minimum": 0,
+                      "exclusiveMinimum": true,
+                      "description": "Base product price"
+                    },
+                    "image_url": {
+                      "type": "string",
+                      "format": "uri",
+                      "nullable": true,
+                      "description": "URL to main product image"
+                    },
+                    "gallery": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "format": "uri"
+                      },
+                      "description": "Product image gallery"
+                    },
+                    "categories": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      },
+                      "description": "Product categories"
+                    },
+                    "variants": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      },
+                      "nullable": true,
+                      "description": "Product variants"
+                    },
+                    "created_at": {
+                      "type": "string",
+                      "format": "date-time",
+                      "description": "Product creation date"
+                    },
+                    "updated_at": {
+                      "type": "string",
+                      "format": "date-time",
+                      "description": "Product last update date"
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "draft",
+                        "published",
+                        "archived"
+                      ],
+                      "description": "Product status"
+                    },
+                    "average_rating": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 5,
+                      "nullable": true,
+                      "description": "Average product rating"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "name",
+                    "price",
+                    "gallery",
+                    "categories",
+                    "created_at",
+                    "updated_at",
+                    "status"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "delete-products-{id}",
+        "summary": "Delete product",
+        "description": "Removes a product from the system",
+        "tags": [
+          "Products"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string",
+              "description": "Unique product identifier"
+            },
+            "required": true,
+            "description": "Unique product identifier",
+            "example": "123abc"
+          }
+        ],
+        "responses": {}
+      }
+    },
+    "/users/{id}": {
+      "get": {
+        "operationId": "get-users-{id}",
+        "summary": "Get user by ID",
+        "description": "Retrieves detailed user information",
+        "tags": [
+          "Users"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "fields",
+            "schema": {
+              "type": "string",
+              "description": "Comma-separated list of fields to include"
+            },
+            "description": "Comma-separated list of fields to include"
+          },
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string",
+              "description": "User ID"
+            },
+            "required": true,
+            "description": "User ID",
+            "example": "123abc"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "operationId": "patch-users-{id}",
+        "summary": "Update user",
+        "description": "Updates user information",
+        "tags": [
+          "Users"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string",
+              "description": "User ID"
+            },
+            "required": true,
+            "description": "User ID",
+            "example": "123abc"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "delete-users-{id}",
+        "summary": "Delete user",
+        "description": "Deletes a user account",
+        "tags": [
+          "Users"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string",
+              "description": "User ID"
+            },
+            "required": true,
+            "description": "User ID",
+            "example": "123abc"
+          }
+        ],
+        "responses": {}
+      }
+    }
+  }
+}

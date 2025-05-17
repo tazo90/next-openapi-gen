@@ -1,0 +1,30 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "API Documentation",
+    "version": "1.0.0",
+    "description": "This is the OpenAPI specification for your project."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000/api",
+      "description": "Local development server"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  },
+  "apiDir": "./src/app/api",
+  "schemaDir": "./src/schemas",
+  "docsUrl": "api-docs",
+  "schemaType": "zod",
+  "ui": "scalar",
+  "outputFile": "openapi.json",
+  "includeOpenApiRoutes": false
+}
