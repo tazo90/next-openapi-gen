@@ -559,9 +559,7 @@ export class SchemaProcessor {
       options.description = description;
     }
 
-    if (this.contentType === "params") {
-      options.required = !isOptional;
-    } else if (this.contentType === "body") {
+    if (this.contentType === "body") {
       options.nullable = isOptional;
     }
 
@@ -655,7 +653,7 @@ export class SchemaProcessor {
           schema: {
             type: value.type,
           },
-          required: isPathParam ? true : value.required, // Path parameters are always required
+          required: isPathParam ? true : !!value.required, // Path parameters are always required
         };
 
         if (value.enum) {
