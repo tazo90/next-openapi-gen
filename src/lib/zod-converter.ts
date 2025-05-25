@@ -134,11 +134,6 @@ export class ZodSchemaConverter {
           this.scanDirectoryForZodSchema(filePath, schemaName);
         } else if (file.endsWith(".ts") || file.endsWith(".tsx")) {
           this.processFileForZodSchema(filePath, schemaName);
-
-          // Stop searching if we found the schema
-          if (this.zodSchemas[schemaName]) {
-            break;
-          }
         }
       }
     } catch (error) {
@@ -334,6 +329,53 @@ export class ZodSchemaConverter {
     } catch (error) {
       console.error(
         `Error processing file ${filePath} for schema ${schemaName}: ${error}`
+      );
+    }
+  }
+
+  /**
+   * Process all exported schemas in a file, not just the one we're looking for
+   */
+  processAllSchemasInFile(filePath) {
+    try {
+      const content = fs.readFileSync(filePath, "utf-8");
+      const ast = parse(content, {
+        sourceType: "module",
+        plugins: ["typescript", "decorators-legacy"],
+      });
+
+      traverse.default(ast, {
+        ExportNamedDeclaration: (path) => {
+          if (t.isVariableDeclaration(path.node.declaration)) {
+            path.node.declaration.declarations.forEach((declaration) => {
+              if (
+                t.isIdentifier(declaration.id) &&
+                declaration.init &&
+                t.isCallExpression(declaration.init) &&
+                t.isMemberExpression(declaration.init.callee) &&
+                t.isIdentifier(declaration.init.callee.object) &&
+                declaration.init.callee.object.name === "z"
+              ) {
+                const schemaName = declaration.id.name;
+                if (
+                  !this.zodSchemas[schemaName] &&
+                  !this.processingSchemas.has(schemaName)
+                ) {
+                  this.processingSchemas.add(schemaName);
+                  const schema = this.processZodNode(declaration.init);
+                  if (schema) {
+                    this.zodSchemas[schemaName] = schema;
+                  }
+                  this.processingSchemas.delete(schemaName);
+                }
+              }
+            });
+          }
+        },
+      });
+    } catch (error) {
+      console.error(
+        `Error processing all schemas in file ${filePath}: ${error}`
       );
     }
   }
@@ -646,6 +688,50 @@ export class ZodSchemaConverter {
           return; // Skip if key is not identifier or string literal
         }
 
+        // Check if the property value is an identifier (reference to another schema)
+        if (t.isIdentifier(prop.value)) {
+          const referencedSchemaName = prop.value.name;
+          // Try to find and convert the referenced schema
+          if (!this.zodSchemas[referencedSchemaName]) {
+            this.convertZodSchemaToOpenApi(referencedSchemaName);
+          }
+          // Create a reference
+          properties[propName] = {
+            $ref: `#/components/schemas/${referencedSchemaName}`,
+          };
+          required.push(propName); // Assuming it's required unless marked optional
+        }
+
+        // For array of schemas (like z.array(PaymentMethodSchema))
+        if (
+          t.isCallExpression(prop.value) &&
+          t.isMemberExpression(prop.value.callee) &&
+          t.isIdentifier(prop.value.callee.object) &&
+          prop.value.callee.object.name === "z" &&
+          t.isIdentifier(prop.value.callee.property) &&
+          prop.value.callee.property.name === "array" &&
+          prop.value.arguments.length > 0 &&
+          t.isIdentifier(prop.value.arguments[0])
+        ) {
+          const itemSchemaName = prop.value.arguments[0].name;
+          // Try to find and convert the referenced schema
+          if (!this.zodSchemas[itemSchemaName]) {
+            this.convertZodSchemaToOpenApi(itemSchemaName);
+          }
+          // Process as array with reference
+          const arraySchema = this.processZodNode(prop.value);
+          arraySchema.items = {
+            $ref: `#/components/schemas/${itemSchemaName}`,
+          };
+          properties[propName] = arraySchema;
+
+          const isOptional =
+            this.isOptional(prop.value) || this.hasOptionalMethod(prop.value);
+          if (!isOptional) {
+            required.push(propName);
+          }
+        }
+
         // Process property value (a Zod schema)
         const propSchema = this.processZodNode(prop.value);
 
@@ -717,9 +803,21 @@ export class ZodSchemaConverter {
         schema = { type: "null" };
         break;
       case "array":
-        let itemsType: OpenApiSchema = { type: "string" };
+        let itemsType = { type: "string" };
         if (node.arguments.length > 0) {
-          itemsType = this.processZodNode(node.arguments[0]);
+          // Check if argument is an identifier (schema reference)
+          if (t.isIdentifier(node.arguments[0])) {
+            const schemaName = node.arguments[0].name;
+            // Try to find and convert the referenced schema
+            if (!this.zodSchemas[schemaName]) {
+              this.convertZodSchemaToOpenApi(schemaName);
+            }
+            // @ts-ignore
+            itemsType = { $ref: `#/components/schemas/${schemaName}` };
+          } else {
+            // @ts-ignore
+            itemsType = this.processZodNode(node.arguments[0]);
+          }
         }
         schema = { type: "array", items: itemsType };
         break;

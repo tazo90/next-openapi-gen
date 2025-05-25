@@ -40,6 +40,14 @@ export class SchemaProcessor {
    * Get all defined schemas (for components.schemas section)
    */
   public getDefinedSchemas(): Record<string, OpenAPIDefinition> {
+    // If using Zod, also include all processed Zod schemas
+    if (this.schemaType === "zod" && this.zodSchemaConverter) {
+      const zodSchemas = this.zodSchemaConverter.getProcessedSchemas();
+      return {
+        ...this.openapiDefinitions,
+        ...zodSchemas,
+      };
+    }
     return this.openapiDefinitions;
   }
 
@@ -736,6 +744,20 @@ export class SchemaProcessor {
     if (responseType && !responses) {
       this.findSchemaDefinition(responseType, "response");
       responses = this.openapiDefinitions[responseType] || {};
+    }
+
+    if (this.schemaType === "zod") {
+      const schemasToProcess = [
+        paramsType,
+        pathParamsType,
+        bodyType,
+        responseType,
+      ].filter(Boolean);
+      schemasToProcess.forEach((schemaName) => {
+        if (!this.openapiDefinitions[schemaName]) {
+          this.findSchemaDefinition(schemaName, "");
+        }
+      });
     }
 
     return {
