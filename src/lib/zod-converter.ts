@@ -12,7 +12,6 @@ import { OpenApiSchema } from "../types.js";
 export class ZodSchemaConverter {
   schemaDir: string;
   zodSchemas: Record<string, OpenApiSchema> = {};
-  processedFiles: Record<string, boolean> = {};
   processingSchemas: Set<string> = new Set();
   processedModules: Set<string> = new Set();
 
@@ -42,8 +41,10 @@ export class ZodSchemaConverter {
 
       // Find all route files and process them first
       const routeFiles = this.findRouteFiles();
+
       for (const routeFile of routeFiles) {
         this.processFileForZodSchema(routeFile, schemaName);
+
         if (this.zodSchemas[schemaName]) {
           console.log(
             `Found Zod schema '${schemaName}' in route file: ${routeFile}`
@@ -149,12 +150,13 @@ export class ZodSchemaConverter {
    * Process a file to find Zod schema definitions
    */
   processFileForZodSchema(filePath: string, schemaName: string) {
-    // Skip if already processed
-    if (this.processedFiles[filePath]) return;
-    this.processedFiles[filePath] = true;
-
     try {
       const content = fs.readFileSync(filePath, "utf-8");
+
+      // Check if file contains schema we are looking for
+      if (!content.includes(schemaName)) {
+        return;
+      }
 
       // Parse the file
       const ast = parse(content, {
@@ -193,9 +195,29 @@ export class ZodSchemaConverter {
                 declaration.id.name === schemaName &&
                 declaration.init
               ) {
-                const schema = this.processZodNode(declaration.init);
-                if (schema) {
-                  this.zodSchemas[schemaName] = schema;
+                // Check if this is a call expression with .extend()
+                if (
+                  t.isCallExpression(declaration.init) &&
+                  t.isMemberExpression(declaration.init.callee) &&
+                  t.isIdentifier(declaration.init.callee.property) &&
+                  declaration.init.callee.property.name === "extend"
+                ) {
+                  const schema = this.processZodNode(declaration.init);
+                  if (schema) {
+                    this.zodSchemas[schemaName] = schema;
+                  }
+                }
+                // Existing code for z.object({...})
+                else if (
+                  t.isCallExpression(declaration.init) &&
+                  t.isMemberExpression(declaration.init.callee) &&
+                  t.isIdentifier(declaration.init.callee.object) &&
+                  declaration.init.callee.object.name === "z"
+                ) {
+                  const schema = this.processZodNode(declaration.init);
+                  if (schema) {
+                    this.zodSchemas[schemaName] = schema;
+                  }
                 }
               }
             });
@@ -256,9 +278,24 @@ export class ZodSchemaConverter {
             path.node.id.name === schemaName &&
             path.node.init
           ) {
-            const schema = this.processZodNode(path.node.init);
-            if (schema) {
-              this.zodSchemas[schemaName] = schema;
+            // Check if it is .extend()
+            if (
+              t.isCallExpression(path.node.init) &&
+              t.isMemberExpression(path.node.init.callee) &&
+              t.isIdentifier(path.node.init.callee.property) &&
+              path.node.init.callee.property.name === "extend"
+            ) {
+              const schema = this.processZodNode(path.node.init);
+              if (schema) {
+                this.zodSchemas[schemaName] = schema;
+              }
+            }
+            // Existing code
+            else {
+              const schema = this.processZodNode(path.node.init);
+              if (schema) {
+                this.zodSchemas[schemaName] = schema;
+              }
             }
           }
         },
@@ -305,6 +342,25 @@ export class ZodSchemaConverter {
    * Process a Zod node and convert it to OpenAPI schema
    */
   processZodNode(node: t.Node): OpenApiSchema {
+    // Handle reference to another schema (e.g. UserBaseSchema.extend)
+    if (
+      t.isCallExpression(node) &&
+      t.isMemberExpression(node.callee) &&
+      t.isIdentifier(node.callee.object) &&
+      t.isIdentifier(node.callee.property) &&
+      node.callee.property.name === "extend"
+    ) {
+      const baseSchemaName = node.callee.object.name;
+
+      // Check if the base schema already exists
+      if (!this.zodSchemas[baseSchemaName]) {
+        // Try to find the basic pattern
+        this.convertZodSchemaToOpenApi(baseSchemaName);
+      }
+
+      return this.processZodChain(node);
+    }
+
     // Handle z.object({...})
     if (
       t.isCallExpression(node) &&
@@ -576,7 +632,7 @@ export class ZodSchemaConverter {
     const properties: Record<string, OpenApiSchema> = {};
     const required: string[] = [];
 
-    objectExpression.properties.forEach((prop) => {
+    objectExpression.properties.forEach((prop, index) => {
       if (t.isObjectProperty(prop)) {
         let propName: string | undefined;
 
@@ -586,6 +642,7 @@ export class ZodSchemaConverter {
         } else if (t.isStringLiteral(prop.key)) {
           propName = prop.key.value;
         } else {
+          console.log(`Skipping property ${index} - unsupported key type`);
           return; // Skip if key is not identifier or string literal
         }
 
@@ -596,8 +653,11 @@ export class ZodSchemaConverter {
           properties[propName] = propSchema;
 
           // If the property is not marked as optional, add it to required list
-          // @ts-ignore
-          if (!this.isOptional(prop.value)) {
+          const isOptional =
+            // @ts-ignore
+            this.isOptional(prop.value) || this.hasOptionalMethod(prop.value);
+
+          if (!isOptional) {
             required.push(propName);
           }
         }
@@ -950,7 +1010,11 @@ export class ZodSchemaConverter {
           node.arguments.length > 0 &&
           t.isObjectExpression(node.arguments[0])
         ) {
-          const extendedProps = this.processZodObject({
+          // Get the base schema by processing the object that extend is called on
+          const baseSchema = this.processZodNode(node.callee.object);
+
+          // Process the extension object
+          const extendNode: any = {
             type: "CallExpression",
             callee: {
               type: "MemberExpression",
@@ -960,20 +1024,30 @@ export class ZodSchemaConverter {
               optional: false,
             },
             arguments: [node.arguments[0]],
-          });
+          };
 
-          if (extendedProps && extendedProps.properties) {
-            schema.properties = {
-              ...schema.properties,
-              ...extendedProps.properties,
+          const extendedProps = this.processZodObject(extendNode);
+
+          // Merge base schema and extensions
+          if (baseSchema && baseSchema.properties) {
+            schema = {
+              type: "object",
+              properties: {
+                ...baseSchema.properties,
+                ...(extendedProps?.properties || {}),
+              },
+              required: [
+                ...(baseSchema.required || []),
+                ...(extendedProps?.required || []),
+              ].filter((item, index, arr) => arr.indexOf(item) === index), // Remove duplicates
             };
 
-            if (extendedProps.required) {
-              schema.required = [
-                ...(schema.required || []),
-                ...extendedProps.required,
-              ];
-            }
+            // Copy other properties from base schema
+            if (baseSchema.description)
+              schema.description = baseSchema.description;
+          } else {
+            console.log(`Warning: Could not resolve base schema for extend`);
+            schema = extendedProps || { type: "object" };
           }
         }
         break;
