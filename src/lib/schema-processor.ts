@@ -63,6 +63,16 @@ export class SchemaProcessor {
     // Check if we should use Zod schemas
     if (this.schemaType === "zod") {
       console.log(`Looking for Zod schema: ${schemaName}`);
+
+      // Check type mapping first
+      const mappedSchemaName =
+        this.zodSchemaConverter.typeToSchemaMapping[schemaName];
+      if (mappedSchemaName) {
+        console.log(
+          `Type '${schemaName}' is mapped to Zod schema '${mappedSchemaName}'`
+        );
+      }
+
       // Try to convert Zod schema
       const zodSchema =
         this.zodSchemaConverter.convertZodSchemaToOpenApi(schemaName);
@@ -71,7 +81,6 @@ export class SchemaProcessor {
         this.openapiDefinitions[schemaName] = zodSchema;
         return zodSchema;
       }
-
       console.log(
         `No Zod schema found for ${schemaName}, trying TypeScript fallback`
       );
@@ -79,7 +88,6 @@ export class SchemaProcessor {
 
     // Fall back to TypeScript types
     this.scanSchemaDir(this.schemaDir, schemaName);
-
     return schemaNode;
   }
 

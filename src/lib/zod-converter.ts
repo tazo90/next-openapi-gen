@@ -14,6 +14,7 @@ export class ZodSchemaConverter {
   zodSchemas: Record<string, OpenApiSchema> = {};
   processingSchemas: Set<string> = new Set();
   processedModules: Set<string> = new Set();
+  typeToSchemaMapping = {};
 
   constructor(schemaDir: string) {
     this.schemaDir = path.resolve(schemaDir);
@@ -23,7 +24,21 @@ export class ZodSchemaConverter {
    * Find a Zod schema by name and convert it to OpenAPI spec
    */
   convertZodSchemaToOpenApi(schemaName: string): OpenApiSchema | null {
+    // Run pre-scan only one time
+    if (Object.keys(this.typeToSchemaMapping).length === 0) {
+      this.preScanForTypeMappings();
+    }
+
     console.log(`Looking for Zod schema: ${schemaName}`);
+
+    // Check mapped types
+    const mappedSchemaName = this.typeToSchemaMapping[schemaName];
+    if (mappedSchemaName) {
+      console.log(
+        `Type '${schemaName}' is mapped to schema '${mappedSchemaName}'`
+      );
+      schemaName = mappedSchemaName;
+    }
 
     // Check for circular references
     if (this.processingSchemas.has(schemaName)) {
@@ -297,29 +312,67 @@ export class ZodSchemaConverter {
 
         // For type aliases that reference Zod schemas
         TSTypeAliasDeclaration: (path) => {
-          if (
-            t.isIdentifier(path.node.id) &&
-            path.node.id.name === schemaName
-          ) {
-            // Try to find if this is a z.infer<typeof SchemaName> pattern
+          if (t.isIdentifier(path.node.id)) {
+            const typeName = path.node.id.name;
+
             if (
               t.isTSTypeReference(path.node.typeAnnotation) &&
-              t.isIdentifier(path.node.typeAnnotation.typeName) &&
-              path.node.typeAnnotation.typeName.name === "infer" &&
-              path.node.typeAnnotation.typeParameters &&
-              path.node.typeAnnotation.typeParameters.params.length > 0
+              t.isTSQualifiedName(path.node.typeAnnotation.typeName) &&
+              t.isIdentifier(path.node.typeAnnotation.typeName.left) &&
+              path.node.typeAnnotation.typeName.left.name === "z" &&
+              t.isIdentifier(path.node.typeAnnotation.typeName.right) &&
+              path.node.typeAnnotation.typeName.right.name === "infer"
             ) {
-              const param = path.node.typeAnnotation.typeParameters.params[0];
+              // Extract schema name from z.infer<typeof SchemaName>
+              if (
+                path.node.typeAnnotation.typeParameters &&
+                path.node.typeAnnotation.typeParameters.params.length > 0
+              ) {
+                const param = path.node.typeAnnotation.typeParameters.params[0];
+                if (t.isTSTypeQuery(param) && t.isIdentifier(param.exprName)) {
+                  const referencedSchemaName = param.exprName.name;
 
-              if (t.isTSTypeQuery(param) && t.isIdentifier(param.exprName)) {
-                const referencedSchemaName = param.exprName.name;
+                  // Save mapping: TypeName -> SchemaName
+                  this.typeToSchemaMapping[typeName] = referencedSchemaName;
+                  console.log(
+                    `Mapped type '${typeName}' to schema '${referencedSchemaName}'`
+                  );
 
-                // Find the referenced schema
-                this.processFileForZodSchema(filePath, referencedSchemaName);
+                  // Process the referenced schema if not already processed
+                  if (!this.zodSchemas[referencedSchemaName]) {
+                    this.processFileForZodSchema(
+                      filePath,
+                      referencedSchemaName
+                    );
+                  }
 
-                if (this.zodSchemas[referencedSchemaName]) {
-                  this.zodSchemas[schemaName] =
-                    this.zodSchemas[referencedSchemaName];
+                  // Use the referenced schema for this type
+                  if (this.zodSchemas[referencedSchemaName]) {
+                    this.zodSchemas[typeName] =
+                      this.zodSchemas[referencedSchemaName];
+                  }
+                }
+              }
+            }
+
+            if (path.node.id.name === schemaName) {
+              // Try to find if this is a z.infer<typeof SchemaName> pattern
+              if (
+                t.isTSTypeReference(path.node.typeAnnotation) &&
+                t.isIdentifier(path.node.typeAnnotation.typeName) &&
+                path.node.typeAnnotation.typeName.name === "infer" &&
+                path.node.typeAnnotation.typeParameters &&
+                path.node.typeAnnotation.typeParameters.params.length > 0
+              ) {
+                const param = path.node.typeAnnotation.typeParameters.params[0];
+                if (t.isTSTypeQuery(param) && t.isIdentifier(param.exprName)) {
+                  const referencedSchemaName = param.exprName.name;
+                  // Find the referenced schema
+                  this.processFileForZodSchema(filePath, referencedSchemaName);
+                  if (this.zodSchemas[referencedSchemaName]) {
+                    this.zodSchemas[schemaName] =
+                      this.zodSchemas[referencedSchemaName];
+                  }
                 }
               }
             }
@@ -1248,5 +1301,109 @@ export class ZodSchemaConverter {
    */
   getProcessedSchemas() {
     return this.zodSchemas;
+  }
+
+  /**
+   * Pre-scan all files to build type mappings
+   */
+  preScanForTypeMappings() {
+    console.log("Pre-scanning for type mappings...");
+
+    // Scan route files
+    const routeFiles = this.findRouteFiles();
+    for (const routeFile of routeFiles) {
+      this.scanFileForTypeMappings(routeFile);
+    }
+
+    // Scan schema directory
+    this.scanDirectoryForTypeMappings(this.schemaDir);
+  }
+
+  /**
+   * Scan a single file for type mappings
+   */
+  scanFileForTypeMappings(filePath) {
+    try {
+      const content = fs.readFileSync(filePath, "utf-8");
+      const ast = parse(content, {
+        sourceType: "module",
+        plugins: ["typescript", "decorators-legacy"],
+      });
+
+      traverse.default(ast, {
+        TSTypeAliasDeclaration: (path) => {
+          if (t.isIdentifier(path.node.id)) {
+            const typeName = path.node.id.name;
+
+            // Check for z.infer<typeof SchemaName> pattern
+            if (t.isTSTypeReference(path.node.typeAnnotation)) {
+              const typeRef = path.node.typeAnnotation;
+
+              // Handle both z.infer and just infer (when z is imported)
+              let isInferType = false;
+
+              if (
+                t.isTSQualifiedName(typeRef.typeName) &&
+                t.isIdentifier(typeRef.typeName.left) &&
+                typeRef.typeName.left.name === "z" &&
+                t.isIdentifier(typeRef.typeName.right) &&
+                typeRef.typeName.right.name === "infer"
+              ) {
+                isInferType = true;
+              } else if (
+                t.isIdentifier(typeRef.typeName) &&
+                typeRef.typeName.name === "infer"
+              ) {
+                isInferType = true;
+              }
+
+              if (
+                isInferType &&
+                typeRef.typeParameters &&
+                typeRef.typeParameters.params.length > 0
+              ) {
+                const param = typeRef.typeParameters.params[0];
+                if (t.isTSTypeQuery(param) && t.isIdentifier(param.exprName)) {
+                  const referencedSchemaName = param.exprName.name;
+                  this.typeToSchemaMapping[typeName] = referencedSchemaName;
+                  console.log(
+                    `Pre-scan: Mapped type '${typeName}' to schema '${referencedSchemaName}'`
+                  );
+                }
+              }
+            }
+          }
+        },
+      });
+    } catch (error) {
+      console.error(
+        `Error scanning file ${filePath} for type mappings:`,
+        error
+      );
+    }
+  }
+
+  /**
+   * Recursively scan directory for type mappings
+   */
+  scanDirectoryForTypeMappings(dir) {
+    try {
+      const files = fs.readdirSync(dir);
+      for (const file of files) {
+        const filePath = path.join(dir, file);
+        const stats = fs.statSync(filePath);
+
+        if (stats.isDirectory()) {
+          this.scanDirectoryForTypeMappings(filePath);
+        } else if (file.endsWith(".ts") || file.endsWith(".tsx")) {
+          this.scanFileForTypeMappings(filePath);
+        }
+      }
+    } catch (error) {
+      console.error(
+        `Error scanning directory ${dir} for type mappings:`,
+        error
+      );
+    }
   }
 }
