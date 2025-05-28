@@ -693,20 +693,32 @@ export class SchemaProcessor {
     return queryParams;
   }
 
-  public createRequestBodySchema(body: OpenAPIDefinition): any {
-    return {
+  public createRequestBodySchema(
+    body: OpenAPIDefinition,
+    description?: string
+  ): any {
+    const schema: any = {
       content: {
         "application/json": {
           schema: body,
         },
       },
     };
+
+    if (description) {
+      schema.description = description;
+    }
+
+    return schema;
   }
 
-  public createResponseSchema(responses: OpenAPIDefinition): any {
+  public createResponseSchema(
+    responses: OpenAPIDefinition,
+    description?: string
+  ): any {
     return {
       200: {
-        description: "Successful response",
+        description: description || "Successful response",
         content: {
           "application/json": {
             schema: responses,

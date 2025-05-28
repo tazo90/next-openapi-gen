@@ -33,6 +33,7 @@ export type RouteDefinition = {
   parameters?: any;
   requestBody?: any;
   responses?: any;
+  deprecated?: boolean;
 };
 
 export type Property = {
@@ -62,6 +63,7 @@ export type OpenApiSchema = {
   items?: OpenApiSchema;
   nullable?: boolean;
   description?: string;
+  deprecated?: boolean;
   format?: string;
   minLength?: number;
   maxLength?: number;
@@ -137,6 +139,9 @@ export type DataTypes = {
   description?: string;
   auth?: string;
   isOpenApi?: boolean;
+  deprecated?: boolean;
+  bodyDescription?: string;
+  responseDescription?: string;
 };
 
 export type RouteConfig = {

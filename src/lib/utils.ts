@@ -33,12 +33,35 @@ export function extractJSDocComments(path: NodePath): DataTypes {
   let responseType = "";
   let auth = "";
   let isOpenApi = false;
+  let deprecated = false;
+  let bodyDescription = "";
+  let responseDescription = "";
 
   if (comments) {
     comments.forEach((comment) => {
       const commentValue = cleanComment(comment.value);
 
       isOpenApi = commentValue.includes("@openapi");
+
+      if (commentValue.includes("@deprecated")) {
+        deprecated = true;
+      }
+
+      if (commentValue.includes("@bodyDescription")) {
+        const regex = /@bodyDescription\s*(.*)/;
+        const match = commentValue.match(regex);
+        if (match && match[1]) {
+          bodyDescription = match[1].trim();
+        }
+      }
+
+      if (commentValue.includes("@responseDescription")) {
+        const regex = /@responseDescription\s*(.*)/;
+        const match = commentValue.match(regex);
+        if (match && match[1]) {
+          responseDescription = match[1].trim();
+        }
+      }
 
       if (!summary) {
         summary = commentValue.split("\n")[0];
@@ -102,6 +125,9 @@ export function extractJSDocComments(path: NodePath): DataTypes {
     bodyType,
     responseType,
     isOpenApi,
+    deprecated,
+    bodyDescription,
+    responseDescription,
   };
 }
 

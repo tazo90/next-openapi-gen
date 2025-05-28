@@ -155,7 +155,16 @@ export class RouteProcessor {
     const routePath = this.getRoutePath(filePath);
     const rootPath = capitalize(routePath.split("/")[1]);
     const operationId = getOperationId(routePath, method);
-    const { tag, summary, description, auth, isOpenApi } = dataTypes;
+    const {
+      tag,
+      summary,
+      description,
+      auth,
+      isOpenApi,
+      deprecated,
+      bodyDescription,
+      responseDescription,
+    } = dataTypes;
 
     if (this.config.includeOpenApiRoutes && !isOpenApi) {
       // If flag is enabled and there is no @openapi tag, then skip path
@@ -176,6 +185,10 @@ export class RouteProcessor {
       tags: [tag || rootPath],
       parameters: [],
     };
+
+    if (deprecated) {
+      definition.deprecated = true;
+    }
 
     // Add auth
     if (auth) {
@@ -217,13 +230,18 @@ export class RouteProcessor {
 
     // Add request body
     if (MUTATION_HTTP_METHODS.includes(method.toUpperCase())) {
-      definition.requestBody =
-        this.schemaProcessor.createRequestBodySchema(body);
+      definition.requestBody = this.schemaProcessor.createRequestBodySchema(
+        body,
+        bodyDescription
+      );
     }
 
     // Add responses
     definition.responses = responses
-      ? this.schemaProcessor.createResponseSchema(responses)
+      ? this.schemaProcessor.createResponseSchema(
+          responses,
+          responseDescription
+        )
       : {};
 
     this.swaggerPaths[routePath][method] = definition;

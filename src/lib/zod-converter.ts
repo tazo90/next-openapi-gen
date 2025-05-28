@@ -1067,6 +1067,9 @@ export class ZodSchemaConverter {
           schema.description = node.arguments[0].value;
         }
         break;
+      case "deprecated":
+        schema.deprecated = true;
+        break;
       case "min":
         if (
           node.arguments.length > 0 &&
