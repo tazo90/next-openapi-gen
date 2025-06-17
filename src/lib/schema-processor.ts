@@ -240,6 +240,10 @@ export class SchemaProcessor {
         };
       }
 
+      if (t.isTSUnionType(typeNode)) {
+        return this.resolveTSNodeType(typeNode);
+      }
+
       return {};
     } finally {
       // Remove type from processed set after we finish
