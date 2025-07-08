@@ -142,6 +142,7 @@ export type DataTypes = {
   deprecated?: boolean;
   bodyDescription?: string;
   responseDescription?: string;
+  contentType?: string;
 };
 
 export type RouteConfig = {

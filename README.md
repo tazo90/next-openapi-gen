@@ -154,6 +154,7 @@ export async function GET(
 | `@bodyDescription`     | Request body description                                                            |
 | `@response`            | Response type/schema                                                                |
 | `@responseDescription` | Response description                                                                |
+| `@contentType`         | Request body content type (`application/json`, `multipart/form-data`)               |
 | `@auth`                | Authorization type (`bearer`, `basic`, `apikey`)                                    |
 | `@tag`                 | Custom tag                                                                          |
 | `@deprecated`          | Marks the route as deprecated                                                       |
@@ -340,6 +341,34 @@ const UserSchema = z.object({
  * @response UserResponse
  */
 export async function GET() {
+  // ...
+}
+```
+
+### File Uploads / Multipart Form Data
+
+```typescript
+// src/app/api/upload/route.ts
+
+// TypeScript
+type FileUploadFormData = {
+  file: File;
+  description?: string;
+  category: string;
+};
+
+// Or Zod
+const FileUploadSchema = z.object({
+  file: z.custom<File>().describe("Image file (PNG/JPG)"),
+  description: z.string().optional().describe("File description"),
+  category: z.string().describe("File category"),
+});
+
+/**
+ * @body FileUploadSchema
+ * @contentType multipart/form-data
+ */
+export async function POST() {
   // ...
 }
 ```

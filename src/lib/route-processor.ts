@@ -232,7 +232,8 @@ export class RouteProcessor {
     if (MUTATION_HTTP_METHODS.includes(method.toUpperCase())) {
       definition.requestBody = this.schemaProcessor.createRequestBodySchema(
         body,
-        bodyDescription
+        bodyDescription,
+        dataTypes.contentType
       );
     }
 

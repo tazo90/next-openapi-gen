@@ -1065,6 +1065,26 @@ export class ZodSchemaConverter {
       return { type: "string" };
     }
 
+    if (
+      t.isMemberExpression(node.callee) &&
+      t.isIdentifier(node.callee.property)
+    ) {
+      const zodType = node.callee.property.name;
+
+      // Custom() support for FormData
+      if (zodType === "custom" && node.arguments.length > 0) {
+        // Check if it is FormData
+        if (t.isArrowFunctionExpression(node.arguments[0])) {
+          // Assume custom FormData validation
+          return {
+            type: "object",
+            additionalProperties: true,
+            description: "Form data object",
+          };
+        }
+      }
+    }
+
     const zodType = node.callee.property.name;
     let schema: OpenApiSchema = {};
 

@@ -269,7 +269,7 @@ export class SchemaProcessor {
     return this.isDateString(node) || this.isDateObject(node);
   }
 
-  resolveTSNodeType(node: any): OpenAPIDefinition {
+  private resolveTSNodeType(node: any): OpenAPIDefinition {
     if (!node) return { type: "object" }; // Default type for undefined/null
 
     if (t.isTSStringKeyword(node)) return { type: "string" };
@@ -626,6 +626,57 @@ export class SchemaProcessor {
     }
   }
 
+  private detectContentType(
+    bodyType: string,
+    explicitContentType?: string
+  ): string {
+    if (explicitContentType) {
+      return explicitContentType;
+    }
+
+    // Automatic detection based on type name
+    if (
+      bodyType &&
+      (bodyType.toLowerCase().includes("formdata") ||
+        bodyType.toLowerCase().includes("fileupload") ||
+        bodyType.toLowerCase().includes("multipart"))
+    ) {
+      return "multipart/form-data";
+    }
+
+    return "application/json";
+  }
+
+  private createFormDataSchema(body: OpenAPIDefinition): OpenAPIDefinition {
+    if (!body.properties) {
+      return body;
+    }
+
+    const formDataProperties: Record<string, any> = {};
+
+    Object.entries(body.properties).forEach(([key, value]: [string, any]) => {
+      // Convert File types to binary format
+      if (
+        value.type === "object" &&
+        (key.toLowerCase().includes("file") ||
+          value.description?.toLowerCase().includes("file"))
+      ) {
+        formDataProperties[key] = {
+          type: "string",
+          format: "binary",
+          description: value.description,
+        };
+      } else {
+        formDataProperties[key] = value;
+      }
+    });
+
+    return {
+      ...body,
+      properties: formDataProperties,
+    };
+  }
+
   /**
    * Create a default schema for path parameters when no schema is defined
    */
@@ -699,21 +750,34 @@ export class SchemaProcessor {
 
   public createRequestBodySchema(
     body: OpenAPIDefinition,
-    description?: string
+    description?: string,
+    contentType?: string
   ): any {
-    const schema: any = {
+    const detectedContentType = this.detectContentType(
+      body?.type || "",
+      contentType
+    );
+
+    let schema = body;
+
+    // If it is multipart/form-data, convert schema
+    if (detectedContentType === "multipart/form-data") {
+      schema = this.createFormDataSchema(body);
+    }
+
+    const requestBody: any = {
       content: {
-        "application/json": {
-          schema: body,
+        [detectedContentType]: {
+          schema: schema,
         },
       },
     };
 
     if (description) {
-      schema.description = description;
+      requestBody.description = description;
     }
 
-    return schema;
+    return requestBody;
   }
 
   public createResponseSchema(

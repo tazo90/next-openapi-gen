@@ -36,6 +36,7 @@ export function extractJSDocComments(path: NodePath): DataTypes {
   let deprecated = false;
   let bodyDescription = "";
   let responseDescription = "";
+  let contentType = "";
 
   if (comments) {
     comments.forEach((comment) => {
@@ -112,6 +113,14 @@ export function extractJSDocComments(path: NodePath): DataTypes {
       if (commentValue.includes("@response")) {
         responseType = extractTypeFromComment(commentValue, "@response");
       }
+
+      if (commentValue.includes("@contentType")) {
+        const regex = /@contentType\s*(.*)/;
+        const match = commentValue.match(regex);
+        if (match && match[1]) {
+          contentType = match[1].trim();
+        }
+      }
     });
   }
 
@@ -128,6 +137,7 @@ export function extractJSDocComments(path: NodePath): DataTypes {
     deprecated,
     bodyDescription,
     responseDescription,
+    contentType,
   };
 }
 
