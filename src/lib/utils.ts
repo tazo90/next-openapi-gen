@@ -30,13 +30,16 @@ export function extractJSDocComments(path: NodePath): DataTypes {
   let paramsType = "";
   let pathParamsType = "";
   let bodyType = "";
-  let responseType = "";
   let auth = "";
   let isOpenApi = false;
   let deprecated = false;
   let bodyDescription = "";
-  let responseDescription = "";
   let contentType = "";
+  let responseType = "";
+  let responseDescription = "";
+  let responseSet = "";
+  let addResponses = "";
+  let successCode = "";
 
   if (comments) {
     comments.forEach((comment) => {
@@ -53,14 +56,6 @@ export function extractJSDocComments(path: NodePath): DataTypes {
         const match = commentValue.match(regex);
         if (match && match[1]) {
           bodyDescription = match[1].trim();
-        }
-      }
-
-      if (commentValue.includes("@responseDescription")) {
-        const regex = /@responseDescription\s*(.*)/;
-        const match = commentValue.match(regex);
-        if (match && match[1]) {
-          responseDescription = match[1].trim();
         }
       }
 
@@ -121,6 +116,43 @@ export function extractJSDocComments(path: NodePath): DataTypes {
           contentType = match[1].trim();
         }
       }
+
+      if (commentValue.includes("@responseDescription")) {
+        const regex = /@responseDescription\s*(.*)/;
+        const match = commentValue.match(regex);
+        if (match && match[1]) {
+          responseDescription = match[1].trim();
+        }
+      }
+
+      if (commentValue.includes("@responseSet")) {
+        const regex = /@responseSet\s*(.*)/;
+        const match = commentValue.match(regex);
+        if (match && match[1]) {
+          responseSet = match[1].trim();
+        }
+      }
+
+      if (commentValue.includes("@add")) {
+        const regex = /@add\s*(.*)/;
+        const match = commentValue.match(regex);
+        if (match && match[1]) {
+          addResponses = match[1].trim();
+        }
+      }
+
+      if (commentValue.includes("@response")) {
+        const responseMatch = commentValue.match(
+          /@response\s+(?:(\d+):)?(\w+)(?:\s+(.*))?/
+        );
+        if (responseMatch) {
+          const [, code, type] = responseMatch;
+          successCode = code || "";
+          responseType = type;
+        } else {
+          responseType = extractTypeFromComment(commentValue, "@response");
+        }
+      }
     });
   }
 
@@ -132,12 +164,15 @@ export function extractJSDocComments(path: NodePath): DataTypes {
     paramsType,
     pathParamsType,
     bodyType,
-    responseType,
     isOpenApi,
     deprecated,
     bodyDescription,
-    responseDescription,
     contentType,
+    responseType,
+    responseDescription,
+    responseSet,
+    addResponses,
+    successCode,
   };
 }
 
@@ -160,6 +195,10 @@ export function cleanSpec(spec: any) {
     "ui",
     "outputFile",
     "includeOpenApiRoutes",
+    "schemaType",
+    "defaultResponseSet",
+    "responseSets",
+    "errorConfig",
   ];
   const newSpec = { ...spec };
 

@@ -1,3 +1,6 @@
+export type ResponseSetDefinition = string[]; // ["400:BadRequest", "401:Unauthorized"]
+export type ResponseSets = Record<string, ResponseSetDefinition>;
+
 export type OpenApiConfig = {
   apiDir: string;
   schemaDir: string;
@@ -6,6 +9,10 @@ export type OpenApiConfig = {
   outputFile: string;
   includeOpenApiRoutes: boolean;
   schemaType: "typescript" | "zod";
+  defaultResponseSet?: string;
+  responseSets?: ResponseSets;
+  errorConfig?: ErrorTemplateConfig;
+  errorDefinitions?: Record<string, ErrorDefinition>;
 };
 
 export type OpenApiTemplate = {
@@ -20,7 +27,11 @@ export type OpenApiTemplate = {
     description: string;
   }>;
   basePath: string;
-  components: Record<string, any>;
+  components?: {
+    securitySchemes?: Record<string, any>;
+    schemas?: Record<string, any>;
+    responses?: Record<string, any>;
+  };
   paths: Record<string, any>;
 };
 
@@ -29,10 +40,10 @@ export type RouteDefinition = {
   summary: string;
   description: string;
   tags: string[];
-  security?: any;
-  parameters?: any;
+  security?: Array<Record<string, any>>;
+  parameters?: ParamSchema[];
   requestBody?: any;
-  responses?: any;
+  responses?: Record<string, any>;
   deprecated?: boolean;
 };
 
@@ -143,6 +154,9 @@ export type DataTypes = {
   bodyDescription?: string;
   responseDescription?: string;
   contentType?: string;
+  responseSet?: string; // e.g. "authErrors" or "publicErrors,crudErrors"
+  addResponses?: string; // e.g. "409:ConflictResponse,429:RateLimitResponse"
+  successCode?: string; // e.g "201" for POST
 };
 
 export type RouteConfig = {
@@ -161,3 +175,25 @@ export type PathDefinition = {
   requestBody?: any;
   responses: Record<string, any>;
 };
+
+export interface ErrorTemplateConfig {
+  template: any; // Any schema template with placeholders
+  codes: Record<string, ErrorCodeConfig>;
+  variables?: Record<string, string>; // Global variables
+}
+
+export interface ErrorCodeConfig {
+  description: string;
+  httpStatus?: number;
+  variables?: Record<string, string>; // Per-code variables
+}
+
+export interface ErrorConfig {
+  globalTemplate?: any;
+  variables?: Record<string, string>;
+}
+
+export interface ErrorDefinition {
+  description: string;
+  schema: any;
+}

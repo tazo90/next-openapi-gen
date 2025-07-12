@@ -647,6 +647,31 @@ export class SchemaProcessor {
     return "application/json";
   }
 
+  public createMultipleResponsesSchema(
+    responses: Record<string, any>,
+    defaultDescription?: string
+  ): Record<string, any> {
+    const result: Record<string, any> = {};
+
+    Object.entries(responses).forEach(([code, response]) => {
+      if (typeof response === "string") {
+        // Reference do components/responses
+        result[code] = { $ref: `#/components/responses/${response}` };
+      } else {
+        result[code] = {
+          description: response.description || defaultDescription || "Response",
+          content: {
+            "application/json": {
+              schema: response.schema || response,
+            },
+          },
+        };
+      }
+    });
+
+    return result;
+  }
+
   private createFormDataSchema(body: OpenAPIDefinition): OpenAPIDefinition {
     if (!body.properties) {
       return body;

@@ -33,6 +33,106 @@ export class RouteProcessor {
     );
   }
 
+  private buildResponsesFromConfig(
+    dataTypes: DataTypes,
+    method: string
+  ): Record<string, any> {
+    const responses: Record<string, any> = {};
+
+    // 1. Add success response
+    const successCode =
+      dataTypes.successCode || this.getDefaultSuccessCode(method);
+    if (dataTypes.responseType) {
+      const responseSchema = this.schemaProcessor.getSchemaContent({
+        responseType: dataTypes.responseType,
+      }).responses;
+      responses[successCode] = {
+        description: dataTypes.responseDescription || "Successful response",
+        content: {
+          "application/json": {
+            schema: responseSchema,
+          },
+        },
+      };
+    }
+
+    // 2. Add responses from ResponseSet
+    const responseSetName =
+      dataTypes.responseSet || this.config.defaultResponseSet;
+    if (responseSetName && responseSetName !== "none") {
+      const responseSets = this.config.responseSets || {};
+
+      const setNames = responseSetName.split(",").map((s) => s.trim());
+
+      setNames.forEach((setName) => {
+        const responseSet = responseSets[setName];
+        if (responseSet) {
+          responseSet.forEach((errorCode) => {
+            // Use $ref for components/responses
+            responses[errorCode] = {
+              $ref: `#/components/responses/${errorCode}`,
+            };
+          });
+        }
+      });
+    }
+
+    // 3. Add custom responses (@add)
+    if (dataTypes.addResponses) {
+      const customResponses = dataTypes.addResponses
+        .split(",")
+        .map((s) => s.trim());
+
+      customResponses.forEach((responseRef) => {
+        const [code, ref] = responseRef.split(":");
+        if (ref) {
+          // Custom schema: "409:ConflictResponse"
+          responses[code] = {
+            description:
+              this.getDefaultErrorDescription(code) || `HTTP ${code} response`,
+            content: {
+              "application/json": {
+                schema: { $ref: `#/components/schemas/${ref}` },
+              },
+            },
+          };
+        } else {
+          // Only code: "409" - use $ref fro components/responses
+          responses[code] = {
+            $ref: `#/components/responses/${code}`,
+          };
+        }
+      });
+    }
+
+    return responses;
+  }
+
+  private getDefaultSuccessCode(method: string): string {
+    switch (method.toUpperCase()) {
+      case "POST":
+        return "201";
+      case "DELETE":
+        return "204";
+      default:
+        return "200";
+    }
+  }
+
+  private getDefaultErrorDescription(code: string): string {
+    const defaults = {
+      400: "Bad Request",
+      401: "Unauthorized",
+      403: "Forbidden",
+      404: "Not Found",
+      409: "Conflict",
+      422: "Unprocessable Entity",
+      429: "Too Many Requests",
+      500: "Internal Server Error",
+    };
+    return defaults[code] || `HTTP ${code}`;
+  }
+
   /**
    * Get the SchemaProcessor instance
    */
@@ -238,12 +338,17 @@ export class RouteProcessor {
     }
 
     // Add responses
-    definition.responses = responses
-      ? this.schemaProcessor.createResponseSchema(
-          responses,
-          responseDescription
-        )
-      : {};
+    definition.responses = this.buildResponsesFromConfig(dataTypes, method);
+
+    // If there are no responses from config, use the old logic
+    if (Object.keys(definition.responses).length === 0) {
+      definition.responses = responses
+        ? this.schemaProcessor.createResponseSchema(
+            responses,
+            responseDescription
+          )
+        : {};
+    }
 
     this.swaggerPaths[routePath][method] = definition;
   }

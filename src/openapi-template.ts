@@ -20,6 +20,49 @@ export default {
       },
     },
   },
+  defaultResponseSet: "common",
+  responseSets: {
+    common: ["400", "500"],
+    auth: ["401"],
+  },
+  errorConfig: {
+    template: {
+      type: "object",
+      properties: {
+        success: {
+          type: "boolean",
+          example: false,
+        },
+        error: {
+          type: "string",
+          example: "{{ERROR_MESSAGE}}",
+        },
+      },
+    },
+    codes: {
+      invalid: {
+        description: "Bad request",
+        httpStatus: 400,
+        variables: {
+          ERROR_MESSAGE: "Validation error",
+        },
+      },
+      auth: {
+        description: "Unauthorized",
+        httpStatus: 401,
+        variables: {
+          ERROR_MESSAGE: "Unathorized",
+        },
+      },
+      server_error: {
+        description: "Internal server error",
+        httpStatus: 500,
+        variables: {
+          ERROR_MESSAGE: "Something went wrong",
+        },
+      },
+    },
+  },
   apiDir: "./src/app/api",
   schemaDir: "./src",
   schemaType: "typescript", // or "zod"
