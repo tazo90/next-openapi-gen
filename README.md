@@ -61,7 +61,8 @@ During initialization (`npx next-openapi-gen init`), a configuration file `next.
   "schemaType": "typescript", // or "zod" for Zod schemas
   "outputFile": "openapi.json",
   "docsUrl": "/api-docs",
-  "includeOpenApiRoutes": false
+  "includeOpenApiRoutes": false,
+  "debug": false
 }
 ```
 
@@ -78,6 +79,7 @@ During initialization (`npx next-openapi-gen init`), a configuration file `next.
 | `defaultResponseSet`   | Default error response set for all endpoints     |
 | `responseSets`         | Named sets of error response codes               |
 | `errorConfig`          | Error schema configuration                       |
+| `debug`                | Enable detailed logging during generation        |
 
 ## Documenting Your API
 
