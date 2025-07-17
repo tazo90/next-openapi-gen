@@ -13,6 +13,7 @@ export type OpenApiConfig = {
   responseSets?: ResponseSets;
   errorConfig?: ErrorTemplateConfig;
   errorDefinitions?: Record<string, ErrorDefinition>;
+  debug: boolean;
 };
 
 export type OpenApiTemplate = {

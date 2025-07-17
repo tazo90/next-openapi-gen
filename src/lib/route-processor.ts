@@ -12,6 +12,7 @@ import {
   getOperationId,
 } from "./utils.js";
 import { DataTypes, OpenApiConfig, RouteDefinition } from "../types.js";
+import { logger } from "./logger.js";
 
 const HTTP_METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE"];
 const MUTATION_HTTP_METHODS = ["PATCH", "POST", "PUT"];
@@ -175,7 +176,7 @@ export class RouteProcessor {
 
               // If we have path parameters but no pathParamsType defined, we should log a warning
               if (pathParams.length > 0 && !dataTypes.pathParamsType) {
-                console.warn(
+                logger.warn(
                   `Route ${routePath} contains path parameters ${pathParams.join(
                     ", "
                   )} but no @pathParams type is defined.`
@@ -201,7 +202,7 @@ export class RouteProcessor {
                   const pathParams = extractPathParameters(routePath);
 
                   if (pathParams.length > 0 && !dataTypes.pathParamsType) {
-                    console.warn(
+                    logger.warn(
                       `Route ${routePath} contains path parameters ${pathParams.join(
                         ", "
                       )} but no @pathParams type is defined.`
@@ -221,6 +222,8 @@ export class RouteProcessor {
   }
 
   public scanApiRoutes(dir: string): void {
+    logger.log(`Scanning API routes in: ${dir}`);
+
     let files = this.directoryCache[dir];
     if (!files) {
       files = fs.readdirSync(dir);

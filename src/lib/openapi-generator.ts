@@ -9,6 +9,7 @@ import {
   OpenApiConfig,
   OpenApiTemplate,
 } from "../types.js";
+import { logger } from "./logger.js";
 
 export class OpenApiGenerator {
   private config: OpenApiConfig;
@@ -22,11 +23,14 @@ export class OpenApiGenerator {
     this.config = this.getConfig();
 
     this.routeProcessor = new RouteProcessor(this.config);
+
+    // Initialize logger
+    logger.init(this.config);
   }
 
   public getConfig() {
     // @ts-ignore
-    const { apiDir, schemaDir, docsUrl, ui, outputFile, includeOpenApiRoutes, schemaType = "typescript", defaultResponseSet, responseSets, errorConfig } = this.template;
+    const { apiDir, schemaDir, docsUrl, ui, outputFile, includeOpenApiRoutes, schemaType = "typescript", defaultResponseSet, responseSets, errorConfig, debug } = this.template;
 
     return {
       apiDir,
@@ -39,17 +43,22 @@ export class OpenApiGenerator {
       defaultResponseSet,
       responseSets,
       errorConfig,
+      debug,
     };
   }
 
   public generate() {
+    logger.log("Starting OpenAPI generation...");
+
     const { apiDir } = this.config;
 
     // Check if app router structure exists
     let appRouterApiDir = "";
     if (fs.existsSync(path.join(path.dirname(apiDir), "app", "api"))) {
       appRouterApiDir = path.join(path.dirname(apiDir), "app", "api");
-      console.log(`Found app router API directory at ${appRouterApiDir}`);
+      logger.log(
+        `Found app router API directory at ${appRouterApiDir}`
+      );
     }
 
     // Scan pages router routes
@@ -112,6 +121,8 @@ export class OpenApiGenerator {
     }
 
     const openapiSpec = cleanSpec(this.template);
+
+    logger.log("OpenAPI generation completed");
 
     return openapiSpec;
   }

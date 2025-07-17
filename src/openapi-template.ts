@@ -70,4 +70,5 @@ export default {
   ui: "scalar",
   outputFile: "openapi.json",
   includeOpenApiRoutes: false,
+  debug: false,
 };

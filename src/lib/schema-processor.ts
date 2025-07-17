@@ -12,6 +12,7 @@ import {
   PropertyOptions,
   SchemaType,
 } from "../types.js";
+import { logger } from "./logger.js";
 
 export class SchemaProcessor {
   private schemaDir: string;
@@ -62,13 +63,13 @@ export class SchemaProcessor {
 
     // Check if we should use Zod schemas
     if (this.schemaType === "zod") {
-      console.log(`Looking for Zod schema: ${schemaName}`);
+      logger.log(`Looking for Zod schema: ${schemaName}`);
 
       // Check type mapping first
       const mappedSchemaName =
         this.zodSchemaConverter.typeToSchemaMapping[schemaName];
       if (mappedSchemaName) {
-        console.log(
+        logger.log(
           `Type '${schemaName}' is mapped to Zod schema '${mappedSchemaName}'`
         );
       }
@@ -77,11 +78,12 @@ export class SchemaProcessor {
       const zodSchema =
         this.zodSchemaConverter.convertZodSchemaToOpenApi(schemaName);
       if (zodSchema) {
-        console.log(`Found and processed Zod schema: ${schemaName}`);
+        logger.log(`Found and processed Zod schema: ${schemaName}`);
         this.openapiDefinitions[schemaName] = zodSchema;
         return zodSchema;
       }
-      console.log(
+
+      logger.log(
         `No Zod schema found for ${schemaName}, trying TypeScript fallback`
       );
     }
@@ -496,7 +498,7 @@ export class SchemaProcessor {
       return { $ref: `#/components/schemas/${node.typeName.name}` };
     }
 
-    console.warn("Unrecognized TypeScript type node:", node);
+    logger.log("Unrecognized TypeScript type node:", node);
     return { type: "object" }; // By default we return an object
   }
 
@@ -525,9 +527,8 @@ export class SchemaProcessor {
       this.processSchemaTracker[`${filePath}-${schemaName}`] = true;
       return definition;
     } catch (error) {
-      console.error(
-        `Error processing schema file ${filePath} for schema ${schemaName}:`,
-        error
+      logger.error(
+        `Error processing schema file ${filePath} for schema ${schemaName}: ${error}`
       );
       return { type: "object" }; // By default we return an empty object on error
     }

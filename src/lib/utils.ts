@@ -199,6 +199,7 @@ export function cleanSpec(spec: any) {
     "defaultResponseSet",
     "responseSets",
     "errorConfig",
+    "debug",
   ];
   const newSpec = { ...spec };
 
