@@ -27,6 +27,7 @@ export class SchemaProcessor {
 
   private zodSchemaConverter: ZodSchemaConverter | null;
   private schemaType: SchemaType;
+  private isResolvingPickOmitBase: boolean = false;
 
   constructor(schemaDir: string, schemaType: SchemaType = "typescript") {
     this.schemaDir = path.resolve(schemaDir);
@@ -211,11 +212,24 @@ export class SchemaProcessor {
         return enumValues;
       }
 
-      if (t.isTSTypeLiteral(typeNode) || t.isTSInterfaceBody(typeNode)) {
+      if (t.isTSTypeLiteral(typeNode) || t.isTSInterfaceBody(typeNode) || t.isTSInterfaceDeclaration(typeNode)) {
         const properties: Record<string, any> = {};
 
-        if ("members" in typeNode) {
-          (typeNode.members || []).forEach((member: any) => {
+        // Handle interface extends clause
+        if (t.isTSInterfaceDeclaration(typeNode) && typeNode.extends && typeNode.extends.length > 0) {
+          typeNode.extends.forEach((extendedType: any) => {
+            const extendedSchema = this.resolveTSNodeType(extendedType);
+            if (extendedSchema.properties) {
+              Object.assign(properties, extendedSchema.properties);
+            }
+          });
+        }
+
+        // Get members from interface declaration body or direct members
+        const members = t.isTSInterfaceDeclaration(typeNode) ? typeNode.body.body : (typeNode as any).members;
+
+        if (members) {
+          (members || []).forEach((member: any) => {
             if (t.isTSPropertySignature(member) && t.isIdentifier(member.key)) {
               const propName = member.key.name;
               const options = this.getPropertyOptions(member);
@@ -243,6 +257,10 @@ export class SchemaProcessor {
       }
 
       if (t.isTSUnionType(typeNode)) {
+        return this.resolveTSNodeType(typeNode);
+      }
+
+      if (t.isTSTypeReference(typeNode)) {
         return this.resolveTSNodeType(typeNode);
       }
 
@@ -307,6 +325,20 @@ export class SchemaProcessor {
       }
     }
 
+    // Handle TSExpressionWithTypeArguments (used in interface extends)
+    if (t.isTSExpressionWithTypeArguments(node)) {
+      if (t.isIdentifier(node.expression)) {
+        // Convert to TSTypeReference-like structure for processing
+        const syntheticNode = {
+          type: 'TSTypeReference',
+          typeName: node.expression,
+          typeParameters: node.typeParameters
+        };
+
+        return this.resolveTSNodeType(syntheticNode);
+      }
+    }
+
     if (t.isTSTypeReference(node) && t.isIdentifier(node.typeName)) {
       const typeName = node.typeName.name;
 
@@ -351,6 +383,38 @@ export class SchemaProcessor {
       }
 
       if (typeName === "Pick" || typeName === "Omit") {
+        if (node.typeParameters && node.typeParameters.params.length > 1) {
+          const baseTypeParam = node.typeParameters.params[0];
+          const keysParam = node.typeParameters.params[1];
+
+          // Resolve base type without adding it to schema definitions
+          this.isResolvingPickOmitBase = true;
+          const baseType = this.resolveTSNodeType(baseTypeParam);
+          this.isResolvingPickOmitBase = false;
+
+          if (baseType.properties) {
+            const properties: Record<string, any> = {};
+            const keyNames = this.extractKeysFromLiteralType(keysParam);
+
+            if (typeName === "Pick") {
+              keyNames.forEach(key => {
+                if (baseType.properties[key]) {
+                  properties[key] = baseType.properties[key];
+                }
+              });
+            } else { // Omit
+              Object.entries(baseType.properties).forEach(([key, value]) => {
+                if (!keyNames.includes(key)) {
+                  properties[key] = value;
+                }
+              });
+            }
+
+            return { type: "object", properties };
+          }
+        }
+
+        // Fallback to just the base type if we can't process properly
         if (node.typeParameters && node.typeParameters.params.length > 0) {
           return this.resolveTSNodeType(node.typeParameters.params[0]);
         }
@@ -522,7 +586,9 @@ export class SchemaProcessor {
       // Reset the set of processed types before each schema processing
       this.processingTypes.clear();
       const definition = this.resolveType(schemaName);
-      this.openapiDefinitions[schemaName] = definition;
+      if (!this.isResolvingPickOmitBase) {
+        this.openapiDefinitions[schemaName] = definition;
+      }
 
       this.processSchemaTracker[`${filePath}-${schemaName}`] = true;
       return definition;
@@ -563,6 +629,24 @@ export class SchemaProcessor {
     });
 
     return enumSchema;
+  }
+
+  private extractKeysFromLiteralType(node: any): string[] {
+    if (t.isTSLiteralType(node) && t.isStringLiteral(node.literal)) {
+      return [node.literal.value];
+    }
+
+    if (t.isTSUnionType(node)) {
+      const keys: string[] = [];
+      node.types.forEach((type: any) => {
+        if (t.isTSLiteralType(type) && t.isStringLiteral(type.literal)) {
+          keys.push(type.literal.value);
+        }
+      });
+      return keys;
+    }
+
+    return [];
   }
 
   private getPropertyOptions(node: any): PropertyOptions {
