@@ -1,6 +1,8 @@
 export type ResponseSetDefinition = string[]; // ["400:BadRequest", "401:Unauthorized"]
 export type ResponseSets = Record<string, ResponseSetDefinition>;
 
+export type SchemaType = "typescript" | "zod";
+
 export type OpenApiConfig = {
   apiDir: string;
   schemaDir: string;
@@ -8,7 +10,7 @@ export type OpenApiConfig = {
   ui: string;
   outputFile: string;
   includeOpenApiRoutes: boolean;
-  schemaType: "typescript" | "zod";
+  schemaType: SchemaType;
   defaultResponseSet?: string;
   responseSets?: ResponseSets;
   errorConfig?: ErrorTemplateConfig;
@@ -98,7 +100,6 @@ export type OpenApiSchema = {
   $ref?: string;
 };
 
-export type SchemaType = "typescript" | "zod";
 export type ContentType = "params" | "pathParams" | "body" | "response" | "";
 
 export type PropertyOptions = {

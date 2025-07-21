@@ -65,7 +65,7 @@ export default {
   },
   apiDir: "./src/app/api",
   schemaDir: "./src",
-  schemaType: "typescript", // or "zod"
+  schemaType: "zod", // or "typescript"
   docsUrl: "api-docs",
   ui: "scalar",
   outputFile: "openapi.json",

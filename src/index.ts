@@ -9,7 +9,7 @@ const program = new Command();
 
 program
   .name("next-openapi-gen")
-  .version("0.0.1")
+  .version("0.6.7")
   .description(
     "Super fast and easy way to generate OpenAPI documentation for Next.js"
   );
@@ -22,6 +22,7 @@ program
       .default("swagger")
   )
   .option("-u, --docs-url <url>", "Specify the docs URL", "api-docs")
+  .option("-s, --schema <schemaType>", "Specify the schema type", "zod")
   .description("Initialize a openapi specification")
   .action(init);
 

@@ -1,13 +1,13 @@
 # next-openapi-gen
 
-Automatically generate OpenAPI 3.0 documentation from Next.js projects, with support for TypeScript types and Zod schemas.
+Automatically generate OpenAPI 3.0 documentation from Next.js projects, with support for Zod schemas and TypeScript types.
 
 ## Features
 
 - ✅ Automatic OpenAPI documentation generation from Next.js code
 - ✅ Support for Next.js App Router (including `/api/users/[id]/route.ts` routes)
-- ✅ TypeScript types support
 - ✅ Zod schemas support
+- ✅ TypeScript types support
 - ✅ JSDoc comments support
 - ✅ Multiple UI interfaces: `Scalar`, `Swagger`, `Redoc`, `Stoplight` and `Rapidoc` available at `/api-docs` url
 - ✅ Path parameters detection (`/users/{id}`)
@@ -32,7 +32,7 @@ npm install next-openapi-gen --save-dev
 
 ```bash
 # Initialize OpenAPI configuration
-npx next-openapi-gen init --ui scalar --docs-url api-docs
+npx next-openapi-gen init --ui scalar --docs-url api-docs --schema zod
 
 # Generate OpenAPI documentation
 npx next-openapi-gen generate
@@ -58,7 +58,7 @@ During initialization (`npx next-openapi-gen init`), a configuration file `next.
   ],
   "apiDir": "src/app/api",
   "schemaDir": "src/types", // or "src/schemas" for Zod schemas
-  "schemaType": "typescript", // or "zod" for Zod schemas
+  "schemaType": "zod", // or "typescript" for TypeScript types
   "outputFile": "openapi.json",
   "docsUrl": "/api-docs",
   "includeOpenApiRoutes": false,
@@ -72,7 +72,7 @@ During initialization (`npx next-openapi-gen init`), a configuration file `next.
 | ---------------------- | ------------------------------------------------ |
 | `apiDir`               | Path to the API directory                        |
 | `schemaDir`            | Path to the types/schemas directory              |
-| `schemaType`           | Schema type: `"typescript"` or `"zod"`           |
+| `schemaType`           | Schema type: `"zod"` or `"typescript"`           |
 | `outputFile`           | Path to the OpenAPI output file                  |
 | `docsUrl`              | API documentation URL (for Swagger UI)           |
 | `includeOpenApiRoutes` | Whether to include only routes with @openapi tag |
@@ -82,38 +82,6 @@ During initialization (`npx next-openapi-gen init`), a configuration file `next.
 | `debug`                | Enable detailed logging during generation        |
 
 ## Documenting Your API
-
-### With TypeScript Types
-
-```typescript
-// src/app/api/users/[id]/route.ts
-
-import { NextRequest, NextResponse } from "next/server";
-
-type UserParams = {
-  id: string; // User ID
-};
-
-type UserResponse = {
-  id: string; // User ID
-  name: string; // Full name
-  email: string; // Email address
-};
-
-/**
- * Get user information
- * @description Fetches detailed user information by ID
- * @pathParams UserParams
- * @response UserResponse
- * @openapi
- */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  // Implementation...
-}
-```
 
 ### With Zod Schemas
 
@@ -138,6 +106,38 @@ export const ProductResponse = z.object({
  * @description Fetches detailed product information by ID
  * @pathParams ProductParams
  * @response ProductResponse
+ * @openapi
+ */
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  // Implementation...
+}
+```
+
+### With TypeScript Types
+
+```typescript
+// src/app/api/users/[id]/route.ts
+
+import { NextRequest, NextResponse } from "next/server";
+
+type UserParams = {
+  id: string; // User ID
+};
+
+type UserResponse = {
+  id: string; // User ID
+  name: string; // Full name
+  email: string; // Email address
+};
+
+/**
+ * Get user information
+ * @description Fetches detailed user information by ID
+ * @pathParams UserParams
+ * @response UserResponse
  * @openapi
  */
 export async function GET(
@@ -205,15 +205,15 @@ To see API documenation go to `http://localhost:3000/api-docs`
 ```typescript
 // src/app/api/users/[id]/route.ts
 
-// TypeScript
-type UserParams = {
-  id: string; // User ID
-};
-
-// Or Zod
+// Zod
 const UserParams = z.object({
   id: z.string().describe("User ID"),
 });
+
+// Or TypeScript
+type UserParams = {
+  id: string; // User ID
+};
 
 /**
  * @pathParams UserParams
@@ -228,19 +228,19 @@ export async function GET() {
 ```typescript
 // src/app/api/users/route.ts
 
-// TypeScript
-type UsersQueryParams = {
-  page?: number; // Page number
-  limit?: number; // Results per page
-  search?: string; // Search phrase
-};
-
-// Or Zod
+// Zod
 const UsersQueryParams = z.object({
   page: z.number().optional().describe("Page number"),
   limit: z.number().optional().describe("Results per page"),
   search: z.string().optional().describe("Search phrase"),
 });
+
+// Or TypeScript
+type UsersQueryParams = {
+  page?: number; // Page number
+  limit?: number; // Results per page
+  search?: string; // Search phrase
+};
 
 /**
  * @params UsersQueryParams
@@ -255,19 +255,19 @@ export async function GET() {
 ```typescript
 // src/app/api/users/route.ts
 
-// TypeScript
-type CreateUserBody = {
-  name: string; // Full name
-  email: string; // Email address
-  password: string; // Password
-};
-
-// Or Zod
+// Zod
 const CreateUserBody = z.object({
   name: z.string().describe("Full name"),
   email: z.string().email().describe("Email address"),
   password: z.string().min(8).describe("Password"),
 });
+
+// Or TypeScript
+type CreateUserBody = {
+  name: string; // Full name
+  email: string; // Email address
+  password: string; // Password
+};
 
 /**
  * @body CreateUserBody
@@ -283,21 +283,21 @@ export async function POST() {
 ```typescript
 // src/app/api/users/route.ts
 
-// TypeScript
-type UserResponse = {
-  id: string; // User ID
-  name: string; // Full name
-  email: string; // Email address
-  createdAt: Date; // Creation date
-};
-
-// Or Zod
+// Zod
 const UserResponse = z.object({
   id: z.string().describe("User ID"),
   name: z.string().describe("Full name"),
   email: z.string().email().describe("Email address"),
   createdAt: z.date().describe("Creation date"),
 });
+
+// Or TypeScript
+type UserResponse = {
+  id: string; // User ID
+  name: string; // Full name
+  email: string; // Email address
+  createdAt: Date; // Creation date
+};
 
 /**
  * @response UserResponse
@@ -326,7 +326,15 @@ export async function GET() {
 ```typescript
 // src/app/api/v1/route.ts
 
-// TypeScript
+// Zod
+const UserSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  fullName: z.string().optional().describe("@deprecated Use name instead"),
+  email: z.string().email(),
+});
+
+// Or TypeScript
 type UserResponse = {
   id: string;
   name: string;
@@ -334,14 +342,6 @@ type UserResponse = {
   fullName?: string;
   email: string;
 };
-
-// Or Zod
-const UserSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  fullName: z.string().optional().describe("@deprecated Use name instead"),
-  email: z.string().email(),
-});
 
 /**
  * @body UserSchema
@@ -357,19 +357,19 @@ export async function GET() {
 ```typescript
 // src/app/api/upload/route.ts
 
-// TypeScript
-type FileUploadFormData = {
-  file: File;
-  description?: string;
-  category: string;
-};
-
-// Or Zod
+// Zod
 const FileUploadSchema = z.object({
   file: z.custom<File>().describe("Image file (PNG/JPG)"),
   description: z.string().optional().describe("File description"),
   category: z.string().describe("File category"),
 });
+
+// Or TypeScript
+type FileUploadFormData = {
+  file: File;
+  description?: string;
+  category: string;
+};
 
 /**
  * @body FileUploadSchema
