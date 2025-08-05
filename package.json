@@ -1,6 +1,6 @@
 {
   "name": "next-openapi-gen",
-  "version": "0.7.2",
+  "version": "0.7.3",
   "description": "Automatically generate OpenAPI 3.0 documentation from Next.js projects, with support for Zod schemas and TypeScript types.",
   "type": "module",
   "main": "dist/index.js",
