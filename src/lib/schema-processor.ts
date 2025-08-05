@@ -1,9 +1,9 @@
 import fs from "fs";
 import path from "path";
-import { parse } from "@babel/parser";
 import traverse from "@babel/traverse";
 import * as t from "@babel/types";
 
+import { parseTypeScriptFile } from "./utils.js";
 import { ZodSchemaConverter } from "./zod-converter.js";
 import {
   ContentType,
@@ -212,11 +212,19 @@ export class SchemaProcessor {
         return enumValues;
       }
 
-      if (t.isTSTypeLiteral(typeNode) || t.isTSInterfaceBody(typeNode) || t.isTSInterfaceDeclaration(typeNode)) {
+      if (
+        t.isTSTypeLiteral(typeNode) ||
+        t.isTSInterfaceBody(typeNode) ||
+        t.isTSInterfaceDeclaration(typeNode)
+      ) {
         const properties: Record<string, any> = {};
 
         // Handle interface extends clause
-        if (t.isTSInterfaceDeclaration(typeNode) && typeNode.extends && typeNode.extends.length > 0) {
+        if (
+          t.isTSInterfaceDeclaration(typeNode) &&
+          typeNode.extends &&
+          typeNode.extends.length > 0
+        ) {
           typeNode.extends.forEach((extendedType: any) => {
             const extendedSchema = this.resolveTSNodeType(extendedType);
             if (extendedSchema.properties) {
@@ -226,7 +234,9 @@ export class SchemaProcessor {
         }
 
         // Get members from interface declaration body or direct members
-        const members = t.isTSInterfaceDeclaration(typeNode) ? typeNode.body.body : (typeNode as any).members;
+        const members = t.isTSInterfaceDeclaration(typeNode)
+          ? typeNode.body.body
+          : (typeNode as any).members;
 
         if (members) {
           (members || []).forEach((member: any) => {
@@ -330,9 +340,9 @@ export class SchemaProcessor {
       if (t.isIdentifier(node.expression)) {
         // Convert to TSTypeReference-like structure for processing
         const syntheticNode = {
-          type: 'TSTypeReference',
+          type: "TSTypeReference",
           typeName: node.expression,
-          typeParameters: node.typeParameters
+          typeParameters: node.typeParameters,
         };
 
         return this.resolveTSNodeType(syntheticNode);
@@ -397,12 +407,13 @@ export class SchemaProcessor {
             const keyNames = this.extractKeysFromLiteralType(keysParam);
 
             if (typeName === "Pick") {
-              keyNames.forEach(key => {
+              keyNames.forEach((key) => {
                 if (baseType.properties[key]) {
                   properties[key] = baseType.properties[key];
                 }
               });
-            } else { // Omit
+            } else {
+              // Omit
               Object.entries(baseType.properties).forEach(([key, value]) => {
                 if (!keyNames.includes(key)) {
                   properties[key] = value;
@@ -576,10 +587,7 @@ export class SchemaProcessor {
     try {
       // Recognizes different elements of TS like variable, type, interface, enum
       const content = fs.readFileSync(filePath, "utf-8");
-      const ast = parse(content, {
-        sourceType: "module",
-        plugins: ["typescript", "decorators-legacy"],
-      });
+      const ast = parseTypeScriptFile(content);
 
       this.collectTypeDefinitions(ast, schemaName);
 

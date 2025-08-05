@@ -2,12 +2,12 @@ import * as t from "@babel/types";
 import fs from "fs";
 import path from "path";
 import traverse from "@babel/traverse";
-import { parse } from "@babel/parser";
 
 import { SchemaProcessor } from "./schema-processor.js";
 import {
   capitalize,
   extractJSDocComments,
+  parseTypeScriptFile,
   extractPathParameters,
   getOperationId,
 } from "./utils.js";
@@ -150,10 +150,7 @@ export class RouteProcessor {
     if (this.processFileTracker[filePath]) return;
 
     const content = fs.readFileSync(filePath, "utf-8");
-    const ast = parse(content, {
-      sourceType: "module",
-      plugins: ["typescript", "decorators-legacy"],
-    });
+    const ast = parseTypeScriptFile(content);
 
     traverse.default(ast, {
       ExportNamedDeclaration: (path) => {

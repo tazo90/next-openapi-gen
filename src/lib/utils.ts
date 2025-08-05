@@ -1,4 +1,6 @@
 import { NodePath } from "@babel/traverse";
+import { parse, ParserOptions } from "@babel/parser";
+import * as t from "@babel/types";
 
 import { DataTypes } from "../types.js";
 
@@ -244,4 +246,28 @@ export function getOperationId(routePath: string, method: string) {
   const operation = routePath.replaceAll(/\//g, "-").replace(/^-/, "");
 
   return `${method}-${operation}`;
+}
+
+/**
+ * Common Babel parser configuration for TypeScript files with JSX support
+ */
+const DEFAULT_PARSER_OPTIONS: ParserOptions = {
+  sourceType: "module",
+  plugins: ["typescript", "jsx", "decorators-legacy"],
+};
+
+/**
+ * Parse TypeScript/TSX file content with the standard configuration
+ * @param content - File content to parse
+ * @param options - Optional parser options to override defaults
+ * @returns Parsed AST
+ */
+export function parseTypeScriptFile(
+  content: string,
+  options?: Partial<ParserOptions>
+): t.File {
+  return parse(content, {
+    ...DEFAULT_PARSER_OPTIONS,
+    ...options,
+  });
 }

@@ -1,9 +1,9 @@
 import fs from "fs";
 import path from "path";
-import { parse } from "@babel/parser";
 import traverse from "@babel/traverse";
 import * as t from "@babel/types";
 
+import { parseTypeScriptFile } from "./utils.js";
 import { OpenApiSchema } from "../types.js";
 import { logger } from "./logger.js";
 
@@ -178,10 +178,7 @@ export class ZodSchemaConverter {
       }
 
       // Parse the file
-      const ast = parse(content, {
-        sourceType: "module",
-        plugins: ["typescript", "decorators-legacy"],
-      });
+      const ast = parseTypeScriptFile(content);
 
       // Create a map to store imported modules
       const importedModules: Record<string, string> = {};
@@ -587,10 +584,7 @@ export class ZodSchemaConverter {
   processAllSchemasInFile(filePath) {
     try {
       const content = fs.readFileSync(filePath, "utf-8");
-      const ast = parse(content, {
-        sourceType: "module",
-        plugins: ["typescript", "decorators-legacy"],
-      });
+      const ast = parseTypeScriptFile(content);
 
       traverse.default(ast, {
         ExportNamedDeclaration: (path) => {
@@ -1619,10 +1613,7 @@ export class ZodSchemaConverter {
   scanFileForTypeMappings(filePath) {
     try {
       const content = fs.readFileSync(filePath, "utf-8");
-      const ast = parse(content, {
-        sourceType: "module",
-        plugins: ["typescript", "decorators-legacy"],
-      });
+      const ast = parseTypeScriptFile(content);
 
       traverse.default(ast, {
         TSTypeAliasDeclaration: (path) => {
@@ -1705,10 +1696,7 @@ export class ZodSchemaConverter {
   preprocessAllSchemasInFile(filePath) {
     try {
       const content = fs.readFileSync(filePath, "utf-8");
-      const ast = parse(content, {
-        sourceType: "module",
-        plugins: ["typescript", "decorators-legacy"],
-      });
+      const ast = parseTypeScriptFile(content);
 
       // Collect all exported Zod schemas
       traverse.default(ast, {
