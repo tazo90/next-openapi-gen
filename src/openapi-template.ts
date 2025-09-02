@@ -91,6 +91,7 @@ export default {
   docsUrl: "api-docs",
   ui: "scalar",
   outputFile: "openapi.json",
+  outputDir: "./public",
   includeOpenApiRoutes: false,
   debug: false,
 };

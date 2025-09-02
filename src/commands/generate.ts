@@ -15,8 +15,8 @@ export async function generate() {
   const apiDir = path.resolve(config.apiDir);
   await fse.ensureDir(apiDir);
 
-  // Create public dir if not exists
-  const outputDir = path.resolve("./public");
+  // Use user-defined output directory
+  const outputDir = path.resolve(config.outputDir);
   await fse.ensureDir(outputDir);
 
   const apiDocs = generator.generate();

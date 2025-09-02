@@ -60,6 +60,7 @@ During initialization (`npx next-openapi-gen init`), a configuration file `next.
   "schemaDir": "src/types", // or "src/schemas" for Zod schemas
   "schemaType": "zod", // or "typescript" for TypeScript types
   "outputFile": "openapi.json",
+  "outputDir": "./public",
   "docsUrl": "/api-docs",
   "includeOpenApiRoutes": false,
   "debug": false
@@ -68,18 +69,19 @@ During initialization (`npx next-openapi-gen init`), a configuration file `next.
 
 ### Configuration Options
 
-| Option                 | Description                                      |
-| ---------------------- | ------------------------------------------------ |
-| `apiDir`               | Path to the API directory                        |
-| `schemaDir`            | Path to the types/schemas directory              |
-| `schemaType`           | Schema type: `"zod"` or `"typescript"`           |
-| `outputFile`           | Path to the OpenAPI output file                  |
-| `docsUrl`              | API documentation URL (for Swagger UI)           |
-| `includeOpenApiRoutes` | Whether to include only routes with @openapi tag |
-| `defaultResponseSet`   | Default error response set for all endpoints     |
-| `responseSets`         | Named sets of error response codes               |
-| `errorConfig`          | Error schema configuration                       |
-| `debug`                | Enable detailed logging during generation        |
+| Option                 | Description                                                            |
+| ---------------------- | ---------------------------------------------------------------------- |
+| `apiDir`               | Path to the API directory                                              |
+| `schemaDir`            | Path to the types/schemas directory                                    |
+| `schemaType`           | Schema type: `"zod"` or `"typescript"`                                 |
+| `outputFile`           | Name of the OpenAPI output file                                        |
+| `outputDir`            | Directory where OpenAPI file will be generated (default: `"./public"`) |
+| `docsUrl`              | API documentation URL (for Swagger UI)                                 |
+| `includeOpenApiRoutes` | Whether to include only routes with @openapi tag                       |
+| `defaultResponseSet`   | Default error response set for all endpoints                           |
+| `responseSets`         | Named sets of error response codes                                     |
+| `errorConfig`          | Error schema configuration                                             |
+| `debug`                | Enable detailed logging during generation                              |
 
 ## Documenting Your API
 
@@ -192,7 +194,7 @@ This command will generate OpenAPI documentation based on your API code:
 
 - Scan API directories for routes
 - Analyze types/schemas
-- Generate OpenAPI file (`openapi.json`) in `public` folder
+- Generate OpenAPI file (`openapi.json`) in specified output directory (default: `public` folder)
 - Create Scalar/Swagger UI endpoint and page (if enabled)
 
 ### 3. View API Documentation
