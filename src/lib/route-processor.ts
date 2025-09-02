@@ -366,6 +366,9 @@ export class RouteProcessor {
       // Convert directory separators to URL path format
       relativePath = relativePath.replaceAll("\\", "/");
 
+      // Remove Next.js route groups (folders in parentheses like (authenticated), (marketing))
+      relativePath = relativePath.replace(/\/\([^)]+\)/g, "");
+
       // Convert Next.js dynamic route syntax to OpenAPI parameter syntax
       relativePath = relativePath.replace(/\/\[([^\]]+)\]/g, "/{$1}");
 
@@ -381,6 +384,7 @@ export class RouteProcessor {
       .replace(/route\.tsx?$/, "")
       .replaceAll("\\", "/")
       .replace(/\/$/, "")
+      .replace(/\/\([^)]+\)/g, "") // Remove route groups for pages router too
       .replace(/\/\[([^\]]+)\]/g, "/{$1}") // Replace [param] with {param}
       .replace(/\/\[\.\.\.(.*)\]/g, "/{$1}"); // Replace [...param] with {param}
   }
