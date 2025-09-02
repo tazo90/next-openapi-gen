@@ -9,6 +9,7 @@ export type OpenApiConfig = {
   docsUrl: string;
   ui: string;
   outputFile: string;
+  outputDir: string;
   includeOpenApiRoutes: boolean;
   schemaType: SchemaType;
   defaultResponseSet?: string;
