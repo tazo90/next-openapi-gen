@@ -1,0 +1,984 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "API Documentation",
+    "version": "1.0.0",
+    "description": "This is the OpenAPI specification for your project."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000/api",
+      "description": "Local development server"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "schemas": {
+      "AdminUserQuery": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "number",
+            "nullable": true,
+            "description": "Page number"
+          },
+          "limit": {
+            "type": "number",
+            "nullable": true,
+            "description": "Items per page"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "admin",
+              "user"
+            ],
+            "nullable": true,
+            "description": "Filter by role"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "inactive",
+              "banned"
+            ],
+            "nullable": true,
+            "description": "Filter by status"
+          }
+        }
+      },
+      "AdminUserListResponse": {
+        "type": "object",
+        "properties": {
+          "users": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "description": "User ID"
+                },
+                "email": {
+                  "type": "string",
+                  "format": "email",
+                  "description": "User email"
+                },
+                "name": {
+                  "type": "string",
+                  "description": "User full name"
+                },
+                "role": {
+                  "type": "string",
+                  "enum": [
+                    "admin",
+                    "user"
+                  ],
+                  "description": "User role"
+                },
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "active",
+                    "inactive",
+                    "banned"
+                  ],
+                  "description": "User status"
+                },
+                "createdAt": {
+                  "type": "string",
+                  "description": "Account creation date"
+                }
+              },
+              "required": [
+                "id",
+                "email",
+                "name",
+                "role",
+                "status",
+                "createdAt"
+              ]
+            },
+            "description": "List of users"
+          },
+          "pagination": {
+            "type": "object",
+            "properties": {
+              "page": {
+                "type": "number",
+                "description": "Current page"
+              },
+              "limit": {
+                "type": "number",
+                "description": "Items per page"
+              },
+              "total": {
+                "type": "number",
+                "description": "Total number of users"
+              }
+            },
+            "required": [
+              "page",
+              "limit",
+              "total"
+            ],
+            "description": "Pagination information"
+          }
+        },
+        "required": [
+          "users",
+          "pagination"
+        ]
+      },
+      "DashboardResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Dashboard ID"
+          },
+          "name": {
+            "type": "string",
+            "description": "Dashboard name"
+          },
+          "widgets": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Widget IDs"
+          },
+          "userId": {
+            "type": "string",
+            "description": "Owner user ID"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "widgets",
+          "userId"
+        ]
+      },
+      "UserSettings": {
+        "type": "object",
+        "properties": {
+          "theme": {
+            "type": "string",
+            "enum": [
+              "light",
+              "dark"
+            ],
+            "description": "UI theme preference"
+          },
+          "notifications": {
+            "type": "boolean",
+            "description": "Enable notifications"
+          },
+          "language": {
+            "type": "string",
+            "description": "Preferred language"
+          },
+          "timezone": {
+            "type": "string",
+            "description": "User timezone"
+          }
+        },
+        "required": [
+          "theme",
+          "notifications",
+          "language",
+          "timezone"
+        ]
+      },
+      "LoginRequest": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "User email address"
+          },
+          "password": {
+            "type": "string",
+            "minLength": 6,
+            "description": "User password"
+          }
+        },
+        "required": [
+          "email",
+          "password"
+        ]
+      },
+      "LoginResponse": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "description": "JWT access token"
+          },
+          "user": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "description": "User ID"
+              },
+              "email": {
+                "type": "string",
+                "format": "email",
+                "description": "User email"
+              },
+              "name": {
+                "type": "string",
+                "description": "User full name"
+              }
+            },
+            "required": [
+              "id",
+              "email",
+              "name"
+            ],
+            "description": "User information"
+          }
+        },
+        "required": [
+          "token",
+          "user"
+        ]
+      },
+      "GetUserProfilePathParams": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "User ID"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "Users": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "User ID"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ]
+      }
+    },
+    "responses": {
+      "400": {
+        "description": "Bad request",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "success": {
+                  "type": "boolean",
+                  "example": false
+                },
+                "error": {
+                  "type": "string",
+                  "example": "Validation error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "401": {
+        "description": "Unauthorized",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "success": {
+                  "type": "boolean",
+                  "example": false
+                },
+                "error": {
+                  "type": "string",
+                  "example": "Unathorized"
+                }
+              }
+            }
+          }
+        }
+      },
+      "500": {
+        "description": "Internal server error",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "success": {
+                  "type": "boolean",
+                  "example": false
+                },
+                "error": {
+                  "type": "string",
+                  "example": "Something went wrong"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "outputDir": "./public",
+  "paths": {
+    "/users": {
+      "get": {
+        "operationId": "get-users",
+        "summary": "List all users (Admin only)\r",
+        "description": "Retrieves a paginated list of all users in the system",
+        "tags": [
+          "Admin"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "number",
+              "description": "Page number"
+            },
+            "required": false,
+            "description": "Page number"
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "number",
+              "description": "Items per page"
+            },
+            "required": false,
+            "description": "Items per page"
+          },
+          {
+            "in": "query",
+            "name": "role",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "admin",
+                "user"
+              ],
+              "description": "Filter by role"
+            },
+            "required": false,
+            "description": "Filter by role"
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "active",
+                "inactive",
+                "banned"
+              ],
+              "description": "Filter by status"
+            },
+            "required": false,
+            "description": "Filter by status"
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "users": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "description": "User ID"
+                          },
+                          "email": {
+                            "type": "string",
+                            "format": "email",
+                            "description": "User email"
+                          },
+                          "name": {
+                            "type": "string",
+                            "description": "User full name"
+                          },
+                          "role": {
+                            "type": "string",
+                            "enum": [
+                              "admin",
+                              "user"
+                            ],
+                            "description": "User role"
+                          },
+                          "status": {
+                            "type": "string",
+                            "enum": [
+                              "active",
+                              "inactive",
+                              "banned"
+                            ],
+                            "description": "User status"
+                          },
+                          "createdAt": {
+                            "type": "string",
+                            "description": "Account creation date"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "email",
+                          "name",
+                          "role",
+                          "status",
+                          "createdAt"
+                        ]
+                      },
+                      "description": "List of users"
+                    },
+                    "pagination": {
+                      "type": "object",
+                      "properties": {
+                        "page": {
+                          "type": "number",
+                          "description": "Current page"
+                        },
+                        "limit": {
+                          "type": "number",
+                          "description": "Items per page"
+                        },
+                        "total": {
+                          "type": "number",
+                          "description": "Total number of users"
+                        }
+                      },
+                      "required": [
+                        "page",
+                        "limit",
+                        "total"
+                      ],
+                      "description": "Pagination information"
+                    }
+                  },
+                  "required": [
+                    "users",
+                    "pagination"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    },
+    "/auth": {
+      "post": {
+        "operationId": "post-auth",
+        "summary": "User login\r",
+        "description": "Authenticate user and return access token",
+        "tags": [
+          "Authentication"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "description": "User email address"
+                  },
+                  "password": {
+                    "type": "string",
+                    "minLength": 6,
+                    "description": "User password"
+                  }
+                },
+                "required": [
+                  "email",
+                  "password"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "token": {
+                      "type": "string",
+                      "description": "JWT access token"
+                    },
+                    "user": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "description": "User ID"
+                        },
+                        "email": {
+                          "type": "string",
+                          "format": "email",
+                          "description": "User email"
+                        },
+                        "name": {
+                          "type": "string",
+                          "description": "User full name"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "email",
+                        "name"
+                      ],
+                      "description": "User information"
+                    }
+                  },
+                  "required": [
+                    "token",
+                    "user"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    },
+    "/dashboard": {
+      "get": {
+        "operationId": "get-dashboard",
+        "summary": "Get user dashboard\r",
+        "description": "Retrieves the user's dashboard configuration",
+        "tags": [
+          "Dashboard"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "description": "Dashboard ID"
+                    },
+                    "name": {
+                      "type": "string",
+                      "description": "Dashboard name"
+                    },
+                    "widgets": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "description": "Widget IDs"
+                    },
+                    "userId": {
+                      "type": "string",
+                      "description": "Owner user ID"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "name",
+                    "widgets",
+                    "userId"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      },
+      "put": {
+        "operationId": "put-dashboard",
+        "summary": "Update dashboard\r",
+        "description": "Updates the user's dashboard configuration",
+        "tags": [
+          "Dashboard"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "description": "Dashboard ID"
+                  },
+                  "name": {
+                    "type": "string",
+                    "description": "Dashboard name"
+                  },
+                  "widgets": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "Widget IDs"
+                  },
+                  "userId": {
+                    "type": "string",
+                    "description": "Owner user ID"
+                  }
+                },
+                "required": [
+                  "id",
+                  "name",
+                  "widgets",
+                  "userId"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "description": "Dashboard ID"
+                    },
+                    "name": {
+                      "type": "string",
+                      "description": "Dashboard name"
+                    },
+                    "widgets": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "description": "Widget IDs"
+                    },
+                    "userId": {
+                      "type": "string",
+                      "description": "Owner user ID"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "name",
+                    "widgets",
+                    "userId"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    },
+    "/settings": {
+      "get": {
+        "operationId": "get-settings",
+        "summary": "Get user settings\r",
+        "description": "Retrieves the user's personal settings",
+        "tags": [
+          "Settings"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "theme": {
+                      "type": "string",
+                      "enum": [
+                        "light",
+                        "dark"
+                      ],
+                      "description": "UI theme preference"
+                    },
+                    "notifications": {
+                      "type": "boolean",
+                      "description": "Enable notifications"
+                    },
+                    "language": {
+                      "type": "string",
+                      "description": "Preferred language"
+                    },
+                    "timezone": {
+                      "type": "string",
+                      "description": "User timezone"
+                    }
+                  },
+                  "required": [
+                    "theme",
+                    "notifications",
+                    "language",
+                    "timezone"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      },
+      "patch": {
+        "operationId": "patch-settings",
+        "summary": "Update user settings\r",
+        "description": "Updates the user's personal settings",
+        "tags": [
+          "Settings"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "theme": {
+                    "type": "string",
+                    "enum": [
+                      "light",
+                      "dark"
+                    ],
+                    "description": "UI theme preference"
+                  },
+                  "notifications": {
+                    "type": "boolean",
+                    "description": "Enable notifications"
+                  },
+                  "language": {
+                    "type": "string",
+                    "description": "Preferred language"
+                  },
+                  "timezone": {
+                    "type": "string",
+                    "description": "User timezone"
+                  }
+                },
+                "required": [
+                  "theme",
+                  "notifications",
+                  "language",
+                  "timezone"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "theme": {
+                      "type": "string",
+                      "enum": [
+                        "light",
+                        "dark"
+                      ],
+                      "description": "UI theme preference"
+                    },
+                    "notifications": {
+                      "type": "boolean",
+                      "description": "Enable notifications"
+                    },
+                    "language": {
+                      "type": "string",
+                      "description": "Preferred language"
+                    },
+                    "timezone": {
+                      "type": "string",
+                      "description": "User timezone"
+                    }
+                  },
+                  "required": [
+                    "theme",
+                    "notifications",
+                    "language",
+                    "timezone"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    },
+    "/users/{id}": {
+      "get": {
+        "operationId": "get-users-{id}",
+        "summary": "Read the user profile",
+        "description": "Detailed user profile",
+        "tags": [
+          "Users"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string",
+              "description": "User ID"
+            },
+            "required": true,
+            "description": "User ID",
+            "example": "123"
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Test",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "description": "User ID"
+                    },
+                    "name": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "name"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,3 +1,3 @@
 export default function Home() {
-  return <div>Go do /docs-api to check Zod example</div>;
+  return <div>Go do /api-docs to check Zod example</div>;
 }
