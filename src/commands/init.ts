@@ -56,6 +56,22 @@ function getDocsPage(ui: string, outputFile: string) {
   return DocsComponent(outputFile);
 }
 
+function getDocsPageInstallFlags(ui: string, packageManager: string) {
+  let installFlags = "";
+  if (ui === "swagger") {
+    // @temp: swagger-ui-react does not support React 19 now.
+    if (packageManager === "pnpm") {
+      installFlags = "--no-strict-peer-dependencies";
+    } else if (packageManager === "yarn") {
+      installFlags = ""; // flag for legacy peer deps is not needed for yarn
+    } else {
+      installFlags = "--legacy-peer-deps";
+    }
+  }
+
+  return installFlags;
+}
+
 function getDocsPageDependencies(ui: string) {
   let deps = [];
 
@@ -99,9 +115,10 @@ async function installDependencies(ui: string) {
   }`;
 
   const deps = getDocsPageDependencies(ui);
+  const flags = getDocsPageInstallFlags(ui, packageManager);
 
   spinner.succeed(`Installing ${deps} dependencies...`);
-  const resp = await execPromise(`${installCmd} ${deps}`);
+  const resp = await execPromise(`${installCmd} ${deps} ${flags}`);
   spinner.succeed(`Successfully installed ${deps}.`);
 }
 

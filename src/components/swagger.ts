@@ -1,8 +1,4 @@
-export const swaggerDeps = [
-  "swagger-ui",
-  "swagger-ui-react",
-  "--legacy-peer-deps", // @temp: swagger-ui-react does not support React 19 now.
-];
+export const swaggerDeps = ["swagger-ui", "swagger-ui-react"];
 
 export function SwaggerUI(outputFile: string) {
   return `
