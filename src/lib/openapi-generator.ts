@@ -33,18 +33,18 @@ export class OpenApiGenerator {
     const { apiDir, schemaDir, docsUrl, ui, outputFile, outputDir, includeOpenApiRoutes, schemaType = "typescript", defaultResponseSet, responseSets, errorConfig, debug } = this.template;
 
     return {
-      apiDir,
-      schemaDir,
-      docsUrl,
-      ui,
-      outputFile,
-      outputDir,
-      includeOpenApiRoutes,
+      apiDir: apiDir || "./src/app/api",
+      schemaDir: schemaDir || "./src",
+      docsUrl: docsUrl || "api-docs",
+      ui: ui || "scalar",
+      outputFile: outputFile || "openapi.json",
+      outputDir: outputDir || "./public",
+      includeOpenApiRoutes: includeOpenApiRoutes || false,
       schemaType,
       defaultResponseSet,
       responseSets,
       errorConfig,
-      debug,
+      debug: debug || false,
     };
   }
 
