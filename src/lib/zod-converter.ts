@@ -1084,26 +1084,6 @@ export class ZodSchemaConverter {
       return { type: "string" };
     }
 
-    if (
-      t.isMemberExpression(node.callee) &&
-      t.isIdentifier(node.callee.property)
-    ) {
-      const zodType = node.callee.property.name;
-
-      // Custom() support for FormData
-      if (zodType === "custom" && node.arguments.length > 0) {
-        // Check if it is FormData
-        if (t.isArrowFunctionExpression(node.arguments[0])) {
-          // Assume custom FormData validation
-          return {
-            type: "object",
-            additionalProperties: true,
-            description: "Form data object",
-          };
-        }
-      }
-    }
-
     const zodType = node.callee.property.name;
     let schema: OpenApiSchema = {};
 
@@ -1226,6 +1206,39 @@ export class ZodSchemaConverter {
           schema = this.processZodObject(node);
         } else {
           schema = { type: "object" };
+        }
+        break;
+      case "custom":
+        // Check if it has TypeScript generic type parameters (z.custom<File>())
+        if (node.typeParameters && node.typeParameters.params.length > 0) {
+          const typeParam = node.typeParameters.params[0];
+
+          // Check if the generic type is File
+          if (
+            t.isTSTypeReference(typeParam) &&
+            t.isIdentifier(typeParam.typeName) &&
+            typeParam.typeName.name === "File"
+          ) {
+            schema = {
+              type: "string",
+              format: "binary",
+            };
+          } else {
+            // Other generic types default to string
+            schema = { type: "string" };
+          }
+        } else if (
+          node.arguments.length > 0 &&
+          t.isArrowFunctionExpression(node.arguments[0])
+        ) {
+          // Legacy support: FormData validation
+          schema = {
+            type: "object",
+            additionalProperties: true,
+          };
+        } else {
+          // Default case for z.custom() without specific type detection
+          schema = { type: "string" };
         }
         break;
       default:

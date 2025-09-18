@@ -62,7 +62,11 @@ export function extractJSDocComments(path: NodePath): DataTypes {
       }
 
       if (!summary) {
-        summary = commentValue.split("\n")[0];
+        const firstLine = commentValue.split("\n")[0];
+        // Don't use tags as summary - only use actual descriptions
+        if (!firstLine.trim().startsWith("@")) {
+          summary = firstLine;
+        }
       }
 
       if (commentValue.includes("@auth")) {
