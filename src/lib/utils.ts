@@ -148,17 +148,14 @@ export function extractJSDocComments(path: NodePath): DataTypes {
       }
 
       if (commentValue.includes("@response")) {
+        // Updated regex to support generic types
         const responseMatch = commentValue.match(
-          /@response\s+(?:(\d+):)?(\w+)(?::(.*))?/
+          /@response\s+(?:(\d+):)?([^@\n\r]+)(?:\s+(.*))?/
         );
         if (responseMatch) {
-          const [, code, type, description] = responseMatch;
+          const [, code, type] = responseMatch;
           successCode = code || "";
-          responseType = type;
-          // Set responseDescription only if not already set by @responseDescription
-          if (description?.trim() && !responseDescription) {
-            responseDescription = description.trim();
-          }
+          responseType = type?.trim();
         } else {
           responseType = extractTypeFromComment(commentValue, "@response");
         }
@@ -190,7 +187,12 @@ export function extractTypeFromComment(
   commentValue: string,
   tag: string
 ): string {
-  return commentValue.match(new RegExp(`${tag}\\s*\\s*(\\w+)`))?.[1] || "";
+  // Updated regex to support generic types with angle brackets
+  return (
+    commentValue
+      .match(new RegExp(`${tag}\\s*\\s*([\\w<>,\\s]+)`))?.[1]
+      ?.trim() || ""
+  );
 }
 
 export function cleanComment(commentValue: string): string {

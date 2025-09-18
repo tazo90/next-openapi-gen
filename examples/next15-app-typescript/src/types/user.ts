@@ -16,11 +16,11 @@ export type UserAddress = {
 };
 
 export interface User {
-  id: string;           
+  id: string;
   email: string;
   name: string;
   password: string;
-  role: 'admin' | 'user';
+  role: "admin" | "user";
   address: UserAddress;
   createdAt: Date;
   updatedAt: Date;
