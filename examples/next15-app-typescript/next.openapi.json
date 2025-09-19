@@ -25,5 +25,6 @@
   "docsUrl": "api-docs",
   "ui": "scalar",
   "outputFile": "openapi.json",
-  "includeOpenApiRoutes": false
+  "includeOpenApiRoutes": false,
+  "debug": true
 }

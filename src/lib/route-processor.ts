@@ -44,14 +44,16 @@ export class RouteProcessor {
     const successCode =
       dataTypes.successCode || this.getDefaultSuccessCode(method);
     if (dataTypes.responseType) {
-      const responseSchema = this.schemaProcessor.getSchemaContent({
+      // Ensure the schema is defined in components/schemas
+      this.schemaProcessor.getSchemaContent({
         responseType: dataTypes.responseType,
-      }).responses;
+      });
+
       responses[successCode] = {
         description: dataTypes.responseDescription || "Successful response",
         content: {
           "application/json": {
-            schema: responseSchema,
+            schema: { $ref: `#/components/schemas/${dataTypes.responseType}` },
           },
         },
       };
@@ -330,11 +332,37 @@ export class RouteProcessor {
 
     // Add request body
     if (MUTATION_HTTP_METHODS.includes(method.toUpperCase())) {
-      definition.requestBody = this.schemaProcessor.createRequestBodySchema(
-        body,
-        bodyDescription,
-        dataTypes.contentType
-      );
+      if (dataTypes.bodyType) {
+        // Ensure the schema is defined in components/schemas
+        this.schemaProcessor.getSchemaContent({
+          bodyType: dataTypes.bodyType,
+        });
+
+        // Use reference to the schema
+        const contentType = this.schemaProcessor.detectContentType(
+          dataTypes.bodyType || "",
+          dataTypes.contentType
+        );
+
+        definition.requestBody = {
+          content: {
+            [contentType]: {
+              schema: { $ref: `#/components/schemas/${dataTypes.bodyType}` },
+            },
+          },
+        };
+
+        if (bodyDescription) {
+          definition.requestBody.description = bodyDescription;
+        }
+      } else if (body && Object.keys(body).length > 0) {
+        // Fallback to inline schema for backward compatibility
+        definition.requestBody = this.schemaProcessor.createRequestBodySchema(
+          body,
+          bodyDescription,
+          dataTypes.contentType
+        );
+      }
     }
 
     // Add responses
