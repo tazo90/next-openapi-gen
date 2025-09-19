@@ -522,6 +522,7 @@
         "properties": {
           "file": {
             "type": "string",
+            "format": "binary",
             "description": "Image file (PNG/JPG, max 5MB)"
           },
           "description": {
@@ -1294,6 +1295,7 @@
         "properties": {
           "file": {
             "type": "string",
+            "format": "binary",
             "description": "Image file (PNG/JPG, max 5MB)"
           },
           "description": {
@@ -1600,6 +1602,7 @@
       }
     }
   },
+  "outputDir": "./public",
   "paths": {
     "/orders": {
       "get": {
@@ -1688,55 +1691,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "orders": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/OrderSchema"
-                      },
-                      "description": "List of orders"
-                    },
-                    "pagination": {
-                      "type": "object",
-                      "properties": {
-                        "total": {
-                          "type": "integer",
-                          "minimum": 0,
-                          "description": "Total number of orders"
-                        },
-                        "pages": {
-                          "type": "integer",
-                          "minimum": 0,
-                          "exclusiveMinimum": true,
-                          "description": "Total number of pages"
-                        },
-                        "page": {
-                          "type": "integer",
-                          "minimum": 0,
-                          "exclusiveMinimum": true,
-                          "description": "Current page"
-                        },
-                        "limit": {
-                          "type": "integer",
-                          "minimum": 0,
-                          "exclusiveMinimum": true,
-                          "description": "Results per page"
-                        }
-                      },
-                      "required": [
-                        "total",
-                        "pages",
-                        "page",
-                        "limit"
-                      ],
-                      "description": "Pagination information"
-                    }
-                  },
-                  "required": [
-                    "orders",
-                    "pagination"
-                  ]
+                  "$ref": "#/components/schemas/OrdersResponse"
                 }
               }
             }
@@ -1766,55 +1721,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "properties": {
-                  "cartId": {
-                    "type": "string",
-                    "format": "uuid",
-                    "description": "Cart ID"
-                  },
-                  "shippingAddressId": {
-                    "type": "integer",
-                    "nullable": true,
-                    "description": "ID of shipping address from user profile"
-                  },
-                  "billingAddressId": {
-                    "type": "integer",
-                    "nullable": true,
-                    "description": "ID of billing address from user profile"
-                  },
-                  "shippingAddress": {
-                    "type": "object",
-                    "description": "New shipping address"
-                  },
-                  "billingAddress": {
-                    "type": "object",
-                    "description": "New billing address"
-                  },
-                  "useShippingAsBilling": {
-                    "type": "boolean",
-                    "nullable": true,
-                    "default": true,
-                    "description": "Use shipping address as billing address"
-                  },
-                  "paymentMethodId": {
-                    "type": "integer",
-                    "nullable": true,
-                    "description": "ID of saved payment method"
-                  },
-                  "paymentMethod": {
-                    "type": "object",
-                    "description": "New payment method"
-                  },
-                  "notes": {
-                    "type": "string",
-                    "nullable": true,
-                    "description": "Additional order notes"
-                  }
-                },
-                "required": [
-                  "cartId"
-                ]
+                "$ref": "#/components/schemas/CreateOrderBody"
               }
             }
           }
@@ -1825,133 +1732,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "id": {
-                      "type": "string",
-                      "format": "uuid",
-                      "description": "Order ID"
-                    },
-                    "userId": {
-                      "type": "string",
-                      "format": "uuid",
-                      "description": "User ID"
-                    },
-                    "items": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/CartItemSchema"
-                      },
-                      "description": "Purchased products"
-                    },
-                    "shippingAddress": {
-                      "allOf": [
-                        {
-                          "$ref": "#/components/schemas/AddressSchema"
-                        }
-                      ],
-                      "description": "Shipping address"
-                    },
-                    "billingAddress": {
-                      "allOf": [
-                        {
-                          "$ref": "#/components/schemas/AddressSchema"
-                        }
-                      ],
-                      "description": "Billing address (can be the same as shipping address)"
-                    },
-                    "paymentMethod": {
-                      "allOf": [
-                        {
-                          "$ref": "#/components/schemas/PaymentMethodSchema"
-                        }
-                      ],
-                      "description": "Payment method"
-                    },
-                    "status": {
-                      "allOf": [
-                        {
-                          "$ref": "#/components/schemas/OrderStatusSchema"
-                        }
-                      ],
-                      "description": "Order status"
-                    },
-                    "subtotal": {
-                      "type": "number",
-                      "minimum": 0,
-                      "description": "Subtotal (without discount and shipping)"
-                    },
-                    "discountAmount": {
-                      "type": "number",
-                      "minimum": 0,
-                      "default": 0,
-                      "description": "Discount amount"
-                    },
-                    "shippingCost": {
-                      "type": "number",
-                      "minimum": 0,
-                      "description": "Shipping cost"
-                    },
-                    "tax": {
-                      "type": "number",
-                      "minimum": 0,
-                      "description": "Tax"
-                    },
-                    "total": {
-                      "type": "number",
-                      "minimum": 0,
-                      "description": "Total amount"
-                    },
-                    "notes": {
-                      "type": "string",
-                      "nullable": true,
-                      "description": "Additional notes"
-                    },
-                    "createdAt": {
-                      "type": "string",
-                      "format": "date-time",
-                      "description": "Order creation date"
-                    },
-                    "updatedAt": {
-                      "type": "string",
-                      "format": "date-time",
-                      "description": "Last update date"
-                    },
-                    "paymentDate": {
-                      "type": "string",
-                      "format": "date-time",
-                      "nullable": true,
-                      "description": "Payment date"
-                    },
-                    "shippingDate": {
-                      "type": "string",
-                      "format": "date-time",
-                      "nullable": true,
-                      "description": "Shipping date"
-                    },
-                    "deliveryDate": {
-                      "type": "string",
-                      "format": "date-time",
-                      "nullable": true,
-                      "description": "Delivery date"
-                    }
-                  },
-                  "required": [
-                    "id",
-                    "userId",
-                    "items",
-                    "shippingAddress",
-                    "billingAddress",
-                    "paymentMethod",
-                    "status",
-                    "subtotal",
-                    "discountAmount",
-                    "shippingCost",
-                    "tax",
-                    "total",
-                    "createdAt",
-                    "updatedAt"
-                  ]
+                  "$ref": "#/components/schemas/OrderSchema"
                 }
               }
             }
@@ -1997,133 +1778,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "id": {
-                      "type": "string",
-                      "format": "uuid",
-                      "description": "Order ID"
-                    },
-                    "userId": {
-                      "type": "string",
-                      "format": "uuid",
-                      "description": "User ID"
-                    },
-                    "items": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/CartItemSchema"
-                      },
-                      "description": "Purchased products"
-                    },
-                    "shippingAddress": {
-                      "allOf": [
-                        {
-                          "$ref": "#/components/schemas/AddressSchema"
-                        }
-                      ],
-                      "description": "Shipping address"
-                    },
-                    "billingAddress": {
-                      "allOf": [
-                        {
-                          "$ref": "#/components/schemas/AddressSchema"
-                        }
-                      ],
-                      "description": "Billing address (can be the same as shipping address)"
-                    },
-                    "paymentMethod": {
-                      "allOf": [
-                        {
-                          "$ref": "#/components/schemas/PaymentMethodSchema"
-                        }
-                      ],
-                      "description": "Payment method"
-                    },
-                    "status": {
-                      "allOf": [
-                        {
-                          "$ref": "#/components/schemas/OrderStatusSchema"
-                        }
-                      ],
-                      "description": "Order status"
-                    },
-                    "subtotal": {
-                      "type": "number",
-                      "minimum": 0,
-                      "description": "Subtotal (without discount and shipping)"
-                    },
-                    "discountAmount": {
-                      "type": "number",
-                      "minimum": 0,
-                      "default": 0,
-                      "description": "Discount amount"
-                    },
-                    "shippingCost": {
-                      "type": "number",
-                      "minimum": 0,
-                      "description": "Shipping cost"
-                    },
-                    "tax": {
-                      "type": "number",
-                      "minimum": 0,
-                      "description": "Tax"
-                    },
-                    "total": {
-                      "type": "number",
-                      "minimum": 0,
-                      "description": "Total amount"
-                    },
-                    "notes": {
-                      "type": "string",
-                      "nullable": true,
-                      "description": "Additional notes"
-                    },
-                    "createdAt": {
-                      "type": "string",
-                      "format": "date-time",
-                      "description": "Order creation date"
-                    },
-                    "updatedAt": {
-                      "type": "string",
-                      "format": "date-time",
-                      "description": "Last update date"
-                    },
-                    "paymentDate": {
-                      "type": "string",
-                      "format": "date-time",
-                      "nullable": true,
-                      "description": "Payment date"
-                    },
-                    "shippingDate": {
-                      "type": "string",
-                      "format": "date-time",
-                      "nullable": true,
-                      "description": "Shipping date"
-                    },
-                    "deliveryDate": {
-                      "type": "string",
-                      "format": "date-time",
-                      "nullable": true,
-                      "description": "Delivery date"
-                    }
-                  },
-                  "required": [
-                    "id",
-                    "userId",
-                    "items",
-                    "shippingAddress",
-                    "billingAddress",
-                    "paymentMethod",
-                    "status",
-                    "subtotal",
-                    "discountAmount",
-                    "shippingCost",
-                    "tax",
-                    "total",
-                    "createdAt",
-                    "updatedAt"
-                  ]
+                  "$ref": "#/components/schemas/OrderSchema"
                 }
               }
             }
@@ -2165,25 +1820,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "properties": {
-                  "status": {
-                    "allOf": [
-                      {
-                        "$ref": "#/components/schemas/OrderStatusSchema"
-                      }
-                    ],
-                    "description": "New order status"
-                  },
-                  "notes": {
-                    "type": "string",
-                    "nullable": true,
-                    "description": "Additional notes about the status change"
-                  }
-                },
-                "required": [
-                  "status"
-                ]
+                "$ref": "#/components/schemas/UpdateOrderStatusBody"
               }
             }
           }
@@ -2194,133 +1831,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "id": {
-                      "type": "string",
-                      "format": "uuid",
-                      "description": "Order ID"
-                    },
-                    "userId": {
-                      "type": "string",
-                      "format": "uuid",
-                      "description": "User ID"
-                    },
-                    "items": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/CartItemSchema"
-                      },
-                      "description": "Purchased products"
-                    },
-                    "shippingAddress": {
-                      "allOf": [
-                        {
-                          "$ref": "#/components/schemas/AddressSchema"
-                        }
-                      ],
-                      "description": "Shipping address"
-                    },
-                    "billingAddress": {
-                      "allOf": [
-                        {
-                          "$ref": "#/components/schemas/AddressSchema"
-                        }
-                      ],
-                      "description": "Billing address (can be the same as shipping address)"
-                    },
-                    "paymentMethod": {
-                      "allOf": [
-                        {
-                          "$ref": "#/components/schemas/PaymentMethodSchema"
-                        }
-                      ],
-                      "description": "Payment method"
-                    },
-                    "status": {
-                      "allOf": [
-                        {
-                          "$ref": "#/components/schemas/OrderStatusSchema"
-                        }
-                      ],
-                      "description": "Order status"
-                    },
-                    "subtotal": {
-                      "type": "number",
-                      "minimum": 0,
-                      "description": "Subtotal (without discount and shipping)"
-                    },
-                    "discountAmount": {
-                      "type": "number",
-                      "minimum": 0,
-                      "default": 0,
-                      "description": "Discount amount"
-                    },
-                    "shippingCost": {
-                      "type": "number",
-                      "minimum": 0,
-                      "description": "Shipping cost"
-                    },
-                    "tax": {
-                      "type": "number",
-                      "minimum": 0,
-                      "description": "Tax"
-                    },
-                    "total": {
-                      "type": "number",
-                      "minimum": 0,
-                      "description": "Total amount"
-                    },
-                    "notes": {
-                      "type": "string",
-                      "nullable": true,
-                      "description": "Additional notes"
-                    },
-                    "createdAt": {
-                      "type": "string",
-                      "format": "date-time",
-                      "description": "Order creation date"
-                    },
-                    "updatedAt": {
-                      "type": "string",
-                      "format": "date-time",
-                      "description": "Last update date"
-                    },
-                    "paymentDate": {
-                      "type": "string",
-                      "format": "date-time",
-                      "nullable": true,
-                      "description": "Payment date"
-                    },
-                    "shippingDate": {
-                      "type": "string",
-                      "format": "date-time",
-                      "nullable": true,
-                      "description": "Shipping date"
-                    },
-                    "deliveryDate": {
-                      "type": "string",
-                      "format": "date-time",
-                      "nullable": true,
-                      "description": "Delivery date"
-                    }
-                  },
-                  "required": [
-                    "id",
-                    "userId",
-                    "items",
-                    "shippingAddress",
-                    "billingAddress",
-                    "paymentMethod",
-                    "status",
-                    "subtotal",
-                    "discountAmount",
-                    "shippingCost",
-                    "tax",
-                    "total",
-                    "createdAt",
-                    "updatedAt"
-                  ]
+                  "$ref": "#/components/schemas/OrderSchema"
                 }
               }
             }
@@ -2425,95 +1936,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "id": {
-                      "type": "string",
-                      "format": "uuid",
-                      "description": "Unique product identifier"
-                    },
-                    "name": {
-                      "type": "string",
-                      "minLength": 3,
-                      "description": "Product name"
-                    },
-                    "description": {
-                      "type": "string",
-                      "nullable": true,
-                      "description": "Product description"
-                    },
-                    "price": {
-                      "type": "number",
-                      "minimum": 0,
-                      "exclusiveMinimum": true,
-                      "description": "Base product price"
-                    },
-                    "image_url": {
-                      "type": "string",
-                      "format": "uri",
-                      "nullable": true,
-                      "description": "URL to main product image"
-                    },
-                    "gallery": {
-                      "type": "array",
-                      "items": {
-                        "type": "string",
-                        "format": "uri"
-                      },
-                      "description": "Product image gallery"
-                    },
-                    "categories": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/ProductCategorySchema"
-                      },
-                      "description": "Product categories"
-                    },
-                    "variants": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/ProductVariantSchema"
-                      },
-                      "nullable": true,
-                      "description": "Product variants"
-                    },
-                    "created_at": {
-                      "type": "string",
-                      "format": "date-time",
-                      "description": "Product creation date"
-                    },
-                    "updated_at": {
-                      "type": "string",
-                      "format": "date-time",
-                      "description": "Product last update date"
-                    },
-                    "status": {
-                      "type": "string",
-                      "enum": [
-                        "draft",
-                        "published",
-                        "archived"
-                      ],
-                      "description": "Product status"
-                    },
-                    "average_rating": {
-                      "type": "number",
-                      "minimum": 0,
-                      "maximum": 5,
-                      "nullable": true,
-                      "description": "Average product rating"
-                    }
-                  },
-                  "required": [
-                    "id",
-                    "name",
-                    "price",
-                    "gallery",
-                    "categories",
-                    "created_at",
-                    "updated_at",
-                    "status"
-                  ]
+                  "$ref": "#/components/schemas/ProductResponseSchema"
                 }
               }
             }
@@ -2555,60 +1978,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "properties": {
-                  "name": {
-                    "type": "string",
-                    "minLength": 3,
-                    "nullable": true,
-                    "description": "Product name"
-                  },
-                  "description": {
-                    "type": "string",
-                    "nullable": true,
-                    "description": "Product description"
-                  },
-                  "price": {
-                    "type": "number",
-                    "minimum": 0,
-                    "exclusiveMinimum": true,
-                    "nullable": true,
-                    "description": "Base product price"
-                  },
-                  "image_url": {
-                    "type": "string",
-                    "format": "uri",
-                    "nullable": true,
-                    "description": "URL to main product image"
-                  },
-                  "gallery": {
-                    "type": "array",
-                    "items": {
-                      "type": "string",
-                      "format": "uri"
-                    },
-                    "nullable": true,
-                    "description": "Product image gallery"
-                  },
-                  "category_ids": {
-                    "type": "array",
-                    "items": {
-                      "type": "string"
-                    },
-                    "nullable": true,
-                    "description": "Product category identifiers"
-                  },
-                  "status": {
-                    "type": "string",
-                    "enum": [
-                      "draft",
-                      "published",
-                      "archived"
-                    ],
-                    "nullable": true,
-                    "description": "Product status"
-                  }
-                }
+                "$ref": "#/components/schemas/UpdateProductSchema"
               }
             }
           }
@@ -2619,95 +1989,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "id": {
-                      "type": "string",
-                      "format": "uuid",
-                      "description": "Unique product identifier"
-                    },
-                    "name": {
-                      "type": "string",
-                      "minLength": 3,
-                      "description": "Product name"
-                    },
-                    "description": {
-                      "type": "string",
-                      "nullable": true,
-                      "description": "Product description"
-                    },
-                    "price": {
-                      "type": "number",
-                      "minimum": 0,
-                      "exclusiveMinimum": true,
-                      "description": "Base product price"
-                    },
-                    "image_url": {
-                      "type": "string",
-                      "format": "uri",
-                      "nullable": true,
-                      "description": "URL to main product image"
-                    },
-                    "gallery": {
-                      "type": "array",
-                      "items": {
-                        "type": "string",
-                        "format": "uri"
-                      },
-                      "description": "Product image gallery"
-                    },
-                    "categories": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/ProductCategorySchema"
-                      },
-                      "description": "Product categories"
-                    },
-                    "variants": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/ProductVariantSchema"
-                      },
-                      "nullable": true,
-                      "description": "Product variants"
-                    },
-                    "created_at": {
-                      "type": "string",
-                      "format": "date-time",
-                      "description": "Product creation date"
-                    },
-                    "updated_at": {
-                      "type": "string",
-                      "format": "date-time",
-                      "description": "Product last update date"
-                    },
-                    "status": {
-                      "type": "string",
-                      "enum": [
-                        "draft",
-                        "published",
-                        "archived"
-                      ],
-                      "description": "Product status"
-                    },
-                    "average_rating": {
-                      "type": "number",
-                      "minimum": 0,
-                      "maximum": 5,
-                      "nullable": true,
-                      "description": "Average product rating"
-                    }
-                  },
-                  "required": [
-                    "id",
-                    "name",
-                    "price",
-                    "gallery",
-                    "categories",
-                    "created_at",
-                    "updated_at",
-                    "status"
-                  ]
+                  "$ref": "#/components/schemas/ProductResponseSchema"
                 }
               }
             }
@@ -2758,7 +2040,7 @@
     "/upload": {
       "post": {
         "operationId": "post-upload",
-        "summary": "Upload image file",
+        "summary": "Upload image file\r",
         "description": "Uploads PNG or JPG image files with validation and metadata",
         "tags": [
           "Uploads"
@@ -2768,27 +2050,7 @@
           "content": {
             "multipart/form-data": {
               "schema": {
-                "type": "object",
-                "properties": {
-                  "file": {
-                    "type": "string",
-                    "description": "Image file (PNG/JPG, max 5MB)"
-                  },
-                  "description": {
-                    "type": "string",
-                    "nullable": true,
-                    "description": "Optional file description"
-                  },
-                  "category": {
-                    "type": "string",
-                    "minLength": 1,
-                    "description": "File category (required)"
-                  }
-                },
-                "required": [
-                  "file",
-                  "category"
-                ]
+                "$ref": "#/components/schemas/UploadFormDataSchema"
               }
             }
           },
@@ -2800,52 +2062,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "id": {
-                      "type": "string",
-                      "description": "Upload ID"
-                    },
-                    "filename": {
-                      "type": "string",
-                      "description": "Original filename"
-                    },
-                    "size": {
-                      "type": "number",
-                      "description": "File size in bytes"
-                    },
-                    "type": {
-                      "type": "string",
-                      "description": "MIME type"
-                    },
-                    "url": {
-                      "type": "string",
-                      "format": "uri",
-                      "description": "File access URL"
-                    },
-                    "category": {
-                      "type": "string",
-                      "description": "File category"
-                    },
-                    "description": {
-                      "type": "string",
-                      "nullable": true,
-                      "description": "File description"
-                    },
-                    "uploadedAt": {
-                      "type": "string",
-                      "description": "Upload timestamp"
-                    }
-                  },
-                  "required": [
-                    "id",
-                    "filename",
-                    "size",
-                    "type",
-                    "url",
-                    "category",
-                    "uploadedAt"
-                  ]
+                  "$ref": "#/components/schemas/UploadResponseSchema"
                 }
               }
             }
@@ -2891,40 +2108,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "id": {
-                      "type": "string",
-                      "format": "uuid",
-                      "description": "Unique user identifier"
-                    },
-                    "email": {
-                      "type": "string",
-                      "format": "email",
-                      "description": "User's email address"
-                    },
-                    "name": {
-                      "type": "string",
-                      "minLength": 2,
-                      "maxLength": 100,
-                      "description": "User's full name"
-                    },
-                    "role": {
-                      "type": "string",
-                      "enum": [
-                        "user",
-                        "admin",
-                        "moderator"
-                      ],
-                      "description": "User's role in the system"
-                    }
-                  },
-                  "required": [
-                    "id",
-                    "email",
-                    "name",
-                    "role"
-                  ]
+                  "$ref": "#/components/schemas/UserDetailedSchema"
                 }
               }
             }
@@ -2978,40 +2162,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "id": {
-                      "type": "string",
-                      "format": "uuid",
-                      "description": "Unique user identifier"
-                    },
-                    "email": {
-                      "type": "string",
-                      "format": "email",
-                      "description": "User's email address"
-                    },
-                    "name": {
-                      "type": "string",
-                      "minLength": 2,
-                      "maxLength": 100,
-                      "description": "User's full name"
-                    },
-                    "role": {
-                      "type": "string",
-                      "enum": [
-                        "user",
-                        "admin",
-                        "moderator"
-                      ],
-                      "description": "User's role in the system"
-                    }
-                  },
-                  "required": [
-                    "id",
-                    "email",
-                    "name",
-                    "role"
-                  ]
+                  "$ref": "#/components/schemas/UserDetailedSchema"
                 }
               }
             }
@@ -3053,60 +2204,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "properties": {
-                  "name": {
-                    "type": "string",
-                    "minLength": 2,
-                    "maxLength": 100,
-                    "nullable": true,
-                    "description": "User's full name"
-                  },
-                  "email": {
-                    "type": "string",
-                    "format": "email",
-                    "nullable": true,
-                    "description": "User's email address"
-                  },
-                  "phone": {
-                    "type": "string",
-                    "pattern": "^\\+\\d{1,3} \\d{3} \\d{3} \\d{3}$",
-                    "nullable": true,
-                    "description": "Phone number (format: +XX XXX XXX XXX)"
-                  },
-                  "preferences": {
-                    "type": "object",
-                    "properties": {
-                      "language": {
-                        "type": "string",
-                        "enum": [
-                          "pl",
-                          "en",
-                          "de"
-                        ],
-                        "nullable": true,
-                        "description": "Preferred language"
-                      },
-                      "theme": {
-                        "type": "string",
-                        "enum": [
-                          "light",
-                          "dark",
-                          "system"
-                        ],
-                        "nullable": true,
-                        "description": "Preferred theme"
-                      },
-                      "notifications": {
-                        "type": "boolean",
-                        "nullable": true,
-                        "description": "Whether notifications are enabled"
-                      }
-                    },
-                    "nullable": true,
-                    "description": "User preferences"
-                  }
-                }
+                "$ref": "#/components/schemas/UpdateUserBody"
               }
             }
           }
@@ -3117,40 +2215,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "id": {
-                      "type": "string",
-                      "format": "uuid",
-                      "description": "Unique user identifier"
-                    },
-                    "email": {
-                      "type": "string",
-                      "format": "email",
-                      "description": "User's email address"
-                    },
-                    "name": {
-                      "type": "string",
-                      "minLength": 2,
-                      "maxLength": 100,
-                      "description": "User's full name"
-                    },
-                    "role": {
-                      "type": "string",
-                      "enum": [
-                        "user",
-                        "admin",
-                        "moderator"
-                      ],
-                      "description": "User's role in the system"
-                    }
-                  },
-                  "required": [
-                    "id",
-                    "email",
-                    "name",
-                    "role"
-                  ]
+                  "$ref": "#/components/schemas/UserDetailedSchema"
                 }
               }
             }

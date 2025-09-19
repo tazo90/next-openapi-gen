@@ -48,6 +48,79 @@
           }
         }
       },
+      "MyApiSuccessResponseBody": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "httpCode": {
+            "type": "string"
+          }
+        }
+      },
+      "LLMSResponse": {
+        "type": "object",
+        "properties": {
+          "llms": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "provider": {
+                  "type": "string"
+                },
+                "isDefault": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        }
+      },
+      "MyApiSuccessResponseBody<LLMSResponse>": {
+        "type": "object",
+        "properties": {
+          "llms": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "provider": {
+                  "type": "string"
+                },
+                "isDefault": {
+                  "type": "boolean"
+                }
+              }
+            }
+          },
+          "success": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "httpCode": {
+            "type": "string"
+          }
+        }
+      },
       "CommentsQueryParams": {
         "type": "object",
         "properties": {
@@ -1361,6 +1434,19 @@
           }
         }
       },
+      "DeleteCommentResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "Whether deletion was successful"
+          },
+          "message": {
+            "type": "string",
+            "description": "Success or error message"
+          }
+        }
+      },
       "UploadFormData": {
         "type": "object",
         "properties": {
@@ -1467,8 +1553,70 @@
         }
       }
     },
-    "responses": {}
+    "responses": {
+      "400": {
+        "description": "Bad request",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "success": {
+                  "type": "boolean",
+                  "example": false
+                },
+                "error": {
+                  "type": "string",
+                  "example": "Validation error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "401": {
+        "description": "Unauthorized",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "success": {
+                  "type": "boolean",
+                  "example": false
+                },
+                "error": {
+                  "type": "string",
+                  "example": "Unathorized"
+                }
+              }
+            }
+          }
+        }
+      },
+      "500": {
+        "description": "Internal server error",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "success": {
+                  "type": "boolean",
+                  "example": false
+                },
+                "error": {
+                  "type": "string",
+                  "example": "Something went wrong"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
   },
+  "outputDir": "./public",
   "paths": {
     "/auth/login": {
       "post": {
@@ -1483,19 +1631,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "properties": {
-                  "email": {
-                    "type": "string",
-                    "description": "user email",
-                    "nullable": false
-                  },
-                  "password": {
-                    "type": "string",
-                    "description": "user password",
-                    "nullable": false
-                  }
-                }
+                "$ref": "#/components/schemas/LoginBody"
               }
             }
           }
@@ -1506,20 +1642,45 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "token": {
-                      "type": "string",
-                      "description": "auth token"
-                    },
-                    "refresh_token": {
-                      "type": "string",
-                      "description": "refresh token"
-                    }
-                  }
+                  "$ref": "#/components/schemas/LoginResponse"
                 }
               }
             }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    },
+    "/llms": {
+      "get": {
+        "operationId": "get-llms",
+        "summary": "GET /api/llms\r",
+        "description": "Get list of available LLMs",
+        "tags": [
+          "Llms"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MyApiSuccessResponseBody<LLMSResponse>"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
           }
         }
       }
@@ -1643,280 +1804,16 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "task": {
-                      "type": "object",
-                      "properties": {
-                        "id": {
-                          "type": "string"
-                        },
-                        "title": {
-                          "type": "string"
-                        }
-                      }
-                    },
-                    "project": {
-                      "type": "object",
-                      "properties": {
-                        "id": {
-                          "type": "string"
-                        },
-                        "name": {
-                          "type": "string"
-                        }
-                      }
-                    },
-                    "organization": {
-                      "type": "object",
-                      "properties": {
-                        "id": {
-                          "type": "string"
-                        },
-                        "name": {
-                          "type": "string"
-                        }
-                      }
-                    },
-                    "comments": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "id": {
-                            "type": "string",
-                            "description": "Comment ID"
-                          },
-                          "content": {
-                            "type": "string",
-                            "description": "Comment content"
-                          },
-                          "author": {
-                            "type": "object",
-                            "properties": {
-                              "id": {
-                                "type": "string"
-                              },
-                              "email": {
-                                "type": "string"
-                              },
-                              "name": {
-                                "type": "string"
-                              },
-                              "password": {
-                                "type": "string"
-                              },
-                              "role": {
-                                "type": "string",
-                                "enum": [
-                                  "admin",
-                                  "user"
-                                ]
-                              },
-                              "address": {
-                                "type": "object",
-                                "properties": {
-                                  "line1": {
-                                    "type": "string"
-                                  },
-                                  "line2": {
-                                    "type": "string"
-                                  },
-                                  "city": {
-                                    "type": "string"
-                                  },
-                                  "postalCode": {
-                                    "type": "string"
-                                  }
-                                }
-                              },
-                              "createdAt": {
-                                "type": "string",
-                                "format": "date-time"
-                              },
-                              "updatedAt": {
-                                "type": "string",
-                                "format": "date-time"
-                              },
-                              "internalNotes": {
-                                "type": "string"
-                              }
-                            },
-                            "description": "User who created the comment"
-                          },
-                          "attachments": {
-                            "type": "array",
-                            "items": {
-                              "type": "object",
-                              "properties": {
-                                "id": {
-                                  "type": "string",
-                                  "description": "Attachment ID"
-                                },
-                                "fileName": {
-                                  "type": "string",
-                                  "description": "Original file name"
-                                },
-                                "fileSize": {
-                                  "type": "number",
-                                  "description": "Size in bytes"
-                                },
-                                "fileType": {
-                                  "type": "string",
-                                  "description": "MIME type"
-                                },
-                                "url": {
-                                  "type": "string",
-                                  "description": "Download URL"
-                                },
-                                "thumbnailUrl": {
-                                  "type": "string",
-                                  "description": "Thumbnail URL for images"
-                                },
-                                "uploadedAt": {
-                                  "type": "string",
-                                  "format": "date-time",
-                                  "description": "When the file was uploaded"
-                                }
-                              }
-                            },
-                            "description": "Attached files"
-                          },
-                          "mentions": {
-                            "type": "array",
-                            "items": {
-                              "type": "object",
-                              "properties": {
-                                "id": {
-                                  "type": "string"
-                                },
-                                "email": {
-                                  "type": "string"
-                                },
-                                "name": {
-                                  "type": "string"
-                                },
-                                "password": {
-                                  "type": "string"
-                                },
-                                "role": {
-                                  "type": "string",
-                                  "enum": [
-                                    "admin",
-                                    "user"
-                                  ]
-                                },
-                                "address": {
-                                  "type": "object",
-                                  "properties": {
-                                    "line1": {
-                                      "type": "string"
-                                    },
-                                    "line2": {
-                                      "type": "string"
-                                    },
-                                    "city": {
-                                      "type": "string"
-                                    },
-                                    "postalCode": {
-                                      "type": "string"
-                                    }
-                                  }
-                                },
-                                "createdAt": {
-                                  "type": "string",
-                                  "format": "date-time"
-                                },
-                                "updatedAt": {
-                                  "type": "string",
-                                  "format": "date-time"
-                                },
-                                "internalNotes": {
-                                  "type": "string"
-                                }
-                              }
-                            },
-                            "description": "Users mentioned in the comment"
-                          },
-                          "likes": {
-                            "type": "number",
-                            "description": "Number of likes"
-                          },
-                          "likedBy": {
-                            "type": "array",
-                            "items": {
-                              "type": "string"
-                            },
-                            "description": "User IDs who liked the comment"
-                          },
-                          "replyTo": {
-                            "type": "string",
-                            "description": "Parent comment ID if this is a reply"
-                          },
-                          "replies": {
-                            "type": "array",
-                            "items": {
-                              "$ref": "#/components/schemas/Comment"
-                            },
-                            "description": "Child comments (if includeReplies=true)"
-                          },
-                          "createdAt": {
-                            "type": "string",
-                            "format": "date-time",
-                            "description": "Creation timestamp"
-                          },
-                          "updatedAt": {
-                            "type": "string",
-                            "format": "date-time",
-                            "description": "Last update timestamp"
-                          },
-                          "deletedAt": {
-                            "type": "string",
-                            "format": "date-time",
-                            "description": "Soft deletion timestamp"
-                          }
-                        }
-                      },
-                      "description": "List of comments"
-                    },
-                    "pagination": {
-                      "type": "object",
-                      "properties": {
-                        "total": {
-                          "type": "number"
-                        },
-                        "page": {
-                          "type": "number"
-                        },
-                        "limit": {
-                          "type": "number"
-                        },
-                        "pages": {
-                          "type": "number"
-                        }
-                      }
-                    },
-                    "permissions": {
-                      "type": "object",
-                      "properties": {
-                        "canCreate": {
-                          "type": "boolean"
-                        },
-                        "canEdit": {
-                          "type": "boolean"
-                        },
-                        "canDelete": {
-                          "type": "boolean"
-                        },
-                        "canModerate": {
-                          "type": "boolean"
-                        }
-                      }
-                    }
-                  }
+                  "$ref": "#/components/schemas/CommentsResponse"
                 }
               }
             }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
           }
         }
       },
@@ -1971,35 +1868,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "properties": {
-                  "content": {
-                    "type": "string",
-                    "description": "Comment content",
-                    "nullable": false
-                  },
-                  "attachmentIds": {
-                    "type": "array",
-                    "items": {
-                      "type": "string"
-                    },
-                    "description": "IDs of previously uploaded attachments",
-                    "nullable": true
-                  },
-                  "mentions": {
-                    "type": "array",
-                    "items": {
-                      "type": "string"
-                    },
-                    "description": "User IDs mentioned in the comment",
-                    "nullable": true
-                  },
-                  "replyTo": {
-                    "type": "string",
-                    "description": "Parent comment ID if this is a reply",
-                    "nullable": true
-                  }
-                }
+                "$ref": "#/components/schemas/CreateCommentBody"
               }
             }
           }
@@ -2010,218 +1879,16 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "comment": {
-                      "type": "object",
-                      "properties": {
-                        "id": {
-                          "type": "string",
-                          "description": "Comment ID"
-                        },
-                        "content": {
-                          "type": "string",
-                          "description": "Comment content"
-                        },
-                        "author": {
-                          "type": "object",
-                          "properties": {
-                            "id": {
-                              "type": "string"
-                            },
-                            "email": {
-                              "type": "string"
-                            },
-                            "name": {
-                              "type": "string"
-                            },
-                            "password": {
-                              "type": "string"
-                            },
-                            "role": {
-                              "type": "string",
-                              "enum": [
-                                "admin",
-                                "user"
-                              ]
-                            },
-                            "address": {
-                              "type": "object",
-                              "properties": {
-                                "line1": {
-                                  "type": "string"
-                                },
-                                "line2": {
-                                  "type": "string"
-                                },
-                                "city": {
-                                  "type": "string"
-                                },
-                                "postalCode": {
-                                  "type": "string"
-                                }
-                              }
-                            },
-                            "createdAt": {
-                              "type": "string",
-                              "format": "date-time"
-                            },
-                            "updatedAt": {
-                              "type": "string",
-                              "format": "date-time"
-                            },
-                            "internalNotes": {
-                              "type": "string"
-                            }
-                          },
-                          "description": "User who created the comment"
-                        },
-                        "attachments": {
-                          "type": "array",
-                          "items": {
-                            "type": "object",
-                            "properties": {
-                              "id": {
-                                "type": "string",
-                                "description": "Attachment ID"
-                              },
-                              "fileName": {
-                                "type": "string",
-                                "description": "Original file name"
-                              },
-                              "fileSize": {
-                                "type": "number",
-                                "description": "Size in bytes"
-                              },
-                              "fileType": {
-                                "type": "string",
-                                "description": "MIME type"
-                              },
-                              "url": {
-                                "type": "string",
-                                "description": "Download URL"
-                              },
-                              "thumbnailUrl": {
-                                "type": "string",
-                                "description": "Thumbnail URL for images"
-                              },
-                              "uploadedAt": {
-                                "type": "string",
-                                "format": "date-time",
-                                "description": "When the file was uploaded"
-                              }
-                            }
-                          },
-                          "description": "Attached files"
-                        },
-                        "mentions": {
-                          "type": "array",
-                          "items": {
-                            "type": "object",
-                            "properties": {
-                              "id": {
-                                "type": "string"
-                              },
-                              "email": {
-                                "type": "string"
-                              },
-                              "name": {
-                                "type": "string"
-                              },
-                              "password": {
-                                "type": "string"
-                              },
-                              "role": {
-                                "type": "string",
-                                "enum": [
-                                  "admin",
-                                  "user"
-                                ]
-                              },
-                              "address": {
-                                "type": "object",
-                                "properties": {
-                                  "line1": {
-                                    "type": "string"
-                                  },
-                                  "line2": {
-                                    "type": "string"
-                                  },
-                                  "city": {
-                                    "type": "string"
-                                  },
-                                  "postalCode": {
-                                    "type": "string"
-                                  }
-                                }
-                              },
-                              "createdAt": {
-                                "type": "string",
-                                "format": "date-time"
-                              },
-                              "updatedAt": {
-                                "type": "string",
-                                "format": "date-time"
-                              },
-                              "internalNotes": {
-                                "type": "string"
-                              }
-                            }
-                          },
-                          "description": "Users mentioned in the comment"
-                        },
-                        "likes": {
-                          "type": "number",
-                          "description": "Number of likes"
-                        },
-                        "likedBy": {
-                          "type": "array",
-                          "items": {
-                            "type": "string"
-                          },
-                          "description": "User IDs who liked the comment"
-                        },
-                        "replyTo": {
-                          "type": "string",
-                          "description": "Parent comment ID if this is a reply"
-                        },
-                        "replies": {
-                          "type": "array",
-                          "items": {
-                            "$ref": "#/components/schemas/Comment"
-                          },
-                          "description": "Child comments (if includeReplies=true)"
-                        },
-                        "createdAt": {
-                          "type": "string",
-                          "format": "date-time",
-                          "description": "Creation timestamp"
-                        },
-                        "updatedAt": {
-                          "type": "string",
-                          "format": "date-time",
-                          "description": "Last update timestamp"
-                        },
-                        "deletedAt": {
-                          "type": "string",
-                          "format": "date-time",
-                          "description": "Soft deletion timestamp"
-                        }
-                      },
-                      "description": "Created comment"
-                    },
-                    "success": {
-                      "type": "boolean",
-                      "description": "Whether creation was successful"
-                    },
-                    "message": {
-                      "type": "string",
-                      "description": "Success or error message"
-                    }
-                  }
+                  "$ref": "#/components/schemas/CreateCommentResponse"
                 }
               }
             }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
           }
         }
       },
@@ -2276,46 +1943,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "properties": {
-                  "content": {
-                    "type": "string",
-                    "description": "Updated comment content",
-                    "nullable": true
-                  },
-                  "addAttachmentIds": {
-                    "type": "array",
-                    "items": {
-                      "type": "string"
-                    },
-                    "description": "IDs of attachments to add",
-                    "nullable": true
-                  },
-                  "removeAttachmentIds": {
-                    "type": "array",
-                    "items": {
-                      "type": "string"
-                    },
-                    "description": "IDs of attachments to remove",
-                    "nullable": true
-                  },
-                  "addMentions": {
-                    "type": "array",
-                    "items": {
-                      "type": "string"
-                    },
-                    "description": "User IDs to add to mentions",
-                    "nullable": true
-                  },
-                  "removeMentions": {
-                    "type": "array",
-                    "items": {
-                      "type": "string"
-                    },
-                    "description": "User IDs to remove from mentions",
-                    "nullable": true
-                  }
-                }
+                "$ref": "#/components/schemas/UpdateCommentBody"
               }
             }
           }
@@ -2326,218 +1954,16 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "comment": {
-                      "type": "object",
-                      "properties": {
-                        "id": {
-                          "type": "string",
-                          "description": "Comment ID"
-                        },
-                        "content": {
-                          "type": "string",
-                          "description": "Comment content"
-                        },
-                        "author": {
-                          "type": "object",
-                          "properties": {
-                            "id": {
-                              "type": "string"
-                            },
-                            "email": {
-                              "type": "string"
-                            },
-                            "name": {
-                              "type": "string"
-                            },
-                            "password": {
-                              "type": "string"
-                            },
-                            "role": {
-                              "type": "string",
-                              "enum": [
-                                "admin",
-                                "user"
-                              ]
-                            },
-                            "address": {
-                              "type": "object",
-                              "properties": {
-                                "line1": {
-                                  "type": "string"
-                                },
-                                "line2": {
-                                  "type": "string"
-                                },
-                                "city": {
-                                  "type": "string"
-                                },
-                                "postalCode": {
-                                  "type": "string"
-                                }
-                              }
-                            },
-                            "createdAt": {
-                              "type": "string",
-                              "format": "date-time"
-                            },
-                            "updatedAt": {
-                              "type": "string",
-                              "format": "date-time"
-                            },
-                            "internalNotes": {
-                              "type": "string"
-                            }
-                          },
-                          "description": "User who created the comment"
-                        },
-                        "attachments": {
-                          "type": "array",
-                          "items": {
-                            "type": "object",
-                            "properties": {
-                              "id": {
-                                "type": "string",
-                                "description": "Attachment ID"
-                              },
-                              "fileName": {
-                                "type": "string",
-                                "description": "Original file name"
-                              },
-                              "fileSize": {
-                                "type": "number",
-                                "description": "Size in bytes"
-                              },
-                              "fileType": {
-                                "type": "string",
-                                "description": "MIME type"
-                              },
-                              "url": {
-                                "type": "string",
-                                "description": "Download URL"
-                              },
-                              "thumbnailUrl": {
-                                "type": "string",
-                                "description": "Thumbnail URL for images"
-                              },
-                              "uploadedAt": {
-                                "type": "string",
-                                "format": "date-time",
-                                "description": "When the file was uploaded"
-                              }
-                            }
-                          },
-                          "description": "Attached files"
-                        },
-                        "mentions": {
-                          "type": "array",
-                          "items": {
-                            "type": "object",
-                            "properties": {
-                              "id": {
-                                "type": "string"
-                              },
-                              "email": {
-                                "type": "string"
-                              },
-                              "name": {
-                                "type": "string"
-                              },
-                              "password": {
-                                "type": "string"
-                              },
-                              "role": {
-                                "type": "string",
-                                "enum": [
-                                  "admin",
-                                  "user"
-                                ]
-                              },
-                              "address": {
-                                "type": "object",
-                                "properties": {
-                                  "line1": {
-                                    "type": "string"
-                                  },
-                                  "line2": {
-                                    "type": "string"
-                                  },
-                                  "city": {
-                                    "type": "string"
-                                  },
-                                  "postalCode": {
-                                    "type": "string"
-                                  }
-                                }
-                              },
-                              "createdAt": {
-                                "type": "string",
-                                "format": "date-time"
-                              },
-                              "updatedAt": {
-                                "type": "string",
-                                "format": "date-time"
-                              },
-                              "internalNotes": {
-                                "type": "string"
-                              }
-                            }
-                          },
-                          "description": "Users mentioned in the comment"
-                        },
-                        "likes": {
-                          "type": "number",
-                          "description": "Number of likes"
-                        },
-                        "likedBy": {
-                          "type": "array",
-                          "items": {
-                            "type": "string"
-                          },
-                          "description": "User IDs who liked the comment"
-                        },
-                        "replyTo": {
-                          "type": "string",
-                          "description": "Parent comment ID if this is a reply"
-                        },
-                        "replies": {
-                          "type": "array",
-                          "items": {
-                            "$ref": "#/components/schemas/Comment"
-                          },
-                          "description": "Child comments (if includeReplies=true)"
-                        },
-                        "createdAt": {
-                          "type": "string",
-                          "format": "date-time",
-                          "description": "Creation timestamp"
-                        },
-                        "updatedAt": {
-                          "type": "string",
-                          "format": "date-time",
-                          "description": "Last update timestamp"
-                        },
-                        "deletedAt": {
-                          "type": "string",
-                          "format": "date-time",
-                          "description": "Soft deletion timestamp"
-                        }
-                      },
-                      "description": "Updated comment"
-                    },
-                    "success": {
-                      "type": "boolean",
-                      "description": "Whether update was successful"
-                    },
-                    "message": {
-                      "type": "string",
-                      "description": "Success or error message"
-                    }
-                  }
+                  "$ref": "#/components/schemas/UpdateCommentResponse"
                 }
               }
             }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
           }
         }
       },
@@ -2589,13 +2015,21 @@
           }
         ],
         "responses": {
-          "200": {
+          "204": {
             "description": "Successful response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteCommentResponse"
+                }
               }
             }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
           }
         }
       }
@@ -2603,7 +2037,7 @@
     "/upload": {
       "post": {
         "operationId": "post-upload",
-        "summary": "Upload image file",
+        "summary": "Upload image file\r",
         "description": "Uploads PNG or JPG image files with validation and metadata",
         "tags": [
           "Uploads"
@@ -2613,21 +2047,7 @@
           "content": {
             "multipart/form-data": {
               "schema": {
-                "type": "object",
-                "properties": {
-                  "file": {
-                    "description": "Image file (PNG/JPG, max 5MB)",
-                    "nullable": false
-                  },
-                  "description": {
-                    "type": "string",
-                    "nullable": true
-                  },
-                  "category": {
-                    "type": "string",
-                    "nullable": false
-                  }
-                }
+                "$ref": "#/components/schemas/UploadFormData"
               }
             }
           },
@@ -2639,39 +2059,16 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "id": {
-                      "type": "string"
-                    },
-                    "filename": {
-                      "type": "string"
-                    },
-                    "size": {
-                      "type": "number"
-                    },
-                    "type": {
-                      "type": "string",
-                      "description": "MIME type"
-                    },
-                    "url": {
-                      "type": "string",
-                      "description": "File access URL"
-                    },
-                    "category": {
-                      "type": "string",
-                      "description": "File category"
-                    },
-                    "description": {
-                      "type": "string"
-                    },
-                    "uploadedAt": {
-                      "type": "string"
-                    }
-                  }
+                  "$ref": "#/components/schemas/UploadResponse"
                 }
               }
             }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
           }
         }
       }
@@ -2703,53 +2100,16 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "id": {
-                      "type": "string"
-                    },
-                    "email": {
-                      "type": "string"
-                    },
-                    "name": {
-                      "type": "string"
-                    },
-                    "role": {
-                      "type": "string",
-                      "enum": [
-                        "admin",
-                        "user"
-                      ]
-                    },
-                    "address": {
-                      "type": "object",
-                      "properties": {
-                        "line1": {
-                          "type": "string"
-                        },
-                        "line2": {
-                          "type": "string"
-                        },
-                        "city": {
-                          "type": "string"
-                        },
-                        "postalCode": {
-                          "type": "string"
-                        }
-                      }
-                    },
-                    "createdAt": {
-                      "type": "string",
-                      "format": "date-time"
-                    },
-                    "updatedAt": {
-                      "type": "string",
-                      "format": "date-time"
-                    }
-                  }
+                  "$ref": "#/components/schemas/UserResponse"
                 }
               }
             }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
           }
         }
       }
