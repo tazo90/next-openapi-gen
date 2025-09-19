@@ -554,6 +554,53 @@ export async function GET() {
 
 If no type/schema is provided for path parameters, a default schema will be generated.
 
+### TypeScript Generics Support
+
+The library supports TypeScript generic types and automatically resolves them during documentation generation:
+
+```typescript
+// src/app/api/llms/route.ts
+
+import { NextResponse } from "next/server";
+
+// Define generic response wrapper
+type MyApiSuccessResponseBody<T> = T & {
+  success: true;
+  httpCode: string;
+};
+
+// Define specific response data
+type LLMSResponse = {
+  llms: Array<{
+    id: string;
+    name: string;
+    provider: string;
+    isDefault: boolean;
+  }>;
+};
+
+/**
+ * Get list of available LLMs
+ * @description Get list of available LLMs with success wrapper
+ * @response 200:MyApiSuccessResponseBody<LLMSResponse>
+ * @openapi
+ */
+export async function GET() {
+  return NextResponse.json({
+    success: true,
+    httpCode: "200",
+    llms: [
+      {
+        id: "gpt-5",
+        name: "GPT-5",
+        provider: "OpenAI",
+        isDefault: true,
+      },
+    ],
+  });
+}
+```
+
 ### Intelligent Examples
 
 The library generates intelligent examples for parameters based on their name:
