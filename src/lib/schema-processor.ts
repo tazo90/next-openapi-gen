@@ -42,15 +42,23 @@ export class SchemaProcessor {
    * Get all defined schemas (for components.schemas section)
    */
   public getDefinedSchemas(): Record<string, OpenAPIDefinition> {
+    // Filter out generic type parameters and invalid schema names
+    const filteredSchemas = {};
+    Object.entries(this.openapiDefinitions).forEach(([key, value]) => {
+      if (!this.isGenericTypeParameter(key) && !this.isInvalidSchemaName(key)) {
+        filteredSchemas[key] = value;
+      }
+    });
+
     // If using Zod, also include all processed Zod schemas
     if (this.schemaType === "zod" && this.zodSchemaConverter) {
       const zodSchemas = this.zodSchemaConverter.getProcessedSchemas();
       return {
-        ...this.openapiDefinitions,
+        ...filteredSchemas,
         ...zodSchemas,
       };
     }
-    return this.openapiDefinitions;
+    return filteredSchemas;
   }
 
   public findSchemaDefinition(
@@ -61,6 +69,11 @@ export class SchemaProcessor {
 
     // Assign type that is actually processed
     this.contentType = contentType;
+
+    // Check if the schemaName is a generic type (contains < and >)
+    if (schemaName.includes("<") && schemaName.includes(">")) {
+      return this.resolveGenericTypeFromString(schemaName);
+    }
 
     // Check if we should use Zod schemas
     if (this.schemaType === "zod") {
@@ -128,7 +141,15 @@ export class SchemaProcessor {
       TSTypeAliasDeclaration: (path: any) => {
         if (t.isIdentifier(path.node.id, { name: schemaName })) {
           const name = path.node.id.name;
-          this.typeDefinitions[name] = path.node.typeAnnotation;
+          // Store the full node for generic types, just the type annotation for regular types
+          if (
+            path.node.typeParameters &&
+            path.node.typeParameters.params.length > 0
+          ) {
+            this.typeDefinitions[name] = path.node; // Store the full declaration for generic types
+          } else {
+            this.typeDefinitions[name] = path.node.typeAnnotation; // Store just the type annotation for regular types
+          }
         }
       },
       TSInterfaceDeclaration: (path: any) => {
@@ -190,6 +211,14 @@ export class SchemaProcessor {
 
       const typeNode = this.typeDefinitions[typeName.toString()];
       if (!typeNode) return {};
+
+      // Handle generic type alias declarations (full node)
+      if (t.isTSTypeAliasDeclaration(typeNode)) {
+        // This is a generic type, should be handled by the caller via resolveGenericType
+        // For non-generic access, just return the type annotation
+        const typeAnnotation = typeNode.typeAnnotation;
+        return this.resolveTSNodeType(typeAnnotation);
+      }
 
       // Check if node is Zod
       if (
@@ -428,6 +457,22 @@ export class SchemaProcessor {
         // Fallback to just the base type if we can't process properly
         if (node.typeParameters && node.typeParameters.params.length > 0) {
           return this.resolveTSNodeType(node.typeParameters.params[0]);
+        }
+      }
+
+      // Handle custom generic types
+      if (node.typeParameters && node.typeParameters.params.length > 0) {
+        // Find the generic type definition first
+        this.findSchemaDefinition(typeName, this.contentType);
+        const genericTypeDefinition = this.typeDefinitions[typeName];
+
+        if (genericTypeDefinition) {
+          // Resolve the generic type by substituting type parameters
+          return this.resolveGenericType(
+            genericTypeDefinition,
+            node.typeParameters.params,
+            typeName
+          );
         }
       }
 
@@ -719,7 +764,7 @@ export class SchemaProcessor {
     }
   }
 
-  private detectContentType(
+  public detectContentType(
     bodyType: string,
     explicitContentType?: string
   ): string {
@@ -975,5 +1020,352 @@ export class SchemaProcessor {
       body,
       responses,
     };
+  }
+
+  /**
+   * Parse and resolve a generic type from a string like "MyApiSuccessResponseBody<LLMSResponse>"
+   * @param genericTypeString - The generic type string to parse and resolve
+   * @returns The resolved OpenAPI schema
+   */
+  private resolveGenericTypeFromString(
+    genericTypeString: string
+  ): OpenAPIDefinition {
+    // Parse the generic type string
+    const parsed = this.parseGenericTypeString(genericTypeString);
+    if (!parsed) {
+      return {};
+    }
+
+    const { baseTypeName, typeArguments } = parsed;
+
+    // Find the base generic type definition
+    this.scanSchemaDir(this.schemaDir, baseTypeName);
+    const genericTypeDefinition = this.typeDefinitions[baseTypeName];
+
+    if (!genericTypeDefinition) {
+      logger.debug(`Generic type definition not found for: ${baseTypeName}`);
+      return {};
+    }
+
+    // Also find all the type argument definitions
+    typeArguments.forEach((argTypeName: string) => {
+      // If it's a simple type reference (not another generic), find its definition
+      if (
+        !argTypeName.includes("<") &&
+        !this.isGenericTypeParameter(argTypeName)
+      ) {
+        this.scanSchemaDir(this.schemaDir, argTypeName);
+      }
+    });
+
+    // Create AST nodes for the type arguments by parsing them
+    const typeArgumentNodes = typeArguments.map((arg: string) =>
+      this.createTypeNodeFromString(arg)
+    );
+
+    // Resolve the generic type
+    const resolved = this.resolveGenericType(
+      genericTypeDefinition,
+      typeArgumentNodes,
+      baseTypeName
+    );
+
+    // Cache the resolved type for future reference
+    this.openapiDefinitions[genericTypeString] = resolved;
+
+    return resolved;
+  }
+
+  /**
+   * Check if a type name is likely a generic type parameter (e.g., T, U, K, V)
+   * @param {string} typeName - The type name to check
+   * @returns {boolean} - True if it's likely a generic type parameter
+   */
+  private isGenericTypeParameter(typeName: string) {
+    // Common generic type parameter patterns:
+    // - Single uppercase letters (T, U, K, V, etc.)
+    // - TKey, TValue, etc.
+    return /^[A-Z]$|^T[A-Z][a-zA-Z]*$/.test(typeName);
+  }
+
+  /**
+   * Check if a schema name is invalid (contains special characters, brackets, etc.)
+   * @param {string} schemaName - The schema name to check
+   * @returns {boolean} - True if the schema name is invalid
+   */
+  private isInvalidSchemaName(schemaName: string) {
+    // Schema names should not contain { } : ? spaces or other special characters
+    return /[{}\s:?]/.test(schemaName);
+  }
+
+  /**
+   * Parse a generic type string into base type and arguments
+   * @param genericTypeString - The string like "MyApiSuccessResponseBody<LLMSResponse>"
+   * @returns Object with baseTypeName and typeArguments array
+   */
+  private parseGenericTypeString(
+    genericTypeString: string
+  ): { baseTypeName: string; typeArguments: string[] } | null {
+    const match = genericTypeString.match(/^([^<]+)<(.+)>$/);
+    if (!match) {
+      return null;
+    }
+
+    const baseTypeName = match[1].trim();
+    const typeArgsString = match[2].trim();
+
+    // Split type arguments by comma, handling nested generics
+    const typeArguments = this.splitTypeArguments(typeArgsString);
+
+    return { baseTypeName, typeArguments };
+  }
+
+  /**
+   * Split type arguments by comma, handling nested generics correctly
+   * @param typeArgsString - The string inside angle brackets
+   * @returns Array of individual type argument strings
+   */
+  private splitTypeArguments(typeArgsString: string): string[] {
+    const args: string[] = [];
+    let currentArg = "";
+    let bracketDepth = 0;
+
+    for (let i = 0; i < typeArgsString.length; i++) {
+      const char = typeArgsString[i];
+
+      if (char === "<") {
+        bracketDepth++;
+      } else if (char === ">") {
+        bracketDepth--;
+      } else if (char === "," && bracketDepth === 0) {
+        args.push(currentArg.trim());
+        currentArg = "";
+        continue;
+      }
+
+      currentArg += char;
+    }
+
+    if (currentArg.trim()) {
+      args.push(currentArg.trim());
+    }
+
+    return args;
+  }
+
+  /**
+   * Create a TypeScript AST node from a type string
+   * @param typeString - The type string like "LLMSResponse"
+   * @returns A TypeScript AST node
+   */
+  private createTypeNodeFromString(typeString: string): any {
+    // For simple type references, create a TSTypeReference node
+    if (!typeString.includes("<")) {
+      return {
+        type: "TSTypeReference",
+        typeName: {
+          type: "Identifier",
+          name: typeString,
+        },
+      };
+    }
+
+    // For nested generics, recursively parse
+    const parsed = this.parseGenericTypeString(typeString);
+    if (parsed) {
+      const typeParameterNodes = parsed.typeArguments.map((arg: string) =>
+        this.createTypeNodeFromString(arg)
+      );
+      return {
+        type: "TSTypeReference",
+        typeName: {
+          type: "Identifier",
+          name: parsed.baseTypeName,
+        },
+        typeParameters: {
+          type: "TSTypeParameterInstantiation",
+          params: typeParameterNodes,
+        },
+      };
+    }
+
+    // Fallback for unknown patterns
+    return {
+      type: "TSTypeReference",
+      typeName: {
+        type: "Identifier",
+        name: typeString,
+      },
+    };
+  }
+
+  /**
+   * Resolve generic types by substituting type parameters with actual types
+   * @param genericTypeDefinition - The AST node of the generic type definition
+   * @param typeArguments - The type arguments passed to the generic type
+   * @param typeName - The name of the generic type
+   * @returns The resolved OpenAPI schema
+   */
+  private resolveGenericType(
+    genericTypeDefinition: any,
+    typeArguments: any[],
+    typeName: string
+  ): OpenAPIDefinition {
+    // Extract type parameters from the generic type definition
+    let typeParameters: string[] = [];
+
+    if (t.isTSTypeAliasDeclaration(genericTypeDefinition)) {
+      if (
+        genericTypeDefinition.typeParameters &&
+        genericTypeDefinition.typeParameters.params
+      ) {
+        typeParameters = genericTypeDefinition.typeParameters.params.map(
+          (param: any) => {
+            if (t.isTSTypeParameter(param)) {
+              return param.name;
+            }
+            return t.isIdentifier(param)
+              ? param.name
+              : param.name?.name || param;
+          }
+        );
+      }
+
+      // Create a mapping from type parameters to actual types
+      const typeParameterMap: Record<string, any> = {};
+      typeParameters.forEach((param: string, index: number) => {
+        if (index < typeArguments.length) {
+          typeParameterMap[param] = typeArguments[index];
+        }
+      });
+
+      // Resolve the type annotation with substituted type parameters
+      return this.resolveTypeWithSubstitution(
+        genericTypeDefinition.typeAnnotation,
+        typeParameterMap
+      );
+    }
+
+    // If we can't process the generic type, return empty object
+    return {};
+  }
+
+  /**
+   * Resolve a type node with type parameter substitution
+   * @param node - The AST node to resolve
+   * @param typeParameterMap - Mapping from type parameter names to actual types
+   * @returns The resolved OpenAPI schema
+   */
+  private resolveTypeWithSubstitution(
+    node: any,
+    typeParameterMap: Record<string, any>
+  ): OpenAPIDefinition {
+    if (!node) return { type: "object" };
+
+    // If this is a type parameter reference, substitute it
+    if (t.isTSTypeReference(node) && t.isIdentifier(node.typeName)) {
+      const paramName = node.typeName.name;
+      if (typeParameterMap[paramName]) {
+        // The mapped value is an AST node, resolve it
+        const mappedNode = typeParameterMap[paramName];
+        if (
+          t.isTSTypeReference(mappedNode) &&
+          t.isIdentifier(mappedNode.typeName)
+        ) {
+          // If it's a reference to another type, get the resolved schema from openapiDefinitions
+          const referencedTypeName = mappedNode.typeName.name;
+          if (this.openapiDefinitions[referencedTypeName]) {
+            return this.openapiDefinitions[referencedTypeName];
+          }
+          // If not in openapiDefinitions, try to resolve it
+          this.findSchemaDefinition(referencedTypeName, this.contentType);
+          return this.openapiDefinitions[referencedTypeName] || {};
+        }
+        return this.resolveTSNodeType(typeParameterMap[paramName]);
+      }
+    }
+
+    // Handle intersection types (e.g., T & { success: true })
+    if (t.isTSIntersectionType(node)) {
+      const allProperties: Record<string, any> = {};
+      const requiredProperties: string[] = [];
+
+      node.types.forEach((typeNode: any, index: number) => {
+        let resolvedType: OpenAPIDefinition;
+
+        // Check if this is a type parameter reference
+        if (
+          t.isTSTypeReference(typeNode) &&
+          t.isIdentifier(typeNode.typeName)
+        ) {
+          const paramName = typeNode.typeName.name;
+
+          if (typeParameterMap[paramName]) {
+            const mappedNode = typeParameterMap[paramName];
+            if (
+              t.isTSTypeReference(mappedNode) &&
+              t.isIdentifier(mappedNode.typeName)
+            ) {
+              // If it's a reference to another type, get the resolved schema
+              const referencedTypeName = mappedNode.typeName.name;
+
+              if (this.openapiDefinitions[referencedTypeName]) {
+                resolvedType = this.openapiDefinitions[referencedTypeName];
+              } else {
+                // If not in openapiDefinitions, try to resolve it
+                this.findSchemaDefinition(referencedTypeName, this.contentType);
+                resolvedType =
+                  this.openapiDefinitions[referencedTypeName] || {};
+              }
+            } else {
+              resolvedType = this.resolveTSNodeType(mappedNode);
+            }
+          } else {
+            resolvedType = this.resolveTSNodeType(typeNode);
+          }
+        } else {
+          resolvedType = this.resolveTypeWithSubstitution(
+            typeNode,
+            typeParameterMap
+          );
+        }
+
+        if (resolvedType.type === "object" && resolvedType.properties) {
+          Object.entries(resolvedType.properties).forEach(
+            ([key, value]: [string, any]) => {
+              allProperties[key] = value;
+              if (value.required) {
+                requiredProperties.push(key);
+              }
+            }
+          );
+        }
+      });
+
+      return {
+        type: "object",
+        properties: allProperties,
+        required:
+          requiredProperties.length > 0 ? requiredProperties : undefined,
+      };
+    }
+
+    // For other types, use the standard resolution but with parameter substitution
+    if (t.isTSTypeLiteral(node)) {
+      const properties: Record<string, any> = {};
+      node.members.forEach((member: any) => {
+        if (t.isTSPropertySignature(member) && t.isIdentifier(member.key)) {
+          const propName = member.key.name;
+          properties[propName] = this.resolveTypeWithSubstitution(
+            member.typeAnnotation?.typeAnnotation,
+            typeParameterMap
+          );
+        }
+      });
+      return { type: "object", properties };
+    }
+
+    // Fallback to standard type resolution
+    return this.resolveTSNodeType(node);
   }
 }

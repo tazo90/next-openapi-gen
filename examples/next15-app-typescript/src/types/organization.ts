@@ -109,3 +109,9 @@ export type UpdateCommentResponse = {
   success: boolean; // Whether update was successful
   message?: string; // Success or error message
 };
+
+// Response for DELETE method
+export type DeleteCommentResponse = {
+  success: boolean; // Whether deletion was successful
+  message?: string; // Success or error message
+};

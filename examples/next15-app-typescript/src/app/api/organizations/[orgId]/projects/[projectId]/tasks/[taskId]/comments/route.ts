@@ -3,6 +3,7 @@ import {
   CommentsResponse,
   CreateCommentBody,
   CreateCommentResponse,
+  Comment,
   UpdateCommentBody,
   UpdateCommentResponse,
   User,
@@ -256,7 +257,7 @@ export async function PATCH(
  * Delete Task Comment
  * @description Remove a comment from a task (soft delete)
  * @pathParams CommentPathParams
- * @response { success: boolean, message?: string }
+ * @response DeleteCommentResponse
  * @auth bearer
  * @openapi
  */
