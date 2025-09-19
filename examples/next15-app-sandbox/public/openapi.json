@@ -254,6 +254,29 @@
           "user"
         ]
       },
+      "FileUploadSchema": {
+        "type": "object",
+        "properties": {
+          "file": {
+            "type": "string",
+            "format": "binary",
+            "description": "Image file (PNG/JPG)"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true,
+            "description": "File description"
+          },
+          "category": {
+            "type": "string",
+            "description": "File category"
+          }
+        },
+        "required": [
+          "file",
+          "category"
+        ]
+      },
       "GetUserProfilePathParams": {
         "type": "object",
         "properties": {
@@ -418,87 +441,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "users": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "id": {
-                            "type": "string",
-                            "description": "User ID"
-                          },
-                          "email": {
-                            "type": "string",
-                            "format": "email",
-                            "description": "User email"
-                          },
-                          "name": {
-                            "type": "string",
-                            "description": "User full name"
-                          },
-                          "role": {
-                            "type": "string",
-                            "enum": [
-                              "admin",
-                              "user"
-                            ],
-                            "description": "User role"
-                          },
-                          "status": {
-                            "type": "string",
-                            "enum": [
-                              "active",
-                              "inactive",
-                              "banned"
-                            ],
-                            "description": "User status"
-                          },
-                          "createdAt": {
-                            "type": "string",
-                            "description": "Account creation date"
-                          }
-                        },
-                        "required": [
-                          "id",
-                          "email",
-                          "name",
-                          "role",
-                          "status",
-                          "createdAt"
-                        ]
-                      },
-                      "description": "List of users"
-                    },
-                    "pagination": {
-                      "type": "object",
-                      "properties": {
-                        "page": {
-                          "type": "number",
-                          "description": "Current page"
-                        },
-                        "limit": {
-                          "type": "number",
-                          "description": "Items per page"
-                        },
-                        "total": {
-                          "type": "number",
-                          "description": "Total number of users"
-                        }
-                      },
-                      "required": [
-                        "page",
-                        "limit",
-                        "total"
-                      ],
-                      "description": "Pagination information"
-                    }
-                  },
-                  "required": [
-                    "users",
-                    "pagination"
-                  ]
+                  "$ref": "#/components/schemas/AdminUserListResponse"
                 }
               }
             }
@@ -525,23 +468,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "properties": {
-                  "email": {
-                    "type": "string",
-                    "format": "email",
-                    "description": "User email address"
-                  },
-                  "password": {
-                    "type": "string",
-                    "minLength": 6,
-                    "description": "User password"
-                  }
-                },
-                "required": [
-                  "email",
-                  "password"
-                ]
+                "$ref": "#/components/schemas/LoginRequest"
               }
             }
           }
@@ -552,41 +479,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "token": {
-                      "type": "string",
-                      "description": "JWT access token"
-                    },
-                    "user": {
-                      "type": "object",
-                      "properties": {
-                        "id": {
-                          "type": "string",
-                          "description": "User ID"
-                        },
-                        "email": {
-                          "type": "string",
-                          "format": "email",
-                          "description": "User email"
-                        },
-                        "name": {
-                          "type": "string",
-                          "description": "User full name"
-                        }
-                      },
-                      "required": [
-                        "id",
-                        "email",
-                        "name"
-                      ],
-                      "description": "User information"
-                    }
-                  },
-                  "required": [
-                    "token",
-                    "user"
-                  ]
+                  "$ref": "#/components/schemas/LoginResponse"
                 }
               }
             }
@@ -620,34 +513,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "id": {
-                      "type": "string",
-                      "description": "Dashboard ID"
-                    },
-                    "name": {
-                      "type": "string",
-                      "description": "Dashboard name"
-                    },
-                    "widgets": {
-                      "type": "array",
-                      "items": {
-                        "type": "string"
-                      },
-                      "description": "Widget IDs"
-                    },
-                    "userId": {
-                      "type": "string",
-                      "description": "Owner user ID"
-                    }
-                  },
-                  "required": [
-                    "id",
-                    "name",
-                    "widgets",
-                    "userId"
-                  ]
+                  "$ref": "#/components/schemas/DashboardResponse"
                 }
               }
             }
@@ -677,34 +543,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "properties": {
-                  "id": {
-                    "type": "string",
-                    "description": "Dashboard ID"
-                  },
-                  "name": {
-                    "type": "string",
-                    "description": "Dashboard name"
-                  },
-                  "widgets": {
-                    "type": "array",
-                    "items": {
-                      "type": "string"
-                    },
-                    "description": "Widget IDs"
-                  },
-                  "userId": {
-                    "type": "string",
-                    "description": "Owner user ID"
-                  }
-                },
-                "required": [
-                  "id",
-                  "name",
-                  "widgets",
-                  "userId"
-                ]
+                "$ref": "#/components/schemas/DashboardResponse"
               }
             }
           }
@@ -715,34 +554,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "id": {
-                      "type": "string",
-                      "description": "Dashboard ID"
-                    },
-                    "name": {
-                      "type": "string",
-                      "description": "Dashboard name"
-                    },
-                    "widgets": {
-                      "type": "array",
-                      "items": {
-                        "type": "string"
-                      },
-                      "description": "Widget IDs"
-                    },
-                    "userId": {
-                      "type": "string",
-                      "description": "Owner user ID"
-                    }
-                  },
-                  "required": [
-                    "id",
-                    "name",
-                    "widgets",
-                    "userId"
-                  ]
+                  "$ref": "#/components/schemas/DashboardResponse"
                 }
               }
             }
@@ -776,35 +588,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "theme": {
-                      "type": "string",
-                      "enum": [
-                        "light",
-                        "dark"
-                      ],
-                      "description": "UI theme preference"
-                    },
-                    "notifications": {
-                      "type": "boolean",
-                      "description": "Enable notifications"
-                    },
-                    "language": {
-                      "type": "string",
-                      "description": "Preferred language"
-                    },
-                    "timezone": {
-                      "type": "string",
-                      "description": "User timezone"
-                    }
-                  },
-                  "required": [
-                    "theme",
-                    "notifications",
-                    "language",
-                    "timezone"
-                  ]
+                  "$ref": "#/components/schemas/UserSettings"
                 }
               }
             }
@@ -834,35 +618,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "properties": {
-                  "theme": {
-                    "type": "string",
-                    "enum": [
-                      "light",
-                      "dark"
-                    ],
-                    "description": "UI theme preference"
-                  },
-                  "notifications": {
-                    "type": "boolean",
-                    "description": "Enable notifications"
-                  },
-                  "language": {
-                    "type": "string",
-                    "description": "Preferred language"
-                  },
-                  "timezone": {
-                    "type": "string",
-                    "description": "User timezone"
-                  }
-                },
-                "required": [
-                  "theme",
-                  "notifications",
-                  "language",
-                  "timezone"
-                ]
+                "$ref": "#/components/schemas/UserSettings"
               }
             }
           }
@@ -873,35 +629,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "theme": {
-                      "type": "string",
-                      "enum": [
-                        "light",
-                        "dark"
-                      ],
-                      "description": "UI theme preference"
-                    },
-                    "notifications": {
-                      "type": "boolean",
-                      "description": "Enable notifications"
-                    },
-                    "language": {
-                      "type": "string",
-                      "description": "Preferred language"
-                    },
-                    "timezone": {
-                      "type": "string",
-                      "description": "User timezone"
-                    }
-                  },
-                  "required": [
-                    "theme",
-                    "notifications",
-                    "language",
-                    "timezone"
-                  ]
+                  "$ref": "#/components/schemas/UserSettings"
                 }
               }
             }
@@ -915,10 +643,38 @@
         }
       }
     },
+    "/upload": {
+      "post": {
+        "operationId": "post-upload",
+        "summary": "File upload",
+        "description": "",
+        "tags": [
+          "Upload"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/FileUploadSchema"
+              }
+            }
+          }
+        },
+        "responses": {
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    },
     "/users/{id}": {
       "get": {
         "operationId": "get-users-{id}",
-        "summary": "Read the user profile",
+        "summary": "Read the user profile\r",
         "description": "Detailed user profile",
         "tags": [
           "Users"
@@ -947,20 +703,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "id": {
-                      "type": "string",
-                      "description": "User ID"
-                    },
-                    "name": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "id",
-                    "name"
-                  ]
+                  "$ref": "#/components/schemas/Users"
                 }
               }
             }
