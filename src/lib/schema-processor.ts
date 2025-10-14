@@ -1,7 +1,10 @@
 import fs from "fs";
 import path from "path";
-import traverse from "@babel/traverse";
+import traverseModule from "@babel/traverse";
 import * as t from "@babel/types";
+
+// Handle both ES modules and CommonJS
+const traverse = (traverseModule as any).default || traverseModule;
 
 import { parseTypeScriptFile } from "./utils.js";
 import { ZodSchemaConverter } from "./zod-converter.js";
@@ -131,7 +134,7 @@ export class SchemaProcessor {
   }
 
   private collectTypeDefinitions(ast: any, schemaName: string): void {
-    traverse.default(ast, {
+    traverse(ast, {
       VariableDeclarator: (path: any) => {
         if (t.isIdentifier(path.node.id, { name: schemaName })) {
           const name = path.node.id.name;

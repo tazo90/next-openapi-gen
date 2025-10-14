@@ -30,7 +30,7 @@ export class OpenApiGenerator {
 
   public getConfig() {
     // @ts-ignore
-    const { apiDir, schemaDir, docsUrl, ui, outputFile, outputDir, includeOpenApiRoutes, schemaType = "typescript", defaultResponseSet, responseSets, errorConfig, debug } = this.template;
+    const { apiDir, schemaDir, docsUrl, ui, outputFile, outputDir, includeOpenApiRoutes, ignoreRoutes, schemaType = "typescript", defaultResponseSet, responseSets, errorConfig, debug } = this.template;
 
     return {
       apiDir: apiDir || "./src/app/api",
@@ -40,6 +40,7 @@ export class OpenApiGenerator {
       outputFile: outputFile || "openapi.json",
       outputDir: outputDir || "./public",
       includeOpenApiRoutes: includeOpenApiRoutes || false,
+      ignoreRoutes: ignoreRoutes || [],
       schemaType,
       defaultResponseSet,
       responseSets,

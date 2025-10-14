@@ -1,6 +1,38 @@
-node_modules
-src
-tsconfig.*
-todo.md
-assets
-examples
+# Source files
+src/
+
+# Tests
+tests/
+**/*.test.ts
+**/*.spec.ts
+**/*.test.js
+**/*.spec.js
+*.test.ts
+*.spec.ts
+
+# Config files
+tsconfig.json
+vitest.config.ts
+.eslintrc*
+.prettierrc*
+
+# Development files
+.git
+.github
+.vscode
+.idea
+*.log
+coverage/
+
+# Build artifacts
+node_modules/
+*.tsbuildinfo
+
+# Documentation
+docs/
+*.md
+!README.md
+
+# Examples and fixtures
+examples/
+fixtures/

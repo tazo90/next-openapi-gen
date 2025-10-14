@@ -1,7 +1,10 @@
 import * as t from "@babel/types";
 import fs from "fs";
 import path from "path";
-import traverse from "@babel/traverse";
+import traverseModule from "@babel/traverse";
+
+// Handle both ES modules and CommonJS
+const traverse = (traverseModule as any).default || traverseModule;
 
 import { SchemaProcessor } from "./schema-processor.js";
 import {
@@ -147,6 +150,31 @@ export class RouteProcessor {
     return HTTP_METHODS.includes(varName);
   }
 
+  /**
+   * Check if a route should be ignored based on config patterns or @ignore tag
+   */
+  private shouldIgnoreRoute(routePath: string, dataTypes: DataTypes): boolean {
+    // Check if route has @ignore tag
+    if (dataTypes.isIgnored) {
+      return true;
+    }
+
+    // Check if route matches any ignore patterns
+    const ignorePatterns = this.config.ignoreRoutes || [];
+    if (ignorePatterns.length === 0) {
+      return false;
+    }
+
+    return ignorePatterns.some((pattern) => {
+      // Support wildcards
+      const regexPattern = pattern
+        .replace(/\*/g, ".*")
+        .replace(/\//g, "\\/");
+      const regex = new RegExp(`^${regexPattern}$`);
+      return regex.test(routePath);
+    });
+  }
+
   private processFile(filePath: string): void {
     // Check if the file has already been processed
     if (this.processFileTracker[filePath]) return;
@@ -154,7 +182,7 @@ export class RouteProcessor {
     const content = fs.readFileSync(filePath, "utf-8");
     const ast = parseTypeScriptFile(content);
 
-    traverse.default(ast, {
+    traverse(ast, {
       ExportNamedDeclaration: (path) => {
         const declaration = path.node.declaration;
 
@@ -164,13 +192,20 @@ export class RouteProcessor {
         ) {
           const dataTypes = extractJSDocComments(path);
           if (this.isRoute(declaration.id.name)) {
+            const routePath = this.getRoutePath(filePath);
+
+            // Skip if route should be ignored
+            if (this.shouldIgnoreRoute(routePath, dataTypes)) {
+              logger.debug(`Ignoring route: ${routePath}`);
+              return;
+            }
+
             // Don't bother adding routes for processing if only including OpenAPI routes and the route is not OpenAPI
             if (
               !this.config.includeOpenApiRoutes ||
               (this.config.includeOpenApiRoutes && dataTypes.isOpenApi)
             ) {
               // Check for URL parameters in the route path
-              const routePath = this.getRoutePath(filePath);
               const pathParams = extractPathParameters(routePath);
 
               // If we have path parameters but no pathParamsType defined, we should log a warning
@@ -192,12 +227,19 @@ export class RouteProcessor {
             if (t.isVariableDeclarator(decl) && t.isIdentifier(decl.id)) {
               if (this.isRoute(decl.id.name)) {
                 const dataTypes = extractJSDocComments(path);
+                const routePath = this.getRoutePath(filePath);
+
+                // Skip if route should be ignored
+                if (this.shouldIgnoreRoute(routePath, dataTypes)) {
+                  logger.debug(`Ignoring route: ${routePath}`);
+                  return;
+                }
+
                 // Don't bother adding routes for processing if only including OpenAPI routes and the route is not OpenAPI
                 if (
                   !this.config.includeOpenApiRoutes ||
                   (this.config.includeOpenApiRoutes && dataTypes.isOpenApi)
                 ) {
-                  const routePath = this.getRoutePath(filePath);
                   const pathParams = extractPathParameters(routePath);
 
                   if (pathParams.length > 0 && !dataTypes.pathParamsType) {
