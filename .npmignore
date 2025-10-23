@@ -33,6 +33,7 @@ docs/
 *.md
 !README.md
 
-# Examples and fixtures
+# Examples, fixtures, assets
 examples/
 fixtures/
+assets/
