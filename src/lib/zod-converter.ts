@@ -1,7 +1,10 @@
 import fs from "fs";
 import path from "path";
-import traverse from "@babel/traverse";
+import traverseModule from "@babel/traverse";
 import * as t from "@babel/types";
+
+// Handle both ES modules and CommonJS
+const traverse = (traverseModule as any).default || traverseModule;
 
 import { parseTypeScriptFile } from "./utils.js";
 import { OpenApiSchema } from "../types.js";
@@ -184,7 +187,7 @@ export class ZodSchemaConverter {
       const importedModules: Record<string, string> = {};
 
       // Look for all exported Zod schemas
-      traverse.default(ast, {
+      traverse(ast, {
         // Track imports for resolving local and imported schemas
         ImportDeclaration: (path) => {
           // Keep track of imports to resolve external schemas
@@ -586,7 +589,7 @@ export class ZodSchemaConverter {
       const content = fs.readFileSync(filePath, "utf-8");
       const ast = parseTypeScriptFile(content);
 
-      traverse.default(ast, {
+      traverse(ast, {
         ExportNamedDeclaration: (path) => {
           if (t.isVariableDeclaration(path.node.declaration)) {
             path.node.declaration.declarations.forEach((declaration) => {
@@ -1628,7 +1631,7 @@ export class ZodSchemaConverter {
       const content = fs.readFileSync(filePath, "utf-8");
       const ast = parseTypeScriptFile(content);
 
-      traverse.default(ast, {
+      traverse(ast, {
         TSTypeAliasDeclaration: (path) => {
           if (t.isIdentifier(path.node.id)) {
             const typeName = path.node.id.name;
@@ -1712,7 +1715,7 @@ export class ZodSchemaConverter {
       const ast = parseTypeScriptFile(content);
 
       // Collect all exported Zod schemas
-      traverse.default(ast, {
+      traverse(ast, {
         ExportNamedDeclaration: (path) => {
           if (t.isVariableDeclaration(path.node.declaration)) {
             path.node.declaration.declarations.forEach((declaration) => {

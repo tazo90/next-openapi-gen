@@ -11,6 +11,7 @@ export type OpenApiConfig = {
   outputFile: string;
   outputDir: string;
   includeOpenApiRoutes: boolean;
+  ignoreRoutes?: string[];
   schemaType: SchemaType;
   defaultResponseSet?: string;
   responseSets?: ResponseSets;
@@ -153,6 +154,7 @@ export type DataTypes = {
   description?: string;
   auth?: string;
   isOpenApi?: boolean;
+  isIgnored?: boolean;
   deprecated?: boolean;
   bodyDescription?: string;
   responseDescription?: string;
@@ -166,6 +168,7 @@ export type RouteConfig = {
   schemaDir: string;
   schemaType: string;
   includeOpenApiRoutes?: boolean;
+  ignoreRoutes?: string[];
 };
 
 export type PathDefinition = {

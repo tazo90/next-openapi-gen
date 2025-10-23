@@ -78,6 +78,7 @@ During initialization (`npx next-openapi-gen init`), a configuration file `next.
 | `outputDir`            | Directory where OpenAPI file will be generated (default: `"./public"`) |
 | `docsUrl`              | API documentation URL (for Swagger UI)                                 |
 | `includeOpenApiRoutes` | Whether to include only routes with @openapi tag                       |
+| `ignoreRoutes`         | Array of route patterns to exclude from documentation (supports wildcards) |
 | `defaultResponseSet`   | Default error response set for all endpoints                           |
 | `responseSets`         | Named sets of error response codes                                     |
 | `errorConfig`          | Error schema configuration                                             |
@@ -168,6 +169,7 @@ export async function GET(
 | `@tag`                 | Custom tag                                                                                                               |
 | `@deprecated`          | Marks the route as deprecated                                                                                            |
 | `@openapi`             | Marks the route for inclusion in documentation (if includeOpenApiRoutes is enabled)                                      |
+| `@ignore`              | Excludes the route from OpenAPI documentation                                                                            |
 
 ## CLI Usage
 
@@ -536,6 +538,51 @@ export async function PUT() {}
   }
 }
 ```
+
+## Ignoring Routes
+
+You can exclude routes from OpenAPI documentation in two ways:
+
+### Using @ignore Tag
+
+Add the `@ignore` tag to any route you want to exclude:
+
+```typescript
+// src/app/api/internal/route.ts
+
+/**
+ * Internal route - not for documentation
+ * @ignore
+ */
+export async function GET() {
+  // This route will not appear in OpenAPI documentation
+}
+```
+
+### Using ignoreRoutes Configuration
+
+Add patterns to your `next.openapi.json` configuration file to exclude multiple routes at once:
+
+```json
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Next.js API",
+    "version": "1.0.0"
+  },
+  "apiDir": "src/app/api",
+  "ignoreRoutes": [
+    "/internal/*",
+    "/debug",
+    "/admin/test/*"
+  ]
+}
+```
+
+Pattern matching supports wildcards:
+- `/internal/*` - Ignores all routes under `/internal/`
+- `/debug` - Ignores only the `/debug` route
+- `/admin/*/temp` - Ignores routes like `/admin/users/temp`, `/admin/posts/temp`
 
 ## Advanced Usage
 

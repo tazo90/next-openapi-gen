@@ -1,7 +1,10 @@
 import * as t from "@babel/types";
 import fs from "fs";
 import path from "path";
-import traverse from "@babel/traverse";
+import traverseModule from "@babel/traverse";
+
+// Handle both ES modules and CommonJS
+const traverse = (traverseModule as any).default || traverseModule;
 
 import { SchemaProcessor } from "./schema-processor.js";
 import {
@@ -147,6 +150,29 @@ export class RouteProcessor {
     return HTTP_METHODS.includes(varName);
   }
 
+  /**
+   * Check if a route should be ignored based on config patterns or @ignore tag
+   */
+  private shouldIgnoreRoute(routePath: string, dataTypes: DataTypes): boolean {
+    // Check if route has @ignore tag
+    if (dataTypes.isIgnored) {
+      return true;
+    }
+
+    // Check if route matches any ignore patterns
+    const ignorePatterns = this.config.ignoreRoutes || [];
+    if (ignorePatterns.length === 0) {
+      return false;
+    }
+
+    return ignorePatterns.some((pattern) => {
+      // Support wildcards
+      const regexPattern = pattern.replace(/\*/g, ".*").replace(/\//g, "\\/");
+      const regex = new RegExp(`^${regexPattern}$`);
+      return regex.test(routePath);
+    });
+  }
+
   private processFile(filePath: string): void {
     // Check if the file has already been processed
     if (this.processFileTracker[filePath]) return;
@@ -154,7 +180,7 @@ export class RouteProcessor {
     const content = fs.readFileSync(filePath, "utf-8");
     const ast = parseTypeScriptFile(content);
 
-    traverse.default(ast, {
+    traverse(ast, {
       ExportNamedDeclaration: (path) => {
         const declaration = path.node.declaration;
 
@@ -164,13 +190,20 @@ export class RouteProcessor {
         ) {
           const dataTypes = extractJSDocComments(path);
           if (this.isRoute(declaration.id.name)) {
+            const routePath = this.getRoutePath(filePath);
+
+            // Skip if route should be ignored
+            if (this.shouldIgnoreRoute(routePath, dataTypes)) {
+              logger.debug(`Ignoring route: ${routePath}`);
+              return;
+            }
+
             // Don't bother adding routes for processing if only including OpenAPI routes and the route is not OpenAPI
             if (
               !this.config.includeOpenApiRoutes ||
               (this.config.includeOpenApiRoutes && dataTypes.isOpenApi)
             ) {
               // Check for URL parameters in the route path
-              const routePath = this.getRoutePath(filePath);
               const pathParams = extractPathParameters(routePath);
 
               // If we have path parameters but no pathParamsType defined, we should log a warning
@@ -192,12 +225,19 @@ export class RouteProcessor {
             if (t.isVariableDeclarator(decl) && t.isIdentifier(decl.id)) {
               if (this.isRoute(decl.id.name)) {
                 const dataTypes = extractJSDocComments(path);
+                const routePath = this.getRoutePath(filePath);
+
+                // Skip if route should be ignored
+                if (this.shouldIgnoreRoute(routePath, dataTypes)) {
+                  logger.debug(`Ignoring route: ${routePath}`);
+                  return;
+                }
+
                 // Don't bother adding routes for processing if only including OpenAPI routes and the route is not OpenAPI
                 if (
                   !this.config.includeOpenApiRoutes ||
                   (this.config.includeOpenApiRoutes && dataTypes.isOpenApi)
                 ) {
-                  const routePath = this.getRoutePath(filePath);
                   const pathParams = extractPathParameters(routePath);
 
                   if (pathParams.length > 0 && !dataTypes.pathParamsType) {
@@ -382,17 +422,19 @@ export class RouteProcessor {
   }
 
   private getRoutePath(filePath: string): string {
+    // Normalize path separators first
+    const normalizedPath = filePath.replaceAll("\\", "/");
+
     // First, check if it's an app router path
-    if (filePath.includes("/app/api/")) {
+    if (normalizedPath.includes("/app/api/")) {
       // Get the relative path from the api directory
-      const apiDirPos = filePath.indexOf("/app/api/");
-      let relativePath = filePath.substring(apiDirPos + "/app/api".length);
+      const apiDirPos = normalizedPath.lastIndexOf("/app/api/");
+      let relativePath = normalizedPath.substring(
+        apiDirPos + "/app/api".length
+      );
 
       // Remove the /route.ts or /route.tsx suffix
       relativePath = relativePath.replace(/\/route\.tsx?$/, "");
-
-      // Convert directory separators to URL path format
-      relativePath = relativePath.replaceAll("\\", "/");
 
       // Remove Next.js route groups (folders in parentheses like (authenticated), (marketing))
       relativePath = relativePath.replace(/\/\([^)]+\)/g, "");
@@ -407,10 +449,9 @@ export class RouteProcessor {
     }
 
     // For pages router or other formats
-    const suffixPath = filePath.split("api")[1];
+    const suffixPath = normalizedPath.split("api")[1];
     return suffixPath
       .replace(/route\.tsx?$/, "")
-      .replaceAll("\\", "/")
       .replace(/\/$/, "")
       .replace(/\/\([^)]+\)/g, "") // Remove route groups for pages router too
       .replace(/\/\[([^\]]+)\]/g, "/{$1}") // Replace [param] with {param}

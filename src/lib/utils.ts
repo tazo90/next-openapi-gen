@@ -34,6 +34,7 @@ export function extractJSDocComments(path: NodePath): DataTypes {
   let bodyType = "";
   let auth = "";
   let isOpenApi = false;
+  let isIgnored = false;
   let deprecated = false;
   let bodyDescription = "";
   let contentType = "";
@@ -48,6 +49,10 @@ export function extractJSDocComments(path: NodePath): DataTypes {
       const commentValue = cleanComment(comment.value);
 
       isOpenApi = commentValue.includes("@openapi");
+
+      if (commentValue.includes("@ignore")) {
+        isIgnored = true;
+      }
 
       if (commentValue.includes("@deprecated")) {
         deprecated = true;
@@ -172,6 +177,7 @@ export function extractJSDocComments(path: NodePath): DataTypes {
     pathParamsType,
     bodyType,
     isOpenApi,
+    isIgnored,
     deprecated,
     bodyDescription,
     contentType,
@@ -207,6 +213,7 @@ export function cleanSpec(spec: any) {
     "ui",
     "outputFile",
     "includeOpenApiRoutes",
+    "ignoreRoutes",
     "schemaType",
     "defaultResponseSet",
     "responseSets",
