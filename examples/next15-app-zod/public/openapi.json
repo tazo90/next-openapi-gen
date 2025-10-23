@@ -41,7 +41,11 @@
             "description": "Results per page"
           },
           "status": {
-            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/OrderStatusSchema"
+              }
+            ],
             "description": "Filter by status"
           },
           "dateFrom": {
@@ -950,7 +954,11 @@
             "description": "Results per page"
           },
           "status": {
-            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/OrderStatusSchema"
+              }
+            ],
             "description": "Filter by status"
           },
           "dateFrom": {
@@ -1637,7 +1645,6 @@
             "in": "query",
             "name": "status",
             "schema": {
-              "type": "object",
               "description": "Filter by status"
             },
             "required": false,

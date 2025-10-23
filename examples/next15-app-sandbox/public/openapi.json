@@ -694,7 +694,7 @@
     "/test-optional": {
       "get": {
         "operationId": "get-test-optional",
-        "summary": "This is a test user endpoint",
+        "summary": "This is a test user endpoint\r",
         "description": "Test User Description",
         "tags": [
           "Test-optional"
