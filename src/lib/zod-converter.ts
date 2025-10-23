@@ -700,6 +700,53 @@ export class ZodSchemaConverter {
       }
     }
 
+    // Handle schema reference with method calls, e.g., Image.optional(), UserSchema.nullable()
+    if (
+      t.isCallExpression(node) &&
+      t.isMemberExpression(node.callee) &&
+      t.isIdentifier(node.callee.object) &&
+      t.isIdentifier(node.callee.property) &&
+      node.callee.object.name !== "z" // Make sure it's not a z.* call
+    ) {
+      const schemaName = node.callee.object.name;
+      const methodName = node.callee.property.name;
+
+      // Process base schema first if not already processed
+      if (!this.zodSchemas[schemaName]) {
+        this.convertZodSchemaToOpenApi(schemaName);
+      }
+
+      // If the schema exists, create a reference and apply the method
+      if (this.zodSchemas[schemaName]) {
+        let schema: OpenApiSchema = {
+          allOf: [{ $ref: `#/components/schemas/${schemaName}` }],
+        };
+
+        // Apply method-specific transformations
+        switch (methodName) {
+          case "optional":
+          case "nullable":
+          case "nullish":
+            // Don't add nullable flag here as it would be at the wrong level
+            // The fact that it's optional is handled by not including it in required array
+            break;
+          case "describe":
+            if (
+              node.arguments.length > 0 &&
+              t.isStringLiteral(node.arguments[0])
+            ) {
+              schema.description = node.arguments[0].value;
+            }
+            break;
+          default:
+            // For other methods, process as a chain
+            return this.processZodChain(node);
+        }
+
+        return schema;
+      }
+    }
+
     // Handle chained methods, e.g., z.string().email().min(5)
     if (
       t.isCallExpression(node) &&
@@ -1293,13 +1340,23 @@ export class ZodSchemaConverter {
     // Apply the current method
     switch (methodName) {
       case "optional":
-        schema.nullable = true;
+        // Don't add nullable for schema references wrapped in allOf
+        // as it doesn't make sense in that context
+        if (!schema.allOf) {
+          schema.nullable = true;
+        }
         break;
       case "nullable":
-        schema.nullable = true;
+        // Don't add nullable for schema references wrapped in allOf
+        if (!schema.allOf) {
+          schema.nullable = true;
+        }
         break;
       case "nullish": // Handles both null and undefined
-        schema.nullable = true;
+        // Don't add nullable for schema references wrapped in allOf
+        if (!schema.allOf) {
+          schema.nullable = true;
+        }
         break;
       case "describe":
         if (node.arguments.length > 0 && t.isStringLiteral(node.arguments[0])) {

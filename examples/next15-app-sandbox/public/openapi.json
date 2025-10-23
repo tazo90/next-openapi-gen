@@ -254,6 +254,42 @@
           "user"
         ]
       },
+      "User": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Full name of the user"
+          },
+          "profileImage": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Image"
+              }
+            ],
+            "description": "The profile image"
+          },
+          "avatar": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Image"
+              }
+            ],
+            "description": "The avatar image"
+          },
+          "banner": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Image"
+              }
+            ],
+            "description": "The banner image"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
       "FileUploadSchema": {
         "type": "object",
         "properties": {
@@ -303,6 +339,18 @@
         "required": [
           "id",
           "name"
+        ]
+      },
+      "Image": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "description": "The url"
+          }
+        },
+        "required": [
+          "url"
         ]
       }
     },
@@ -630,6 +678,35 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/UserSettings"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    },
+    "/test-optional": {
+      "get": {
+        "operationId": "get-test-optional",
+        "summary": "This is a test user endpoint",
+        "description": "Test User Description",
+        "tags": [
+          "Test-optional"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
                 }
               }
             }
