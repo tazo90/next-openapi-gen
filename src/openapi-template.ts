@@ -93,5 +93,6 @@ export default {
   outputFile: "openapi.json",
   outputDir: "./public",
   includeOpenApiRoutes: false,
+  ignoreRoutes: [],
   debug: false,
 };

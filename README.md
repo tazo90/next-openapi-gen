@@ -63,26 +63,27 @@ During initialization (`npx next-openapi-gen init`), a configuration file `next.
   "outputDir": "./public",
   "docsUrl": "/api-docs",
   "includeOpenApiRoutes": false,
+  "ignoreRoutes": [],
   "debug": false
 }
 ```
 
 ### Configuration Options
 
-| Option                 | Description                                                            |
-| ---------------------- | ---------------------------------------------------------------------- |
-| `apiDir`               | Path to the API directory                                              |
-| `schemaDir`            | Path to the types/schemas directory                                    |
-| `schemaType`           | Schema type: `"zod"` or `"typescript"`                                 |
-| `outputFile`           | Name of the OpenAPI output file                                        |
-| `outputDir`            | Directory where OpenAPI file will be generated (default: `"./public"`) |
-| `docsUrl`              | API documentation URL (for Swagger UI)                                 |
-| `includeOpenApiRoutes` | Whether to include only routes with @openapi tag                       |
+| Option                 | Description                                                                |
+| ---------------------- | -------------------------------------------------------------------------- |
+| `apiDir`               | Path to the API directory                                                  |
+| `schemaDir`            | Path to the types/schemas directory                                        |
+| `schemaType`           | Schema type: `"zod"` or `"typescript"`                                     |
+| `outputFile`           | Name of the OpenAPI output file                                            |
+| `outputDir`            | Directory where OpenAPI file will be generated (default: `"./public"`)     |
+| `docsUrl`              | API documentation URL (for Swagger UI)                                     |
+| `includeOpenApiRoutes` | Whether to include only routes with @openapi tag                           |
 | `ignoreRoutes`         | Array of route patterns to exclude from documentation (supports wildcards) |
-| `defaultResponseSet`   | Default error response set for all endpoints                           |
-| `responseSets`         | Named sets of error response codes                                     |
-| `errorConfig`          | Error schema configuration                                             |
-| `debug`                | Enable detailed logging during generation                              |
+| `defaultResponseSet`   | Default error response set for all endpoints                               |
+| `responseSets`         | Named sets of error response codes                                         |
+| `errorConfig`          | Error schema configuration                                                 |
+| `debug`                | Enable detailed logging during generation                                  |
 
 ## Documenting Your API
 
@@ -571,15 +572,12 @@ Add patterns to your `next.openapi.json` configuration file to exclude multiple 
     "version": "1.0.0"
   },
   "apiDir": "src/app/api",
-  "ignoreRoutes": [
-    "/internal/*",
-    "/debug",
-    "/admin/test/*"
-  ]
+  "ignoreRoutes": ["/internal/*", "/debug", "/admin/test/*"]
 }
 ```
 
 Pattern matching supports wildcards:
+
 - `/internal/*` - Ignores all routes under `/internal/`
 - `/debug` - Ignores only the `/debug` route
 - `/admin/*/temp` - Ignores routes like `/admin/users/temp`, `/admin/posts/temp`
