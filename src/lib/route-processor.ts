@@ -167,9 +167,7 @@ export class RouteProcessor {
 
     return ignorePatterns.some((pattern) => {
       // Support wildcards
-      const regexPattern = pattern
-        .replace(/\*/g, ".*")
-        .replace(/\//g, "\\/");
+      const regexPattern = pattern.replace(/\*/g, ".*").replace(/\//g, "\\/");
       const regex = new RegExp(`^${regexPattern}$`);
       return regex.test(routePath);
     });
@@ -424,17 +422,19 @@ export class RouteProcessor {
   }
 
   private getRoutePath(filePath: string): string {
+    // Normalize path separators first
+    const normalizedPath = filePath.replaceAll("\\", "/");
+
     // First, check if it's an app router path
-    if (filePath.includes("/app/api/")) {
+    if (normalizedPath.includes("/app/api/")) {
       // Get the relative path from the api directory
-      const apiDirPos = filePath.indexOf("/app/api/");
-      let relativePath = filePath.substring(apiDirPos + "/app/api".length);
+      const apiDirPos = normalizedPath.lastIndexOf("/app/api/");
+      let relativePath = normalizedPath.substring(
+        apiDirPos + "/app/api".length
+      );
 
       // Remove the /route.ts or /route.tsx suffix
       relativePath = relativePath.replace(/\/route\.tsx?$/, "");
-
-      // Convert directory separators to URL path format
-      relativePath = relativePath.replaceAll("\\", "/");
 
       // Remove Next.js route groups (folders in parentheses like (authenticated), (marketing))
       relativePath = relativePath.replace(/\/\([^)]+\)/g, "");
@@ -449,10 +449,9 @@ export class RouteProcessor {
     }
 
     // For pages router or other formats
-    const suffixPath = filePath.split("api")[1];
+    const suffixPath = normalizedPath.split("api")[1];
     return suffixPath
       .replace(/route\.tsx?$/, "")
-      .replaceAll("\\", "/")
       .replace(/\/$/, "")
       .replace(/\/\([^)]+\)/g, "") // Remove route groups for pages router too
       .replace(/\/\[([^\]]+)\]/g, "/{$1}") // Replace [param] with {param}
