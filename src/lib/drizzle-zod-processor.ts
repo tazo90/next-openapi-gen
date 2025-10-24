@@ -204,6 +204,8 @@ export class DrizzleZodProcessor {
     if (
       lowercaseField.includes("id") ||
       lowercaseField.includes("count") ||
+      lowercaseField.includes("stock") ||
+      lowercaseField.includes("quantity") ||
       lowercaseField.includes("age") ||
       lowercaseField.includes("year")
     ) {
