@@ -6,8 +6,9 @@ Automatically generate OpenAPI 3.0 documentation from Next.js projects, with sup
 
 - ✅ Automatic OpenAPI documentation generation from Next.js code
 - ✅ Support for Next.js App Router (including `/api/users/[id]/route.ts` routes)
-- ✅ Zod schemas support
 - ✅ TypeScript types support
+- ✅ Zod schemas support
+- ✅ Drizzle-Zod support - Generate schemas from Drizzle ORM tables 🆕
 - ✅ JSDoc comments support
 - ✅ Multiple UI interfaces: `Scalar`, `Swagger`, `Redoc`, `Stoplight` and `Rapidoc` available at `/api-docs` url
 - ✅ Path parameters detection (`/users/{id}`)
@@ -148,6 +149,44 @@ export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  // Implementation...
+}
+```
+
+### With Drizzle-Zod
+
+```typescript
+// src/db/schema.ts - Define your Drizzle table
+import { pgTable, serial, varchar, text } from "drizzle-orm/pg-core";
+
+export const posts = pgTable("posts", {
+  id: serial("id").primaryKey(),
+  title: varchar("title", { length: 255 }).notNull(),
+  content: text("content").notNull(),
+});
+
+// src/schemas/post.ts - Generate Zod schema with drizzle-zod
+import { createInsertSchema, createSelectSchema } from "drizzle-zod";
+import { posts } from "@/db/schema";
+
+export const CreatePostSchema = createInsertSchema(posts, {
+  title: (schema) => schema.title.min(5).max(255).describe("Post title"),
+  content: (schema) => schema.content.min(10).describe("Post content"),
+});
+
+export const PostResponseSchema = createSelectSchema(posts);
+
+// src/app/api/posts/route.ts - Use in your API route
+/**
+ * Create a new post
+ * @description Create a new blog post with Drizzle-Zod validation
+ * @body CreatePostSchema
+ * @response 201:PostResponseSchema
+ * @openapi
+ */
+export async function POST(request: NextRequest) {
+  const body = await request.json();
+  const validated = CreatePostSchema.parse(body);
   // Implementation...
 }
 ```
@@ -694,6 +733,64 @@ type User = z.infer<typeof UserSchema>;
 // The library will be able to recognize this schema by reference `UserSchema` or `User` type.
 ```
 
+### Drizzle-Zod Support
+
+The library fully supports **drizzle-zod** for generating Zod schemas from Drizzle ORM table definitions. This provides a single source of truth for your database schema, validation, and API documentation.
+
+**Supported Functions:**
+
+- `createInsertSchema()` - Generate schema for inserts
+- `createSelectSchema()` - Generate schema for selects
+- `createUpdateSchema()` - Generate schema for updates
+
+**Features:**
+
+- ✅ Automatic field extraction from refinements
+- ✅ Validation method conversion (min, max, email, url, etc.)
+- ✅ Optional/nullable field detection
+- ✅ Intelligent type mapping based on field names
+- ✅ Full OpenAPI schema generation
+
+**Example:**
+
+```typescript
+import { createInsertSchema } from "drizzle-zod";
+import { posts } from "@/db/schema";
+
+export const CreatePostSchema = createInsertSchema(posts, {
+  title: (schema) => schema.title.min(5).max(255),
+  content: (schema) => schema.content.min(10),
+  published: (schema) => schema.published.optional(),
+});
+```
+
+See the [complete Drizzle-Zod example](./examples/next15-app-drizzle-zod) for a full working implementation with a blog API.
+
+## Examples
+
+This repository includes several complete example projects:
+
+### 📦 Available Examples
+
+| Example                                                         | Description                | Features                                        |
+| --------------------------------------------------------------- | -------------------------- | ----------------------------------------------- |
+| **[next15-app-zod](./examples/next15-app-zod)**                 | Zod schemas example        | Users, Products, Orders API with Zod validation |
+| **[next15-app-drizzle-zod](./examples/next15-app-drizzle-zod)** | Drizzle-Zod integration 🆕 | Blog API with Drizzle ORM + drizzle-zod         |
+| **[next15-app-typescript](./examples/next15-app-typescript)**   | TypeScript types           | API with pure TypeScript type definitions       |
+| **[next15-app-scalar](./examples/next15-app-scalar)**           | Scalar UI                  | Modern API documentation interface              |
+| **[next15-app-swagger](./examples/next15-app-swagger)**         | Swagger UI                 | Classic Swagger documentation                   |
+
+### 🚀 Running Examples
+
+```bash
+cd examples/next15-app-drizzle-zod
+npm install
+npm run openapi:generate
+npm run dev
+```
+
+Visit `http://localhost:3000/api-docs` to see the generated documentation.
+
 ## Available UI providers
 
 <div align="center">
@@ -726,6 +823,16 @@ type User = z.infer<typeof UserSchema>;
   </tbody>
 </table>
 </div>
+
+## Learn More
+
+- **[Drizzle-Zod Example](./examples/next15-app-drizzle-zod)** - Complete example with Drizzle ORM integration
+- **[Drizzle ORM](https://orm.drizzle.team/)** - TypeScript ORM for SQL databases
+- **[drizzle-zod](https://orm.drizzle.team/docs/zod)** - Zod schema generator for Drizzle
+- **[Zod Documentation](https://zod.dev/)** - TypeScript-first schema validation
+- **[Next.js Documentation](https://nextjs.org/docs)** - React framework documentation
+- **[OpenAPI Specification](https://swagger.io/specification/)** - OpenAPI 3.0 spec
+- **[Scalar Documentation](https://docs.scalar.com/)** - Modern API documentation UI
 
 ## License
 
