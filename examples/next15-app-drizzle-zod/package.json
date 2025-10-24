@@ -1,0 +1,38 @@
+{
+  "name": "next-15-drizzle-zod",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:studio": "drizzle-kit studio",
+    "openapi:generate": "next-openapi-gen generate"
+  },
+  "dependencies": {
+    "@scalar/api-reference-react": "^0.6.30",
+    "drizzle-orm": "^0.36.4",
+    "drizzle-zod": "^0.5.1",
+    "next": "15.3.2",
+    "next-openapi-gen": "^0.7.11",
+    "postgres": "^3.4.5",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.18",
+    "@types/react": "^19.1.4",
+    "@types/react-dom": "^19.1.5",
+    "autoprefixer": "^10.4.21",
+    "drizzle-kit": "^0.29.1",
+    "eslint": "^9.26.0",
+    "eslint-config-next": "15.3.2",
+    "postcss": "^8.5.3",
+    "tailwindcss": "^3.4.1",
+    "typescript": "^5.8.3"
+  }
+}

@@ -1,0 +1,8 @@
+node_modules
+.next
+dist
+build
+.DS_Store
+*.log
+.env*.local
+.vercelignore

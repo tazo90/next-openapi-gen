@@ -1,0 +1,529 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Drizzle-Zod Blog API",
+    "version": "1.0.0",
+    "description": "Example API using Drizzle ORM with Zod validation and next-openapi-gen"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000",
+      "description": "Local development server"
+    }
+  ],
+  "outputDir": "./public",
+  "paths": {
+    "/posts": {
+      "get": {
+        "operationId": "get-posts",
+        "summary": "Get all posts",
+        "description": "Retrieve a paginated list of blog posts with optional filters",
+        "tags": [
+          "Posts"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "string",
+              "description": "Page number"
+            },
+            "required": false,
+            "description": "Page number"
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "string",
+              "description": "Items per page"
+            },
+            "required": false,
+            "description": "Items per page"
+          },
+          {
+            "in": "query",
+            "name": "published",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "true",
+                "false"
+              ],
+              "description": "Filter by publication status"
+            },
+            "required": false,
+            "description": "Filter by publication status"
+          },
+          {
+            "in": "query",
+            "name": "authorId",
+            "schema": {
+              "type": "string",
+              "description": "Filter by author ID"
+            },
+            "required": false,
+            "description": "Filter by author ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of blog posts",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PostResponseSchema[]"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      },
+      "post": {
+        "operationId": "post-posts",
+        "summary": "Create a new post",
+        "description": "Create a new blog post with Drizzle-Zod validation",
+        "tags": [
+          "Posts"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePostSchema"
+              }
+            }
+          },
+          "description": "Post data including title, content, and author"
+        },
+        "responses": {
+          "201": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PostResponseSchema:Post created successfully"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    },
+    "/posts/{id}": {
+      "get": {
+        "operationId": "get-posts-{id}",
+        "summary": "Get post by ID",
+        "description": "Retrieve a single blog post by its ID",
+        "tags": [
+          "Posts"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string",
+              "description": "Post ID"
+            },
+            "required": true,
+            "description": "Post ID",
+            "example": "123"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Single blog post",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PostResponseSchema"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      },
+      "patch": {
+        "operationId": "patch-posts-{id}",
+        "summary": "Update post",
+        "description": "Update an existing blog post",
+        "tags": [
+          "Posts"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string",
+              "description": "Post ID"
+            },
+            "required": true,
+            "description": "Post ID",
+            "example": "123"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePostSchema"
+              }
+            }
+          },
+          "description": "Fields to update"
+        },
+        "responses": {
+          "200": {
+            "description": "Updated post",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PostResponseSchema"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "delete-posts-{id}",
+        "summary": "Delete post",
+        "description": "Delete a blog post by ID",
+        "tags": [
+          "Posts"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string",
+              "description": "Post ID"
+            },
+            "required": true,
+            "description": "Post ID",
+            "example": "123"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Post deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/204"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "204": {},
+      "PostsQueryParams": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "string",
+            "pattern": "^\\d+$",
+            "nullable": true,
+            "description": "Page number"
+          },
+          "limit": {
+            "type": "string",
+            "pattern": "^\\d+$",
+            "nullable": true,
+            "description": "Items per page"
+          },
+          "published": {
+            "type": "string",
+            "enum": [
+              "true",
+              "false"
+            ],
+            "nullable": true,
+            "description": "Filter by publication status"
+          },
+          "authorId": {
+            "type": "string",
+            "pattern": "^\\d+$",
+            "nullable": true,
+            "description": "Filter by author ID"
+          }
+        }
+      },
+      "PostResponseSchema[]": {},
+      "CreatePostSchema": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 5,
+            "maxLength": 255,
+            "description": "Post title"
+          },
+          "slug": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 255,
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+            "description": "URL-friendly slug"
+          },
+          "excerpt": {
+            "type": "string",
+            "maxLength": 500,
+            "description": "Short excerpt of the post"
+          },
+          "content": {
+            "type": "string",
+            "minLength": 10,
+            "description": "Post content in markdown"
+          },
+          "published": {
+            "type": "boolean",
+            "description": "Whether the post is published"
+          },
+          "authorId": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true,
+            "description": "ID of the post author"
+          }
+        },
+        "required": [
+          "title",
+          "slug",
+          "content",
+          "authorId"
+        ]
+      },
+      "PostIdParams": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^\\d+$",
+            "description": "Post ID"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "PostResponseSchema": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "Post title"
+          },
+          "slug": {
+            "type": "string",
+            "description": "URL-friendly slug"
+          },
+          "excerpt": {
+            "type": "string",
+            "description": "Post excerpt"
+          },
+          "content": {
+            "type": "string",
+            "description": "Full post content"
+          },
+          "published": {
+            "type": "boolean",
+            "description": "Publication status"
+          },
+          "viewCount": {
+            "type": "integer",
+            "description": "Number of views"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Creation timestamp"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Last update timestamp"
+          }
+        },
+        "required": [
+          "title",
+          "slug",
+          "excerpt",
+          "content",
+          "published",
+          "viewCount",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "UpdatePostSchema": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 5,
+            "maxLength": 255,
+            "description": "Post title"
+          },
+          "slug": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+            "description": "URL-friendly slug"
+          },
+          "excerpt": {
+            "type": "string",
+            "maxLength": 500,
+            "description": "Short excerpt"
+          },
+          "content": {
+            "type": "string",
+            "minLength": 10,
+            "description": "Post content"
+          },
+          "published": {
+            "type": "boolean",
+            "description": "Publication status"
+          }
+        },
+        "required": []
+      }
+    },
+    "responses": {
+      "400": {
+        "description": "Bad Request",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "error": {
+                  "type": "string",
+                  "example": "Invalid request parameters"
+                },
+                "code": {
+                  "type": "string",
+                  "example": "400"
+                }
+              }
+            }
+          }
+        }
+      },
+      "401": {
+        "description": "Unauthorized",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "error": {
+                  "type": "string",
+                  "example": "Authentication required"
+                },
+                "code": {
+                  "type": "string",
+                  "example": "401"
+                }
+              }
+            }
+          }
+        }
+      },
+      "403": {
+        "description": "Forbidden",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "error": {
+                  "type": "string",
+                  "example": "Access denied"
+                },
+                "code": {
+                  "type": "string",
+                  "example": "403"
+                }
+              }
+            }
+          }
+        }
+      },
+      "500": {
+        "description": "Internal Server Error",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "error": {
+                  "type": "string",
+                  "example": "An unexpected error occurred"
+                },
+                "code": {
+                  "type": "string",
+                  "example": "500"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

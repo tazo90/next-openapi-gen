@@ -9,6 +9,7 @@ const traverse = (traverseModule as any).default || traverseModule;
 import { parseTypeScriptFile } from "./utils.js";
 import { OpenApiSchema } from "../types.js";
 import { logger } from "./logger.js";
+import { DrizzleZodProcessor } from "./drizzle-zod-processor.js";
 
 /**
  * Class for converting Zod schemas to OpenAPI specifications
@@ -19,6 +20,7 @@ export class ZodSchemaConverter {
   processingSchemas: Set<string> = new Set();
   processedModules: Set<string> = new Set();
   typeToSchemaMapping = {};
+  drizzleZodImports: Set<string> = new Set();
 
   constructor(schemaDir: string) {
     this.schemaDir = path.resolve(schemaDir);
@@ -193,6 +195,18 @@ export class ZodSchemaConverter {
           // Keep track of imports to resolve external schemas
           const source = path.node.source.value;
 
+          // Track drizzle-zod imports
+          if (source === "drizzle-zod") {
+            path.node.specifiers.forEach((specifier) => {
+              if (
+                t.isImportSpecifier(specifier) ||
+                t.isImportDefaultSpecifier(specifier)
+              ) {
+                this.drizzleZodImports.add(specifier.local.name);
+              }
+            });
+          }
+
           // Process each import specifier
           path.node.specifiers.forEach((specifier) => {
             if (
@@ -214,8 +228,19 @@ export class ZodSchemaConverter {
                 declaration.id.name === schemaName &&
                 declaration.init
               ) {
-                // Check if this is a call expression with .extend()
+                // Check if this is a drizzle-zod helper function
                 if (
+                  t.isCallExpression(declaration.init) &&
+                  t.isIdentifier(declaration.init.callee) &&
+                  this.drizzleZodImports.has(declaration.init.callee.name)
+                ) {
+                  const schema = this.processZodNode(declaration.init);
+                  if (schema) {
+                    this.zodSchemas[schemaName] = schema;
+                  }
+                }
+                // Check if this is a call expression with .extend()
+                else if (
                   t.isCallExpression(declaration.init) &&
                   t.isMemberExpression(declaration.init.callee) &&
                   t.isIdentifier(declaration.init.callee.property) &&
@@ -629,6 +654,15 @@ export class ZodSchemaConverter {
    * Process a Zod node and convert it to OpenAPI schema
    */
   processZodNode(node: t.Node): OpenApiSchema {
+    // Handle drizzle-zod helper functions (e.g., createInsertSchema, createSelectSchema)
+    if (
+      t.isCallExpression(node) &&
+      t.isIdentifier(node.callee) &&
+      this.drizzleZodImports.has(node.callee.name)
+    ) {
+      return DrizzleZodProcessor.processSchema(node);
+    }
+
     // Handle reference to another schema (e.g. UserBaseSchema.extend)
     if (
       t.isCallExpression(node) &&
@@ -1771,6 +1805,23 @@ export class ZodSchemaConverter {
       const content = fs.readFileSync(filePath, "utf-8");
       const ast = parseTypeScriptFile(content);
 
+      // First, collect all drizzle-zod imports
+      traverse(ast, {
+        ImportDeclaration: (path) => {
+          const source = path.node.source.value;
+          if (source === "drizzle-zod") {
+            path.node.specifiers.forEach((specifier) => {
+              if (
+                t.isImportSpecifier(specifier) ||
+                t.isImportDefaultSpecifier(specifier)
+              ) {
+                this.drizzleZodImports.add(specifier.local.name);
+              }
+            });
+          }
+        },
+      });
+
       // Collect all exported Zod schemas
       traverse(ast, {
         ExportNamedDeclaration: (path) => {
@@ -1828,6 +1879,17 @@ export class ZodSchemaConverter {
    */
   isZodSchema(node) {
     if (t.isCallExpression(node)) {
+      // Check for drizzle-zod helper functions (e.g., createInsertSchema, createSelectSchema)
+      if (
+        t.isIdentifier(node.callee) &&
+        this.drizzleZodImports.has(node.callee.name)
+      ) {
+        logger.debug(
+          `[isZodSchema] Detected drizzle-zod function: ${node.callee.name}`
+        );
+        return true;
+      }
+
       // Check direct z.method() calls
       if (
         t.isMemberExpression(node.callee) &&
