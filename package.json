@@ -36,7 +36,8 @@
     "docs",
     "react",
     "scalar",
-    "redoc"
+    "redoc",
+    "drizzle"
   ],
   "publishConfig": {
     "access": "public"
