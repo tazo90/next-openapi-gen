@@ -17,7 +17,7 @@
     "drizzle-orm": "^0.36.4",
     "drizzle-zod": "^0.5.1",
     "next": "15.3.2",
-    "next-openapi-gen": "^0.7.11",
+    "next-openapi-gen": "^0.8.0",
     "postgres": "^3.4.5",
     "react": "19.1.0",
     "react-dom": "19.1.0",

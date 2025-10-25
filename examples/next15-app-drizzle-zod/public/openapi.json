@@ -16,7 +16,7 @@
     "/posts": {
       "get": {
         "operationId": "get-posts",
-        "summary": "Get all posts",
+        "summary": "Get all posts\r",
         "description": "Retrieve a paginated list of blog posts with optional filters",
         "tags": [
           "Posts"
@@ -91,7 +91,7 @@
       },
       "post": {
         "operationId": "post-posts",
-        "summary": "Create a new post",
+        "summary": "Create a new post\r",
         "description": "Create a new blog post with Drizzle-Zod validation",
         "tags": [
           "Posts"
@@ -133,7 +133,7 @@
     "/posts/{id}": {
       "get": {
         "operationId": "get-posts-{id}",
-        "summary": "Get post by ID",
+        "summary": "Get post by ID\r",
         "description": "Retrieve a single blog post by its ID",
         "tags": [
           "Posts"
@@ -175,7 +175,7 @@
       },
       "patch": {
         "operationId": "patch-posts-{id}",
-        "summary": "Update post",
+        "summary": "Update post\r",
         "description": "Update an existing blog post",
         "tags": [
           "Posts"
@@ -227,7 +227,7 @@
       },
       "delete": {
         "operationId": "delete-posts-{id}",
-        "summary": "Delete post",
+        "summary": "Delete post\r",
         "description": "Delete a blog post by ID",
         "tags": [
           "Posts"
