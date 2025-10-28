@@ -71,7 +71,8 @@
     "anyBranch": false,
     "branch": "main",
     "cleanup": false,
-    "tests": true,
-    "2fa": false
+    "tests": false,
+    "2fa": false,
+    "releaseDraft": false
   }
 }
