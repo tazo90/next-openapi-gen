@@ -70,7 +70,7 @@
     "contents": "dist",
     "anyBranch": false,
     "branch": "main",
-    "cleanup": true,
+    "cleanup": false,
     "tests": true,
     "2fa": false
   }
