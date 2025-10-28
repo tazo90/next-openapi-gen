@@ -21,7 +21,7 @@
     "test:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage",
     "release": "np",
-    "version": "auto-changelog -p && git add CHANGELOG.md"
+    "version": "conventional-changelog -p angular -i CHANGELOG.md -s -n .changelogrc.cjs && git add CHANGELOG.md"
   },
   "repository": {
     "type": "git",
@@ -60,7 +60,7 @@
   "devDependencies": {
     "@types/node": "^24.3.0",
     "@vitest/ui": "^3.2.4",
-    "auto-changelog": "^2.5.0",
+    "conventional-changelog-cli": "^5.0.0",
     "np": "^10.2.0",
     "typescript": "^5.9.2",
     "vitest": "^3.2.4"

@@ -15,6 +15,7 @@ tsconfig.json
 vitest.config.ts
 .eslintrc*
 .prettierrc*
+.changelog*
 
 # Development files
 .git
