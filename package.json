@@ -20,7 +20,7 @@
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage",
-    "release": "np",
+    "release": "np --no-cleanup --no-tests",
     "version": "conventional-changelog -p angular -i CHANGELOG.md -s -n .changelogrc.cjs && git add CHANGELOG.md"
   },
   "repository": {
