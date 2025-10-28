@@ -1,0 +1,24 @@
+{
+  "output": "CHANGELOG.md",
+  "template": "compact",
+  "unreleased": true,
+  "commitLimit": false,
+  "backfillLimit": false,
+  "hideCredit": true,
+  "includeBranch": ["main"],
+  "ignoreCommitPattern": "(^chore\\(release\\)|^v?\\d+\\.\\d+\\.\\d+)",
+  "commitUrl": "https://github.com/tazo90/next-openapi-gen/commit/{id}",
+  "compareUrl": "https://github.com/tazo90/next-openapi-gen/compare/{from}...{to}",
+  "issueUrl": "https://github.com/tazo90/next-openapi-gen/issues/{id}",
+  "replaceText": {
+    "^feat(\\(.+\\))?:": "**Features:**",
+    "^fix(\\(.+\\))?:": "**Bug Fixes:**",
+    "^perf(\\(.+\\))?:": "**Performance:**",
+    "^refactor(\\(.+\\))?:": "**Refactoring:**",
+    "^docs(\\(.+\\))?:": "**Documentation:**",
+    "^test(\\(.+\\))?:": "**Tests:**",
+    "^build(\\(.+\\))?:": "**Build:**",
+    "^ci(\\(.+\\))?:": "**CI:**"
+  },
+  "includeMergeCommitMessages": true
+}

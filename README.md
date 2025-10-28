@@ -834,6 +834,21 @@ Visit `http://localhost:3000/api-docs` to see the generated documentation.
 - **[OpenAPI Specification](https://swagger.io/specification/)** - OpenAPI 3.0 spec
 - **[Scalar Documentation](https://docs.scalar.com/)** - Modern API documentation UI
 
+## Contributing
+
+We welcome contributions! 🎉
+
+Please read our [Contributing Guide](CONTRIBUTING.md) for details on:
+
+- 📝 Commit message guidelines (Conventional Commits)
+- 🔧 Development setup
+- ✅ Pull request process
+- 🚀 Release workflow
+
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) for release history and changes.
+
 ## License
 
 MIT

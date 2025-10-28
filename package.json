@@ -19,7 +19,9 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "release": "np",
+    "version": "auto-changelog -p && git add CHANGELOG.md"
   },
   "repository": {
     "type": "git",
@@ -58,7 +60,18 @@
   "devDependencies": {
     "@types/node": "^24.3.0",
     "@vitest/ui": "^3.2.4",
+    "auto-changelog": "^2.5.0",
+    "np": "^10.2.0",
     "typescript": "^5.9.2",
     "vitest": "^3.2.4"
+  },
+  "np": {
+    "yarn": false,
+    "contents": "dist",
+    "anyBranch": false,
+    "branch": "main",
+    "cleanup": true,
+    "tests": true,
+    "2fa": false
   }
 }
