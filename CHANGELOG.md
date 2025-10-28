@@ -1,3 +1,32 @@
+## [0.8.1](https://github.com/tazo90/next-openapi-gen/compare/v0.7.11...v0.8.1) (2025-10-28)
+
+
+### ✨ Features
+
+* add improved type definitions for schema processing ([2513d19](https://github.com/tazo90/next-openapi-gen/commit/2513d190d8be3087ac64a5e4aeda7fcb7fed0816))
+* implement automated release process with changelog generation ([263ac47](https://github.com/tazo90/next-openapi-gen/commit/263ac47dd4c644d57aade84803fd7f4e2d52c56a))
+
+
+### 🐛 Bug Fixes
+
+* remove contents option from np config to publish root package ([6c0afd8](https://github.com/tazo90/next-openapi-gen/commit/6c0afd8e6a1ac7d777fe328cd49d230e4026f6d1))
+
+
+### 📝 Documentation
+
+* improve formatting in PR template and contributing guide ([85677dc](https://github.com/tazo90/next-openapi-gen/commit/85677dc05ccfccb263e67254fd204b2cf453025f))
+
+
+### 🔨 Chores
+
+* add --no-cleanup --no-tests flags to release script ([1e72d77](https://github.com/tazo90/next-openapi-gen/commit/1e72d7717efc5e6b6d435222ccbdeb9a1023e207))
+* disable cleanup in np config to avoid npm ci issues ([eb725ee](https://github.com/tazo90/next-openapi-gen/commit/eb725eee5ce4ada8c4db0c1467c425dda93691c7))
+* disable tests in np to skip npm ci step ([1325048](https://github.com/tazo90/next-openapi-gen/commit/1325048f052452a1bad493262968a2ab722391b9))
+* setup automated release process with np and auto-changelog ([c0e6f7f](https://github.com/tazo90/next-openapi-gen/commit/c0e6f7f394aef96a55123d334fcafaa0058ca541))
+* update keywords in package.json ([44140fa](https://github.com/tazo90/next-openapi-gen/commit/44140fa329432e49adfc1fcb746be6bc1dc3928a))
+
+
+
 # [0.8.0](https://github.com/tazo90/next-openapi-gen/compare/v0.7.11...v0.8.0) (2025-10-28)
 
 
