@@ -1,9 +1,11 @@
 ## 📝 Pull Request
 
 ### Description
+
 <!-- Provide a clear and concise description of your changes -->
 
 ### Type of Change
+
 <!-- Put an `x` in the box that applies -->
 
 - [ ] 🐛 **Bug fix** (`fix:`) - Fixes an issue
@@ -16,6 +18,7 @@
 - [ ] 🔧 **Chore** (`chore:`) - Other changes (dependencies, build config, etc.)
 
 ### Checklist
+
 <!-- Put an `x` in the boxes that apply -->
 
 - [ ] My code follows the existing code style
@@ -30,6 +33,7 @@
 **Your PR title must follow [Conventional Commits](https://www.conventionalcommits.org/) format:**
 
 ### ✅ Good Examples:
+
 ```
 feat: add support for Drizzle ORM schemas
 fix: resolve TypeScript type errors in route processor
@@ -38,6 +42,7 @@ docs: update README with new examples
 ```
 
 ### ❌ Bad Examples:
+
 ```
 Added drizzle support
 Fixed bugs
@@ -46,12 +51,15 @@ WIP
 ```
 
 ### 💡 Why?
+
 We use **squash merge**, so your **PR title becomes the commit message** in the main branch. This helps us:
+
 - 📊 Auto-generate professional changelogs
 - 🏷️ Automatically determine version bumps
 - 📖 Maintain a clean and readable git history
 
 ### 📋 Format Rules:
+
 ```
 <type>: <description>
 
@@ -71,6 +79,7 @@ Breaking Changes (bumps MAJOR version):
 ```
 
 ### 📚 More Info:
+
 See [CONTRIBUTING.md](../CONTRIBUTING.md) for detailed guidelines.
 
 ---

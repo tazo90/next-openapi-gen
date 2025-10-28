@@ -3,6 +3,7 @@
 Thank you for considering contributing to **next-openapi-gen**! 🎉
 
 We welcome contributions from the community, whether it's:
+
 - 🐛 Bug reports
 - ✨ Feature requests
 - 📝 Documentation improvements
@@ -67,18 +68,18 @@ We use **[Conventional Commits](https://www.conventionalcommits.org/)** format f
 
 ### Types
 
-| Type | Description | Version Bump | Example |
-|------|-------------|--------------|---------|
-| `feat:` | New feature | MINOR (0.8.0 → 0.9.0) | `feat: add Drizzle ORM support` |
-| `fix:` | Bug fix | PATCH (0.8.0 → 0.8.1) | `fix: resolve type errors` |
-| `perf:` | Performance improvement | PATCH | `perf: optimize schema processing` |
-| `docs:` | Documentation only | None | `docs: update README examples` |
-| `style:` | Code formatting | None | `style: fix indentation` |
-| `refactor:` | Code refactoring | None | `refactor: simplify route processor` |
-| `test:` | Tests only | None | `test: add unit tests for converter` |
-| `build:` | Build system changes | None | `build: update tsconfig` |
-| `ci:` | CI/CD changes | None | `ci: add workflow` |
-| `chore:` | Maintenance tasks | None | `chore: update dependencies` |
+| Type        | Description             | Version Bump          | Example                              |
+| ----------- | ----------------------- | --------------------- | ------------------------------------ |
+| `feat:`     | New feature             | MINOR (0.8.0 → 0.9.0) | `feat: add Drizzle ORM support`      |
+| `fix:`      | Bug fix                 | PATCH (0.8.0 → 0.8.1) | `fix: resolve type errors`           |
+| `perf:`     | Performance improvement | PATCH                 | `perf: optimize schema processing`   |
+| `docs:`     | Documentation only      | None                  | `docs: update README examples`       |
+| `style:`    | Code formatting         | None                  | `style: fix indentation`             |
+| `refactor:` | Code refactoring        | None                  | `refactor: simplify route processor` |
+| `test:`     | Tests only              | None                  | `test: add unit tests for converter` |
+| `build:`    | Build system changes    | None                  | `build: update tsconfig`             |
+| `ci:`       | CI/CD changes           | None                  | `ci: add workflow`                   |
+| `chore:`    | Maintenance tasks       | None                  | `chore: update dependencies`         |
 
 ### Breaking Changes
 
@@ -87,7 +88,7 @@ For breaking changes, add `!` after the type or include `BREAKING CHANGE:` in th
 ```
 feat!: migrate to ESM modules
 
-BREAKING CHANGE: CommonJS is no longer supported. 
+BREAKING CHANGE: CommonJS is no longer supported.
 Node.js 16 is no longer supported, minimum version is now 18.0.0.
 ```
 
@@ -176,6 +177,7 @@ Update
 ### 4. PR Template
 
 When you create a PR, a template will guide you through:
+
 - Description of changes
 - Type of change (bug fix, feature, etc.)
 - Checklist
@@ -274,6 +276,7 @@ npm run release
 ```
 
 This will:
+
 1. ✅ Run tests
 2. ✅ Build the project
 3. ✅ Prompt you to select version (patch/minor/major)
