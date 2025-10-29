@@ -1,0 +1,28 @@
+{
+  "name": "next15-app-mixed-schemas",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "openapi:generate": "next-openapi-gen generate"
+  },
+  "dependencies": {
+    "@scalar/api-reference-react": "^0.6.30",
+    "next": "^16.0.1",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "zod": "^4.1.12"
+  },
+  "devDependencies": {
+    "@types/node": "^24.9.2",
+    "@types/react": "^19.2.2",
+    "@types/react-dom": "^19.2.2",
+    "eslint": "^9.38.0",
+    "eslint-config-next": "^16.0.1",
+    "next-openapi-gen": "file:../..",
+    "typescript": "^5.9.3"
+  }
+}
