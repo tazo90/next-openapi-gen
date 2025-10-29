@@ -55,9 +55,11 @@
     "@babel/types": "^7.28.2",
     "commander": "^14.0.0",
     "fs-extra": "^11.3.1",
+    "js-yaml": "^4.1.0",
     "ora": "^8.2.0"
   },
   "devDependencies": {
+    "@types/js-yaml": "^4.0.9",
     "@types/node": "^24.3.0",
     "@vitest/ui": "^3.2.4",
     "conventional-changelog-cli": "^5.0.0",
