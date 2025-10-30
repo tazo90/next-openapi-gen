@@ -8,7 +8,7 @@ Automatically generate OpenAPI 3.0 documentation from Next.js projects, with sup
 - ✅ Multiple schema types: `TypeScript`, `Zod`, `Drizzle-Zod`, or `custom YAML/JSON` files 🆕
 - ✅ Mix schema sources simultaneously - perfect for gradual migrations 🆕
 - ✅ JSDoc comments with intelligent parameter examples
-- ✅ Multiple UI options: `Scalar`, `Swagger`, `Redoc`, `Stoplight`, and `RapiDoc` available at `/api-docs` url
+- ✅ Multiple UI interfaces: `Scalar`, `Swagger`, `Redoc`, `Stoplight`, and `RapiDoc` available at `/api-docs` url
 - ✅ Auto-detection of path parameters (e.g., `/users/[id]/route.ts`)
 - ✅ Intuitive CLI for quick setup and generation
 
