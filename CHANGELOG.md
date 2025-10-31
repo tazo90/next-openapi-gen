@@ -1,3 +1,17 @@
+## [0.8.2](https://github.com/tazo90/next-openapi-gen/compare/v0.8.1...v0.8.2) (2025-10-31)
+
+
+### ✨ Features
+
+* support for multiple schema types simultaneously ([#46](https://github.com/tazo90/next-openapi-gen/issues/46)) ([c4c09b5](https://github.com/tazo90/next-openapi-gen/commit/c4c09b5dce4dc01c449950c999bce0531737841e))
+
+
+### 📝 Documentation
+
+* simplify pull request template ([a887ca8](https://github.com/tazo90/next-openapi-gen/commit/a887ca8399aefe6cedef8049d499853f17ad6cf0))
+
+
+
 ## [0.8.1](https://github.com/tazo90/next-openapi-gen/compare/v0.7.11...v0.8.1) (2025-10-28)
 
 
