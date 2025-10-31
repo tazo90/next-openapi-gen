@@ -814,19 +814,19 @@ This repository includes several complete example projects:
 
 | Example                                                         | Description             | Features                                        |
 | --------------------------------------------------------------- | ----------------------- | ----------------------------------------------- |
-| **[next15-app-zod](./examples/next15-app-zod)**                 | Zod schemas example     | Users, Products, Orders API with Zod validation |
-| **[next15-app-drizzle-zod](./examples/next15-app-drizzle-zod)** | Drizzle-Zod integration | Blog API with Drizzle ORM + drizzle-zod         |
-| **[next15-app-mixed-schemas](./examples/next15-app-mixed-schemas)** 🆕          | Multiple schema types   | Zod + TypeScript + Custom YAML schemas combined |
-| **[next15-app-typescript](./examples/next15-app-typescript)**   | TypeScript types        | API with pure TypeScript type definitions       |
-| **[next15-app-scalar](./examples/next15-app-scalar)**           | Scalar UI               | Modern API documentation interface              |
-| **[next15-app-swagger](./examples/next15-app-swagger)**         | Swagger UI              | Classic Swagger documentation                   |
+| **[next-app-zod](./examples/next-app-zod)**                 | Zod schemas example     | Users, Products, Orders API with Zod validation |
+| **[next-app-drizzle-zod](./examples/next-app-drizzle-zod)** | Drizzle-Zod integration | Blog API with Drizzle ORM + drizzle-zod         |
+| **[next-app-mixed-schemas](./examples/next-app-mixed-schemas)** 🆕          | Multiple schema types   | Zod + TypeScript + Custom YAML schemas combined |
+| **[next-app-typescript](./examples/next-app-typescript)**   | TypeScript types        | API with pure TypeScript type definitions       |
+| **[next-app-scalar](./examples/next-app-scalar)**           | Scalar UI               | Modern API documentation interface              |
+| **[next-app-swagger](./examples/next-app-swagger)**         | Swagger UI              | Classic Swagger documentation                   |
 
 ### 🚀 Running Examples
 
 ```bash
-cd examples/next15-app-drizzle-zod
+cd examples/next-app-zod
 npm install
-npm run openapi:generate
+npx next-openapi-gen generate
 npm run dev
 ```
 

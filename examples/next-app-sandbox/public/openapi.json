@@ -290,29 +290,6 @@
           "name"
         ]
       },
-      "FileUploadSchema": {
-        "type": "object",
-        "properties": {
-          "file": {
-            "type": "string",
-            "format": "binary",
-            "description": "Image file (PNG/JPG)"
-          },
-          "description": {
-            "type": "string",
-            "nullable": true,
-            "description": "File description"
-          },
-          "category": {
-            "type": "string",
-            "description": "File category"
-          }
-        },
-        "required": [
-          "file",
-          "category"
-        ]
-      },
       "GetUserProfilePathParams": {
         "type": "object",
         "properties": {
@@ -711,34 +688,6 @@
               }
             }
           },
-          "400": {
-            "$ref": "#/components/responses/400"
-          },
-          "500": {
-            "$ref": "#/components/responses/500"
-          }
-        }
-      }
-    },
-    "/upload": {
-      "post": {
-        "operationId": "post-upload",
-        "summary": "File upload",
-        "description": "",
-        "tags": [
-          "Upload"
-        ],
-        "parameters": [],
-        "requestBody": {
-          "content": {
-            "multipart/form-data": {
-              "schema": {
-                "$ref": "#/components/schemas/FileUploadSchema"
-              }
-            }
-          }
-        },
-        "responses": {
           "400": {
             "$ref": "#/components/responses/400"
           },
