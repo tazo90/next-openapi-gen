@@ -33,7 +33,8 @@ export class RouteProcessor {
     this.config = config;
     this.schemaProcessor = new SchemaProcessor(
       config.schemaDir,
-      config.schemaType
+      config.schemaType,
+      config.schemaFiles
     );
   }
 

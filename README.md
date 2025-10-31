@@ -4,16 +4,13 @@ Automatically generate OpenAPI 3.0 documentation from Next.js projects, with sup
 
 ## Features
 
-- ✅ Automatic OpenAPI documentation generation from Next.js code
-- ✅ Support for Next.js App Router (including `/api/users/[id]/route.ts` routes)
-- ✅ TypeScript types support
-- ✅ Zod schemas support
-- ✅ Drizzle-Zod support - Generate schemas from Drizzle ORM tables 🆕
-- ✅ JSDoc comments support
-- ✅ Multiple UI interfaces: `Scalar`, `Swagger`, `Redoc`, `Stoplight` and `Rapidoc` available at `/api-docs` url
-- ✅ Path parameters detection (`/users/{id}`)
-- ✅ Intelligent parameter examples
-- ✅ Intuitive CLI for initialization and documentation generation
+- ✅ Automatic OpenAPI 3.0 documentation generation from Next.js App Router
+- ✅ Multiple schema types: `TypeScript`, `Zod`, `Drizzle-Zod`, or `custom YAML/JSON` files 🆕
+- ✅ Mix schema sources simultaneously - perfect for gradual migrations 🆕
+- ✅ JSDoc comments with intelligent parameter examples
+- ✅ Multiple UI interfaces: `Scalar`, `Swagger`, `Redoc`, `Stoplight`, and `RapiDoc` available at `/api-docs` url
+- ✅ Auto-detection of path parameters (e.g., `/users/[id]/route.ts`)
+- ✅ Intuitive CLI for quick setup and generation
 
 ## Supported interfaces
 
@@ -59,7 +56,8 @@ During initialization (`npx next-openapi-gen init`), a configuration file `next.
   ],
   "apiDir": "src/app/api",
   "schemaDir": "src/types", // or "src/schemas" for Zod schemas
-  "schemaType": "zod", // or "typescript" for TypeScript types
+  "schemaType": "zod", // or "typescript", or ["zod", "typescript"] for multiple
+  "schemaFiles": [], // Optional: ["./schemas/models.yaml", "./schemas/api.json"]
   "outputFile": "openapi.json",
   "outputDir": "./public",
   "docsUrl": "/api-docs",
@@ -71,20 +69,21 @@ During initialization (`npx next-openapi-gen init`), a configuration file `next.
 
 ### Configuration Options
 
-| Option                 | Description                                                                |
-| ---------------------- | -------------------------------------------------------------------------- |
-| `apiDir`               | Path to the API directory                                                  |
-| `schemaDir`            | Path to the types/schemas directory                                        |
-| `schemaType`           | Schema type: `"zod"` or `"typescript"`                                     |
-| `outputFile`           | Name of the OpenAPI output file                                            |
-| `outputDir`            | Directory where OpenAPI file will be generated (default: `"./public"`)     |
-| `docsUrl`              | API documentation URL (for Swagger UI)                                     |
-| `includeOpenApiRoutes` | Whether to include only routes with @openapi tag                           |
-| `ignoreRoutes`         | Array of route patterns to exclude from documentation (supports wildcards) |
-| `defaultResponseSet`   | Default error response set for all endpoints                               |
-| `responseSets`         | Named sets of error response codes                                         |
-| `errorConfig`          | Error schema configuration                                                 |
-| `debug`                | Enable detailed logging during generation                                  |
+| Option                 | Description                                                                   |
+| ---------------------- | ----------------------------------------------------------------------------- |
+| `apiDir`               | Path to the API directory                                                     |
+| `schemaDir`            | Path to the types/schemas directory                                           |
+| `schemaType`           | Schema type: `"zod"`, `"typescript"`, or `["zod", "typescript"]` for multiple |
+| `schemaFiles`          | Optional: Array of custom OpenAPI schema files (YAML/JSON) to include         |
+| `outputFile`           | Name of the OpenAPI output file                                               |
+| `outputDir`            | Directory where OpenAPI file will be generated (default: `"./public"`)        |
+| `docsUrl`              | API documentation URL (for Swagger UI)                                        |
+| `includeOpenApiRoutes` | Whether to include only routes with @openapi tag                              |
+| `ignoreRoutes`         | Array of route patterns to exclude from documentation (supports wildcards)    |
+| `defaultResponseSet`   | Default error response set for all endpoints                                  |
+| `responseSets`         | Named sets of error response codes                                            |
+| `errorConfig`          | Error schema configuration                                                    |
+| `debug`                | Enable detailed logging during generation                                     |
 
 ## Documenting Your API
 
@@ -766,19 +765,61 @@ export const CreatePostSchema = createInsertSchema(posts, {
 
 See the [complete Drizzle-Zod example](./examples/next15-app-drizzle-zod) for a full working implementation with a blog API.
 
+## Multiple Schema Types Support 🆕
+
+Use **multiple schema types simultaneously** in a single project - perfect for gradual migrations, combining hand-written schemas with generated ones (protobuf, GraphQL), or using existing OpenAPI specs.
+
+### Configuration
+
+```json
+{
+  "schemaType": ["zod", "typescript"],
+  "schemaDir": "./src/schemas",
+  "schemaFiles": ["./schemas/external-api.yaml"]
+}
+```
+
+### Schema Resolution Priority
+
+1. **Custom files** (highest) - from `schemaFiles` array
+2. **Zod schemas** (medium) - if `"zod"` in `schemaType`
+3. **TypeScript types** (fallback) - if `"typescript"` in `schemaType`
+
+### Common Use Cases
+
+```json
+// Gradual TypeScript → Zod migration
+{ "schemaType": ["zod", "typescript"] }
+
+// Zod + protobuf schemas
+{
+  "schemaType": ["zod"],
+  "schemaFiles": ["./proto/schemas.yaml"]
+}
+
+// Everything together
+{
+  "schemaType": ["zod", "typescript"],
+  "schemaFiles": ["./openapi-models.yaml"]
+}
+```
+
+Custom schema files support YAML/JSON in OpenAPI 3.0 format. See **[next15-app-mixed-schemas](./examples/next15-app-mixed-schemas)** for a complete working example.
+
 ## Examples
 
 This repository includes several complete example projects:
 
 ### 📦 Available Examples
 
-| Example                                                         | Description                | Features                                        |
-| --------------------------------------------------------------- | -------------------------- | ----------------------------------------------- |
-| **[next15-app-zod](./examples/next15-app-zod)**                 | Zod schemas example        | Users, Products, Orders API with Zod validation |
-| **[next15-app-drizzle-zod](./examples/next15-app-drizzle-zod)** | Drizzle-Zod integration 🆕 | Blog API with Drizzle ORM + drizzle-zod         |
-| **[next15-app-typescript](./examples/next15-app-typescript)**   | TypeScript types           | API with pure TypeScript type definitions       |
-| **[next15-app-scalar](./examples/next15-app-scalar)**           | Scalar UI                  | Modern API documentation interface              |
-| **[next15-app-swagger](./examples/next15-app-swagger)**         | Swagger UI                 | Classic Swagger documentation                   |
+| Example                                                         | Description             | Features                                        |
+| --------------------------------------------------------------- | ----------------------- | ----------------------------------------------- |
+| **[next15-app-zod](./examples/next15-app-zod)**                 | Zod schemas example     | Users, Products, Orders API with Zod validation |
+| **[next15-app-drizzle-zod](./examples/next15-app-drizzle-zod)** | Drizzle-Zod integration | Blog API with Drizzle ORM + drizzle-zod         |
+| **[next15-app-mixed-schemas](./examples/next15-app-mixed-schemas)** 🆕          | Multiple schema types   | Zod + TypeScript + Custom YAML schemas combined |
+| **[next15-app-typescript](./examples/next15-app-typescript)**   | TypeScript types        | API with pure TypeScript type definitions       |
+| **[next15-app-scalar](./examples/next15-app-scalar)**           | Scalar UI               | Modern API documentation interface              |
+| **[next15-app-swagger](./examples/next15-app-swagger)**         | Swagger UI              | Classic Swagger documentation                   |
 
 ### 🚀 Running Examples
 
@@ -824,26 +865,11 @@ Visit `http://localhost:3000/api-docs` to see the generated documentation.
 </table>
 </div>
 
-## Learn More
-
-- **[Drizzle-Zod Example](./examples/next15-app-drizzle-zod)** - Complete example with Drizzle ORM integration
-- **[Drizzle ORM](https://orm.drizzle.team/)** - TypeScript ORM for SQL databases
-- **[drizzle-zod](https://orm.drizzle.team/docs/zod)** - Zod schema generator for Drizzle
-- **[Zod Documentation](https://zod.dev/)** - TypeScript-first schema validation
-- **[Next.js Documentation](https://nextjs.org/docs)** - React framework documentation
-- **[OpenAPI Specification](https://swagger.io/specification/)** - OpenAPI 3.0 spec
-- **[Scalar Documentation](https://docs.scalar.com/)** - Modern API documentation UI
-
 ## Contributing
 
 We welcome contributions! 🎉
 
-Please read our [Contributing Guide](CONTRIBUTING.md) for details on:
-
-- 📝 Commit message guidelines (Conventional Commits)
-- 🔧 Development setup
-- ✅ Pull request process
-- 🚀 Release workflow
+Please read our [Contributing Guide](CONTRIBUTING.md) for details.
 
 ## Changelog
 

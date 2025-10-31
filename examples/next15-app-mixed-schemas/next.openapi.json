@@ -1,0 +1,68 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Mixed Schema Types API",
+    "version": "1.0.0",
+    "description": "Example demonstrating Zod + TypeScript + Custom YAML schemas"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000/api",
+      "description": "Local development server"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  },
+  "defaultResponseSet": "common",
+  "responseSets": {
+    "common": ["400", "500"]
+  },
+  "errorConfig": {
+    "template": {
+      "type": "object",
+      "properties": {
+        "error": {
+          "type": "string",
+          "example": "{{ERROR_MESSAGE}}"
+        },
+        "code": {
+          "type": "string",
+          "example": "{{ERROR_CODE}}"
+        }
+      }
+    },
+    "codes": {
+      "400": {
+        "description": "Bad Request",
+        "variables": {
+          "ERROR_MESSAGE": "Invalid request parameters",
+          "ERROR_CODE": "BAD_REQUEST"
+        }
+      },
+      "500": {
+        "description": "Internal Server Error",
+        "variables": {
+          "ERROR_MESSAGE": "An unexpected error occurred",
+          "ERROR_CODE": "INTERNAL_ERROR"
+        }
+      }
+    }
+  },
+  "apiDir": "./src/app/api",
+  "schemaDir": "./src/schemas",
+  "schemaType": ["zod", "typescript"],
+  "schemaFiles": ["./src/schemas/custom-schemas.yaml"],
+  "docsUrl": "api-docs",
+  "ui": "scalar",
+  "outputFile": "openapi.json",
+  "outputDir": "./public",
+  "includeOpenApiRoutes": false,
+  "debug": true
+}

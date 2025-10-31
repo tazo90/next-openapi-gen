@@ -12,7 +12,8 @@ export type OpenApiConfig = {
   outputDir: string;
   includeOpenApiRoutes: boolean;
   ignoreRoutes?: string[];
-  schemaType: SchemaType;
+  schemaType: SchemaType | SchemaType[]; // Support both single type and array of types
+  schemaFiles?: string[]; // Array of custom OpenAPI schema files (YAML/JSON)
   defaultResponseSet?: string;
   responseSets?: ResponseSets;
   errorConfig?: ErrorTemplateConfig;
@@ -203,4 +204,3 @@ export interface ErrorDefinition {
   description: string;
   schema: any;
 }
-// Test feature

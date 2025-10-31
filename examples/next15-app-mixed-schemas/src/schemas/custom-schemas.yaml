@@ -1,0 +1,65 @@
+# Schemas generated from protobuf definitions
+components:
+  schemas:
+    Role:
+      type: object
+      description: User role definition from protobuf
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Role unique identifier
+        name:
+          type: string
+          description: Role name
+          enum: [admin, user, moderator, guest]
+        permissions:
+          type: array
+          description: List of permissions
+          items:
+            type: string
+        createdAt:
+          type: string
+          format: date-time
+          description: Role creation timestamp
+      required:
+        - id
+        - name
+        - permissions
+
+    Permission:
+      type: object
+      description: Permission definition from protobuf
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          description: Permission name
+        resource:
+          type: string
+          description: Resource this permission applies to
+        action:
+          type: string
+          description: Action allowed by this permission
+          enum: [read, write, delete, admin]
+      required:
+        - id
+        - name
+        - resource
+        - action
+
+    ApiMetadata:
+      type: object
+      description: API metadata from external source
+      properties:
+        version:
+          type: string
+          example: "1.0.0"
+        environment:
+          type: string
+          enum: [development, staging, production]
+        region:
+          type: string
+          example: "us-east-1"
