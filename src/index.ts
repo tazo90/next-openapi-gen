@@ -17,8 +17,8 @@ program
 program
   .command("init")
   .addOption(
-    new Option("-i, --ui <type>", "Specify the UI type, e.g., scalar")
-      .choices(["scalar", "swagger", "redoc", "stoplight", "rapidoc"])
+    new Option("-i, --ui <type>", "Specify the UI type, e.g., scalar. Use \"none\" for no UI")
+      .choices(["scalar", "swagger", "redoc", "stoplight", "rapidoc", "none"])
       .default("swagger")
   )
   .option("-u, --docs-url <url>", "Specify the docs URL", "api-docs")
@@ -27,12 +27,14 @@ program
       .choices(["zod", "typescript"])
       .default("zod")
   )
+  .option("-o, --output <file>", "Specify the output path for the OpenAPI template.", "next.openapi.json")
   .description("Initialize a openapi specification")
   .action(init);
 
 program
   .command("generate")
   .description("Generate a specification based on api routes")
+  .option("-t, --template <file>", "Specify the OpenAPI template file", "next.openapi.json")
   .action(generate);
 
 program.parse(process.argv);

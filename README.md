@@ -20,6 +20,9 @@ Automatically generate OpenAPI 3.0 documentation from Next.js projects, with sup
 - Stoplight Elements
 - RapiDoc
 
+> [!TIP]
+> You can use the `--ui none` option during initialization to skip UI setup if you only care about generating the OpenAPI documentation.
+
 ## Installation
 
 ```bash
@@ -35,6 +38,9 @@ npx next-openapi-gen init --ui scalar --docs-url api-docs --schema zod
 # Generate OpenAPI documentation
 npx next-openapi-gen generate
 ```
+
+> [!TIP]
+> Use the `--output` option in the `init` command to specify a custom output file for the template. Then you can use the `--template` option in the `generate` command to point to that file.
 
 ## Configuration
 
