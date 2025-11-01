@@ -91,6 +91,10 @@ function getDocsPageDependencies(ui: string) {
 }
 
 async function createDocsPage(ui: string, outputFile: string) {
+  if (ui === "none") {
+    return;
+  }
+
   const paths = ["app", "api-docs"];
   const srcPath = path.join(process.cwd(), "src");
 
@@ -109,6 +113,10 @@ async function createDocsPage(ui: string, outputFile: string) {
 }
 
 async function installDependencies(ui: string) {
+  if (ui === "none") {
+    return;
+  }
+
   const packageManager = await getPackageManager();
   const installCmd = `${packageManager} ${
     packageManager === "npm" ? "install" : "add"
@@ -128,19 +136,27 @@ function extendOpenApiTemplate(spec, options) {
   spec.schemaType = options.schema ?? spec.schemaType;
 }
 
+function getOutputPath(output?: string) {
+  if (output) {
+    return path.isAbsolute(output) ? output : path.join(process.cwd(), output);
+  }
+
+  return path.join(process.cwd(), "next.openapi.json");
+}
+
 export async function init(options) {
-  const { ui } = options;
+  const { ui, output } = options;
 
   spinner.start();
 
   try {
-    const outputPath = path.join(process.cwd(), "next.openapi.json");
+    const outputPath = getOutputPath(output);
     const template = { ...openapiTemplate };
 
     extendOpenApiTemplate(template, options);
 
     await fse.writeJson(outputPath, template, { spaces: 2 });
-    spinner.succeed(`Created OpenAPI template in next.openapi.json`);
+    spinner.succeed(`Created OpenAPI template in ${outputPath}`);
 
     createDocsPage(ui, template.outputFile);
     installDependencies(ui);

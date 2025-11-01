@@ -11,13 +11,17 @@ import {
 } from "../types.js";
 import { logger } from "./logger.js";
 
+export type OpenApiGeneratorOptions = {
+  templatePath?: string;
+}
+
 export class OpenApiGenerator {
   private config: OpenApiConfig;
   private template: OpenApiTemplate;
   private routeProcessor: RouteProcessor;
 
-  constructor() {
-    const templatePath = path.resolve("./next.openapi.json");
+  constructor(opts: OpenApiGeneratorOptions = {}) {
+    const templatePath = opts.templatePath || path.resolve("./next.openapi.json");
 
     this.template = JSON.parse(fs.readFileSync(templatePath, "utf-8"));
     this.config = this.getConfig();
