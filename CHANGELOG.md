@@ -1,3 +1,12 @@
+## [0.8.3](https://github.com/tazo90/next-openapi-gen/compare/v0.8.2...v0.8.3) (2025-11-01)
+
+
+### ✨ Features
+
+* add --ui none and --output options ([#47](https://github.com/tazo90/next-openapi-gen/issues/47)) ([0c90bcc](https://github.com/tazo90/next-openapi-gen/commit/0c90bcc47ddb09031aa15dbf40eb6a6bf4d64e44))
+
+
+
 ## [0.8.2](https://github.com/tazo90/next-openapi-gen/compare/v0.8.1...v0.8.2) (2025-10-31)
 
 
