@@ -1,3 +1,12 @@
+## [0.8.4](https://github.com/tazo90/next-openapi-gen/compare/v0.8.3...v0.8.4) (2025-11-06)
+
+
+### 🐛 Bug Fixes
+
+* remove `schemaFiles` and `outputDir` from generated file ([#48](https://github.com/tazo90/next-openapi-gen/issues/48)) ([80bf7a7](https://github.com/tazo90/next-openapi-gen/commit/80bf7a71ef72380774b890effaadddc7c7ea3657))
+
+
+
 ## [0.8.3](https://github.com/tazo90/next-openapi-gen/compare/v0.8.2...v0.8.3) (2025-11-01)
 
 
