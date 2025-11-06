@@ -219,6 +219,8 @@ export function cleanSpec(spec: any) {
     "responseSets",
     "errorConfig",
     "debug",
+    "schemaFiles",
+    "outputDir",
   ];
   const newSpec = { ...spec };
 
