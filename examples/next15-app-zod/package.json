@@ -10,8 +10,8 @@
   },
   "dependencies": {
     "@scalar/api-reference-react": "^0.6.30",
+    "next-openapi-gen": "file:../..",
     "next": "15.3.2",
-    "next-openapi-gen": "^0.8.0",
     "react": "19.1.0",
     "react-dom": "19.1.0"
   },

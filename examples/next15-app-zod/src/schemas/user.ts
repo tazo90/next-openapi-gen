@@ -1,6 +1,11 @@
 import { z } from "zod";
 import { PaymentMethodSchema } from "./payment";
 import { PaginatedResponse, PaginationSchema } from "./base";
+import {
+  createPaginatedSchema,
+  makePaginatedResponse,
+  wrapInEnvelope,
+} from "./pagination";
 
 export const UserListParamsSchema = z.object({
   pagination: PaginationSchema,
@@ -113,6 +118,15 @@ export const UpdateUserBody = z
   .refine((data) => Object.keys(data).length > 0, {
     message: "At least one field must be provided for update",
   });
+
+// Factory-based pagination schemas (demonstrates automatic detection)
+// These will be automatically expanded by the OpenAPI generator
+export const PaginatedUsersSchema = createPaginatedSchema(UserDetailedSchema);
+export const PaginatedUsersAlternativeSchema = makePaginatedResponse(UserDetailedSchema);
+export const UserEnvelopeSchema = wrapInEnvelope(UserDetailedSchema);
+
+// Also works with inline schemas
+export const PaginatedStringsSchema = createPaginatedSchema(z.string().describe("A simple string"));
 
 // Export TypeScript types using z.infer
 export type User = z.infer<typeof UserBaseSchema>;

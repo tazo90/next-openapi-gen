@@ -21,6 +21,15 @@ export class ZodSchemaConverter {
   processedModules: Set<string> = new Set();
   typeToSchemaMapping = {};
   drizzleZodImports: Set<string> = new Set();
+  factoryCache: Map<string, t.Node> = new Map(); // Cache for analyzed factory functions
+  factoryCheckCache: Map<string, boolean> = new Map(); // Cache for non-factory functions
+  fileASTCache: Map<string, t.File> = new Map(); // Cache for parsed files
+  fileImportsCache: Map<string, Record<string, string>> = new Map(); // Cache for file imports
+
+  // Current processing context (set during file processing)
+  currentFilePath?: string;
+  currentAST?: t.File;
+  currentImports?: Record<string, string>;
 
   constructor(schemaDir: string) {
     this.schemaDir = path.resolve(schemaDir);
@@ -185,39 +194,57 @@ export class ZodSchemaConverter {
       // Parse the file
       const ast = parseTypeScriptFile(content);
 
+      // Cache AST for later use
+      this.fileASTCache.set(filePath, ast);
+
       // Create a map to store imported modules
-      const importedModules: Record<string, string> = {};
+      let importedModules: Record<string, string> = {};
 
-      // Look for all exported Zod schemas
-      traverse(ast, {
-        // Track imports for resolving local and imported schemas
-        ImportDeclaration: (path) => {
-          // Keep track of imports to resolve external schemas
-          const source = path.node.source.value;
+      // Check if we have cached imports
+      if (this.fileImportsCache.has(filePath)) {
+        importedModules = this.fileImportsCache.get(filePath)!;
+      } else {
+        // Build imports cache
+        traverse(ast, {
+          ImportDeclaration: (path) => {
+            const source = path.node.source.value;
 
-          // Track drizzle-zod imports
-          if (source === "drizzle-zod") {
+            // Track drizzle-zod imports
+            if (source === "drizzle-zod") {
+              path.node.specifiers.forEach((specifier) => {
+                if (
+                  t.isImportSpecifier(specifier) ||
+                  t.isImportDefaultSpecifier(specifier)
+                ) {
+                  this.drizzleZodImports.add(specifier.local.name);
+                }
+              });
+            }
+
+            // Process each import specifier
             path.node.specifiers.forEach((specifier) => {
               if (
                 t.isImportSpecifier(specifier) ||
                 t.isImportDefaultSpecifier(specifier)
               ) {
-                this.drizzleZodImports.add(specifier.local.name);
+                const importedName = specifier.local.name;
+                importedModules[importedName] = source;
               }
             });
-          }
+          },
+        });
 
-          // Process each import specifier
-          path.node.specifiers.forEach((specifier) => {
-            if (
-              t.isImportSpecifier(specifier) ||
-              t.isImportDefaultSpecifier(specifier)
-            ) {
-              const importedName = specifier.local.name;
-              importedModules[importedName] = source;
-            }
-          });
-        },
+        // Cache imports for this file
+        this.fileImportsCache.set(filePath, importedModules);
+      }
+
+      // Set current processing context for use by processZodNode during factory expansion
+      this.currentFilePath = filePath;
+      this.currentAST = ast;
+      this.currentImports = importedModules;
+
+      // Look for all exported Zod schemas
+      traverse(ast, {
 
         // For export const SchemaName = z.object({...})
         ExportNamedDeclaration: (path) => {
@@ -261,6 +288,29 @@ export class ZodSchemaConverter {
                   const schema = this.processZodNode(declaration.init);
                   if (schema) {
                     this.zodSchemas[schemaName] = schema;
+                  }
+                }
+                // Check if this is a factory function call
+                else if (
+                  t.isCallExpression(declaration.init) &&
+                  t.isIdentifier(declaration.init.callee)
+                ) {
+                  const factoryName = declaration.init.callee.name;
+                  logger.debug(`[Schema] Detected potential factory function call: ${factoryName} for schema ${schemaName}`);
+
+                  const factoryNode = this.findFactoryFunction(factoryName, filePath, ast, importedModules);
+
+                  if (factoryNode) {
+                    logger.debug(`[Schema] Found factory function, attempting to expand...`);
+                    const schema = this.expandFactoryCall(factoryNode, declaration.init, filePath);
+                    if (schema) {
+                      this.zodSchemas[schemaName] = schema;
+                      logger.debug(`[Schema] Successfully expanded factory function '${factoryName}' for schema '${schemaName}'`);
+                    } else {
+                      logger.debug(`[Schema] Failed to expand factory function '${factoryName}'`);
+                    }
+                  } else {
+                    logger.debug(`[Schema] Could not find factory function '${factoryName}'`);
                   }
                 }
               }
@@ -801,6 +851,42 @@ export class ZodSchemaConverter {
       node.arguments.length > 0
     ) {
       return this.processZodLazy(node);
+    }
+
+    // Handle potential factory function calls (e.g., createPaginatedSchema(UserSchema))
+    // This must be checked before falling back to "Unknown Zod schema node"
+    if (
+      t.isCallExpression(node) &&
+      t.isIdentifier(node.callee)
+    ) {
+      logger.debug(`[processZodNode] Attempting to handle potential factory function: ${node.callee.name}`);
+
+      // We need the current file context - try to get it from the processing context
+      // Note: This is a limitation - we may not have file context during preprocessing
+      // In that case, we'll return a placeholder and let the main processing handle it
+      const currentFilePath = this.currentFilePath;
+      const currentAST = this.currentAST;
+      const importedModules = this.currentImports;
+
+      if (currentFilePath && currentAST && importedModules) {
+        const factoryNode = this.findFactoryFunction(
+          node.callee.name,
+          currentFilePath,
+          currentAST,
+          importedModules
+        );
+
+        if (factoryNode) {
+          logger.debug(`[processZodNode] Found factory function, expanding...`);
+          const schema = this.expandFactoryCall(factoryNode, node, currentFilePath);
+          if (schema) {
+            logger.debug(`[processZodNode] Successfully expanded factory function '${node.callee.name}'`);
+            return schema;
+          }
+        }
+      }
+
+      logger.debug(`[processZodNode] Could not expand factory function '${node.callee.name}' - missing context or not a factory`);
     }
 
     logger.debug("Unknown Zod schema node:", node);
@@ -1805,7 +1891,13 @@ export class ZodSchemaConverter {
       const content = fs.readFileSync(filePath, "utf-8");
       const ast = parseTypeScriptFile(content);
 
-      // First, collect all drizzle-zod imports
+      // Cache AST for later use
+      this.fileASTCache.set(filePath, ast);
+
+      // Collect imports to enable factory function resolution during preprocessing
+      let importedModules: Record<string, string> = {};
+
+      // First, collect all drizzle-zod imports and regular imports
       traverse(ast, {
         ImportDeclaration: (path) => {
           const source = path.node.source.value;
@@ -1819,8 +1911,27 @@ export class ZodSchemaConverter {
               }
             });
           }
+
+          // Track all imports for factory function resolution
+          path.node.specifiers.forEach((specifier) => {
+            if (
+              t.isImportSpecifier(specifier) ||
+              t.isImportDefaultSpecifier(specifier)
+            ) {
+              const importedName = specifier.local.name;
+              importedModules[importedName] = source;
+            }
+          });
         },
       });
+
+      // Cache imports for this file
+      this.fileImportsCache.set(filePath, importedModules);
+
+      // Set current processing context for factory function expansion
+      this.currentFilePath = filePath;
+      this.currentAST = ast;
+      this.currentImports = importedModules;
 
       // Collect all exported Zod schemas
       traverse(ast, {
@@ -1906,7 +2017,469 @@ export class ZodSchemaConverter {
       ) {
         return this.isZodSchema(node.callee.object);
       }
+
+      // Check for potential factory function calls (any function call with identifier callee)
+      // These will be analyzed later to determine if they're actually factory functions
+      if (t.isIdentifier(node.callee)) {
+        logger.debug(
+          `[isZodSchema] Potential factory function call: ${node.callee.name}`
+        );
+        return true;
+      }
     }
     return false;
+  }
+
+  /**
+   * Find a factory function by name (lazy detection with caching)
+   * @param functionName - Name of the function to find
+   * @param currentFilePath - Path of the current file being processed
+   * @param currentAST - Already parsed AST of current file
+   * @param importedModules - Map of imported module names to their sources
+   * @returns Factory function node if found and returns Zod schema, null otherwise
+   */
+  findFactoryFunction(
+    functionName: string,
+    currentFilePath: string,
+    currentAST: t.File,
+    importedModules: Record<string, string>
+  ): t.Node | null {
+    // Check positive cache first
+    if (this.factoryCache.has(functionName)) {
+      logger.debug(`[Factory] Cache hit for function '${functionName}'`);
+      return this.factoryCache.get(functionName)!;
+    }
+
+    // Check negative cache (already checked, not a factory)
+    if (this.factoryCheckCache.has(functionName)) {
+      logger.debug(`[Factory] Negative cache hit for function '${functionName}'`);
+      return null;
+    }
+
+    logger.debug(`[Factory] Searching for function '${functionName}'`);
+
+    // Look in current file first (AST already parsed)
+    const localFactory = this.findFunctionInAST(currentAST, functionName);
+    if (localFactory && this.returnsZodSchema(localFactory)) {
+      logger.debug(`[Factory] Found Zod factory function '${functionName}' in current file`);
+      this.factoryCache.set(functionName, localFactory);
+      return localFactory;
+    }
+
+    // Check if function is imported
+    const importSource = importedModules[functionName];
+    if (importSource) {
+      logger.debug(`[Factory] Function '${functionName}' is imported from '${importSource}'`);
+
+      // Resolve import path
+      const importedFilePath = this.resolveImportPath(currentFilePath, importSource);
+      if (importedFilePath && fs.existsSync(importedFilePath)) {
+        logger.debug(`[Factory] Resolved import to: ${importedFilePath}`);
+
+        // Parse imported file (with caching) - this will also cache imports
+        const importedAST = this.parseFileWithCache(importedFilePath);
+        if (importedAST) {
+          const importedFactory = this.findFunctionInAST(importedAST, functionName);
+          if (importedFactory && this.returnsZodSchema(importedFactory)) {
+            logger.debug(`[Factory] Found Zod factory function '${functionName}' in imported file`);
+            this.factoryCache.set(functionName, importedFactory);
+            return importedFactory;
+          } else {
+            logger.debug(`[Factory] Function '${functionName}' found in imported file but does not return Zod schema`);
+          }
+        }
+      } else {
+        logger.debug(`[Factory] Could not resolve import path for '${importSource}'`);
+      }
+    } else {
+      logger.debug(`[Factory] Function '${functionName}' is not imported`);
+    }
+
+    // Not found or not a Zod factory - cache negative result
+    logger.debug(`[Factory] Function '${functionName}' is not a Zod factory`);
+    this.factoryCheckCache.set(functionName, false);
+    return null;
+  }
+
+  /**
+   * Find a function definition in an AST
+   */
+  findFunctionInAST(ast: t.File, functionName: string): t.Node | null {
+    let foundFunction: t.Node | null = null;
+
+    traverse(ast, {
+      // Handle: export function createSchema() { ... }
+      FunctionDeclaration: (path) => {
+        if (t.isIdentifier(path.node.id) && path.node.id.name === functionName) {
+          foundFunction = path.node;
+          path.stop();
+        }
+      },
+      // Handle: export const createSchema = (...) => { ... }
+      VariableDeclarator: (path) => {
+        if (
+          t.isIdentifier(path.node.id) &&
+          path.node.id.name === functionName &&
+          (t.isArrowFunctionExpression(path.node.init) ||
+            t.isFunctionExpression(path.node.init))
+        ) {
+          foundFunction = path.node.init;
+          path.stop();
+        }
+      },
+    });
+
+    return foundFunction;
+  }
+
+  /**
+   * Check if a function returns a Zod schema by analyzing return statements
+   */
+  returnsZodSchema(functionNode: t.Node): boolean {
+    if (
+      !t.isFunctionDeclaration(functionNode) &&
+      !t.isArrowFunctionExpression(functionNode) &&
+      !t.isFunctionExpression(functionNode)
+    ) {
+      return false;
+    }
+
+    let returnsZod = false;
+
+    // For arrow functions with direct return (no block)
+    if (
+      t.isArrowFunctionExpression(functionNode) &&
+      !t.isBlockStatement(functionNode.body)
+    ) {
+      returnsZod = this.isZodSchema(functionNode.body);
+      logger.debug(`[Factory] Arrow function direct return, isZodSchema: ${returnsZod}`);
+      return returnsZod;
+    }
+
+    // For functions with block statements, analyze return statements manually
+    const body = functionNode.body;
+    if (!t.isBlockStatement(body)) {
+      return false;
+    }
+
+    // Manually walk through statements instead of using traverse
+    const checkStatements = (statements: t.Statement[]): boolean => {
+      for (const stmt of statements) {
+        if (t.isReturnStatement(stmt) && stmt.argument) {
+          if (this.isZodSchema(stmt.argument)) {
+            logger.debug(`[Factory] Found Zod schema in return statement`);
+            return true;
+          }
+        }
+        // Check nested blocks (if statements, etc.)
+        else if (t.isIfStatement(stmt)) {
+          if (t.isBlockStatement(stmt.consequent)) {
+            if (checkStatements(stmt.consequent.body)) return true;
+          } else if (t.isReturnStatement(stmt.consequent) && stmt.consequent.argument) {
+            if (this.isZodSchema(stmt.consequent.argument)) return true;
+          }
+          if (stmt.alternate) {
+            if (t.isBlockStatement(stmt.alternate)) {
+              if (checkStatements(stmt.alternate.body)) return true;
+            } else if (t.isReturnStatement(stmt.alternate) && stmt.alternate.argument) {
+              if (this.isZodSchema(stmt.alternate.argument)) return true;
+            }
+          }
+        }
+      }
+      return false;
+    };
+
+    returnsZod = checkStatements(body.body);
+    return returnsZod;
+  }
+
+  /**
+   * Parse a file with caching (also caches imports)
+   */
+  parseFileWithCache(filePath: string): t.File | null {
+    if (this.fileASTCache.has(filePath)) {
+      return this.fileASTCache.get(filePath)!;
+    }
+
+    try {
+      const content = fs.readFileSync(filePath, "utf-8");
+      const ast = parseTypeScriptFile(content);
+      this.fileASTCache.set(filePath, ast);
+
+      // Also build and cache imports for this file
+      if (!this.fileImportsCache.has(filePath)) {
+        const importedModules: Record<string, string> = {};
+
+        traverse(ast, {
+          ImportDeclaration: (path) => {
+            const source = path.node.source.value;
+
+            // Track drizzle-zod imports
+            if (source === "drizzle-zod") {
+              path.node.specifiers.forEach((specifier) => {
+                if (
+                  t.isImportSpecifier(specifier) ||
+                  t.isImportDefaultSpecifier(specifier)
+                ) {
+                  this.drizzleZodImports.add(specifier.local.name);
+                }
+              });
+            }
+
+            // Process each import specifier
+            path.node.specifiers.forEach((specifier) => {
+              if (
+                t.isImportSpecifier(specifier) ||
+                t.isImportDefaultSpecifier(specifier)
+              ) {
+                const importedName = specifier.local.name;
+                importedModules[importedName] = source;
+              }
+            });
+          },
+        });
+
+        this.fileImportsCache.set(filePath, importedModules);
+      }
+
+      return ast;
+    } catch (error) {
+      logger.error(`[Factory] Error parsing file '${filePath}': ${error}`);
+      return null;
+    }
+  }
+
+  /**
+   * Resolve import path relative to current file
+   */
+  resolveImportPath(currentFilePath: string, importSource: string): string | null {
+    // Handle relative imports
+    if (importSource.startsWith(".")) {
+      const currentDir = path.dirname(currentFilePath);
+      let resolvedPath = path.resolve(currentDir, importSource);
+
+      // Try adding extensions if not present
+      const extensions = [".ts", ".tsx", ".js", ".jsx"];
+      if (!path.extname(resolvedPath)) {
+        for (const ext of extensions) {
+          const withExt = resolvedPath + ext;
+          if (fs.existsSync(withExt)) {
+            return withExt;
+          }
+        }
+        // Try index files
+        for (const ext of extensions) {
+          const indexPath = path.join(resolvedPath, `index${ext}`);
+          if (fs.existsSync(indexPath)) {
+            return indexPath;
+          }
+        }
+      } else if (fs.existsSync(resolvedPath)) {
+        return resolvedPath;
+      }
+    }
+
+    // Handle absolute imports from schemaDir
+    // This is a simplified approach - you might need to enhance this based on tsconfig paths
+    return null;
+  }
+
+  /**
+   * Expand a factory function call by substituting arguments
+   */
+  expandFactoryCall(
+    factoryNode: t.Node,
+    callNode: t.CallExpression,
+    filePath: string
+  ): OpenApiSchema | null {
+    if (
+      !t.isFunctionDeclaration(factoryNode) &&
+      !t.isArrowFunctionExpression(factoryNode) &&
+      !t.isFunctionExpression(factoryNode)
+    ) {
+      return null;
+    }
+
+    logger.debug(`[Factory] Expanding factory call with ${callNode.arguments.length} arguments`);
+
+    // Build parameter -> argument mapping
+    const paramMap = new Map<string, t.Node>();
+    const params = factoryNode.params;
+
+    for (let i = 0; i < params.length && i < callNode.arguments.length; i++) {
+      const param = params[i];
+      const arg = callNode.arguments[i];
+
+      if (t.isIdentifier(param)) {
+        paramMap.set(param.name, arg);
+        logger.debug(`[Factory] Mapped parameter '${param.name}' to argument`);
+      } else if (t.isObjectPattern(param)) {
+        // Handle destructured parameters - simplified for now
+        logger.debug(`[Factory] Skipping destructured parameter (not yet supported)`);
+      }
+    }
+
+    // Extract return statement
+    const returnNode = this.extractReturnNode(factoryNode);
+    if (!returnNode) {
+      logger.debug(`[Factory] No return statement found in factory`);
+      return null;
+    }
+
+    logger.debug(`[Factory] Return node type: ${returnNode.type}`);
+
+    // Clone and substitute parameters in return node
+    const substitutedNode = this.substituteParameters(returnNode, paramMap, filePath);
+
+    logger.debug(`[Factory] Substituted node type: ${substitutedNode.type}`);
+
+    // Process the substituted node as a normal Zod schema
+    const result = this.processZodNode(substitutedNode);
+
+    if (result) {
+      logger.debug(`[Factory] Successfully processed substituted node, result has ${Object.keys(result).length} keys`);
+    } else {
+      logger.debug(`[Factory] Failed to process substituted node`);
+    }
+
+    return result;
+  }
+
+  /**
+   * Extract the return node from a function
+   */
+  extractReturnNode(functionNode: t.Node): t.Node | null {
+    // For arrow functions with direct return (no block)
+    if (
+      t.isArrowFunctionExpression(functionNode) &&
+      !t.isBlockStatement(functionNode.body)
+    ) {
+      return functionNode.body;
+    }
+
+    // For functions with block statements
+    const body = t.isFunctionDeclaration(functionNode) ||
+      t.isArrowFunctionExpression(functionNode) ||
+      t.isFunctionExpression(functionNode)
+      ? functionNode.body
+      : null;
+
+    if (!body || !t.isBlockStatement(body)) {
+      return null;
+    }
+
+    // Find first return statement manually
+    const findReturn = (statements: t.Statement[]): t.Node | null => {
+      for (const stmt of statements) {
+        if (t.isReturnStatement(stmt) && stmt.argument) {
+          return stmt.argument;
+        }
+        // Check nested blocks
+        if (t.isIfStatement(stmt)) {
+          if (t.isBlockStatement(stmt.consequent)) {
+            const found = findReturn(stmt.consequent.body);
+            if (found) return found;
+          } else if (t.isReturnStatement(stmt.consequent) && stmt.consequent.argument) {
+            return stmt.consequent.argument;
+          }
+          if (stmt.alternate) {
+            if (t.isBlockStatement(stmt.alternate)) {
+              const found = findReturn(stmt.alternate.body);
+              if (found) return found;
+            } else if (t.isReturnStatement(stmt.alternate) && stmt.alternate.argument) {
+              return stmt.alternate.argument;
+            }
+          }
+        }
+      }
+      return null;
+    };
+
+    return findReturn(body.body);
+  }
+
+  /**
+   * Substitute parameters with actual arguments in an AST node (deep clone and replace)
+   */
+  substituteParameters(
+    node: t.Node,
+    paramMap: Map<string, t.Node>,
+    filePath: string
+  ): t.Node {
+    // Deep clone the node to avoid modifying the original
+    const cloned = t.cloneNode(node, /* deep */ true, /* withoutLoc */ false);
+
+    // Manual recursive substitution without traverse
+    const substitute = (n: t.Node): t.Node => {
+      if (t.isIdentifier(n)) {
+        // Replace if this is a parameter
+        if (paramMap.has(n.name)) {
+          const replacement = paramMap.get(n.name)!;
+          return t.cloneNode(replacement, true, false);
+        }
+        return n;
+      }
+
+      // Handle CallExpression
+      if (t.isCallExpression(n)) {
+        return t.callExpression(
+          substitute(n.callee) as t.Expression,
+          n.arguments.map((arg) => {
+            if (t.isSpreadElement(arg)) {
+              return t.spreadElement(substitute(arg.argument) as t.Expression);
+            }
+            return substitute(arg) as t.Expression;
+          })
+        );
+      }
+
+      // Handle MemberExpression
+      if (t.isMemberExpression(n)) {
+        return t.memberExpression(
+          substitute(n.object) as t.Expression,
+          n.computed ? (substitute(n.property) as t.Expression) : n.property,
+          n.computed
+        );
+      }
+
+      // Handle ObjectExpression
+      if (t.isObjectExpression(n)) {
+        return t.objectExpression(
+          n.properties.map((prop) => {
+            if (t.isObjectProperty(prop)) {
+              return t.objectProperty(
+                prop.computed ? (substitute(prop.key) as t.Expression) : prop.key,
+                substitute(prop.value) as t.Expression,
+                prop.computed,
+                prop.shorthand
+              );
+            }
+            if (t.isSpreadElement(prop)) {
+              return t.spreadElement(substitute(prop.argument) as t.Expression);
+            }
+            return prop;
+          })
+        );
+      }
+
+      // Handle ArrayExpression
+      if (t.isArrayExpression(n)) {
+        return t.arrayExpression(
+          n.elements.map((elem) => {
+            if (!elem) return null;
+            if (t.isSpreadElement(elem)) {
+              return t.spreadElement(substitute(elem.argument) as t.Expression);
+            }
+            return substitute(elem) as t.Expression;
+          })
+        );
+      }
+
+      // Return as-is for other node types
+      return n;
+    };
+
+    return substitute(cloned);
   }
 }
