@@ -1616,7 +1616,6 @@
       }
     }
   },
-  "outputDir": "./public",
   "paths": {
     "/auth/login": {
       "post": {

@@ -2018,14 +2018,9 @@ export class ZodSchemaConverter {
         return this.isZodSchema(node.callee.object);
       }
 
-      // Check for potential factory function calls (any function call with identifier callee)
-      // These will be analyzed later to determine if they're actually factory functions
-      if (t.isIdentifier(node.callee)) {
-        logger.debug(
-          `[isZodSchema] Potential factory function call: ${node.callee.name}`
-        );
-        return true;
-      }
+      // Do NOT treat unknown function calls as potential Zod schemas here
+      // Factory functions will be detected and handled in processZodNode() instead
+      // This prevents false positives during preprocessing
     }
     return false;
   }
