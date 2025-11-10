@@ -842,29 +842,18 @@ Custom schema files support YAML/JSON in OpenAPI 3.0 format. See **[next15-app-m
 
 ## Examples
 
-This repository includes several complete example projects:
+Explore complete demo projects in the **[examples](./examples/)** directory, covering integrations with Zod, TypeScript, Drizzle and documentation tools like Scalar and Swagger.
 
-### 📦 Available Examples
-
-| Example                                                         | Description             | Features                                        |
-| --------------------------------------------------------------- | ----------------------- | ----------------------------------------------- |
-| **[next15-app-zod](./examples/next15-app-zod)**                 | Zod schemas example     | Users, Products, Orders API with Zod validation |
-| **[next15-app-drizzle-zod](./examples/next15-app-drizzle-zod)** | Drizzle-Zod integration | Blog API with Drizzle ORM + drizzle-zod         |
-| **[next15-app-mixed-schemas](./examples/next15-app-mixed-schemas)** 🆕          | Multiple schema types   | Zod + TypeScript + Custom YAML schemas combined |
-| **[next15-app-typescript](./examples/next15-app-typescript)**   | TypeScript types        | API with pure TypeScript type definitions       |
-| **[next15-app-scalar](./examples/next15-app-scalar)**           | Scalar UI               | Modern API documentation interface              |
-| **[next15-app-swagger](./examples/next15-app-swagger)**         | Swagger UI              | Classic Swagger documentation                   |
-
-### 🚀 Running Examples
+### 🚀 Run an Example
 
 ```bash
-cd examples/next15-app-drizzle-zod
+cd examples/next15-app-zod
 npm install
-npm run openapi:generate
+npx next-openapi-gen generate
 npm run dev
 ```
 
-Visit `http://localhost:3000/api-docs` to see the generated documentation.
+Then open `http://localhost:3000/api-docs` to view the generated docs.
 
 ## Available UI providers
 
