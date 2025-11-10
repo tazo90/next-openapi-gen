@@ -1,3 +1,12 @@
+## [0.8.5](https://github.com/tazo90/next-openapi-gen/compare/v0.8.4...v0.8.5) (2025-11-10)
+
+
+### ✨ Features
+
+* support Zod factory functions (schema generators) ([#50](https://github.com/tazo90/next-openapi-gen/issues/50)) ([5168100](https://github.com/tazo90/next-openapi-gen/commit/516810003c720dd13d09b8b99d36c02bc316107b))
+
+
+
 ## [0.8.4](https://github.com/tazo90/next-openapi-gen/compare/v0.8.3...v0.8.4) (2025-11-06)
 
 
