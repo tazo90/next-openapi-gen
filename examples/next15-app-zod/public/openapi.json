@@ -732,6 +732,60 @@
           }
         }
       },
+      "PaginationMeta": {
+        "type": "object",
+        "properties": {
+          "nextCursor": {
+            "type": "string",
+            "nullable": true,
+            "description": "Cursor for the next page"
+          },
+          "hasMore": {
+            "type": "boolean",
+            "description": "Whether there are more items after this page"
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true,
+            "description": "Number of items in this page"
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0,
+            "nullable": true,
+            "description": "Total count of items"
+          }
+        },
+        "required": [
+          "hasMore",
+          "limit"
+        ]
+      },
+      "PaginatedUsersSchema": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UserDetailedSchema"
+            },
+            "description": "Array of items"
+          },
+          "pagination": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              }
+            ],
+            "description": "Pagination metadata"
+          }
+        },
+        "required": [
+          "data",
+          "pagination"
+        ]
+      },
       "OrderStatusSchema": {
         "type": "string",
         "enum": [
@@ -1610,7 +1664,6 @@
       }
     }
   },
-  "outputDir": "./public",
   "paths": {
     "/orders": {
       "get": {
@@ -2261,6 +2314,76 @@
           }
         ],
         "responses": {
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    },
+    "/users-paginated": {
+      "get": {
+        "operationId": "get-users-paginated",
+        "summary": "Get paginated users",
+        "description": "Retrieve users with cursor-based pagination using factory-generated schema",
+        "tags": [
+          "Users-paginated"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "nextCursor",
+            "schema": {
+              "type": "string",
+              "description": "Cursor for the next page"
+            },
+            "required": false,
+            "description": "Cursor for the next page"
+          },
+          {
+            "in": "query",
+            "name": "hasMore",
+            "schema": {
+              "type": "boolean",
+              "description": "Whether there are more items after this page"
+            },
+            "required": false,
+            "description": "Whether there are more items after this page"
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "integer",
+              "description": "Number of items in this page"
+            },
+            "required": false,
+            "description": "Number of items in this page"
+          },
+          {
+            "in": "query",
+            "name": "total",
+            "schema": {
+              "type": "integer",
+              "description": "Total count of items"
+            },
+            "required": false,
+            "description": "Total count of items"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedUsersSchema"
+                }
+              }
+            }
+          },
           "400": {
             "$ref": "#/components/responses/400"
           },

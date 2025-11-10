@@ -738,6 +738,34 @@ type User = z.infer<typeof UserSchema>;
 // The library will be able to recognize this schema by reference `UserSchema` or `User` type.
 ```
 
+### Factory Functions (Schema Generators)
+
+The library automatically detects and expands Zod factory functions - any function that returns a Zod schema:
+
+```typescript
+// Define reusable schema factory
+export function createPaginatedSchema<T extends z.ZodTypeAny>(dataSchema: T) {
+  return z.object({
+    data: z.array(dataSchema).describe("Array of items"),
+    pagination: z.object({
+      nextCursor: z.string().nullable(),
+      hasMore: z.boolean(),
+      limit: z.number().int().positive(),
+    }),
+  });
+}
+
+// Use in your schemas - automatically expanded in OpenAPI
+export const PaginatedUsersSchema = createPaginatedSchema(UserSchema);
+export const PaginatedProductsSchema = createPaginatedSchema(ProductSchema);
+```
+
+Factory functions work with any naming convention and support:
+- Generic type parameters
+- Inline schemas as arguments
+- Imported schemas
+- Multiple factory patterns in the same project
+
 ### Drizzle-Zod Support
 
 The library fully supports **drizzle-zod** for generating Zod schemas from Drizzle ORM table definitions. This provides a single source of truth for your database schema, validation, and API documentation.
