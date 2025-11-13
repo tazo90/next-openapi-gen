@@ -1,3 +1,17 @@
+## [0.8.6](https://github.com/tazo90/next-openapi-gen/compare/v0.8.5...v0.8.6) (2025-11-13)
+
+
+### 🐛 Bug Fixes
+
+* support array notation in [@response](https://github.com/response) and [@body](https://github.com/body) annotations (Type[]) ([#55](https://github.com/tazo90/next-openapi-gen/issues/55)) ([006f920](https://github.com/tazo90/next-openapi-gen/commit/006f920176a28c3a1c46390c668e5c346870cb2c))
+
+
+### 📝 Documentation
+
+* simplify examples section ([7b08c23](https://github.com/tazo90/next-openapi-gen/commit/7b08c23c8ee6a0ef79d82766417178e7e1ec3130))
+
+
+
 ## [0.8.5](https://github.com/tazo90/next-openapi-gen/compare/v0.8.4...v0.8.5) (2025-11-10)
 
 
