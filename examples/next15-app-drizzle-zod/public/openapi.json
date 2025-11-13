@@ -72,7 +72,10 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PostResponseSchema[]"
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PostResponseSchema"
+                  }
                 }
               }
             }
@@ -303,7 +306,55 @@
           }
         }
       },
-      "PostResponseSchema[]": {},
+      "PostResponseSchema": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "Post title"
+          },
+          "slug": {
+            "type": "string",
+            "description": "URL-friendly slug"
+          },
+          "excerpt": {
+            "type": "string",
+            "description": "Post excerpt"
+          },
+          "content": {
+            "type": "string",
+            "description": "Full post content"
+          },
+          "published": {
+            "type": "boolean",
+            "description": "Publication status"
+          },
+          "viewCount": {
+            "type": "integer",
+            "description": "Number of views"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Creation timestamp"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Last update timestamp"
+          }
+        },
+        "required": [
+          "title",
+          "slug",
+          "excerpt",
+          "content",
+          "published",
+          "viewCount",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
       "CreatePostSchema": {
         "type": "object",
         "properties": {
@@ -359,55 +410,6 @@
         },
         "required": [
           "id"
-        ]
-      },
-      "PostResponseSchema": {
-        "type": "object",
-        "properties": {
-          "title": {
-            "type": "string",
-            "description": "Post title"
-          },
-          "slug": {
-            "type": "string",
-            "description": "URL-friendly slug"
-          },
-          "excerpt": {
-            "type": "string",
-            "description": "Post excerpt"
-          },
-          "content": {
-            "type": "string",
-            "description": "Full post content"
-          },
-          "published": {
-            "type": "boolean",
-            "description": "Publication status"
-          },
-          "viewCount": {
-            "type": "integer",
-            "description": "Number of views"
-          },
-          "createdAt": {
-            "type": "string",
-            "format": "date-time",
-            "description": "Creation timestamp"
-          },
-          "updatedAt": {
-            "type": "string",
-            "format": "date-time",
-            "description": "Last update timestamp"
-          }
-        },
-        "required": [
-          "title",
-          "slug",
-          "excerpt",
-          "content",
-          "published",
-          "viewCount",
-          "createdAt",
-          "updatedAt"
         ]
       },
       "UpdatePostSchema": {

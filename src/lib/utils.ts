@@ -193,10 +193,10 @@ export function extractTypeFromComment(
   commentValue: string,
   tag: string
 ): string {
-  // Updated regex to support generic types with angle brackets
+  // Updated regex to support generic types with angle brackets and array brackets
   return (
     commentValue
-      .match(new RegExp(`${tag}\\s*\\s*([\\w<>,\\s]+)`))?.[1]
+      .match(new RegExp(`${tag}\\s*\\s*([\\w<>,\\s\\[\\]]+)`))?.[1]
       ?.trim() || ""
   );
 }

@@ -2326,7 +2326,7 @@
     "/users-paginated": {
       "get": {
         "operationId": "get-users-paginated",
-        "summary": "Get paginated users",
+        "summary": "Get paginated users\r",
         "description": "Retrieve users with cursor-based pagination using factory-generated schema",
         "tags": [
           "Users-paginated"
