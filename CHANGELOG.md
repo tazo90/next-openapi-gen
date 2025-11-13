@@ -3,7 +3,7 @@
 
 ### 🐛 Bug Fixes
 
-* support array notation in [@response](https://github.com/response) and [@body](https://github.com/body) annotations (Type[]) ([#55](https://github.com/tazo90/next-openapi-gen/issues/55)) ([006f920](https://github.com/tazo90/next-openapi-gen/commit/006f920176a28c3a1c46390c668e5c346870cb2c))
+* support array notation in @response and @body annotations (Type[]) ([#55](https://github.com/tazo90/next-openapi-gen/issues/55)) ([006f920](https://github.com/tazo90/next-openapi-gen/commit/006f920176a28c3a1c46390c668e5c346870cb2c))
 
 
 ### 📝 Documentation
