@@ -99,224 +99,63 @@
           }
         }
       },
-      "CommentsResponse": {
+      "User": {
         "type": "object",
         "properties": {
-          "task": {
-            "type": "object",
-            "properties": {
-              "id": {
-                "type": "string"
-              },
-              "title": {
-                "type": "string"
-              }
-            }
+          "id": {
+            "type": "string",
+            "description": "User ID"
           },
-          "project": {
-            "type": "object",
-            "properties": {
-              "id": {
-                "type": "string"
-              },
-              "name": {
-                "type": "string"
-              }
-            }
+          "name": {
+            "type": "string",
+            "description": "User's full name"
           },
-          "organization": {
-            "type": "object",
-            "properties": {
-              "id": {
-                "type": "string"
-              },
-              "name": {
-                "type": "string"
-              }
-            }
+          "avatar": {
+            "type": "string",
+            "description": "URL to user's avatar"
           },
-          "comments": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "id": {
-                  "type": "string",
-                  "description": "Comment ID"
-                },
-                "content": {
-                  "type": "string",
-                  "description": "Comment content"
-                },
-                "author": {
-                  "type": "object",
-                  "properties": {
-                    "id": {
-                      "type": "string",
-                      "description": "User ID"
-                    },
-                    "name": {
-                      "type": "string",
-                      "description": "User's full name"
-                    },
-                    "avatar": {
-                      "type": "string",
-                      "description": "URL to user's avatar"
-                    },
-                    "role": {
-                      "type": "string",
-                      "enum": [
-                        "admin",
-                        "member",
-                        "guest"
-                      ],
-                      "description": "User's role in the organization"
-                    }
-                  },
-                  "description": "User who created the comment"
-                },
-                "attachments": {
-                  "type": "array",
-                  "items": {
-                    "type": "object",
-                    "properties": {
-                      "id": {
-                        "type": "string",
-                        "description": "Attachment ID"
-                      },
-                      "fileName": {
-                        "type": "string",
-                        "description": "Original file name"
-                      },
-                      "fileSize": {
-                        "type": "number",
-                        "description": "Size in bytes"
-                      },
-                      "fileType": {
-                        "type": "string",
-                        "description": "MIME type"
-                      },
-                      "url": {
-                        "type": "string",
-                        "description": "Download URL"
-                      },
-                      "thumbnailUrl": {
-                        "type": "string",
-                        "description": "Thumbnail URL for images"
-                      },
-                      "uploadedAt": {
-                        "type": "string",
-                        "format": "date-time",
-                        "description": "When the file was uploaded"
-                      }
-                    }
-                  },
-                  "description": "Attached files"
-                },
-                "mentions": {
-                  "type": "array",
-                  "items": {
-                    "type": "object",
-                    "properties": {
-                      "id": {
-                        "type": "string",
-                        "description": "User ID"
-                      },
-                      "name": {
-                        "type": "string",
-                        "description": "User's full name"
-                      },
-                      "avatar": {
-                        "type": "string",
-                        "description": "URL to user's avatar"
-                      },
-                      "role": {
-                        "type": "string",
-                        "enum": [
-                          "admin",
-                          "member",
-                          "guest"
-                        ],
-                        "description": "User's role in the organization"
-                      }
-                    }
-                  },
-                  "description": "Users mentioned in the comment"
-                },
-                "likes": {
-                  "type": "number",
-                  "description": "Number of likes"
-                },
-                "likedBy": {
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  },
-                  "description": "User IDs who liked the comment"
-                },
-                "replyTo": {
-                  "type": "string",
-                  "description": "Parent comment ID if this is a reply"
-                },
-                "replies": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/Comment"
-                  },
-                  "description": "Child comments (if includeReplies=true)"
-                },
-                "createdAt": {
-                  "type": "string",
-                  "format": "date-time",
-                  "description": "Creation timestamp"
-                },
-                "updatedAt": {
-                  "type": "string",
-                  "format": "date-time",
-                  "description": "Last update timestamp"
-                },
-                "deletedAt": {
-                  "type": "string",
-                  "format": "date-time",
-                  "description": "Soft deletion timestamp"
-                }
-              }
-            },
-            "description": "List of comments"
+          "role": {
+            "type": "string",
+            "enum": [
+              "admin",
+              "member",
+              "guest"
+            ],
+            "description": "User's role in the organization"
+          }
+        }
+      },
+      "Attachment": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Attachment ID"
           },
-          "pagination": {
-            "type": "object",
-            "properties": {
-              "total": {
-                "type": "number"
-              },
-              "page": {
-                "type": "number"
-              },
-              "limit": {
-                "type": "number"
-              },
-              "pages": {
-                "type": "number"
-              }
-            }
+          "fileName": {
+            "type": "string",
+            "description": "Original file name"
           },
-          "permissions": {
-            "type": "object",
-            "properties": {
-              "canCreate": {
-                "type": "boolean"
-              },
-              "canEdit": {
-                "type": "boolean"
-              },
-              "canDelete": {
-                "type": "boolean"
-              },
-              "canModerate": {
-                "type": "boolean"
-              }
-            }
+          "fileSize": {
+            "type": "number",
+            "description": "Size in bytes"
+          },
+          "fileType": {
+            "type": "string",
+            "description": "MIME type"
+          },
+          "url": {
+            "type": "string",
+            "description": "Download URL"
+          },
+          "thumbnailUrl": {
+            "type": "string",
+            "description": "Thumbnail URL for images"
+          },
+          "uploadedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the file was uploaded"
           }
         }
       },
@@ -607,63 +446,224 @@
           }
         }
       },
-      "User": {
+      "CommentsResponse": {
         "type": "object",
         "properties": {
-          "id": {
-            "type": "string",
-            "description": "User ID"
+          "task": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
           },
-          "name": {
-            "type": "string",
-            "description": "User's full name"
+          "project": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              }
+            }
           },
-          "avatar": {
-            "type": "string",
-            "description": "URL to user's avatar"
+          "organization": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              }
+            }
           },
-          "role": {
-            "type": "string",
-            "enum": [
-              "admin",
-              "member",
-              "guest"
-            ],
-            "description": "User's role in the organization"
-          }
-        }
-      },
-      "Attachment": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "description": "Attachment ID"
+          "comments": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "description": "Comment ID"
+                },
+                "content": {
+                  "type": "string",
+                  "description": "Comment content"
+                },
+                "author": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "description": "User ID"
+                    },
+                    "name": {
+                      "type": "string",
+                      "description": "User's full name"
+                    },
+                    "avatar": {
+                      "type": "string",
+                      "description": "URL to user's avatar"
+                    },
+                    "role": {
+                      "type": "string",
+                      "enum": [
+                        "admin",
+                        "member",
+                        "guest"
+                      ],
+                      "description": "User's role in the organization"
+                    }
+                  },
+                  "description": "User who created the comment"
+                },
+                "attachments": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "description": "Attachment ID"
+                      },
+                      "fileName": {
+                        "type": "string",
+                        "description": "Original file name"
+                      },
+                      "fileSize": {
+                        "type": "number",
+                        "description": "Size in bytes"
+                      },
+                      "fileType": {
+                        "type": "string",
+                        "description": "MIME type"
+                      },
+                      "url": {
+                        "type": "string",
+                        "description": "Download URL"
+                      },
+                      "thumbnailUrl": {
+                        "type": "string",
+                        "description": "Thumbnail URL for images"
+                      },
+                      "uploadedAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When the file was uploaded"
+                      }
+                    }
+                  },
+                  "description": "Attached files"
+                },
+                "mentions": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "description": "User ID"
+                      },
+                      "name": {
+                        "type": "string",
+                        "description": "User's full name"
+                      },
+                      "avatar": {
+                        "type": "string",
+                        "description": "URL to user's avatar"
+                      },
+                      "role": {
+                        "type": "string",
+                        "enum": [
+                          "admin",
+                          "member",
+                          "guest"
+                        ],
+                        "description": "User's role in the organization"
+                      }
+                    }
+                  },
+                  "description": "Users mentioned in the comment"
+                },
+                "likes": {
+                  "type": "number",
+                  "description": "Number of likes"
+                },
+                "likedBy": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "description": "User IDs who liked the comment"
+                },
+                "replyTo": {
+                  "type": "string",
+                  "description": "Parent comment ID if this is a reply"
+                },
+                "replies": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Comment"
+                  },
+                  "description": "Child comments (if includeReplies=true)"
+                },
+                "createdAt": {
+                  "type": "string",
+                  "format": "date-time",
+                  "description": "Creation timestamp"
+                },
+                "updatedAt": {
+                  "type": "string",
+                  "format": "date-time",
+                  "description": "Last update timestamp"
+                },
+                "deletedAt": {
+                  "type": "string",
+                  "format": "date-time",
+                  "description": "Soft deletion timestamp"
+                }
+              }
+            },
+            "description": "List of comments"
           },
-          "fileName": {
-            "type": "string",
-            "description": "Original file name"
+          "pagination": {
+            "type": "object",
+            "properties": {
+              "total": {
+                "type": "number"
+              },
+              "page": {
+                "type": "number"
+              },
+              "limit": {
+                "type": "number"
+              },
+              "pages": {
+                "type": "number"
+              }
+            }
           },
-          "fileSize": {
-            "type": "number",
-            "description": "Size in bytes"
-          },
-          "fileType": {
-            "type": "string",
-            "description": "MIME type"
-          },
-          "url": {
-            "type": "string",
-            "description": "Download URL"
-          },
-          "thumbnailUrl": {
-            "type": "string",
-            "description": "Thumbnail URL for images"
-          },
-          "uploadedAt": {
-            "type": "string",
-            "format": "date-time",
-            "description": "When the file was uploaded"
+          "permissions": {
+            "type": "object",
+            "properties": {
+              "canCreate": {
+                "type": "boolean"
+              },
+              "canEdit": {
+                "type": "boolean"
+              },
+              "canDelete": {
+                "type": "boolean"
+              },
+              "canModerate": {
+                "type": "boolean"
+              }
+            }
           }
         }
       },
@@ -1067,6 +1067,23 @@
           }
         }
       },
+      "UserAddress": {
+        "type": "object",
+        "properties": {
+          "line1": {
+            "type": "string"
+          },
+          "line2": {
+            "type": "string"
+          },
+          "city": {
+            "type": "string"
+          },
+          "postalCode": {
+            "type": "string"
+          }
+        }
+      },
       "UserResponse": {
         "type": "object",
         "properties": {
@@ -1102,23 +1119,6 @@
                 "type": "string"
               }
             }
-          }
-        }
-      },
-      "UserAddress": {
-        "type": "object",
-        "properties": {
-          "line1": {
-            "type": "string"
-          },
-          "line2": {
-            "type": "string"
-          },
-          "city": {
-            "type": "string"
-          },
-          "postalCode": {
-            "type": "string"
           }
         }
       }

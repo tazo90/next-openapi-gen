@@ -344,6 +344,9 @@ export class RouteProcessor {
       this.swaggerPaths[routePath] = {};
     }
 
+    // Set context file path for utility type resolution (ReturnType<typeof X>)
+    this.schemaProcessor.setContextFilePath(filePath);
+
     const { params, pathParams, body, responses } =
       this.schemaProcessor.getSchemaContent(dataTypes);
 

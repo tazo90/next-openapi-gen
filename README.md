@@ -690,6 +690,50 @@ export async function GET() {
 }
 ```
 
+### TypeScript Utility Types Support
+
+The library supports common TypeScript utility types including `Awaited<T>` and `ReturnType<typeof X>`, allowing you to derive types from function implementations:
+
+```typescript
+// src/app/api/users/route.utils.ts
+
+// Define your implementation with explicit return type
+export const getUserData = async (id: string): Promise<{
+  id: string;
+  name: string;
+  email: string;
+}> => {
+  // Your implementation here
+  return {
+    id,
+    name: "John Doe",
+    email: "john@example.com",
+  };
+};
+```
+
+```typescript
+// src/app/api/users/[id]/route.ts
+
+import { getUserData } from "../route.utils";
+
+// Derive the unwrapped response type from the async function
+type UserResponse = Awaited<ReturnType<typeof getUserData>>;
+
+/**
+ * Get user by ID
+ * @description Retrieve user information
+ * @response UserResponse
+ * @openapi
+ */
+export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+  const user = await getUserData(params.id);
+  return NextResponse.json(user);
+}
+```
+
+**Note**: The function must have an explicit return type annotation for `ReturnType<>` to work correctly.
+
 ### Intelligent Examples
 
 The library generates intelligent examples for parameters based on their name:
@@ -847,6 +891,7 @@ Explore complete demo projects in the **[examples](./examples/)** directory, cov
 ### 🚀 Run an Example
 
 ```bash
+npm run build
 cd examples/next15-app-zod
 npm install
 npx next-openapi-gen generate

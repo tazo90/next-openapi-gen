@@ -653,6 +653,26 @@
           "role"
         ]
       },
+      "UserIdParam": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "User ID"
+          }
+        }
+      },
+      "UserNameByIdResponse": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "firstName": {
+            "type": "string"
+          }
+        }
+      },
       "UserFieldsQuery": {
         "type": "object",
         "properties": {
@@ -2314,6 +2334,47 @@
           }
         ],
         "responses": {
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    },
+    "/users/{id}/name": {
+      "get": {
+        "operationId": "get-users-{id}-name",
+        "summary": "Get User Name by ID",
+        "description": "Retrieves a user's name information",
+        "tags": [
+          "Users"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string",
+              "description": "User ID"
+            },
+            "required": true,
+            "description": "User ID",
+            "example": "123"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserNameByIdResponse"
+                }
+              }
+            }
+          },
           "400": {
             "$ref": "#/components/responses/400"
           },
