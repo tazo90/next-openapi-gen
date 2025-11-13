@@ -48,16 +48,42 @@ export class RouteProcessor {
     const successCode =
       dataTypes.successCode || this.getDefaultSuccessCode(method);
     if (dataTypes.responseType) {
-      // Ensure the schema is defined in components/schemas
+      // Handle array notation (e.g., "Type[]", "Type[][]", "Generic<T>[]")
+      let schema: any;
+      let baseType = dataTypes.responseType;
+      let arrayDepth = 0;
+
+      // Count and remove array brackets
+      while (baseType.endsWith('[]')) {
+        arrayDepth++;
+        baseType = baseType.slice(0, -2);
+      }
+
+      // Ensure the base schema is defined in components/schemas
       this.schemaProcessor.getSchemaContent({
-        responseType: dataTypes.responseType,
+        responseType: baseType,
       });
+
+      // Build schema reference
+      if (arrayDepth === 0) {
+        // Not an array
+        schema = { $ref: `#/components/schemas/${baseType}` };
+      } else {
+        // Build nested array schema
+        schema = { $ref: `#/components/schemas/${baseType}` };
+        for (let i = 0; i < arrayDepth; i++) {
+          schema = {
+            type: "array",
+            items: schema,
+          };
+        }
+      }
 
       responses[successCode] = {
         description: dataTypes.responseDescription || "Successful response",
         content: {
           "application/json": {
-            schema: { $ref: `#/components/schemas/${dataTypes.responseType}` },
+            schema: schema,
           },
         },
       };

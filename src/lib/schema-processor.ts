@@ -1059,12 +1059,26 @@ export class SchemaProcessor {
     body: OpenAPIDefinition;
     responses: OpenAPIDefinition;
   } {
+    // Helper function to strip array notation from type names
+    const stripArrayNotation = (typeName: string | undefined): string | undefined => {
+      if (!typeName) return typeName;
+      let baseType = typeName;
+      while (baseType.endsWith('[]')) {
+        baseType = baseType.slice(0, -2);
+      }
+      return baseType;
+    };
+
+    // Strip array notation for schema lookups
+    const baseBodyType = stripArrayNotation(bodyType);
+    const baseResponseType = stripArrayNotation(responseType);
+
     let params = paramsType ? this.openapiDefinitions[paramsType] : {};
     let pathParams = pathParamsType
       ? this.openapiDefinitions[pathParamsType]
       : {};
-    let body = bodyType ? this.openapiDefinitions[bodyType] : {};
-    let responses = responseType ? this.openapiDefinitions[responseType] : {};
+    let body = baseBodyType ? this.openapiDefinitions[baseBodyType] : {};
+    let responses = baseResponseType ? this.openapiDefinitions[baseResponseType] : {};
 
     if (paramsType && !params) {
       this.findSchemaDefinition(paramsType, "params");
@@ -1076,22 +1090,22 @@ export class SchemaProcessor {
       pathParams = this.openapiDefinitions[pathParamsType] || {};
     }
 
-    if (bodyType && !body) {
-      this.findSchemaDefinition(bodyType, "body");
-      body = this.openapiDefinitions[bodyType] || {};
+    if (baseBodyType && !body) {
+      this.findSchemaDefinition(baseBodyType, "body");
+      body = this.openapiDefinitions[baseBodyType] || {};
     }
 
-    if (responseType && !responses) {
-      this.findSchemaDefinition(responseType, "response");
-      responses = this.openapiDefinitions[responseType] || {};
+    if (baseResponseType && !responses) {
+      this.findSchemaDefinition(baseResponseType, "response");
+      responses = this.openapiDefinitions[baseResponseType] || {};
     }
 
     if (this.schemaTypes.includes("zod")) {
       const schemasToProcess = [
         paramsType,
         pathParamsType,
-        bodyType,
-        responseType,
+        baseBodyType,
+        baseResponseType,
       ].filter(Boolean);
       schemasToProcess.forEach((schemaName) => {
         if (!this.openapiDefinitions[schemaName]) {
