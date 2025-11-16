@@ -201,6 +201,7 @@ export async function POST(request: NextRequest) {
 | Tag                    | Description                                                                                                              |
 | ---------------------- | ------------------------------------------------------------------------------------------------------------------------ |
 | `@description`         | Endpoint description                                                                                                     |
+| `@operationId`         | Custom operation ID (overrides auto-generated ID)                                                                        |
 | `@pathParams`          | Path parameters type/schema                                                                                              |
 | `@params`              | Query parameters type/schema                                                                                             |
 | `@body`                | Request body type/schema                                                                                                 |
@@ -422,6 +423,23 @@ type UserResponse = {
 export async function GET() {
   // ...
 }
+```
+
+### Custom Operation ID
+
+```typescript
+// src/app/api/users/[id]/route.ts
+
+/**
+ * Get user by ID
+ * @operationId getUserById
+ * @pathParams UserParams
+ * @response UserResponse
+ */
+export async function GET() {
+  // ...
+}
+// Generates: operationId: "getUserById" instead of auto-generated "get-users-{id}"
 ```
 
 ### File Uploads / Multipart Form Data

@@ -163,6 +163,7 @@ export type DataTypes = {
   responseSet?: string; // e.g. "authErrors" or "publicErrors,crudErrors"
   addResponses?: string; // e.g. "409:ConflictResponse,429:RateLimitResponse"
   successCode?: string; // e.g "201" for POST
+  operationId?: string; // Custom operation ID (overrides auto-generated)
 };
 
 export type RouteConfig = {

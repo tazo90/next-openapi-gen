@@ -43,6 +43,7 @@ export function extractJSDocComments(path: NodePath): DataTypes {
   let responseSet = "";
   let addResponses = "";
   let successCode = "";
+  let operationId = "";
 
   if (comments) {
     comments.forEach((comment) => {
@@ -152,6 +153,14 @@ export function extractJSDocComments(path: NodePath): DataTypes {
         }
       }
 
+      if (commentValue.includes("@operationId")) {
+        const regex = /@operationId\s+(\S+)/;
+        const match = commentValue.match(regex);
+        if (match && match[1]) {
+          operationId = match[1].trim();
+        }
+      }
+
       if (commentValue.includes("@response")) {
         // Updated regex to support generic types
         const responseMatch = commentValue.match(
@@ -186,6 +195,7 @@ export function extractJSDocComments(path: NodePath): DataTypes {
     responseSet,
     addResponses,
     successCode,
+    operationId,
   };
 }
 

@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 /**
  * Get orders list
  * @description Retrieves a paginated list of orders with filtering and sorting options
+ * @operationId getOrdersList
  * @params OrdersQueryParams
  * @response OrdersResponse
  * @auth bearer
@@ -17,6 +18,7 @@ export async function GET(request: NextRequest) {
 /**
  * Create order
  * @description Creates a new order from cart
+ * @operationId createOrder
  * @body CreateOrderBody
  * @response OrderSchema
  * @auth bearer

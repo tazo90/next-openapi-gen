@@ -1666,7 +1666,7 @@
   "paths": {
     "/orders": {
       "get": {
-        "operationId": "get-orders",
+        "operationId": "getOrdersList",
         "summary": "Get orders list\r",
         "description": "Retrieves a paginated list of orders with filtering and sorting options",
         "tags": [
@@ -1764,7 +1764,7 @@
         }
       },
       "post": {
-        "operationId": "post-orders",
+        "operationId": "createOrder",
         "summary": "Create order\r",
         "description": "Creates a new order from cart",
         "tags": [

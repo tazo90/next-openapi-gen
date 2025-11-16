@@ -204,3 +204,124 @@ describe('extractJSDocComments - @ignore tag', () => {
     expect(dataTypes?.deprecated).toBe(true);
   });
 });
+
+describe('extractJSDocComments - @operationId tag', () => {
+  it('should extract @operationId from JSDoc comment', () => {
+    const code = `
+      /**
+       * Get user by ID
+       * @operationId getUserById
+       * @response UserResponse
+       */
+      export async function GET() {}
+    `;
+
+    const ast = parseTypeScriptFile(code);
+    let dataTypes;
+
+    traverse(ast, {
+      ExportNamedDeclaration: (path) => {
+        dataTypes = extractJSDocComments(path);
+      },
+    });
+
+    expect(dataTypes).toBeDefined();
+    expect(dataTypes?.operationId).toBe('getUserById');
+    expect(dataTypes?.responseType).toBe('UserResponse');
+  });
+
+  it('should return empty operationId when not specified', () => {
+    const code = `
+      /**
+       * Get user by ID
+       * @response UserResponse
+       */
+      export async function GET() {}
+    `;
+
+    const ast = parseTypeScriptFile(code);
+    let dataTypes;
+
+    traverse(ast, {
+      ExportNamedDeclaration: (path) => {
+        dataTypes = extractJSDocComments(path);
+      },
+    });
+
+    expect(dataTypes).toBeDefined();
+    expect(dataTypes?.operationId).toBe('');
+    expect(dataTypes?.responseType).toBe('UserResponse');
+  });
+
+  it('should handle @operationId with underscores and numbers', () => {
+    const code = `
+      /**
+       * @operationId create_user_v2
+       */
+      export async function POST() {}
+    `;
+
+    const ast = parseTypeScriptFile(code);
+    let dataTypes;
+
+    traverse(ast, {
+      ExportNamedDeclaration: (path) => {
+        dataTypes = extractJSDocComments(path);
+      },
+    });
+
+    expect(dataTypes?.operationId).toBe('create_user_v2');
+  });
+
+  it('should extract @operationId alongside other tags', () => {
+    const code = `
+      /**
+       * Create new user
+       * @description Creates a new user in the system
+       * @operationId createNewUser
+       * @body CreateUserBody
+       * @response 201:UserResponse
+       * @auth bearer
+       * @tag Users
+       */
+      export async function POST() {}
+    `;
+
+    const ast = parseTypeScriptFile(code);
+    let dataTypes;
+
+    traverse(ast, {
+      ExportNamedDeclaration: (path) => {
+        dataTypes = extractJSDocComments(path);
+      },
+    });
+
+    expect(dataTypes?.operationId).toBe('createNewUser');
+    expect(dataTypes?.description).toBe('Creates a new user in the system');
+    expect(dataTypes?.bodyType).toBe('CreateUserBody');
+    expect(dataTypes?.successCode).toBe('201');
+    expect(dataTypes?.responseType).toBe('UserResponse');
+    expect(dataTypes?.auth).toBe('BearerAuth');
+    expect(dataTypes?.tag).toBe('Users');
+  });
+
+  it('should handle camelCase operationId', () => {
+    const code = `
+      /**
+       * @operationId listAllUsersWithFilters
+       */
+      export async function GET() {}
+    `;
+
+    const ast = parseTypeScriptFile(code);
+    let dataTypes;
+
+    traverse(ast, {
+      ExportNamedDeclaration: (path) => {
+        dataTypes = extractJSDocComments(path);
+      },
+    });
+
+    expect(dataTypes?.operationId).toBe('listAllUsersWithFilters');
+  });
+});
