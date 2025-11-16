@@ -889,6 +889,19 @@ export class ZodSchemaConverter {
       logger.debug(`[processZodNode] Could not expand factory function '${node.callee.name}' - missing context or not a factory`);
     }
 
+    // Handle standalone identifier references (e.g., userSchema used directly)
+    if (t.isIdentifier(node)) {
+      const schemaName = node.name;
+      
+      // Try to find and process the referenced schema
+      if (!this.zodSchemas[schemaName]) {
+        this.convertZodSchemaToOpenApi(schemaName);
+      }
+      
+      // Return a reference to the schema
+      return { $ref: `#/components/schemas/${schemaName}` };
+    }
+
     logger.debug("Unknown Zod schema node:", node);
     return { type: "object" };
   }
@@ -1180,6 +1193,7 @@ export class ZodSchemaConverter {
             $ref: `#/components/schemas/${referencedSchemaName}`,
           };
           required.push(propName); // Assuming it's required unless marked optional
+          return; // Skip further processing for this property
         }
 
         // For array of schemas (like z.array(PaymentMethodSchema))
@@ -1210,6 +1224,7 @@ export class ZodSchemaConverter {
           if (!isOptional) {
             required.push(propName);
           }
+          return; // Skip further processing for this property
         }
 
         // Process property value (a Zod schema)
