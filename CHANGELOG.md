@@ -1,3 +1,18 @@
+## [0.8.7](https://github.com/tazo90/next-openapi-gen/compare/v0.8.6...v0.8.7) (2025-11-16)
+
+
+### 🐛 Bug Fixes
+
+* resolve nested Zod schema references in envelope objects ([#59](https://github.com/tazo90/next-openapi-gen/issues/59)) ([97ee719](https://github.com/tazo90/next-openapi-gen/commit/97ee7191386394686b036b5848a0d77e36935af7))
+
+
+### 📝 Documentation
+
+* typo in CHANGELOG.md ([311fd3b](https://github.com/tazo90/next-openapi-gen/commit/311fd3bdee1cfe6c38f6f13f4e419577508e9bba))
+* update openapi file in next15-app-zod example ([65a12d5](https://github.com/tazo90/next-openapi-gen/commit/65a12d502be98a5296b3c655915efdbfb601b90b))
+
+
+
 ## [0.8.6](https://github.com/tazo90/next-openapi-gen/compare/v0.8.5...v0.8.6) (2025-11-13)
 
 
