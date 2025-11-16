@@ -323,7 +323,7 @@ export class RouteProcessor {
     const method = varName.toLowerCase();
     const routePath = this.getRoutePath(filePath);
     const rootPath = capitalize(routePath.split("/")[1]);
-    const operationId = getOperationId(routePath, method);
+    const operationId = dataTypes.operationId || getOperationId(routePath, method);
     const {
       tag,
       summary,
