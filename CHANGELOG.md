@@ -1,3 +1,12 @@
+## [0.8.8](https://github.com/tazo90/next-openapi-gen/compare/v0.8.7...v0.8.8) (2025-11-16)
+
+
+### ✨ Features
+
+* add support for custom [@operation](https://github.com/operation)Id JSDoc tag ([#60](https://github.com/tazo90/next-openapi-gen/issues/60)) ([5faacef](https://github.com/tazo90/next-openapi-gen/commit/5faacefd3223fbd1873be7c2d0e97a20d0b9b3f3))
+
+
+
 ## [0.8.7](https://github.com/tazo90/next-openapi-gen/compare/v0.8.6...v0.8.7) (2025-11-16)
 
 
