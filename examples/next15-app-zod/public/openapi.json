@@ -20,169 +20,6 @@
       }
     },
     "schemas": {
-      "OrderIdParams": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid",
-            "description": "Order ID"
-          }
-        },
-        "required": [
-          "id"
-        ]
-      },
-      "OrderSchema": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid",
-            "description": "Order ID"
-          },
-          "userId": {
-            "type": "string",
-            "format": "uuid",
-            "description": "User ID"
-          },
-          "items": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/CartItemSchema"
-            },
-            "description": "Purchased products"
-          },
-          "shippingAddress": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/AddressSchema"
-              }
-            ],
-            "description": "Shipping address"
-          },
-          "billingAddress": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/AddressSchema"
-              }
-            ],
-            "description": "Billing address (can be the same as shipping address)"
-          },
-          "paymentMethod": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/PaymentMethodSchema"
-              }
-            ],
-            "description": "Payment method"
-          },
-          "status": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/OrderStatusSchema"
-              }
-            ],
-            "description": "Order status"
-          },
-          "subtotal": {
-            "type": "number",
-            "minimum": 0,
-            "description": "Subtotal (without discount and shipping)"
-          },
-          "discountAmount": {
-            "type": "number",
-            "minimum": 0,
-            "default": 0,
-            "description": "Discount amount"
-          },
-          "shippingCost": {
-            "type": "number",
-            "minimum": 0,
-            "description": "Shipping cost"
-          },
-          "tax": {
-            "type": "number",
-            "minimum": 0,
-            "description": "Tax"
-          },
-          "total": {
-            "type": "number",
-            "minimum": 0,
-            "description": "Total amount"
-          },
-          "notes": {
-            "type": "string",
-            "nullable": true,
-            "description": "Additional notes"
-          },
-          "createdAt": {
-            "type": "string",
-            "format": "date-time",
-            "description": "Order creation date"
-          },
-          "updatedAt": {
-            "type": "string",
-            "format": "date-time",
-            "description": "Last update date"
-          },
-          "paymentDate": {
-            "type": "string",
-            "format": "date-time",
-            "nullable": true,
-            "description": "Payment date"
-          },
-          "shippingDate": {
-            "type": "string",
-            "format": "date-time",
-            "nullable": true,
-            "description": "Shipping date"
-          },
-          "deliveryDate": {
-            "type": "string",
-            "format": "date-time",
-            "nullable": true,
-            "description": "Delivery date"
-          }
-        },
-        "required": [
-          "id",
-          "userId",
-          "items",
-          "shippingAddress",
-          "billingAddress",
-          "paymentMethod",
-          "status",
-          "subtotal",
-          "discountAmount",
-          "shippingCost",
-          "tax",
-          "total",
-          "createdAt",
-          "updatedAt"
-        ]
-      },
-      "UpdateOrderStatusBody": {
-        "type": "object",
-        "properties": {
-          "status": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/OrderStatusSchema"
-              }
-            ],
-            "description": "New order status"
-          },
-          "notes": {
-            "type": "string",
-            "nullable": true,
-            "description": "Additional notes about the status change"
-          }
-        },
-        "required": [
-          "status"
-        ]
-      },
       "OrdersQueryParams": {
         "type": "object",
         "properties": {
@@ -337,6 +174,169 @@
         },
         "required": [
           "cartId"
+        ]
+      },
+      "OrderSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Order ID"
+          },
+          "userId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "User ID"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CartItemSchema"
+            },
+            "description": "Purchased products"
+          },
+          "shippingAddress": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AddressSchema"
+              }
+            ],
+            "description": "Shipping address"
+          },
+          "billingAddress": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AddressSchema"
+              }
+            ],
+            "description": "Billing address (can be the same as shipping address)"
+          },
+          "paymentMethod": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PaymentMethodSchema"
+              }
+            ],
+            "description": "Payment method"
+          },
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/OrderStatusSchema"
+              }
+            ],
+            "description": "Order status"
+          },
+          "subtotal": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Subtotal (without discount and shipping)"
+          },
+          "discountAmount": {
+            "type": "number",
+            "minimum": 0,
+            "default": 0,
+            "description": "Discount amount"
+          },
+          "shippingCost": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Shipping cost"
+          },
+          "tax": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Tax"
+          },
+          "total": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Total amount"
+          },
+          "notes": {
+            "type": "string",
+            "nullable": true,
+            "description": "Additional notes"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Order creation date"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Last update date"
+          },
+          "paymentDate": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "Payment date"
+          },
+          "shippingDate": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "Shipping date"
+          },
+          "deliveryDate": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "Delivery date"
+          }
+        },
+        "required": [
+          "id",
+          "userId",
+          "items",
+          "shippingAddress",
+          "billingAddress",
+          "paymentMethod",
+          "status",
+          "subtotal",
+          "discountAmount",
+          "shippingCost",
+          "tax",
+          "total",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "OrderIdParams": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Order ID"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "UpdateOrderStatusBody": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/OrderStatusSchema"
+              }
+            ],
+            "description": "New order status"
+          },
+          "notes": {
+            "type": "string",
+            "nullable": true,
+            "description": "Additional notes about the status change"
+          }
+        },
+        "required": [
+          "status"
         ]
       },
       "ProductQueryParams": {
@@ -593,27 +593,27 @@
           "uploadedAt"
         ]
       },
-      "UserFieldsQuery": {
+      "UserListParamsSchema": {
         "type": "object",
         "properties": {
-          "fields": {
-            "type": "string",
-            "nullable": true,
-            "description": "Comma-separated list of fields to include"
-          }
-        }
-      },
-      "UserIdParams": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid",
-            "description": "User ID"
+          "pagination": {
+            "$ref": "#/components/schemas/PaginationSchema"
+          },
+          "filter": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "name"
+            ],
+            "nullable": true
           }
         },
         "required": [
-          "id"
+          "pagination"
         ]
       },
       "UserDetailedSchema": {
@@ -650,6 +650,29 @@
           "email",
           "name",
           "role"
+        ]
+      },
+      "UserFieldsQuery": {
+        "type": "object",
+        "properties": {
+          "fields": {
+            "type": "string",
+            "nullable": true,
+            "description": "Comma-separated list of fields to include"
+          }
+        }
+      },
+      "UserIdParams": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "User ID"
+          }
+        },
+        "required": [
+          "id"
         ]
       },
       "UpdateUserBody": {
@@ -707,29 +730,6 @@
             "description": "User preferences"
           }
         }
-      },
-      "UserListParamsSchema": {
-        "type": "object",
-        "properties": {
-          "pagination": {
-            "$ref": "#/components/schemas/PaginationSchema"
-          },
-          "filter": {
-            "type": "object",
-            "properties": {
-              "name": {
-                "type": "string"
-              }
-            },
-            "required": [
-              "name"
-            ],
-            "nullable": true
-          }
-        },
-        "required": [
-          "pagination"
-        ]
       },
       "PaginationMeta": {
         "type": "object",
@@ -1667,7 +1667,7 @@
     "/orders": {
       "get": {
         "operationId": "get-orders",
-        "summary": "Get orders list",
+        "summary": "Get orders list\r",
         "description": "Retrieves a paginated list of orders with filtering and sorting options",
         "tags": [
           "Orders"
@@ -1765,7 +1765,7 @@
       },
       "post": {
         "operationId": "post-orders",
-        "summary": "Create order",
+        "summary": "Create order\r",
         "description": "Creates a new order from cart",
         "tags": [
           "Orders"
@@ -1852,7 +1852,7 @@
       },
       "patch": {
         "operationId": "patch-orders-{id}",
-        "summary": "Update order status",
+        "summary": "Update order status\r",
         "description": "Updates the status of an order",
         "tags": [
           "Orders"
@@ -1905,7 +1905,7 @@
       },
       "delete": {
         "operationId": "delete-orders-{id}",
-        "summary": "Cancel order",
+        "summary": "Cancel order\r",
         "description": "Cancels an order if it's not already delivered",
         "tags": [
           "Orders"
@@ -1941,7 +1941,7 @@
     "/products/{id}": {
       "get": {
         "operationId": "get-products-{id}",
-        "summary": "Get product",
+        "summary": "Get product\r",
         "description": "Retrieves detailed product information by ID",
         "tags": [
           "Products"
@@ -2010,7 +2010,7 @@
       },
       "patch": {
         "operationId": "patch-products-{id}",
-        "summary": "Update product",
+        "summary": "Update product\r",
         "description": "Updates an existing product",
         "tags": [
           "Products"
@@ -2063,7 +2063,7 @@
       },
       "delete": {
         "operationId": "delete-products-{id}",
-        "summary": "Delete product",
+        "summary": "Delete product\r",
         "description": "Removes a product from the system",
         "tags": [
           "Products"
@@ -2099,7 +2099,7 @@
     "/upload": {
       "post": {
         "operationId": "post-upload",
-        "summary": "Upload image file",
+        "summary": "Upload image file\r",
         "description": "Uploads PNG or JPG image files with validation and metadata",
         "tags": [
           "Uploads"
@@ -2138,7 +2138,7 @@
     "/users": {
       "get": {
         "operationId": "get-users",
-        "summary": "Get users",
+        "summary": "Get users\r",
         "description": "Retrieve users",
         "tags": [
           "Users"
@@ -2185,7 +2185,7 @@
     "/users/{id}": {
       "get": {
         "operationId": "get-users-{id}",
-        "summary": "Get user by ID",
+        "summary": "Get user by ID\r",
         "description": "Retrieves detailed user information",
         "tags": [
           "Users"
@@ -2234,7 +2234,7 @@
       },
       "patch": {
         "operationId": "patch-users-{id}",
-        "summary": "Update user",
+        "summary": "Update user\r",
         "description": "Updates user information",
         "tags": [
           "Users"
@@ -2287,7 +2287,7 @@
       },
       "delete": {
         "operationId": "delete-users-{id}",
-        "summary": "Delete user",
+        "summary": "Delete user\r",
         "description": "Deletes a user account",
         "tags": [
           "Users"
@@ -2323,7 +2323,7 @@
     "/users-paginated": {
       "get": {
         "operationId": "get-users-paginated",
-        "summary": "Get paginated users",
+        "summary": "Get paginated users\r",
         "description": "Retrieve users with cursor-based pagination using factory-generated schema",
         "tags": [
           "Users-paginated"
