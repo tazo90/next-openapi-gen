@@ -1,3 +1,12 @@
+## [0.8.9](https://github.com/tazo90/next-openapi-gen/compare/v0.8.8...v0.8.9) (2025-12-02)
+
+
+### 🐛 Bug Fixes
+
+* support Zod .extend() and deduplicate required fields ([#61](https://github.com/tazo90/next-openapi-gen/issues/61)) ([7ef918d](https://github.com/tazo90/next-openapi-gen/commit/7ef918de18a8c180db7a095dc8fcac1e7616edc8))
+
+
+
 ## [0.8.8](https://github.com/tazo90/next-openapi-gen/compare/v0.8.7...v0.8.8) (2025-11-16)
 
 
