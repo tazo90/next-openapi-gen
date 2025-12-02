@@ -327,6 +327,7 @@ type CreateUserBody = {
 export async function POST() {
   // ...
 }
+```
 
 ### Response
 
