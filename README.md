@@ -784,6 +784,51 @@ Factory functions work with any naming convention and support:
 - Imported schemas
 - Multiple factory patterns in the same project
 
+### Schema Composition with `.extend()`
+
+Zod's `.extend()` method allows you to build upon existing schemas:
+
+```typescript
+// src/schemas/user.ts
+
+// Base user schema
+export const BaseUserSchema = z.object({
+  id: z.string().uuid().describe("User ID"),
+  email: z.string().email().describe("Email address"),
+});
+
+// Extend with additional fields
+export const UserProfileSchema = BaseUserSchema.extend({
+  name: z.string().describe("Full name"),
+  bio: z.string().optional().describe("User biography"),
+});
+
+// Multiple levels of extension
+export const AdminUserSchema = UserProfileSchema.extend({
+  role: z.enum(["admin", "moderator"]).describe("Admin role"),
+  permissions: z.array(z.string()).describe("Permission list"),
+});
+
+export const UserIdParams = z.object({
+  id: z.string().uuid().describe("User ID"),
+});
+
+// src/app/api/users/[id]/route.ts
+
+/**
+ * Get user profile
+ * @pathParams UserIdParams
+ * @response UserProfileSchema
+ * @openapi
+ */
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  // Returns: { id, email, name, bio? }
+}
+```
+
 ### Drizzle-Zod Support
 
 The library fully supports **drizzle-zod** for generating Zod schemas from Drizzle ORM table definitions. This provides a single source of truth for your database schema, validation, and API documentation.
