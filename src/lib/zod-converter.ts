@@ -1308,6 +1308,7 @@ export class ZodSchemaConverter {
 
     if (required.length > 0) {
       // Deduplicate required array using Set
+      // @ts-ignore
       schema.required = [...new Set(required)];
     }
 
