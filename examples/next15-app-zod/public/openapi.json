@@ -20,6 +20,70 @@
       }
     },
     "schemas": {
+      "NestedSchema": {
+        "type": "object",
+        "properties": {
+          "foo": {
+            "$ref": "#/components/schemas/BaseSchema"
+          },
+          "bar": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "foo",
+          "bar"
+        ]
+      },
+      "ExtendedSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Identifier"
+          },
+          "name": {
+            "type": "string",
+            "description": "Name"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ]
+      },
+      "DoubleExtendedSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Identifier"
+          },
+          "name": {
+            "type": "string",
+            "description": "Name"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "Email address"
+          },
+          "age": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true,
+            "nullable": true,
+            "description": "Age in years"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "email"
+        ]
+      },
       "OrdersQueryParams": {
         "type": "object",
         "properties": {
@@ -643,13 +707,96 @@
               "moderator"
             ],
             "description": "User's role in the system"
+          },
+          "phone": {
+            "type": "string",
+            "pattern": "^\\+48 \\d{3} \\d{3} \\d{3}$",
+            "nullable": true,
+            "description": "Phone number (format: +48 XXX XXX XXX)"
+          },
+          "birthDate": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "Date of birth"
+          },
+          "addresses": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AddressSchema"
+            },
+            "nullable": true,
+            "description": "List of user addresses"
+          },
+          "primaryAddress": {
+            "type": "integer",
+            "minimum": 0,
+            "nullable": true,
+            "description": "Index of primary address"
+          },
+          "preferences": {
+            "type": "object",
+            "properties": {
+              "language": {
+                "type": "string",
+                "enum": [
+                  "pl",
+                  "en",
+                  "de"
+                ],
+                "default": "en",
+                "description": "Preferred language"
+              },
+              "theme": {
+                "type": "string",
+                "enum": [
+                  "light",
+                  "dark",
+                  "system"
+                ],
+                "default": "system",
+                "description": "Preferred theme"
+              },
+              "notifications": {
+                "type": "boolean",
+                "default": true,
+                "description": "Whether notifications are enabled"
+              }
+            },
+            "required": [
+              "language",
+              "theme",
+              "notifications"
+            ],
+            "nullable": true,
+            "description": "User preferences"
+          },
+          "paymentMethods": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PaymentMethodSchema"
+            },
+            "nullable": true,
+            "description": "Saved payment methods"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Account creation date"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Last update date"
           }
         },
         "required": [
           "id",
           "email",
           "name",
-          "role"
+          "role",
+          "createdAt",
+          "updatedAt"
         ]
       },
       "UserFieldsQuery": {
@@ -785,19 +932,35 @@
           "pagination"
         ]
       },
-      "OrderStatusSchema": {
-        "type": "string",
-        "enum": [
-          "pending",
-          "payment_processing",
-          "paid",
-          "preparing",
-          "shipped",
-          "delivered",
-          "cancelled",
-          "refunded"
-        ],
-        "description": "Order status"
+      "BaseSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Identifier"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "PaginationSchema": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1
+          }
+        },
+        "required": [
+          "page",
+          "limit"
+        ]
       },
       "CartItemSchema": {
         "type": "object",
@@ -858,6 +1021,20 @@
           "total"
         ]
       },
+      "OrderStatusSchema": {
+        "type": "string",
+        "enum": [
+          "pending",
+          "payment_processing",
+          "paid",
+          "preparing",
+          "shipped",
+          "delivered",
+          "cancelled",
+          "refunded"
+        ],
+        "description": "Order status"
+      },
       "OrderStatus": {
         "type": "string",
         "enum": [
@@ -893,13 +1070,28 @@
             "description": "Purchased products"
           },
           "shippingAddress": {
-            "type": "object"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AddressSchema"
+              }
+            ],
+            "description": "Shipping address"
           },
           "billingAddress": {
-            "type": "object"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AddressSchema"
+              }
+            ],
+            "description": "Billing address (can be the same as shipping address)"
           },
           "paymentMethod": {
-            "type": "object"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PaymentMethodSchema"
+              }
+            ],
+            "description": "Payment method"
           },
           "status": {
             "allOf": [
@@ -1178,21 +1370,74 @@
           }
         ]
       },
-      "PaginationSchema": {
+      "UserBaseSchema": {
         "type": "object",
         "properties": {
-          "page": {
-            "type": "integer",
-            "minimum": 1
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Unique user identifier"
           },
-          "limit": {
-            "type": "integer",
-            "minimum": 1
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "User's email address"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 100,
+            "description": "User's full name"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "user",
+              "admin",
+              "moderator"
+            ],
+            "description": "User's role in the system"
           }
         },
         "required": [
-          "page",
-          "limit"
+          "id",
+          "email",
+          "name",
+          "role"
+        ]
+      },
+      "AddressSchema": {
+        "type": "object",
+        "properties": {
+          "street": {
+            "type": "string",
+            "description": "Street name"
+          },
+          "houseNumber": {
+            "type": "string",
+            "description": "House/apartment number"
+          },
+          "city": {
+            "type": "string",
+            "description": "City"
+          },
+          "postalCode": {
+            "type": "string",
+            "pattern": "^\\d{2}-\\d{3}$",
+            "description": "Postal code (format: XX-XXX)"
+          },
+          "country": {
+            "type": "string",
+            "default": "Poland",
+            "description": "Country"
+          }
+        },
+        "required": [
+          "street",
+          "houseNumber",
+          "city",
+          "postalCode",
+          "country"
         ]
       },
       "PaymentMethod": {
@@ -1423,76 +1668,6 @@
           "uploadedAt"
         ]
       },
-      "UserBaseSchema": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid",
-            "description": "Unique user identifier"
-          },
-          "email": {
-            "type": "string",
-            "format": "email",
-            "description": "User's email address"
-          },
-          "name": {
-            "type": "string",
-            "minLength": 2,
-            "maxLength": 100,
-            "description": "User's full name"
-          },
-          "role": {
-            "type": "string",
-            "enum": [
-              "user",
-              "admin",
-              "moderator"
-            ],
-            "description": "User's role in the system"
-          }
-        },
-        "required": [
-          "id",
-          "email",
-          "name",
-          "role"
-        ]
-      },
-      "AddressSchema": {
-        "type": "object",
-        "properties": {
-          "street": {
-            "type": "string",
-            "description": "Street name"
-          },
-          "houseNumber": {
-            "type": "string",
-            "description": "House/apartment number"
-          },
-          "city": {
-            "type": "string",
-            "description": "City"
-          },
-          "postalCode": {
-            "type": "string",
-            "pattern": "^\\d{2}-\\d{3}$",
-            "description": "Postal code (format: XX-XXX)"
-          },
-          "country": {
-            "type": "string",
-            "default": "Poland",
-            "description": "Country"
-          }
-        },
-        "required": [
-          "street",
-          "houseNumber",
-          "city",
-          "postalCode",
-          "country"
-        ]
-      },
       "User": {
         "type": "object",
         "properties": {
@@ -1556,13 +1731,96 @@
               "moderator"
             ],
             "description": "User's role in the system"
+          },
+          "phone": {
+            "type": "string",
+            "pattern": "^\\+48 \\d{3} \\d{3} \\d{3}$",
+            "nullable": true,
+            "description": "Phone number (format: +48 XXX XXX XXX)"
+          },
+          "birthDate": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "Date of birth"
+          },
+          "addresses": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AddressSchema"
+            },
+            "nullable": true,
+            "description": "List of user addresses"
+          },
+          "primaryAddress": {
+            "type": "integer",
+            "minimum": 0,
+            "nullable": true,
+            "description": "Index of primary address"
+          },
+          "preferences": {
+            "type": "object",
+            "properties": {
+              "language": {
+                "type": "string",
+                "enum": [
+                  "pl",
+                  "en",
+                  "de"
+                ],
+                "default": "en",
+                "description": "Preferred language"
+              },
+              "theme": {
+                "type": "string",
+                "enum": [
+                  "light",
+                  "dark",
+                  "system"
+                ],
+                "default": "system",
+                "description": "Preferred theme"
+              },
+              "notifications": {
+                "type": "boolean",
+                "default": true,
+                "description": "Whether notifications are enabled"
+              }
+            },
+            "required": [
+              "language",
+              "theme",
+              "notifications"
+            ],
+            "nullable": true,
+            "description": "User preferences"
+          },
+          "paymentMethods": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PaymentMethodSchema"
+            },
+            "nullable": true,
+            "description": "Saved payment methods"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Account creation date"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Last update date"
           }
         },
         "required": [
           "id",
           "email",
           "name",
-          "role"
+          "role",
+          "createdAt",
+          "updatedAt"
         ]
       },
       "Address": {
@@ -1664,6 +1922,109 @@
     }
   },
   "paths": {
+    "/extended": {
+      "get": {
+        "operationId": "get-extended",
+        "summary": "Get nested schema example",
+        "description": "Retrieve nested schema data to test $ref generation",
+        "tags": [
+          "Extended"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Returns nested schema with base schema reference",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NestedSchema"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      },
+      "post": {
+        "operationId": "post-extended",
+        "summary": "Create extended schema",
+        "description": "Create a new item with extended schema to test .extend() functionality",
+        "tags": [
+          "Extended"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExtendedSchema"
+              }
+            }
+          },
+          "description": "Extended schema with base and additional properties"
+        },
+        "responses": {
+          "201": {
+            "description": "Returns the created extended schema",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExtendedSchema"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      },
+      "put": {
+        "operationId": "put-extended",
+        "summary": "Update double extended schema",
+        "description": "Update with double extended schema to test deep inheritance",
+        "tags": [
+          "Extended"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DoubleExtendedSchema"
+              }
+            }
+          },
+          "description": "Double extended schema with multiple levels of inheritance"
+        },
+        "responses": {
+          "200": {
+            "description": "Returns the updated double extended schema",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DoubleExtendedSchema"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    },
     "/orders": {
       "get": {
         "operationId": "getOrdersList",

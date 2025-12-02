@@ -495,6 +495,62 @@ export class ZodSchemaConverter {
                     });
                   }
                   break;
+
+                case "extend":
+                  // Extend the schema with new properties
+                  if (
+                    node.arguments.length > 0 &&
+                    t.isObjectExpression(node.arguments[0])
+                  ) {
+                    const extensionProperties = {};
+                    const extensionRequired = [];
+
+                    node.arguments[0].properties.forEach((prop) => {
+                      if (t.isObjectProperty(prop)) {
+                        const key = t.isIdentifier(prop.key)
+                          ? prop.key.name
+                          : t.isStringLiteral(prop.key)
+                          ? prop.key.value
+                          : null;
+
+                        if (key) {
+                          // Process the Zod type for this property
+                          const propSchema = this.processZodNode(prop.value);
+                          if (propSchema) {
+                            extensionProperties[key] = propSchema;
+
+                            // Check if the schema itself has nullable set (which processZodNode sets for optional fields)
+                            const isOptional = propSchema.nullable === true;
+
+                            if (!isOptional) {
+                              extensionRequired.push(key);
+                            }
+                          }
+                        }
+                      }
+                    });
+
+                    // Merge with existing schema
+                    if (schema.properties) {
+                      schema.properties = {
+                        ...schema.properties,
+                        ...extensionProperties,
+                      };
+                    } else {
+                      schema.properties = extensionProperties;
+                    }
+
+                    // Merge required arrays
+                    if (extensionRequired.length > 0) {
+                      schema.required = [
+                        ...(schema.required || []),
+                        ...extensionRequired,
+                      ];
+                      // Deduplicate
+                      schema.required = [...new Set(schema.required)];
+                    }
+                  }
+                  break;
               }
 
               return schema;
@@ -1251,8 +1307,8 @@ export class ZodSchemaConverter {
     };
 
     if (required.length > 0) {
-      // @ts-ignore
-      schema.required = required;
+      // Deduplicate required array using Set
+      schema.required = [...new Set(required)];
     }
 
     return schema;
@@ -1658,7 +1714,31 @@ export class ZodSchemaConverter {
           t.isObjectExpression(node.arguments[0])
         ) {
           // Get the base schema by processing the object that extend is called on
-          const baseSchema = this.processZodNode(node.callee.object);
+          const baseSchemaResult = this.processZodNode(node.callee.object);
+
+          // If it's a reference, resolve it to the actual schema
+          let baseSchema = baseSchemaResult;
+          if (baseSchemaResult && baseSchemaResult.$ref) {
+            const schemaName = baseSchemaResult.$ref.replace(
+              "#/components/schemas/",
+              ""
+            );
+            // Try to convert the base schema if not already processed
+            if (!this.zodSchemas[schemaName]) {
+              logger.debug(
+                `[extend] Base schema ${schemaName} not found, attempting to convert it`
+              );
+              this.convertZodSchemaToOpenApi(schemaName);
+            }
+            // Now retrieve the converted schema
+            if (this.zodSchemas[schemaName]) {
+              baseSchema = this.zodSchemas[schemaName];
+            } else {
+              logger.debug(
+                `Could not resolve reference for extend: ${schemaName}`
+              );
+            }
+          }
 
           // Process the extension object
           const extendNode: any = {
