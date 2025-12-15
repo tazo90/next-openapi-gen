@@ -140,7 +140,7 @@ async function createDocsPage(ui: string, outputFile: string) {
   spinner.succeed(`Created ${paths.join("/")}/page.tsx for ${ui}.`);
 }
 
-async function installDependencies(ui: string, schema: string) {
+async function installDependencies(ui: string, schema: string | string[]) {
   const packageManager = await getPackageManager();
   const installCmd = `${packageManager} ${
     packageManager === "npm" ? "install" : "add"
@@ -167,15 +167,19 @@ async function installDependencies(ui: string, schema: string) {
   }
 
   // Install schema dependencies
-  if (schema === "zod" && !(await hasDependency("zod"))) {
-    spinner.succeed(`Installing zod...`);
-    await execPromise(`${installCmd} zod`);
-    spinner.succeed(`Successfully installed zod.`);
-  } else if (schema === "typescript" && !(await hasDependency("typescript"))) {
-    const devFlag = packageManager === "npm" ? "--save-dev" : "-D";
-    spinner.succeed(`Installing typescript...`);
-    await execPromise(`${installCmd} ${devFlag} typescript`);
-    spinner.succeed(`Successfully installed typescript.`);
+  const schemaTypes = Array.isArray(schema) ? schema : [schema];
+
+  for (const schemaType of schemaTypes) {
+    if (schemaType === "zod" && !(await hasDependency("zod"))) {
+      spinner.succeed(`Installing zod...`);
+      await execPromise(`${installCmd} zod`);
+      spinner.succeed(`Successfully installed zod.`);
+    } else if (schemaType === "typescript" && !(await hasDependency("typescript"))) {
+      const devFlag = packageManager === "npm" ? "--save-dev" : "-D";
+      spinner.succeed(`Installing typescript...`);
+      await execPromise(`${installCmd} ${devFlag} typescript`);
+      spinner.succeed(`Successfully installed typescript.`);
+    }
   }
 }
 
