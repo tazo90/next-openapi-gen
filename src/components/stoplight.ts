@@ -1,4 +1,5 @@
 export const stoplightDeps = ["@stoplight/elements"];
+export const stoplightDevDeps = [];
 
 export function StoplightUI(outputFile: string) {
   return `

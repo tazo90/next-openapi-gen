@@ -6,11 +6,11 @@ import { exec } from "child_process";
 import util from "util";
 
 import openapiTemplate from "../openapi-template.js";
-import { scalarDeps, ScalarUI } from "../components/scalar.js";
-import { swaggerDeps, SwaggerUI } from "../components/swagger.js";
-import { redocDeps, RedocUI } from "../components/redoc.js";
-import { stoplightDeps, StoplightUI } from "../components/stoplight.js";
-import { rapidocDeps, RapidocUI } from "../components/rapidoc.js";
+import { scalarDeps, scalarDevDeps, ScalarUI } from "../components/scalar.js";
+import { swaggerDeps, swaggerDevDeps, SwaggerUI } from "../components/swagger.js";
+import { redocDeps, redocDevDeps, RedocUI } from "../components/redoc.js";
+import { stoplightDeps, stoplightDevDeps, StoplightUI } from "../components/stoplight.js";
+import { rapidocDeps, rapidocDevDeps, RapidocUI } from "../components/rapidoc.js";
 
 const execPromise = util.promisify(exec);
 
@@ -90,6 +90,24 @@ function getDocsPageDependencies(ui: string) {
   return deps.join(" ");
 }
 
+function getDocsPageDevDependencies(ui: string) {
+  let devDeps = [];
+
+  if (ui === "scalar") {
+    devDeps = scalarDevDeps;
+  } else if (ui === "swagger") {
+    devDeps = swaggerDevDeps;
+  } else if (ui === "redoc") {
+    devDeps = redocDevDeps;
+  } else if (ui === "stoplight") {
+    devDeps = stoplightDevDeps;
+  } else if (ui === "rapidoc") {
+    devDeps = rapidocDevDeps;
+  }
+
+  return devDeps.join(" ");
+}
+
 async function createDocsPage(ui: string, outputFile: string) {
   if (ui === "none") {
     return;
@@ -123,11 +141,23 @@ async function installDependencies(ui: string) {
   }`;
 
   const deps = getDocsPageDependencies(ui);
+  const devDeps = getDocsPageDevDependencies(ui);
   const flags = getDocsPageInstallFlags(ui, packageManager);
 
-  spinner.succeed(`Installing ${deps} dependencies...`);
-  const resp = await execPromise(`${installCmd} ${deps} ${flags}`);
-  spinner.succeed(`Successfully installed ${deps}.`);
+  // Install regular dependencies
+  if (deps) {
+    spinner.succeed(`Installing ${deps} dependencies...`);
+    await execPromise(`${installCmd} ${deps} ${flags}`);
+    spinner.succeed(`Successfully installed ${deps}.`);
+  }
+
+  // Install dev dependencies
+  if (devDeps) {
+    const devFlag = packageManager === "npm" ? "--save-dev" : "-D";
+    spinner.succeed(`Installing ${devDeps} dev dependencies...`);
+    await execPromise(`${installCmd} ${devFlag} ${devDeps} ${flags}`);
+    spinner.succeed(`Successfully installed ${devDeps}.`);
+  }
 }
 
 function extendOpenApiTemplate(spec, options) {

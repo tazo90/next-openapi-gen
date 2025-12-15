@@ -1,4 +1,5 @@
 export const rapidocDeps = ["rapidoc"];
+export const rapidocDevDeps = [];
 
 export function RapidocUI(outputFile: string) {
   return `

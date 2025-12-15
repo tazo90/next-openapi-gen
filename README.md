@@ -14,14 +14,11 @@ Automatically generate OpenAPI 3.0 documentation from Next.js projects, with sup
 
 ## Supported interfaces
 
-- Scalar 🆕
+- Scalar 💡(default)
 - Swagger
 - Redoc
 - Stoplight Elements
 - RapiDoc
-
-> [!TIP]
-> You can use the `--ui none` option during initialization to skip UI setup if you only care about generating the OpenAPI documentation.
 
 ## Installation
 
@@ -33,14 +30,27 @@ npm install next-openapi-gen --save-dev
 
 ```bash
 # Initialize OpenAPI configuration
-npx next-openapi-gen init --ui scalar --docs-url api-docs --schema zod
+npx next-openapi-gen init
 
 # Generate OpenAPI documentation
 npx next-openapi-gen generate
 ```
 
 > [!TIP]
-> Use the `--output` option in the `init` command to specify a custom output file for the template. Then you can use the `--template` option in the `generate` command to point to that file.
+> Scalar UI and Zod are set by default
+
+
+### Init Command Options
+
+| Option | Choices | Default | Description |
+|--------|---------|---------|-------------|
+| `--ui` | `scalar`, `swagger`, `redoc`, `stoplight`, `rapidoc`, `none` | `scalar` | UI framework for API docs |
+| `--schema` | `zod`, `typescript` | `zod` | Schema validation tool |
+| `--docs-url` | any string | `api-docs` | URL path for documentation page |
+| `--output` | any path | `next.openapi.json` | Output file for OpenAPI template |
+
+> [!TIP]
+> Use `--ui none` to skip UI setup and only generate the OpenAPI specification file.
 
 ## Configuration
 

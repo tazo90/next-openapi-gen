@@ -1,4 +1,5 @@
 export const swaggerDeps = ["swagger-ui", "swagger-ui-react"];
+export const swaggerDevDeps = ["@types/swagger-ui-react"];
 
 export function SwaggerUI(outputFile: string) {
   return `

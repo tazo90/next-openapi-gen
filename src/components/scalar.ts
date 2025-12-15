@@ -1,4 +1,5 @@
 export const scalarDeps = ["@scalar/api-reference-react", "ajv"];
+export const scalarDevDeps = [];
 
 export function ScalarUI(outputFile: string) {
   return `
