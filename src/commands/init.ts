@@ -16,6 +16,16 @@ const execPromise = util.promisify(exec);
 
 const spinner = ora("Initializing project with OpenAPI template...\n");
 
+async function hasDependency(packageName: string): Promise<boolean> {
+  try {
+    const packageJsonPath = path.join(process.cwd(), "package.json");
+    const packageJson = await fse.readJson(packageJsonPath);
+    return !!(packageJson.dependencies?.[packageName] || packageJson.devDependencies?.[packageName]);
+  } catch {
+    return false;
+  }
+}
+
 const getPackageManager = async () => {
   let currentDir = process.cwd();
 
@@ -130,33 +140,42 @@ async function createDocsPage(ui: string, outputFile: string) {
   spinner.succeed(`Created ${paths.join("/")}/page.tsx for ${ui}.`);
 }
 
-async function installDependencies(ui: string) {
-  if (ui === "none") {
-    return;
-  }
-
+async function installDependencies(ui: string, schema: string) {
   const packageManager = await getPackageManager();
   const installCmd = `${packageManager} ${
     packageManager === "npm" ? "install" : "add"
   }`;
 
-  const deps = getDocsPageDependencies(ui);
-  const devDeps = getDocsPageDevDependencies(ui);
-  const flags = getDocsPageInstallFlags(ui, packageManager);
+  // Install UI dependencies
+  if (ui !== "none") {
+    const deps = getDocsPageDependencies(ui);
+    const devDeps = getDocsPageDevDependencies(ui);
+    const flags = getDocsPageInstallFlags(ui, packageManager);
 
-  // Install regular dependencies
-  if (deps) {
-    spinner.succeed(`Installing ${deps} dependencies...`);
-    await execPromise(`${installCmd} ${deps} ${flags}`);
-    spinner.succeed(`Successfully installed ${deps}.`);
+    if (deps) {
+      spinner.succeed(`Installing ${deps} dependencies...`);
+      await execPromise(`${installCmd} ${deps} ${flags}`);
+      spinner.succeed(`Successfully installed ${deps}.`);
+    }
+
+    if (devDeps) {
+      const devFlag = packageManager === "npm" ? "--save-dev" : "-D";
+      spinner.succeed(`Installing ${devDeps} dev dependencies...`);
+      await execPromise(`${installCmd} ${devFlag} ${devDeps} ${flags}`);
+      spinner.succeed(`Successfully installed ${devDeps}.`);
+    }
   }
 
-  // Install dev dependencies
-  if (devDeps) {
+  // Install schema dependencies
+  if (schema === "zod" && !(await hasDependency("zod"))) {
+    spinner.succeed(`Installing zod...`);
+    await execPromise(`${installCmd} zod`);
+    spinner.succeed(`Successfully installed zod.`);
+  } else if (schema === "typescript" && !(await hasDependency("typescript"))) {
     const devFlag = packageManager === "npm" ? "--save-dev" : "-D";
-    spinner.succeed(`Installing ${devDeps} dev dependencies...`);
-    await execPromise(`${installCmd} ${devFlag} ${devDeps} ${flags}`);
-    spinner.succeed(`Successfully installed ${devDeps}.`);
+    spinner.succeed(`Installing typescript...`);
+    await execPromise(`${installCmd} ${devFlag} typescript`);
+    spinner.succeed(`Successfully installed typescript.`);
   }
 }
 
@@ -175,7 +194,7 @@ function getOutputPath(output?: string) {
 }
 
 export async function init(options) {
-  const { ui, output } = options;
+  const { ui, output, schema } = options;
 
   spinner.start();
 
@@ -189,7 +208,7 @@ export async function init(options) {
     spinner.succeed(`Created OpenAPI template in ${outputPath}`);
 
     createDocsPage(ui, template.outputFile);
-    installDependencies(ui);
+    installDependencies(ui, schema);
   } catch (error) {
     spinner.fail(`Failed to initialize project: ${error.message}`);
   }
