@@ -1,3 +1,18 @@
+# [0.9.0](https://github.com/tazo90/next-openapi-gen/compare/v0.8.9...v0.9.0) (2025-12-15)
+
+
+### ✨ Features
+
+* auto-install zod/typescript based on --schema flag in init command ([#69](https://github.com/tazo90/next-openapi-gen/issues/69)) ([65a7f1d](https://github.com/tazo90/next-openapi-gen/commit/65a7f1de956f074c4ef9c10411d6e31e7ecbc48e))
+* set Scalar as default UI and install @types/swagger-ui-react as devDependency ([#67](https://github.com/tazo90/next-openapi-gen/issues/67)) ([ca7e3db](https://github.com/tazo90/next-openapi-gen/commit/ca7e3dbf405e8cb0d4875a0283313a1b24c6427d))
+
+
+### 🐛 Bug Fixes
+
+* disable SSR for swagger-ui-react in latest version ([#68](https://github.com/tazo90/next-openapi-gen/issues/68)) ([444eaf5](https://github.com/tazo90/next-openapi-gen/commit/444eaf5b7ceda92a4a92c9ebc879966230ab698b))
+
+
+
 ## [0.8.9](https://github.com/tazo90/next-openapi-gen/compare/v0.8.8...v0.8.9) (2025-12-02)
 
 
