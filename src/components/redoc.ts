@@ -1,4 +1,5 @@
 export const redocDeps = ["redoc"];
+export const redocDevDeps = [];
 
 export function RedocUI(outputFile: string) {
   return `
