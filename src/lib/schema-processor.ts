@@ -42,6 +42,7 @@ export class SchemaProcessor {
   private zodSchemaConverter: ZodSchemaConverter | null = null;
   private schemaTypes: SchemaType[];
   private isResolvingPickOmitBase: boolean = false;
+  private currentFilePath: string | null = null;
 
   constructor(
     schemaDir: string,
@@ -139,6 +140,14 @@ export class SchemaProcessor {
     return merged;
   }
 
+  /**
+   * Set the context file path for resolving utility types like ReturnType<typeof X>
+   * This should be called before processing schemas from a route file
+   */
+  public setContextFilePath(filePath: string | null): void {
+    this.currentFilePath = filePath;
+  }
+
   public findSchemaDefinition(
     schemaName: string,
     contentType: ContentType
@@ -186,8 +195,25 @@ export class SchemaProcessor {
       );
     }
 
-    // Fall back to TypeScript types
-    this.scanSchemaDir(this.schemaDir, schemaName);
+    // Priority 3: Check current file if set (for route-level types)
+    // Always process TypeScript types from route files, even if schemaType is "zod"
+    // This allows utility types like Awaited<ReturnType<>> to work
+    if (this.currentFilePath) {
+      logger.debug(`Processing current file for ${schemaName}: ${this.currentFilePath}`);
+      this.processSchemaFile(this.currentFilePath, schemaName);
+      if (this.openapiDefinitions[schemaName]) {
+        logger.debug(`Found ${schemaName} in current file`);
+        return this.openapiDefinitions[schemaName];
+      }
+    }
+
+    // Priority 4: Fall back to TypeScript types in schema directory
+    // Only search schema directory if TypeScript is enabled
+    if (this.schemaTypes.includes("typescript")) {
+      logger.debug(`Searching schema directory for ${schemaName}`);
+      this.scanSchemaDir(this.schemaDir, schemaName);
+    }
+
     return schemaNode;
   }
 
@@ -473,6 +499,16 @@ export class SchemaProcessor {
         return { type: "string", format: "date-time" };
       }
 
+      if (typeName === "Promise") {
+        // For Promise types, extract and resolve the inner type
+        if (node.typeParameters && node.typeParameters.params.length > 0) {
+          logger.debug(`Resolving Promise type parameter`);
+          return this.resolveTSNodeType(node.typeParameters.params[0]);
+        }
+        // Promise without type parameter - return object
+        return { type: "object" };
+      }
+
       if (typeName === "Array" || typeName === "ReadonlyArray") {
         if (node.typeParameters && node.typeParameters.params.length > 0) {
           return {
@@ -544,6 +580,20 @@ export class SchemaProcessor {
         // Fallback to just the base type if we can't process properly
         if (node.typeParameters && node.typeParameters.params.length > 0) {
           return this.resolveTSNodeType(node.typeParameters.params[0]);
+        }
+      }
+
+      // Handle Awaited<T> - unwraps Promise types
+      if (typeName === "Awaited") {
+        if (node.typeParameters && node.typeParameters.params.length > 0) {
+          return this.resolveAwaitedType(node.typeParameters.params[0]);
+        }
+      }
+
+      // Handle ReturnType<typeof function>
+      if (typeName === "ReturnType") {
+        if (node.typeParameters && node.typeParameters.params.length > 0) {
+          return this.resolveReturnType(node.typeParameters.params[0]);
         }
       }
 
@@ -717,6 +767,9 @@ export class SchemaProcessor {
     if (this.processSchemaTracker[`${filePath}-${schemaName}`]) return;
 
     try {
+      // Store current file path for function lookup
+      this.currentFilePath = filePath;
+
       // Recognizes different elements of TS like variable, type, interface, enum
       const content = fs.readFileSync(filePath, "utf-8");
       const ast = parseTypeScriptFile(content);
@@ -787,6 +840,228 @@ export class SchemaProcessor {
     }
 
     return [];
+  }
+
+  /**
+   * Resolve Awaited<T> utility type - unwraps Promise types
+   * Handles: Promise<T> -> T, Promise<Promise<T>> -> T
+   */
+  private resolveAwaitedType(typeNode: any): OpenAPIDefinition {
+    logger.debug(`Resolving Awaited type, node type: ${typeNode?.type}`);
+
+    // If it's a Promise type reference, unwrap it FIRST
+    if (t.isTSTypeReference(typeNode) && t.isIdentifier(typeNode.typeName)) {
+      const typeName = typeNode.typeName.name;
+      logger.debug(`Type reference: ${typeName}`);
+
+      if (typeName === "Promise") {
+        logger.debug(`Unwrapping Promise type`);
+        // Unwrap Promise<T> -> T
+        if (typeNode.typeParameters && typeNode.typeParameters.params.length > 0) {
+          logger.debug(`Recursively unwrapping Promise parameter`);
+          // Recursively unwrap nested Promises
+          return this.resolveAwaitedType(typeNode.typeParameters.params[0]);
+        }
+      }
+    }
+
+    // Then resolve the inner type (if not a Promise)
+    logger.debug(`Not a Promise, resolving as regular type`);
+    const resolvedType = this.resolveTSNodeType(typeNode);
+    logger.debug(`Resolved to: ${JSON.stringify(resolvedType).substring(0, 200)}`);
+
+    // If not a Promise, return as-is
+    return resolvedType;
+  }
+
+  /**
+   * Resolve ReturnType<typeof functionName> utility type
+   * Finds the function declaration and extracts its return type
+   */
+  private resolveReturnType(typeNode: any): OpenAPIDefinition {
+    logger.debug(`Resolving ReturnType`);
+
+    // Check if it's a typeof expression
+    if (t.isTSTypeQuery(typeNode)) {
+      const functionName = this.extractFunctionNameFromTypeOf(typeNode);
+      logger.debug(`Function name: ${functionName}`);
+
+      if (functionName) {
+        // Find the function declaration
+        const functionReturnType = this.findFunctionReturnType(functionName);
+
+        if (functionReturnType) {
+          logger.debug(`Found return type annotation for ${functionName}`);
+          const resolved = this.resolveTSNodeType(functionReturnType);
+          logger.debug(`Resolved to: ${JSON.stringify(resolved).substring(0, 200)}`);
+          return resolved;
+        } else {
+          logger.debug(`No return type annotation found for ${functionName}`);
+        }
+      }
+    }
+
+    // If we can't resolve it, return empty object
+    logger.debug(`Failed to resolve ReturnType, returning empty object`);
+    return {};
+  }
+
+  /**
+   * Extract function name from typeof expression
+   * Handles: typeof functionName, typeof obj.method
+   */
+  private extractFunctionNameFromTypeOf(typeQueryNode: any): string | null {
+    if (t.isIdentifier(typeQueryNode.exprName)) {
+      return typeQueryNode.exprName.name;
+    }
+
+    // Handle qualified names like obj.method (not supported yet)
+    // Would require more complex resolution
+    return null;
+  }
+
+  /**
+   * Find function declaration and extract its return type annotation
+   */
+  private findFunctionReturnType(functionName: string): any | null {
+    logger.debug(`Looking for function: ${functionName}`);
+
+    // Helper to search a single file for the function
+    // Returns the found type node or null
+    const searchFile = (filePath: string): any | null => {
+      if (!fs.existsSync(filePath)) {
+        logger.debug(`[findFunctionReturnType] File does not exist: ${filePath}`);
+        return null;
+      }
+
+      logger.debug(`[findFunctionReturnType] Searching in file: ${filePath}`);
+
+      try {
+        const content = fs.readFileSync(filePath, 'utf-8');
+        const ast = parseTypeScriptFile(content);
+        let foundTypeNode: any = null;
+
+        traverse(ast, {
+          // Arrow function with export
+          ExportNamedDeclaration: (path: any) => {
+            if (t.isVariableDeclaration(path.node.declaration)) {
+              path.node.declaration.declarations.forEach((declarator: any) => {
+                if (
+                  t.isIdentifier(declarator.id) &&
+                  declarator.id.name === functionName &&
+                  t.isArrowFunctionExpression(declarator.init)
+                ) {
+                  foundTypeNode = declarator.init.returnType?.typeAnnotation;
+                  logger.debug(`[findFunctionReturnType] Found exported arrow function: ${functionName}`);
+                }
+              });
+            }
+          },
+          // Regular function declaration
+          FunctionDeclaration: (path: any) => {
+            if (
+              t.isIdentifier(path.node.id) &&
+              path.node.id.name === functionName
+            ) {
+              foundTypeNode = path.node.returnType?.typeAnnotation;
+              logger.debug(`[findFunctionReturnType] Found function declaration: ${functionName}`);
+            }
+          },
+          // Arrow function variable
+          VariableDeclarator: (path: any) => {
+            if (
+              t.isIdentifier(path.node.id) &&
+              path.node.id.name === functionName &&
+              t.isArrowFunctionExpression(path.node.init)
+            ) {
+              foundTypeNode = path.node.init.returnType?.typeAnnotation;
+              logger.debug(`[findFunctionReturnType] Found arrow function variable: ${functionName}`);
+            }
+          },
+        });
+
+        if (foundTypeNode) {
+          logger.debug(`[findFunctionReturnType] Successfully extracted return type for: ${functionName}`);
+        }
+
+        return foundTypeNode;
+      } catch (error) {
+        logger.debug(`[findFunctionReturnType] Error parsing file ${filePath}: ${error.message}`);
+        return null;
+      }
+    };
+
+    // Recursive helper to search directory
+    // Returns the found type node or null
+    const searchDirectory = (dir: string): any | null => {
+      if (!fs.existsSync(dir)) {
+        logger.debug(`[findFunctionReturnType] Directory does not exist: ${dir}`);
+        return null;
+      }
+
+      logger.debug(`[findFunctionReturnType] Searching in directory: ${dir}`);
+      const files = fs.readdirSync(dir);
+
+      for (const file of files) {
+        const filePath = path.join(dir, file);
+        const stat = fs.statSync(filePath);
+
+        if (stat.isDirectory()) {
+          // Recursively search subdirectories
+          const result = searchDirectory(filePath);
+          if (result) {
+            return result; // Found in subdirectory
+          }
+        } else if (file.endsWith(".ts") || file.endsWith(".tsx")) {
+          const result = searchFile(filePath);
+          if (result) {
+            return result; // Found it
+          }
+        }
+      }
+
+      return null;
+    };
+
+    // 1. First, search in the same directory as the current file being processed
+    if (this.currentFilePath) {
+      const currentDir = path.dirname(this.currentFilePath);
+      logger.debug(`[findFunctionReturnType] Searching in current directory: ${currentDir}`);
+
+      // Check for common patterns like route.utils.ts, utils.ts, helpers.ts
+      const commonUtilFiles = [
+        "route.utils.ts",
+        "utils.ts",
+        "helpers.ts",
+        "lib.ts",
+      ];
+
+      for (const utilFile of commonUtilFiles) {
+        const utilPath = path.join(currentDir, utilFile);
+        const result = searchFile(utilPath);
+        if (result) {
+          logger.debug(`[findFunctionReturnType] Found in ${utilFile}`);
+          return result;
+        }
+      }
+
+      // Search all files in the current directory
+      const result = searchDirectory(currentDir);
+      if (result) {
+        logger.debug(`[findFunctionReturnType] Found in current directory`);
+        return result;
+      }
+    }
+
+    // 2. Fall back to searching the schema directory
+    logger.debug(`[findFunctionReturnType] Searching in schema directory: ${this.schemaDir}`);
+    const result = searchDirectory(this.schemaDir);
+
+    if (!result) {
+      logger.debug(`[findFunctionReturnType] Function ${functionName} not found`);
+    }
+
+    return result;
   }
 
   private getPropertyOptions(node: any): PropertyOptions {
