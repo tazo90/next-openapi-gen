@@ -1,3 +1,13 @@
+## [0.9.1](https://github.com/tazo90/next-openapi-gen/compare/v0.9.0...v0.9.1) (2025-12-22)
+
+
+### 🐛 Bug Fixes
+
+* support custom apiDir paths, improve path normalization and add tests ([c25c830](https://github.com/tazo90/next-openapi-gen/commit/c25c830592dc65d6d9e4ecdc171224f4dd3c09c8))
+* use apiDir from config in route-processor ([#71](https://github.com/tazo90/next-openapi-gen/issues/71)) ([65dc78f](https://github.com/tazo90/next-openapi-gen/commit/65dc78fb5b15e578473c86b781c9320efde5fc6b))
+
+
+
 # [0.9.0](https://github.com/tazo90/next-openapi-gen/compare/v0.8.9...v0.9.0) (2025-12-15)
 
 
