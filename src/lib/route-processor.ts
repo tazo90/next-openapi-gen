@@ -476,7 +476,7 @@ export class RouteProcessor {
     }
 
     // For pages router or other formats
-    const suffixPath = normalizedPath.split("api")[1];
+    const suffixPath = normalizedPath.split(this.config.apiDir.split('/').at(-1))[1];
     return suffixPath
       .replace(/route\.tsx?$/, "")
       .replace(/\/$/, "")
