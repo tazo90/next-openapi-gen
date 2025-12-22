@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { RouteProcessor } from "../src/lib/route-processor.js";
 import { OpenApiConfig } from "../src/types.js";
-import fs from "fs";
+import fs from "fs-extra";
 import path from "path";
 
 describe("Ignore Routes - Integration Tests", () => {
@@ -84,13 +84,11 @@ describe("Ignore Routes - Integration Tests", () => {
     });
   });
 
-  afterAll(() => {
-    // Cleanup test directory
-    if (fs.existsSync(path.join(process.cwd(), "tests", "fixtures"))) {
-      fs.rmSync(path.join(process.cwd(), "tests", "fixtures"), {
-        recursive: true,
-        force: true,
-      });
+  afterAll(async () => {
+    // Cleanup only the test directory we created (app/api within fixtures)
+    const appDir = path.join(process.cwd(), "tests", "fixtures", "app");
+    if (fs.existsSync(appDir)) {
+      await fs.remove(appDir);
     }
   });
 

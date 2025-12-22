@@ -452,37 +452,48 @@ export class RouteProcessor {
     // Normalize path separators first
     const normalizedPath = filePath.replaceAll("\\", "/");
 
-    // First, check if it's an app router path
-    if (normalizedPath.includes("/app/api/")) {
-      // Get the relative path from the api directory
-      const apiDirPos = normalizedPath.lastIndexOf("/app/api/");
-      let relativePath = normalizedPath.substring(
-        apiDirPos + "/app/api".length
+    // Normalize apiDir to ensure consistent format
+    const normalizedApiDir = this.config.apiDir
+      .replaceAll("\\", "/")
+      .replace(/^\.\//, "")
+      .replace(/\/$/, "");
+
+    // Find the apiDir position in the normalized path
+    const apiDirIndex = normalizedPath.indexOf(normalizedApiDir);
+
+    if (apiDirIndex === -1) {
+      throw new Error(
+        `Could not find apiDir "${this.config.apiDir}" in file path "${filePath}"`
       );
-
-      // Remove the /route.ts or /route.tsx suffix
-      relativePath = relativePath.replace(/\/route\.tsx?$/, "");
-
-      // Remove Next.js route groups (folders in parentheses like (authenticated), (marketing))
-      relativePath = relativePath.replace(/\/\([^)]+\)/g, "");
-
-      // Convert Next.js dynamic route syntax to OpenAPI parameter syntax
-      relativePath = relativePath.replace(/\/\[([^\]]+)\]/g, "/{$1}");
-
-      // Handle catch-all routes ([...param])
-      relativePath = relativePath.replace(/\/\[\.\.\.(.*)\]/g, "/{$1}");
-
-      return relativePath;
     }
 
-    // For pages router or other formats
-    const suffixPath = normalizedPath.split(this.config.apiDir.split('/').at(-1))[1];
-    return suffixPath
-      .replace(/route\.tsx?$/, "")
-      .replace(/\/$/, "")
-      .replace(/\/\([^)]+\)/g, "") // Remove route groups for pages router too
-      .replace(/\/\[([^\]]+)\]/g, "/{$1}") // Replace [param] with {param}
-      .replace(/\/\[\.\.\.(.*)\]/g, "/{$1}"); // Replace [...param] with {param}
+    // Extract the path after apiDir
+    let relativePath = normalizedPath.substring(
+      apiDirIndex + normalizedApiDir.length
+    );
+
+    // Remove the /route.ts or /route.tsx suffix
+    relativePath = relativePath.replace(/\/route\.tsx?$/, "");
+
+    // Ensure the path starts with /
+    if (!relativePath.startsWith("/")) {
+      relativePath = "/" + relativePath;
+    }
+
+    // Remove trailing slash
+    relativePath = relativePath.replace(/\/$/, "");
+
+    // Remove Next.js route groups (folders in parentheses like (authenticated), (marketing))
+    relativePath = relativePath.replace(/\/\([^)]+\)/g, "");
+
+    // Handle catch-all routes ([...param]) before converting dynamic routes
+    // This must come first because [...param] would also match the [param] pattern
+    relativePath = relativePath.replace(/\/\[\.\.\.(.*?)\]/g, "/{$1}");
+
+    // Convert Next.js dynamic route syntax to OpenAPI parameter syntax
+    relativePath = relativePath.replace(/\/\[([^\]]+)\]/g, "/{$1}");
+
+    return relativePath || "/";
   }
 
   private getSortedPaths(paths: Record<string, any>): Record<string, any> {

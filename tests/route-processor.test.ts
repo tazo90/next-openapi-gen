@@ -230,4 +230,174 @@ describe('RouteProcessor - Ignore Routes', () => {
       expect(routeProcessor.shouldIgnoreRoute('/api/internal', dataTypes)).toBe(true);
     });
   });
+
+  describe('getRoutePath - custom apiDir handling', () => {
+    it('should handle default apiDir "./src/app/api"', () => {
+      const config = {
+        ...baseConfig,
+        apiDir: './src/app/api',
+      };
+      routeProcessor = new RouteProcessor(config);
+
+      // @ts-ignore - accessing private method for testing
+      const result = routeProcessor.getRoutePath('./src/app/api/users/route.ts');
+      expect(result).toBe('/users');
+    });
+
+    it('should handle custom apiDir "./src/app/private"', () => {
+      const config = {
+        ...baseConfig,
+        apiDir: './src/app/private',
+      };
+      routeProcessor = new RouteProcessor(config);
+
+      // @ts-ignore - accessing private method for testing
+      const result = routeProcessor.getRoutePath('./src/app/private/users/route.ts');
+      expect(result).toBe('/users');
+    });
+
+    it('should handle apiDir with trailing slash', () => {
+      const config = {
+        ...baseConfig,
+        apiDir: './src/app/api/',
+      };
+      routeProcessor = new RouteProcessor(config);
+
+      // @ts-ignore - accessing private method for testing
+      const result = routeProcessor.getRoutePath('./src/app/api/users/route.ts');
+      expect(result).toBe('/users');
+    });
+
+    it('should handle apiDir without leading "./"', () => {
+      const config = {
+        ...baseConfig,
+        apiDir: 'src/app/api',
+      };
+      routeProcessor = new RouteProcessor(config);
+
+      // @ts-ignore - accessing private method for testing
+      const result = routeProcessor.getRoutePath('src/app/api/users/route.ts');
+      expect(result).toBe('/users');
+    });
+
+    it('should handle nested routes with custom apiDir', () => {
+      const config = {
+        ...baseConfig,
+        apiDir: './src/app/private',
+      };
+      routeProcessor = new RouteProcessor(config);
+
+      // @ts-ignore - accessing private method for testing
+      const result = routeProcessor.getRoutePath('./src/app/private/users/profile/route.ts');
+      expect(result).toBe('/users/profile');
+    });
+
+    it('should handle Windows path separators', () => {
+      const config = {
+        ...baseConfig,
+        apiDir: '.\\src\\app\\api',
+      };
+      routeProcessor = new RouteProcessor(config);
+
+      // @ts-ignore - accessing private method for testing
+      const result = routeProcessor.getRoutePath('.\\src\\app\\api\\users\\route.ts');
+      expect(result).toBe('/users');
+    });
+
+    it('should handle dynamic routes with custom apiDir', () => {
+      const config = {
+        ...baseConfig,
+        apiDir: './src/app/private',
+      };
+      routeProcessor = new RouteProcessor(config);
+
+      // @ts-ignore - accessing private method for testing
+      const result = routeProcessor.getRoutePath('./src/app/private/users/[id]/route.ts');
+      expect(result).toBe('/users/{id}');
+    });
+
+    it('should handle route groups with custom apiDir', () => {
+      const config = {
+        ...baseConfig,
+        apiDir: './src/app/private',
+      };
+      routeProcessor = new RouteProcessor(config);
+
+      // @ts-ignore - accessing private method for testing
+      const result = routeProcessor.getRoutePath('./src/app/private/(authenticated)/users/route.ts');
+      expect(result).toBe('/users');
+    });
+
+    it('should handle catch-all routes with custom apiDir', () => {
+      const config = {
+        ...baseConfig,
+        apiDir: './src/app/private',
+      };
+      routeProcessor = new RouteProcessor(config);
+
+      // @ts-ignore - accessing private method for testing
+      const result = routeProcessor.getRoutePath('./src/app/private/files/[...path]/route.ts');
+      expect(result).toBe('/files/{path}');
+    });
+
+    it('should handle root route with custom apiDir', () => {
+      const config = {
+        ...baseConfig,
+        apiDir: './src/app/private',
+      };
+      routeProcessor = new RouteProcessor(config);
+
+      // @ts-ignore - accessing private method for testing
+      const result = routeProcessor.getRoutePath('./src/app/private/route.ts');
+      expect(result).toBe('/');
+    });
+
+    it('should throw error when apiDir is not found in file path', () => {
+      const config = {
+        ...baseConfig,
+        apiDir: './src/app/api',
+      };
+      routeProcessor = new RouteProcessor(config);
+
+      // @ts-ignore - accessing private method for testing
+      expect(() => routeProcessor.getRoutePath('./src/app/private/users/route.ts'))
+        .toThrow('Could not find apiDir "./src/app/api" in file path "./src/app/private/users/route.ts"');
+    });
+
+    it('should handle apiDir that appears multiple times in path (use first occurrence)', () => {
+      const config = {
+        ...baseConfig,
+        apiDir: './src/api',
+      };
+      routeProcessor = new RouteProcessor(config);
+
+      // @ts-ignore - accessing private method for testing
+      const result = routeProcessor.getRoutePath('./src/api/api-users/route.ts');
+      expect(result).toBe('/api-users');
+    });
+
+    it('should handle .tsx route files', () => {
+      const config = {
+        ...baseConfig,
+        apiDir: './src/app/private',
+      };
+      routeProcessor = new RouteProcessor(config);
+
+      // @ts-ignore - accessing private method for testing
+      const result = routeProcessor.getRoutePath('./src/app/private/users/route.tsx');
+      expect(result).toBe('/users');
+    });
+
+    it('should handle mixed forward and backward slashes', () => {
+      const config = {
+        ...baseConfig,
+        apiDir: './src/app/private',
+      };
+      routeProcessor = new RouteProcessor(config);
+
+      // @ts-ignore - accessing private method for testing
+      const result = routeProcessor.getRoutePath('./src\\app\\private/users/route.ts');
+      expect(result).toBe('/users');
+    });
+  });
 });
