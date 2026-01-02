@@ -290,6 +290,76 @@
           "name"
         ]
       },
+      "SearchQueryParams": {
+        "type": "object",
+        "properties": {
+          "q": {
+            "type": "string",
+            "description": "Search query"
+          },
+          "page": {
+            "type": "number",
+            "nullable": true,
+            "description": "Page number"
+          },
+          "limit": {
+            "type": "number",
+            "nullable": true,
+            "description": "Items per page"
+          },
+          "sort": {
+            "type": "string",
+            "enum": [
+              "asc",
+              "desc"
+            ],
+            "nullable": true,
+            "description": "Sort order"
+          }
+        },
+        "required": [
+          "q"
+        ]
+      },
+      "SearchResponse": {
+        "type": "object",
+        "properties": {
+          "results": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "description": "Result ID"
+                },
+                "title": {
+                  "type": "string",
+                  "description": "Result title"
+                },
+                "score": {
+                  "type": "number",
+                  "description": "Relevance score"
+                }
+              },
+              "required": [
+                "id",
+                "title",
+                "score"
+              ]
+            },
+            "description": "Search results"
+          },
+          "total": {
+            "type": "number",
+            "description": "Total results found"
+          }
+        },
+        "required": [
+          "results",
+          "total"
+        ]
+      },
       "GetUserProfilePathParams": {
         "type": "object",
         "properties": {
@@ -683,6 +753,80 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/User"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    },
+    "/test-query-params": {
+      "get": {
+        "operationId": "get-test-query-params",
+        "summary": "Search endpoint with @queryParams tag\r",
+        "description": "Test endpoint to verify @queryParams works (to avoid prettier-plugin-jsdoc conflicts)",
+        "tags": [
+          "Test-query-params"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "q",
+            "schema": {
+              "type": "string",
+              "description": "Search query"
+            },
+            "required": false,
+            "description": "Search query"
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "number",
+              "description": "Page number"
+            },
+            "required": false,
+            "description": "Page number"
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "number",
+              "description": "Items per page"
+            },
+            "required": false,
+            "description": "Items per page"
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "description": "Sort order"
+            },
+            "required": false,
+            "description": "Sort order"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchResponse"
                 }
               }
             }

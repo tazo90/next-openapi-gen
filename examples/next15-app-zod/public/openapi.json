@@ -1925,7 +1925,7 @@
     "/extended": {
       "get": {
         "operationId": "get-extended",
-        "summary": "Get nested schema example",
+        "summary": "Get nested schema example\r",
         "description": "Retrieve nested schema data to test $ref generation",
         "tags": [
           "Extended"
@@ -1952,7 +1952,7 @@
       },
       "post": {
         "operationId": "post-extended",
-        "summary": "Create extended schema",
+        "summary": "Create extended schema\r",
         "description": "Create a new item with extended schema to test .extend() functionality",
         "tags": [
           "Extended"
@@ -1989,7 +1989,7 @@
       },
       "put": {
         "operationId": "put-extended",
-        "summary": "Update double extended schema",
+        "summary": "Update double extended schema\r",
         "description": "Update with double extended schema to test deep inheritance",
         "tags": [
           "Extended"
