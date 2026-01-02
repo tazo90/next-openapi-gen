@@ -105,8 +105,9 @@ export function extractJSDocComments(path: NodePath): DataTypes {
         }
       }
 
-      if (commentValue.includes("@params")) {
-        paramsType = extractTypeFromComment(commentValue, "@params");
+      if (commentValue.includes("@params") || commentValue.includes("@queryParams")) {
+        paramsType = extractTypeFromComment(commentValue, "@queryParams") ||
+                     extractTypeFromComment(commentValue, "@params");
       }
 
       if (commentValue.includes("@pathParams")) {
@@ -204,9 +205,10 @@ export function extractTypeFromComment(
   tag: string
 ): string {
   // Updated regex to support generic types with angle brackets and array brackets
+  // Use multiline mode (m flag) to match tag at start of line (after optional * from JSDoc)
   return (
     commentValue
-      .match(new RegExp(`${tag}\\s*\\s*([\\w<>,\\s\\[\\]]+)`))?.[1]
+      .match(new RegExp(`^\\s*\\*?\\s*${tag}\\s+([\\w<>,\\s\\[\\]]+)`, 'm'))?.[1]
       ?.trim() || ""
   );
 }

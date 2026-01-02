@@ -213,7 +213,7 @@ export async function POST(request: NextRequest) {
 | `@description`         | Endpoint description                                                                                                     |
 | `@operationId`         | Custom operation ID (overrides auto-generated ID)                                                                        |
 | `@pathParams`          | Path parameters type/schema                                                                                              |
-| `@params`              | Query parameters type/schema                                                                                             |
+| `@params`              | Query parameters type/schema (use `@queryParams` if you have prettier-plugin-jsdoc conflicts)                           |
 | `@body`                | Request body type/schema                                                                                                 |
 | `@bodyDescription`     | Request body description                                                                                                 |
 | `@response`            | Response type/schema with optional code and description (`User`, `201:User`, `User:Description`, `201:User:Description`) |
