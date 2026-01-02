@@ -1,3 +1,12 @@
+## [0.9.2](https://github.com/tazo90/next-openapi-gen/compare/v0.9.1...v0.9.2) (2026-01-02)
+
+
+### ✨ Features
+
+* add [@query](https://github.com/query)Params as alternative to [@params](https://github.com/params) to prevent prettier auto-fixing ([#73](https://github.com/tazo90/next-openapi-gen/issues/73)) ([f094944](https://github.com/tazo90/next-openapi-gen/commit/f094944fab61b90db4c6a783591d6a050adc7d8c))
+
+
+
 ## [0.9.1](https://github.com/tazo90/next-openapi-gen/compare/v0.9.0...v0.9.1) (2025-12-22)
 
 
