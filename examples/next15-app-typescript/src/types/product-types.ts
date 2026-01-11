@@ -79,19 +79,21 @@ export type CreateProductData = Parameters<typeof createProduct>[0];
 export type CreateProductOptions = Parameters<typeof createProduct>[1];
 
 // ============================================================================
-// Example 4: Function without return type annotation (shows warning)
+// Example 4: Update stock - Awaited<ReturnType<typeof func>>
 // ============================================================================
 
 /**
- * This will generate a warning because updateStock doesn't have
- * an explicit return type annotation.
- *
- * Warning: "ReturnType<typeof updateStock>: Function 'updateStock' does not
- * have an explicit return type annotation."
- *
- * Fallback: { type: "object" }
+ * Extract return type from async updateStock function
+ * Now with proper return type annotation!
  */
-export type UpdateStockResponse = ReturnType<typeof updateStock>;
+export type UpdateStockResponse = Awaited<ReturnType<typeof updateStock>>;
+
+/**
+ * Request body for updating stock
+ */
+export interface UpdateStockRequest {
+  inStock: boolean;
+}
 
 // ============================================================================
 // Example 5: Complex nested types
@@ -130,3 +132,4 @@ export interface ApiResponse<T> {
  */
 export type GetProductApiResponse = ApiResponse<ProductByIdResponse>;
 export type CreateProductApiResponse = ApiResponse<CreateProductResponse>;
+export type UpdateStockApiResponse = ApiResponse<UpdateStockResponse>;

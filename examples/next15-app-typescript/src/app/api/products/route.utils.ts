@@ -67,12 +67,20 @@ export function createProduct(
 
 /**
  * Updates product stock status
- * Function without explicit return type annotation
- * This will trigger a warning when used with ReturnType<typeof updateStock>
+ * @param id Product ID
+ * @param inStock New stock status
+ * @returns Update confirmation with timestamp
  */
-export async function updateStock(id: string, inStock: boolean) {
+export async function updateStock(
+  id: string,
+  inStock: boolean
+): Promise<{ updated: boolean; productId: string; timestamp: string }> {
+  // Simulate database update
+  await new Promise((resolve) => setTimeout(resolve, 10));
+
   return {
     updated: true,
+    productId: id,
     timestamp: new Date().toISOString(),
   };
 }

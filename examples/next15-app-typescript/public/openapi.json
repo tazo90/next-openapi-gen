@@ -1593,6 +1593,54 @@
           }
         }
       },
+      "UpdateStockRequest": {
+        "type": "object",
+        "properties": {
+          "inStock": {
+            "type": "boolean",
+            "nullable": false
+          }
+        }
+      },
+      "UpdateStockApiResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "updated": {
+                "type": "boolean"
+              },
+              "productId": {
+                "type": "string"
+              },
+              "timestamp": {
+                "type": "string"
+              }
+            }
+          },
+          "timestamp": {
+            "type": "string"
+          }
+        }
+      },
+      "UpdateStockResponse": {
+        "type": "object",
+        "properties": {
+          "updated": {
+            "type": "boolean"
+          },
+          "productId": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "string"
+          }
+        }
+      },
       "ProductSummaryResponse": {
         "type": "object",
         "properties": {
@@ -2252,6 +2300,52 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/CreateProductApiResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      },
+      "patch": {
+        "operationId": "patch-products",
+        "summary": "Update Product Stock",
+        "description": "Demonstrates Awaited<ReturnType<typeof func>> with async functions",
+        "tags": [
+          "Products"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "example": "123"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateStockRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateStockApiResponse"
                 }
               }
             }
