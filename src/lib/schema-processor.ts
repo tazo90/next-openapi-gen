@@ -43,6 +43,10 @@ export class SchemaProcessor {
   private schemaTypes: SchemaType[];
   private isResolvingPickOmitBase: boolean = false;
 
+  // Track imports per file for resolving ReturnType<typeof func>
+  private importMap: Record<string, Record<string, string>> = {}; // { filePath: { importName: importPath } }
+  private currentFilePath: string = ""; // Track the file being processed
+
   constructor(
     schemaDir: string,
     schemaType: SchemaType | SchemaType[] = "typescript",
@@ -121,7 +125,12 @@ export class SchemaProcessor {
     // Layer 1: TypeScript types (base layer)
     const filteredSchemas = {};
     Object.entries(this.openapiDefinitions).forEach(([key, value]) => {
-      if (!this.isGenericTypeParameter(key) && !this.isInvalidSchemaName(key)) {
+      if (
+        !this.isGenericTypeParameter(key) &&
+        !this.isInvalidSchemaName(key) &&
+        !this.isBuiltInUtilityType(key) &&
+        !this.isFunctionSchema(key)
+      ) {
         filteredSchemas[key] = value;
       }
     });
@@ -143,8 +152,6 @@ export class SchemaProcessor {
     schemaName: string,
     contentType: ContentType
   ): OpenAPIDefinition {
-    let schemaNode: t.Node | null = null;
-
     // Assign type that is actually processed
     this.contentType = contentType;
 
@@ -188,7 +195,7 @@ export class SchemaProcessor {
 
     // Fall back to TypeScript types
     this.scanSchemaDir(this.schemaDir, schemaName);
-    return schemaNode;
+    return this.openapiDefinitions[schemaName] || {};
   }
 
   private scanSchemaDir(dir: string, schemaName: string) {
@@ -214,41 +221,172 @@ export class SchemaProcessor {
     });
   }
 
-  private collectTypeDefinitions(ast: any, schemaName: string): void {
+  private collectImports(ast: any, filePath: string): void {
+    // Normalize path to avoid Windows/Unix path separator issues
+    const normalizedPath = path.normalize(filePath);
+    if (!this.importMap[normalizedPath]) {
+      this.importMap[normalizedPath] = {};
+    }
+
+    traverse(ast, {
+      ImportDeclaration: (path: any) => {
+        const importPath = path.node.source.value;
+
+        // Handle named imports: import { foo, bar } from './file'
+        path.node.specifiers.forEach((specifier: any) => {
+          if (t.isImportSpecifier(specifier)) {
+            const importedName = t.isIdentifier(specifier.imported) ? specifier.imported.name : specifier.imported.value;
+            this.importMap[normalizedPath][importedName] = importPath;
+          }
+          // Handle default imports: import foo from './file'
+          else if (t.isImportDefaultSpecifier(specifier)) {
+            const importedName = specifier.local.name;
+            this.importMap[normalizedPath][importedName] = importPath;
+          }
+          // Handle namespace imports: import * as foo from './file'
+          else if (t.isImportNamespaceSpecifier(specifier)) {
+            const importedName = specifier.local.name;
+            this.importMap[normalizedPath][importedName] = importPath;
+          }
+        });
+      },
+    });
+  }
+
+  /**
+   * Resolve an import path relative to the current file
+   * Converts import paths like "../app/api/products/route.utils" to absolute file paths
+   */
+  private resolveImportPath(importPath: string, fromFilePath: string): string | null {
+    // Skip node_modules imports
+    if (!importPath.startsWith('.')) {
+      return null;
+    }
+
+    const fromDir = path.dirname(fromFilePath);
+    let resolvedPath = path.resolve(fromDir, importPath);
+
+    // Try with .ts extension
+    if (fs.existsSync(resolvedPath + '.ts')) {
+      return resolvedPath + '.ts';
+    }
+
+    // Try with .tsx extension
+    if (fs.existsSync(resolvedPath + '.tsx')) {
+      return resolvedPath + '.tsx';
+    }
+
+    // Try as-is (might already have extension)
+    if (fs.existsSync(resolvedPath)) {
+      return resolvedPath;
+    }
+
+    return null;
+  }
+
+  /**
+   * Collect all exported type definitions from an AST without filtering by name
+   * Used when processing imported files to ensure all referenced types are available
+   */
+  private collectAllExportedDefinitions(ast: any, filePath?: string): void {
+    const currentFile = filePath || this.currentFilePath;
+
+    traverse(ast, {
+      TSTypeAliasDeclaration: (path: any) => {
+        if (path.node.id && t.isIdentifier(path.node.id)) {
+          const name = path.node.id.name;
+          if (!this.typeDefinitions[name]) {
+            const node = (path.node.typeParameters && path.node.typeParameters.params.length > 0)
+              ? path.node
+              : path.node.typeAnnotation;
+            this.typeDefinitions[name] = { node, filePath: currentFile };
+          }
+        }
+      },
+      TSInterfaceDeclaration: (path: any) => {
+        if (path.node.id && t.isIdentifier(path.node.id)) {
+          const name = path.node.id.name;
+          if (!this.typeDefinitions[name]) {
+            this.typeDefinitions[name] = { node: path.node, filePath: currentFile };
+          }
+        }
+      },
+      TSEnumDeclaration: (path: any) => {
+        if (path.node.id && t.isIdentifier(path.node.id)) {
+          const name = path.node.id.name;
+          if (!this.typeDefinitions[name]) {
+            this.typeDefinitions[name] = { node: path.node, filePath: currentFile };
+          }
+        }
+      },
+      ExportNamedDeclaration: (path: any) => {
+        // Handle exported interfaces
+        if (t.isTSInterfaceDeclaration(path.node.declaration)) {
+          const interfaceDecl = path.node.declaration;
+          if (interfaceDecl.id && t.isIdentifier(interfaceDecl.id)) {
+            const name = interfaceDecl.id.name;
+            if (!this.typeDefinitions[name]) {
+              this.typeDefinitions[name] = { node: interfaceDecl, filePath: currentFile };
+            }
+          }
+        }
+        // Handle exported type aliases
+        if (t.isTSTypeAliasDeclaration(path.node.declaration)) {
+          const typeDecl = path.node.declaration;
+          if (typeDecl.id && t.isIdentifier(typeDecl.id)) {
+            const name = typeDecl.id.name;
+            if (!this.typeDefinitions[name]) {
+              const node = (typeDecl.typeParameters && typeDecl.typeParameters.params.length > 0)
+                ? typeDecl
+                : typeDecl.typeAnnotation;
+              this.typeDefinitions[name] = { node, filePath: currentFile };
+            }
+          }
+        }
+      },
+    });
+  }
+
+  private collectTypeDefinitions(ast: any, schemaName: string, filePath?: string): void {
+    const currentFile = filePath || this.currentFilePath;
+
     traverse(ast, {
       VariableDeclarator: (path: any) => {
         if (t.isIdentifier(path.node.id, { name: schemaName })) {
           const name = path.node.id.name;
-          this.typeDefinitions[name] = path.node.init || path.node;
+          this.typeDefinitions[name] = { node: path.node.init || path.node, filePath: currentFile };
         }
       },
       TSTypeAliasDeclaration: (path: any) => {
         if (t.isIdentifier(path.node.id, { name: schemaName })) {
           const name = path.node.id.name;
           // Store the full node for generic types, just the type annotation for regular types
-          if (
-            path.node.typeParameters &&
-            path.node.typeParameters.params.length > 0
-          ) {
-            this.typeDefinitions[name] = path.node; // Store the full declaration for generic types
-          } else {
-            this.typeDefinitions[name] = path.node.typeAnnotation; // Store just the type annotation for regular types
-          }
+          const node = (path.node.typeParameters && path.node.typeParameters.params.length > 0)
+            ? path.node // Store the full declaration for generic types
+            : path.node.typeAnnotation; // Store just the type annotation for regular types
+          this.typeDefinitions[name] = { node, filePath: currentFile };
         }
       },
       TSInterfaceDeclaration: (path: any) => {
         if (t.isIdentifier(path.node.id, { name: schemaName })) {
           const name = path.node.id.name;
-          this.typeDefinitions[name] = path.node;
+          this.typeDefinitions[name] = { node: path.node, filePath: currentFile };
         }
       },
       TSEnumDeclaration: (path: any) => {
         if (t.isIdentifier(path.node.id, { name: schemaName })) {
           const name = path.node.id.name;
-          this.typeDefinitions[name] = path.node;
+          this.typeDefinitions[name] = { node: path.node, filePath: currentFile };
         }
       },
-      // Collect exported zod schemas
+      // Collect function declarations for ReturnType<typeof func> support
+      FunctionDeclaration: (path: any) => {
+        if (path.node.id && t.isIdentifier(path.node.id, { name: schemaName })) {
+          const name = path.node.id.name;
+          this.typeDefinitions[name] = { node: path.node, filePath: currentFile };
+        }
+      },
+      // Collect exported zod schemas and functions
       ExportNamedDeclaration: (path: any) => {
         if (t.isVariableDeclaration(path.node.declaration)) {
           path.node.declaration.declarations.forEach((declaration: any) => {
@@ -265,10 +403,19 @@ export class SchemaProcessor {
                 declaration.init.callee.object.name === "z"
               ) {
                 const name = declaration.id.name;
-                this.typeDefinitions[name] = declaration.init;
+                this.typeDefinitions[name] = { node: declaration.init, filePath: currentFile };
               }
             }
           });
+        }
+
+        // Handle exported function declarations
+        if (t.isFunctionDeclaration(path.node.declaration)) {
+          const funcDecl = path.node.declaration;
+          if (funcDecl.id && t.isIdentifier(funcDecl.id, { name: schemaName })) {
+            const name = funcDecl.id.name;
+            this.typeDefinitions[name] = { node: funcDecl, filePath: currentFile };
+          }
         }
       },
     });
@@ -296,8 +443,9 @@ export class SchemaProcessor {
         }
       }
 
-      const typeNode = this.typeDefinitions[typeName.toString()];
-      if (!typeNode) return {};
+      const typeDefEntry = this.typeDefinitions[typeName.toString()];
+      if (!typeDefEntry) return {};
+      const typeNode = typeDefEntry.node || typeDefEntry; // Support both old and new format
 
       // Handle generic type alias declarations (full node)
       if (t.isTSTypeAliasDeclaration(typeNode)) {
@@ -390,6 +538,11 @@ export class SchemaProcessor {
         return this.resolveTSNodeType(typeNode);
       }
 
+      // Handle indexed access types (e.g., Parameters<typeof func>[0])
+      if (t.isTSIndexedAccessType(typeNode)) {
+        return this.resolveTSNodeType(typeNode);
+      }
+
       return {};
     } finally {
       // Remove type from processed set after we finish
@@ -465,12 +618,60 @@ export class SchemaProcessor {
       }
     }
 
+    // Handle indexed access types: SomeType[0] or SomeType["key"]
+    if (t.isTSIndexedAccessType(node)) {
+      const objectType = this.resolveTSNodeType(node.objectType);
+      const indexType = node.indexType;
+
+      // Handle numeric index: Parameters<typeof func>[0]
+      if (t.isTSLiteralType(indexType) && t.isNumericLiteral(indexType.literal)) {
+        const index = indexType.literal.value;
+
+        // If objectType is a tuple (has prefixItems), get the specific item
+        if (objectType.prefixItems && Array.isArray(objectType.prefixItems)) {
+          if (index < objectType.prefixItems.length) {
+            return objectType.prefixItems[index];
+          } else {
+            logger.warn(`Index ${index} is out of bounds for tuple type.`);
+            return { type: "object" };
+          }
+        }
+
+        // If objectType is a regular array, return the items type
+        if (objectType.type === "array" && objectType.items) {
+          return objectType.items;
+        }
+      }
+
+      // Handle string index: SomeType["propertyName"]
+      if (t.isTSLiteralType(indexType) && t.isStringLiteral(indexType.literal)) {
+        const key = indexType.literal.value;
+
+        // If objectType has properties, get the specific property
+        if (objectType.properties && objectType.properties[key]) {
+          return objectType.properties[key];
+        }
+      }
+
+      // Fallback
+      return { type: "object" };
+    }
+
     if (t.isTSTypeReference(node) && t.isIdentifier(node.typeName)) {
       const typeName = node.typeName.name;
 
       // Special handling for built-in types
       if (typeName === "Date") {
         return { type: "string", format: "date-time" };
+      }
+
+      // Handle Promise<T> - in OpenAPI, promises are transparent (we document the resolved value)
+      if (typeName === "Promise") {
+        if (node.typeParameters && node.typeParameters.params.length > 0) {
+          // Return the inner type directly - promises are async wrappers
+          return this.resolveTSNodeType(node.typeParameters.params[0]);
+        }
+        return { type: "object" }; // Promise with no type parameter
       }
 
       if (typeName === "Array" || typeName === "ReadonlyArray") {
@@ -505,6 +706,191 @@ export class SchemaProcessor {
       ) {
         if (node.typeParameters && node.typeParameters.params.length > 0) {
           return this.resolveTSNodeType(node.typeParameters.params[0]);
+        }
+      }
+
+      // Handle Awaited<T> utility type
+      if (typeName === "Awaited") {
+        if (node.typeParameters && node.typeParameters.params.length > 0) {
+          // Unwrap the inner type - promises are transparent in OpenAPI
+          return this.resolveTSNodeType(node.typeParameters.params[0]);
+        }
+      }
+
+      // Handle ReturnType<typeof X> utility type
+      if (typeName === "ReturnType") {
+        if (node.typeParameters && node.typeParameters.params.length > 0) {
+          const typeParam = node.typeParameters.params[0];
+
+          // ReturnType<typeof functionName>
+          if (t.isTSTypeQuery(typeParam)) {
+            const funcName = t.isIdentifier(typeParam.exprName)
+              ? typeParam.exprName.name
+              : null;
+
+            if (funcName) {
+              // Save current file path before findSchemaDefinition which may change it
+              const savedFilePath = this.currentFilePath;
+
+              // First try to find the function in the current file
+              this.findSchemaDefinition(funcName, this.contentType);
+              let funcDefEntry = this.typeDefinitions[funcName];
+              let funcNode = funcDefEntry?.node || funcDefEntry; // Support both old and new format
+              const funcFilePath = funcDefEntry?.filePath;
+
+              // If not found, check if it's an imported function
+              // Use the saved file path (where the utility type is defined)
+              const sourceFilePath = savedFilePath;
+              const normalizedSourcePath = path.normalize(sourceFilePath);
+              if (!funcNode && sourceFilePath && this.importMap[normalizedSourcePath]) {
+                const importPath = this.importMap[normalizedSourcePath][funcName];
+                if (importPath) {
+                  // Resolve the import path to an absolute file path
+                  const resolvedPath = this.resolveImportPath(importPath, sourceFilePath);
+                  if (resolvedPath) {
+                    // Process the imported file to collect the function
+                    const content = fs.readFileSync(resolvedPath, "utf-8");
+                    const ast = parseTypeScriptFile(content);
+
+                    // Collect imports and type definitions from the imported file
+                    this.collectImports(ast, resolvedPath);
+                    this.collectTypeDefinitions(ast, funcName, resolvedPath);
+
+                    // Also collect all exported types/interfaces from the same file
+                    // This ensures referenced types like Product are available
+                    this.collectAllExportedDefinitions(ast, resolvedPath);
+
+                    // Now try to get the function node again
+                    funcDefEntry = this.typeDefinitions[funcName];
+                    funcNode = funcDefEntry?.node || funcDefEntry;
+                  }
+                }
+              }
+
+              if (funcNode) {
+                // Extract the return type annotation
+                const returnTypeNode = this.extractFunctionReturnType(funcNode);
+
+                if (returnTypeNode) {
+                  // Recursively resolve the return type
+                  return this.resolveTSNodeType(returnTypeNode);
+                } else {
+                  logger.warn(
+                    `ReturnType<typeof ${funcName}>: Function '${funcName}' does not have an explicit return type annotation. ` +
+                      `Add a return type to the function signature for accurate schema generation.`
+                  );
+                  return { type: "object" };
+                }
+              } else {
+                logger.warn(
+                  `ReturnType<typeof ${funcName}>: Function '${funcName}' not found in schema files or imports. ` +
+                    `Ensure the function is exported and imported correctly.`
+                );
+                return { type: "object" };
+              }
+            }
+          }
+
+          // Fallback: If not TSTypeQuery, try resolving directly
+          logger.warn(
+            `ReturnType<T>: Expected 'typeof functionName' but got a different type. ` +
+              `Use ReturnType<typeof yourFunction> pattern for best results.`
+          );
+          return this.resolveTSNodeType(typeParam);
+        }
+      }
+
+      // Handle Parameters<typeof X> utility type
+      if (typeName === "Parameters") {
+        if (node.typeParameters && node.typeParameters.params.length > 0) {
+          const typeParam = node.typeParameters.params[0];
+
+          // Parameters<typeof functionName>
+          if (t.isTSTypeQuery(typeParam)) {
+            const funcName = t.isIdentifier(typeParam.exprName)
+              ? typeParam.exprName.name
+              : null;
+
+            if (funcName) {
+              // Save current file path before findSchemaDefinition which may change it
+              const savedFilePath = this.currentFilePath;
+
+              // First try to find the function in the current file
+              this.findSchemaDefinition(funcName, this.contentType);
+              let funcDefEntry = this.typeDefinitions[funcName];
+              let funcNode = funcDefEntry?.node || funcDefEntry; // Support both old and new format
+              const funcFilePath = funcDefEntry?.filePath;
+
+              // If not found, check if it's an imported function
+              // Use the saved file path (where the utility type is defined)
+              const sourceFilePath = savedFilePath;
+              const normalizedSourcePath = path.normalize(sourceFilePath);
+              if (!funcNode && sourceFilePath && this.importMap[normalizedSourcePath]) {
+                const importPath = this.importMap[normalizedSourcePath][funcName];
+                if (importPath) {
+                  // Resolve the import path to an absolute file path
+                  const resolvedPath = this.resolveImportPath(importPath, sourceFilePath);
+                  if (resolvedPath) {
+                    // Process the imported file to collect the function
+                    const content = fs.readFileSync(resolvedPath, "utf-8");
+                    const ast = parseTypeScriptFile(content);
+
+                    // Collect imports and type definitions from the imported file
+                    this.collectImports(ast, resolvedPath);
+                    this.collectTypeDefinitions(ast, funcName, resolvedPath);
+
+                    // Also collect all exported types/interfaces from the same file
+                    // This ensures referenced types like Product are available
+                    this.collectAllExportedDefinitions(ast, resolvedPath);
+
+                    // Now try to get the function node again
+                    funcDefEntry = this.typeDefinitions[funcName];
+                    funcNode = funcDefEntry?.node || funcDefEntry;
+                  }
+                }
+              }
+
+              if (funcNode) {
+                // Extract parameters from function
+                const params = this.extractFunctionParameters(funcNode);
+
+                if (params && params.length > 0) {
+                  // Parameters<T> returns a tuple type [Param1, Param2, ...]
+                  const paramTypes = params.map((param: any) => {
+                    if (
+                      param.typeAnnotation &&
+                      param.typeAnnotation.typeAnnotation
+                    ) {
+                      return this.resolveTSNodeType(
+                        param.typeAnnotation.typeAnnotation
+                      );
+                    }
+                    return { type: "any" };
+                  });
+
+                  // Return as tuple (array with prefixItems for OpenAPI 3.1)
+                  return {
+                    type: "array",
+                    prefixItems: paramTypes,
+                    items: false,
+                    minItems: paramTypes.length,
+                    maxItems: paramTypes.length,
+                  };
+                } else {
+                  // No parameters
+                  return {
+                    type: "array",
+                    maxItems: 0,
+                  };
+                }
+              } else {
+                logger.warn(
+                  `Parameters<typeof ${funcName}>: Function '${funcName}' not found in schema files or imports.`
+                );
+                return { type: "array", items: { type: "object" } };
+              }
+            }
+          }
         }
       }
 
@@ -551,7 +937,8 @@ export class SchemaProcessor {
       if (node.typeParameters && node.typeParameters.params.length > 0) {
         // Find the generic type definition first
         this.findSchemaDefinition(typeName, this.contentType);
-        const genericTypeDefinition = this.typeDefinitions[typeName];
+        const genericDefEntry = this.typeDefinitions[typeName];
+        const genericTypeDefinition = genericDefEntry?.node || genericDefEntry;
 
         if (genericTypeDefinition) {
           // Resolve the generic type by substituting type parameters
@@ -721,7 +1108,14 @@ export class SchemaProcessor {
       const content = fs.readFileSync(filePath, "utf-8");
       const ast = parseTypeScriptFile(content);
 
-      this.collectTypeDefinitions(ast, schemaName);
+      // Track current file path for import resolution (normalize for consistency)
+      this.currentFilePath = path.normalize(filePath);
+
+      // Collect imports from this file
+      this.collectImports(ast, filePath);
+
+      // Collect type definitions, passing the file path explicitly
+      this.collectTypeDefinitions(ast, schemaName, filePath);
 
       // Reset the set of processed types before each schema processing
       this.processingTypes.clear();
@@ -1073,32 +1467,28 @@ export class SchemaProcessor {
     const baseBodyType = stripArrayNotation(bodyType);
     const baseResponseType = stripArrayNotation(responseType);
 
-    let params = paramsType ? this.openapiDefinitions[paramsType] : {};
-    let pathParams = pathParamsType
-      ? this.openapiDefinitions[pathParamsType]
-      : {};
-    let body = baseBodyType ? this.openapiDefinitions[baseBodyType] : {};
-    let responses = baseResponseType ? this.openapiDefinitions[baseResponseType] : {};
-
-    if (paramsType && !params) {
+    // Check if schemas exist, if not try to find them
+    if (paramsType && !this.openapiDefinitions[paramsType]) {
       this.findSchemaDefinition(paramsType, "params");
-      params = this.openapiDefinitions[paramsType] || {};
     }
 
-    if (pathParamsType && !pathParams) {
+    if (pathParamsType && !this.openapiDefinitions[pathParamsType]) {
       this.findSchemaDefinition(pathParamsType, "pathParams");
-      pathParams = this.openapiDefinitions[pathParamsType] || {};
     }
 
-    if (baseBodyType && !body) {
+    if (baseBodyType && !this.openapiDefinitions[baseBodyType]) {
       this.findSchemaDefinition(baseBodyType, "body");
-      body = this.openapiDefinitions[baseBodyType] || {};
     }
 
-    if (baseResponseType && !responses) {
+    if (baseResponseType && !this.openapiDefinitions[baseResponseType]) {
       this.findSchemaDefinition(baseResponseType, "response");
-      responses = this.openapiDefinitions[baseResponseType] || {};
     }
+
+    // Now get the schemas (will be {} if still not found)
+    let params = paramsType ? this.openapiDefinitions[paramsType] || {} : {};
+    let pathParams = pathParamsType ? this.openapiDefinitions[pathParamsType] || {} : {};
+    let body = baseBodyType ? this.openapiDefinitions[baseBodyType] || {} : {};
+    let responses = baseResponseType ? this.openapiDefinitions[baseResponseType] || {} : {};
 
     if (this.schemaTypes.includes("zod")) {
       const schemasToProcess = [
@@ -1141,7 +1531,8 @@ export class SchemaProcessor {
 
     // Find the base generic type definition
     this.scanSchemaDir(this.schemaDir, baseTypeName);
-    const genericTypeDefinition = this.typeDefinitions[baseTypeName];
+    const genericDefEntry = this.typeDefinitions[baseTypeName];
+    const genericTypeDefinition = genericDefEntry?.node || genericDefEntry;
 
     if (!genericTypeDefinition) {
       logger.debug(`Generic type definition not found for: ${baseTypeName}`);
@@ -1197,6 +1588,36 @@ export class SchemaProcessor {
   private isInvalidSchemaName(schemaName: string) {
     // Schema names should not contain { } : ? spaces or other special characters
     return /[{}\s:?]/.test(schemaName);
+  }
+
+  /**
+   * Check if a type name is a built-in TypeScript utility type
+   * @param {string} typeName - The type name to check
+   * @returns {boolean} - True if it's a built-in utility type
+   */
+  private isBuiltInUtilityType(typeName: string) {
+    const builtInTypes = [
+      'Awaited', 'Partial', 'Required', 'Readonly', 'Record', 'Pick', 'Omit',
+      'Exclude', 'Extract', 'NonNullable', 'Parameters', 'ConstructorParameters',
+      'ReturnType', 'InstanceType', 'ThisParameterType', 'OmitThisParameter',
+      'ThisType', 'Uppercase', 'Lowercase', 'Capitalize', 'Uncapitalize',
+      'Promise', 'Array', 'ReadonlyArray', 'Map', 'Set', 'WeakMap', 'WeakSet'
+    ];
+    return builtInTypes.includes(typeName);
+  }
+
+  /**
+   * Check if a schema name is a function (should not be included in schemas)
+   * Functions are identified by having a node that is a function declaration
+   */
+  private isFunctionSchema(schemaName: string): boolean {
+    const entry = this.typeDefinitions[schemaName];
+    if (!entry) return false;
+
+    const node = entry.node || entry;
+    return t.isFunctionDeclaration(node) ||
+           t.isFunctionExpression(node) ||
+           t.isArrowFunctionExpression(node);
   }
 
   /**
@@ -1314,7 +1735,9 @@ export class SchemaProcessor {
   ): OpenAPIDefinition {
     // Extract type parameters from the generic type definition
     let typeParameters: string[] = [];
+    let bodyToResolve: any = null;
 
+    // Handle type alias declarations
     if (t.isTSTypeAliasDeclaration(genericTypeDefinition)) {
       if (
         genericTypeDefinition.typeParameters &&
@@ -1331,24 +1754,46 @@ export class SchemaProcessor {
           }
         );
       }
-
-      // Create a mapping from type parameters to actual types
-      const typeParameterMap: Record<string, any> = {};
-      typeParameters.forEach((param: string, index: number) => {
-        if (index < typeArguments.length) {
-          typeParameterMap[param] = typeArguments[index];
-        }
-      });
-
-      // Resolve the type annotation with substituted type parameters
-      return this.resolveTypeWithSubstitution(
-        genericTypeDefinition.typeAnnotation,
-        typeParameterMap
-      );
+      bodyToResolve = genericTypeDefinition.typeAnnotation;
     }
 
-    // If we can't process the generic type, return empty object
-    return {};
+    // Handle interface declarations
+    if (t.isTSInterfaceDeclaration(genericTypeDefinition)) {
+      if (
+        genericTypeDefinition.typeParameters &&
+        genericTypeDefinition.typeParameters.params
+      ) {
+        typeParameters = genericTypeDefinition.typeParameters.params.map(
+          (param: any) => {
+            if (t.isTSTypeParameter(param)) {
+              return param.name;
+            }
+            return t.isIdentifier(param)
+              ? param.name
+              : param.name?.name || param;
+          }
+        );
+      }
+      bodyToResolve = genericTypeDefinition.body;
+    }
+
+    if (!bodyToResolve) {
+      return {};
+    }
+
+    // Create a mapping from type parameters to actual types
+    const typeParameterMap: Record<string, any> = {};
+    typeParameters.forEach((param: string, index: number) => {
+      if (index < typeArguments.length) {
+        typeParameterMap[param] = typeArguments[index];
+      }
+    });
+
+    // Resolve the type annotation with substituted type parameters
+    return this.resolveTypeWithSubstitution(
+      bodyToResolve,
+      typeParameterMap
+    );
   }
 
   /**
@@ -1466,7 +1911,82 @@ export class SchemaProcessor {
       return { type: "object", properties };
     }
 
+    // Handle interface body (from generic interfaces)
+    if (t.isTSInterfaceBody(node)) {
+      const properties: Record<string, any> = {};
+      node.body.forEach((member: any) => {
+        if (t.isTSPropertySignature(member) && t.isIdentifier(member.key)) {
+          const propName = member.key.name;
+          properties[propName] = this.resolveTypeWithSubstitution(
+            member.typeAnnotation?.typeAnnotation,
+            typeParameterMap
+          );
+        }
+      });
+      return { type: "object", properties };
+    }
+
     // Fallback to standard type resolution
     return this.resolveTSNodeType(node);
+  }
+
+  /**
+   * Extracts the return type annotation from a function AST node
+   * @param funcNode - Function declaration or arrow function AST node
+   * @returns The return type annotation node, or null if not found
+   */
+  private extractFunctionReturnType(funcNode: any): any | null {
+    // Handle FunctionDeclaration: function foo(): ReturnType {}
+    if (t.isFunctionDeclaration(funcNode) || t.isFunctionExpression(funcNode)) {
+      return funcNode.returnType && t.isTSTypeAnnotation(funcNode.returnType)
+        ? funcNode.returnType.typeAnnotation
+        : null;
+    }
+
+    // Handle ArrowFunctionExpression: const foo = (): ReturnType => {}
+    if (t.isArrowFunctionExpression(funcNode)) {
+      return funcNode.returnType && t.isTSTypeAnnotation(funcNode.returnType)
+        ? funcNode.returnType.typeAnnotation
+        : null;
+    }
+
+    // Handle VariableDeclarator with arrow function
+    if (
+      t.isVariableDeclarator(funcNode) &&
+      t.isArrowFunctionExpression(funcNode.init)
+    ) {
+      return funcNode.init.returnType && t.isTSTypeAnnotation(funcNode.init.returnType)
+        ? funcNode.init.returnType.typeAnnotation
+        : null;
+    }
+
+    return null;
+  }
+
+  /**
+   * Extracts parameter nodes from a function AST node
+   * @param funcNode - Function declaration or arrow function AST node
+   * @returns Array of parameter nodes
+   */
+  private extractFunctionParameters(funcNode: any): any[] {
+    // Handle FunctionDeclaration
+    if (t.isFunctionDeclaration(funcNode) || t.isFunctionExpression(funcNode)) {
+      return funcNode.params || [];
+    }
+
+    // Handle ArrowFunctionExpression
+    if (t.isArrowFunctionExpression(funcNode)) {
+      return funcNode.params || [];
+    }
+
+    // Handle VariableDeclarator with arrow function
+    if (
+      t.isVariableDeclarator(funcNode) &&
+      t.isArrowFunctionExpression(funcNode.init)
+    ) {
+      return funcNode.init.params || [];
+    }
+
+    return [];
   }
 }
