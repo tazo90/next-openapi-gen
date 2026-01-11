@@ -1,3 +1,12 @@
+## [0.9.3](https://github.com/tazo90/next-openapi-gen/compare/v0.9.2...v0.9.3) (2026-01-11)
+
+
+### ✨ Features
+
+* support TypeScript utility types (Awaited, ReturnType, Parameters, Generics) in schema resolution ([#74](https://github.com/tazo90/next-openapi-gen/issues/74)) ([98a08fc](https://github.com/tazo90/next-openapi-gen/commit/98a08fcadf6fa0c972efeac03476c8c574b01e57))
+
+
+
 ## [0.9.2](https://github.com/tazo90/next-openapi-gen/compare/v0.9.1...v0.9.2) (2026-01-02)
 
 
