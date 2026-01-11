@@ -671,6 +671,19 @@ export async function GET() {
 
 If no type/schema is provided for path parameters, a default schema will be generated.
 
+### Intelligent Examples
+
+The library generates intelligent examples for parameters based on their name:
+
+| Parameter name | Example                                  |
+| -------------- | ---------------------------------------- |
+| `id`, `*Id`    | `"123"` or `123`                         |
+| `slug`         | `"example-slug"`                         |
+| `uuid`         | `"123e4567-e89b-12d3-a456-426614174000"` |
+| `email`        | `"user@example.com"`                     |
+| `name`         | `"example-name"`                         |
+| `date`         | `"2023-01-01"`                           |
+
 ### TypeScript Generics Support
 
 The library supports TypeScript generic types and automatically resolves them during documentation generation:
@@ -718,18 +731,64 @@ export async function GET() {
 }
 ```
 
-### Intelligent Examples
+### TypeScript Utility Types Support
 
-The library generates intelligent examples for parameters based on their name:
+The library supports TypeScript utility types for extracting types from functions:
 
-| Parameter name | Example                                  |
-| -------------- | ---------------------------------------- |
-| `id`, `*Id`    | `"123"` or `123`                         |
-| `slug`         | `"example-slug"`                         |
-| `uuid`         | `"123e4567-e89b-12d3-a456-426614174000"` |
-| `email`        | `"user@example.com"`                     |
-| `name`         | `"example-name"`                         |
-| `date`         | `"2023-01-01"`                           |
+```typescript
+// src/app/api/products/route.utils.ts
+export async function getProductById(id: string): Promise<{
+  product: Product;
+  fetchedAt: string;
+}> {
+  // Implementation...
+}
+
+export function createProduct(
+  data: { name: string; price: number },
+  options: { notify: boolean }
+): { success: boolean; productId: string } {
+  // Implementation...
+}
+
+// src/types/product-types.ts
+
+// Extract return type from async functions
+export type ProductResponse = Awaited<ReturnType<typeof getProductById>>;
+
+// Extract return type from sync functions
+export type CreateResult = ReturnType<typeof createProduct>;
+
+// Extract parameter types as tuple
+export type CreateProductParams = Parameters<typeof createProduct>;
+
+// Extract specific parameter using indexed access
+export type ProductData = Parameters<typeof createProduct>[0];
+export type ProductOptions = Parameters<typeof createProduct>[1];
+
+// Use with generic types
+interface ApiResponse<T> {
+  success: boolean;
+  data: T;
+}
+
+export type ProductApiResponse = ApiResponse<ProductResponse>;
+
+/**
+ * @response ProductApiResponse
+ * @openapi
+ */
+export async function GET() {
+  // Fully typed response automatically documented
+}
+```
+
+**Supported utility types:**
+- `Awaited<T>` - Unwraps Promise types
+- `ReturnType<typeof func>` - Extracts function return type
+- `Parameters<typeof func>` - Extracts function parameters as tuple
+- `Parameters<typeof func>[N]` - Indexed access to specific parameter
+- Generic interfaces like `ApiResponse<T>` with type parameter substitution
 
 ## Advanced Zod Features
 
