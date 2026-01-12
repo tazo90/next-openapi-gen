@@ -24,3 +24,24 @@ const Users = z.object({
 export async function GET() {
   return NextResponse.json({});
 }
+
+/**
+ * Delete user
+ * @description Delete a user by ID
+ * @pathParams GetUserProfilePathParams
+ * @response 204
+ * @responseDescription User deleted successfully
+ * @openapi
+ */
+export async function DELETE(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
+
+  // Validate path params
+  GetUserProfilePathParams.parse({ id });
+
+  // Delete logic here
+  return new NextResponse(null, { status: 204 });
+}

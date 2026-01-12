@@ -169,8 +169,17 @@ export function extractJSDocComments(path: NodePath): DataTypes {
         );
         if (responseMatch) {
           const [, code, type] = responseMatch;
-          successCode = code || "";
-          responseType = type?.trim();
+          const trimmedType = type?.trim();
+
+          // Check if the type is just a status code (e.g., "@response 204")
+          if (!code && trimmedType && /^\d{3}$/.test(trimmedType)) {
+            // Type is actually a status code without a schema
+            successCode = trimmedType;
+            responseType = undefined;
+          } else {
+            successCode = code || "";
+            responseType = trimmedType;
+          }
         } else {
           responseType = extractTypeFromComment(commentValue, "@response");
         }

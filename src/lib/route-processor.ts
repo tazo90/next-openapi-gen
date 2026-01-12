@@ -47,46 +47,59 @@ export class RouteProcessor {
     // 1. Add success response
     const successCode =
       dataTypes.successCode || this.getDefaultSuccessCode(method);
-    if (dataTypes.responseType) {
-      // Handle array notation (e.g., "Type[]", "Type[][]", "Generic<T>[]")
-      let schema: any;
-      let baseType = dataTypes.responseType;
-      let arrayDepth = 0;
 
-      // Count and remove array brackets
-      while (baseType.endsWith('[]')) {
-        arrayDepth++;
-        baseType = baseType.slice(0, -2);
-      }
-
-      // Ensure the base schema is defined in components/schemas
-      this.schemaProcessor.getSchemaContent({
-        responseType: baseType,
-      });
-
-      // Build schema reference
-      if (arrayDepth === 0) {
-        // Not an array
-        schema = { $ref: `#/components/schemas/${baseType}` };
-      } else {
-        // Build nested array schema
-        schema = { $ref: `#/components/schemas/${baseType}` };
-        for (let i = 0; i < arrayDepth; i++) {
-          schema = {
-            type: "array",
-            items: schema,
-          };
-        }
-      }
-
+    // Handle 204 No Content responses without a schema
+    if (successCode === "204" && !dataTypes.responseType) {
       responses[successCode] = {
-        description: dataTypes.responseDescription || "Successful response",
-        content: {
-          "application/json": {
-            schema: schema,
-          },
-        },
+        description: dataTypes.responseDescription || "No Content",
       };
+    } else if (dataTypes.responseType) {
+      // 204 No Content should not have a content section per HTTP/OpenAPI spec
+      if (successCode === "204") {
+        responses[successCode] = {
+          description: dataTypes.responseDescription || "No Content",
+        };
+      } else {
+        // Handle array notation (e.g., "Type[]", "Type[][]", "Generic<T>[]")
+        let schema: any;
+        let baseType = dataTypes.responseType;
+        let arrayDepth = 0;
+
+        // Count and remove array brackets
+        while (baseType.endsWith('[]')) {
+          arrayDepth++;
+          baseType = baseType.slice(0, -2);
+        }
+
+        // Ensure the base schema is defined in components/schemas
+        this.schemaProcessor.getSchemaContent({
+          responseType: baseType,
+        });
+
+        // Build schema reference
+        if (arrayDepth === 0) {
+          // Not an array
+          schema = { $ref: `#/components/schemas/${baseType}` };
+        } else {
+          // Build nested array schema
+          schema = { $ref: `#/components/schemas/${baseType}` };
+          for (let i = 0; i < arrayDepth; i++) {
+            schema = {
+              type: "array",
+              items: schema,
+            };
+          }
+        }
+
+        responses[successCode] = {
+          description: dataTypes.responseDescription || "Successful response",
+          content: {
+            "application/json": {
+              schema: schema,
+            },
+          },
+        };
+      }
     }
 
     // 2. Add responses from ResponseSet
@@ -120,15 +133,23 @@ export class RouteProcessor {
         const [code, ref] = responseRef.split(":");
         if (ref) {
           // Custom schema: "409:ConflictResponse"
-          responses[code] = {
-            description:
-              this.getDefaultErrorDescription(code) || `HTTP ${code} response`,
-            content: {
-              "application/json": {
-                schema: { $ref: `#/components/schemas/${ref}` },
+          // 204 No Content should not have a content section per HTTP/OpenAPI spec
+          if (code === "204") {
+            responses[code] = {
+              description:
+                this.getDefaultErrorDescription(code) || "No Content",
+            };
+          } else {
+            responses[code] = {
+              description:
+                this.getDefaultErrorDescription(code) || `HTTP ${code} response`,
+              content: {
+                "application/json": {
+                  schema: { $ref: `#/components/schemas/${ref}` },
+                },
               },
-            },
-          };
+            };
+          }
         } else {
           // Only code: "409" - use $ref fro components/responses
           responses[code] = {
