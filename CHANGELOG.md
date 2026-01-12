@@ -1,3 +1,12 @@
+## [0.9.4](https://github.com/tazo90/next-openapi-gen/compare/v0.9.3...v0.9.4) (2026-01-12)
+
+
+### 🐛 Bug Fixes
+
+* 204 responses should not include content section ([#76](https://github.com/tazo90/next-openapi-gen/issues/76)) ([4624bb0](https://github.com/tazo90/next-openapi-gen/commit/4624bb0c5d0495c3fe33ded5ce2ecf8e13f1b16e))
+
+
+
 ## [0.9.3](https://github.com/tazo90/next-openapi-gen/compare/v0.9.2...v0.9.3) (2026-01-11)
 
 
