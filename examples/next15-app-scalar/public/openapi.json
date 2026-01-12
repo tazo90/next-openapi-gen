@@ -1556,14 +1556,7 @@
         ],
         "responses": {
           "204": {
-            "description": "Successful response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/{ success: boolean, message?: string }"
-                }
-              }
-            }
+            "description": "No Content"
           },
           "400": {
             "$ref": "#/components/responses/400"

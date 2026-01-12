@@ -249,14 +249,7 @@
         ],
         "responses": {
           "204": {
-            "description": "Post deleted successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/204"
-                }
-              }
-            }
+            "description": "Post deleted successfully"
           },
           "400": {
             "$ref": "#/components/responses/400"
@@ -273,7 +266,6 @@
   },
   "components": {
     "schemas": {
-      "204": {},
       "PostsQueryParams": {
         "type": "object",
         "properties": {
