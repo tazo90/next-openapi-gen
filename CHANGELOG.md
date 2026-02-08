@@ -1,3 +1,12 @@
+# [0.10.0](https://github.com/tazo90/next-openapi-gen/compare/v0.9.4...v0.10.0) (2026-02-08)
+
+
+### ✨ Features
+
+* add pages router support ([#81](https://github.com/tazo90/next-openapi-gen/issues/81)) ([9118a5c](https://github.com/tazo90/next-openapi-gen/commit/9118a5c43a93b0585edc6e50de61e3b925248a43))
+
+
+
 ## [0.9.4](https://github.com/tazo90/next-openapi-gen/compare/v0.9.3...v0.9.4) (2026-01-12)
 
 
