@@ -1,9 +1,10 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { RouteProcessor } from "../src/lib/route-processor.js";
+import { PagesRouterStrategy } from "../src/lib/pages-router-strategy.js";
 import { OpenApiConfig } from "../src/types.js";
 
-describe("RouteProcessor - Pages Router Support", () => {
-  let routeProcessor: RouteProcessor;
+describe("PagesRouterStrategy", () => {
+  let strategy: PagesRouterStrategy;
   let pagesConfig: OpenApiConfig;
 
   beforeEach(() => {
@@ -21,87 +22,63 @@ describe("RouteProcessor - Pages Router Support", () => {
     };
   });
 
-  describe("getPagesRoutePath", () => {
+  describe("getRoutePath", () => {
     it("should handle pages/api/users/index.ts -> /users", () => {
-      routeProcessor = new RouteProcessor(pagesConfig);
-
-      // @ts-ignore - accessing private method for testing
-      const result = routeProcessor.getPagesRoutePath(
-        "./pages/api/users/index.ts"
+      strategy = new PagesRouterStrategy(pagesConfig);
+      expect(strategy.getRoutePath("./pages/api/users/index.ts")).toBe(
+        "/users"
       );
-      expect(result).toBe("/users");
     });
 
     it("should handle pages/api/users.ts -> /users", () => {
-      routeProcessor = new RouteProcessor(pagesConfig);
-
-      // @ts-ignore - accessing private method for testing
-      const result = routeProcessor.getPagesRoutePath("./pages/api/users.ts");
-      expect(result).toBe("/users");
+      strategy = new PagesRouterStrategy(pagesConfig);
+      expect(strategy.getRoutePath("./pages/api/users.ts")).toBe("/users");
     });
 
     it("should handle dynamic routes pages/api/users/[id].ts -> /users/{id}", () => {
-      routeProcessor = new RouteProcessor(pagesConfig);
-
-      // @ts-ignore - accessing private method for testing
-      const result = routeProcessor.getPagesRoutePath(
-        "./pages/api/users/[id].ts"
+      strategy = new PagesRouterStrategy(pagesConfig);
+      expect(strategy.getRoutePath("./pages/api/users/[id].ts")).toBe(
+        "/users/{id}"
       );
-      expect(result).toBe("/users/{id}");
     });
 
     it("should handle nested dynamic routes pages/api/users/[id]/posts/[postId].ts -> /users/{id}/posts/{postId}", () => {
-      routeProcessor = new RouteProcessor(pagesConfig);
-
-      // @ts-ignore - accessing private method for testing
-      const result = routeProcessor.getPagesRoutePath(
-        "./pages/api/users/[id]/posts/[postId].ts"
-      );
-      expect(result).toBe("/users/{id}/posts/{postId}");
+      strategy = new PagesRouterStrategy(pagesConfig);
+      expect(
+        strategy.getRoutePath("./pages/api/users/[id]/posts/[postId].ts")
+      ).toBe("/users/{id}/posts/{postId}");
     });
 
     it("should handle catch-all routes pages/api/[...slug].ts -> /{slug}", () => {
-      routeProcessor = new RouteProcessor(pagesConfig);
-
-      // @ts-ignore - accessing private method for testing
-      const result = routeProcessor.getPagesRoutePath(
-        "./pages/api/[...slug].ts"
+      strategy = new PagesRouterStrategy(pagesConfig);
+      expect(strategy.getRoutePath("./pages/api/[...slug].ts")).toBe(
+        "/{slug}"
       );
-      expect(result).toBe("/{slug}");
     });
 
     it("should handle Windows path separators", () => {
-      routeProcessor = new RouteProcessor(pagesConfig);
-
-      // @ts-ignore - accessing private method for testing
-      const result = routeProcessor.getPagesRoutePath(
-        ".\\pages\\api\\users\\[id].ts"
+      strategy = new PagesRouterStrategy(pagesConfig);
+      expect(strategy.getRoutePath(".\\pages\\api\\users\\[id].ts")).toBe(
+        "/users/{id}"
       );
-      expect(result).toBe("/users/{id}");
     });
 
     it("should handle root api route pages/api/index.ts -> /", () => {
-      routeProcessor = new RouteProcessor(pagesConfig);
-
-      // @ts-ignore - accessing private method for testing
-      const result = routeProcessor.getPagesRoutePath("./pages/api/index.ts");
-      expect(result).toBe("/");
+      strategy = new PagesRouterStrategy(pagesConfig);
+      expect(strategy.getRoutePath("./pages/api/index.ts")).toBe("/");
     });
 
     it("should handle .tsx files", () => {
-      routeProcessor = new RouteProcessor(pagesConfig);
-
-      // @ts-ignore - accessing private method for testing
-      const result = routeProcessor.getPagesRoutePath(
-        "./pages/api/users/index.tsx"
+      strategy = new PagesRouterStrategy(pagesConfig);
+      expect(strategy.getRoutePath("./pages/api/users/index.tsx")).toBe(
+        "/users"
       );
-      expect(result).toBe("/users");
     });
   });
 
   describe("extractJSDocFromComment", () => {
     it("should extract @method GET from comment", () => {
-      routeProcessor = new RouteProcessor(pagesConfig);
+      strategy = new PagesRouterStrategy(pagesConfig);
 
       const comment = `
         * Get all users
@@ -111,8 +88,7 @@ describe("RouteProcessor - Pages Router Support", () => {
         * @openapi
       `;
 
-      // @ts-ignore - accessing private method for testing
-      const result = routeProcessor.extractJSDocFromComment(comment);
+      const result = strategy.extractJSDocFromComment(comment);
       expect(result.method).toBe("GET");
       expect(result.summary).toBe("Get all users");
       expect(result.description).toBe("Retrieve a list of all users");
@@ -121,7 +97,7 @@ describe("RouteProcessor - Pages Router Support", () => {
     });
 
     it("should extract @method POST with body", () => {
-      routeProcessor = new RouteProcessor(pagesConfig);
+      strategy = new PagesRouterStrategy(pagesConfig);
 
       const comment = `
         * Create a new user
@@ -132,8 +108,7 @@ describe("RouteProcessor - Pages Router Support", () => {
         * @openapi
       `;
 
-      // @ts-ignore - accessing private method for testing
-      const result = routeProcessor.extractJSDocFromComment(comment);
+      const result = strategy.extractJSDocFromComment(comment);
       expect(result.method).toBe("POST");
       expect(result.bodyType).toBe("CreateUserSchema");
       expect(result.successCode).toBe("201");
@@ -141,7 +116,7 @@ describe("RouteProcessor - Pages Router Support", () => {
     });
 
     it("should extract @pathParams and @params", () => {
-      routeProcessor = new RouteProcessor(pagesConfig);
+      strategy = new PagesRouterStrategy(pagesConfig);
 
       const comment = `
         * Get user by ID
@@ -151,14 +126,13 @@ describe("RouteProcessor - Pages Router Support", () => {
         * @response UserSchema
       `;
 
-      // @ts-ignore - accessing private method for testing
-      const result = routeProcessor.extractJSDocFromComment(comment);
+      const result = strategy.extractJSDocFromComment(comment);
       expect(result.pathParamsType).toBe("UserIdSchema");
       expect(result.paramsType).toBe("UserQuerySchema");
     });
 
     it("should extract @auth bearer", () => {
-      routeProcessor = new RouteProcessor(pagesConfig);
+      strategy = new PagesRouterStrategy(pagesConfig);
 
       const comment = `
         * Protected endpoint
@@ -166,13 +140,12 @@ describe("RouteProcessor - Pages Router Support", () => {
         * @auth bearer
       `;
 
-      // @ts-ignore - accessing private method for testing
-      const result = routeProcessor.extractJSDocFromComment(comment);
+      const result = strategy.extractJSDocFromComment(comment);
       expect(result.auth).toBe("BearerAuth");
     });
 
     it("should extract @deprecated and @ignore", () => {
-      routeProcessor = new RouteProcessor(pagesConfig);
+      strategy = new PagesRouterStrategy(pagesConfig);
 
       const comment = `
         * Old endpoint
@@ -181,14 +154,13 @@ describe("RouteProcessor - Pages Router Support", () => {
         * @ignore
       `;
 
-      // @ts-ignore - accessing private method for testing
-      const result = routeProcessor.extractJSDocFromComment(comment);
+      const result = strategy.extractJSDocFromComment(comment);
       expect(result.deprecated).toBe(true);
       expect(result.isIgnored).toBe(true);
     });
 
     it("should extract @tag", () => {
-      routeProcessor = new RouteProcessor(pagesConfig);
+      strategy = new PagesRouterStrategy(pagesConfig);
 
       const comment = `
         * Custom tagged endpoint
@@ -196,13 +168,12 @@ describe("RouteProcessor - Pages Router Support", () => {
         * @tag CustomTag
       `;
 
-      // @ts-ignore - accessing private method for testing
-      const result = routeProcessor.extractJSDocFromComment(comment);
+      const result = strategy.extractJSDocFromComment(comment);
       expect(result.tag).toBe("CustomTag");
     });
 
     it("should extract @operationId", () => {
-      routeProcessor = new RouteProcessor(pagesConfig);
+      strategy = new PagesRouterStrategy(pagesConfig);
 
       const comment = `
         * Get user
@@ -210,28 +181,26 @@ describe("RouteProcessor - Pages Router Support", () => {
         * @operationId getUserById
       `;
 
-      // @ts-ignore - accessing private method for testing
-      const result = routeProcessor.extractJSDocFromComment(comment);
+      const result = strategy.extractJSDocFromComment(comment);
       expect(result.operationId).toBe("getUserById");
     });
 
     it("should handle lowercase method", () => {
-      routeProcessor = new RouteProcessor(pagesConfig);
+      strategy = new PagesRouterStrategy(pagesConfig);
 
       const comment = `
         * Get users
         * @method get
       `;
 
-      // @ts-ignore - accessing private method for testing
-      const result = routeProcessor.extractJSDocFromComment(comment);
+      const result = strategy.extractJSDocFromComment(comment);
       expect(result.method).toBe("GET");
     });
   });
 
   describe("addRouteToPaths with Pages Router", () => {
-    it("should use getPagesRoutePath when routerType is pages", () => {
-      routeProcessor = new RouteProcessor(pagesConfig);
+    it("should use pages router strategy when routerType is pages", () => {
+      const routeProcessor = new RouteProcessor(pagesConfig);
 
       // @ts-ignore - accessing private method for testing
       routeProcessor.addRouteToPaths("GET", "./pages/api/users/index.ts", {
@@ -244,13 +213,13 @@ describe("RouteProcessor - Pages Router Support", () => {
       expect(paths["/users"]["get"]).toBeDefined();
     });
 
-    it("should use getRoutePath when routerType is app (default)", () => {
+    it("should use app router strategy when routerType is app (default)", () => {
       const appConfig: OpenApiConfig = {
         ...pagesConfig,
         routerType: "app",
         apiDir: "./src/app/api",
       };
-      routeProcessor = new RouteProcessor(appConfig);
+      const routeProcessor = new RouteProcessor(appConfig);
 
       // @ts-ignore - accessing private method for testing
       routeProcessor.addRouteToPaths("GET", "./src/app/api/users/route.ts", {
