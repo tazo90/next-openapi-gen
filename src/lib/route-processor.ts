@@ -1,29 +1,25 @@
-import * as t from "@babel/types";
 import fs from "fs";
 import path from "path";
-import traverseModule from "@babel/traverse";
-
-// Handle both ES modules and CommonJS
-const traverse = (traverseModule as any).default || traverseModule;
 
 import { SchemaProcessor } from "./schema-processor.js";
 import {
   capitalize,
-  extractJSDocComments,
-  parseTypeScriptFile,
   extractPathParameters,
   getOperationId,
 } from "./utils.js";
 import { DataTypes, OpenApiConfig, RouteDefinition } from "../types.js";
 import { logger } from "./logger.js";
+import { RouterStrategy } from "./router-strategy.js";
+import { AppRouterStrategy } from "./app-router-strategy.js";
+import { PagesRouterStrategy } from "./pages-router-strategy.js";
 
-const HTTP_METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE"];
 const MUTATION_HTTP_METHODS = ["PATCH", "POST", "PUT"];
 
 export class RouteProcessor {
   private swaggerPaths: Record<string, any> = {};
   private schemaProcessor: SchemaProcessor;
   private config: OpenApiConfig;
+  private strategy: RouterStrategy;
 
   private directoryCache: Record<string, string[]> = {};
   private statCache: Record<string, fs.Stats> = {};
@@ -36,6 +32,9 @@ export class RouteProcessor {
       config.schemaType,
       config.schemaFiles
     );
+    this.strategy = config.routerType === "pages"
+      ? new PagesRouterStrategy(config)
+      : new AppRouterStrategy(config);
   }
 
   private buildResponsesFromConfig(
@@ -194,10 +193,6 @@ export class RouteProcessor {
     return this.schemaProcessor;
   }
 
-  private isRoute(varName: string): boolean {
-    return HTTP_METHODS.includes(varName);
-  }
-
   /**
    * Check if a route should be ignored based on config patterns or @ignore tag
    */
@@ -221,91 +216,31 @@ export class RouteProcessor {
     });
   }
 
-  private processFile(filePath: string): void {
-    // Check if the file has already been processed
-    if (this.processFileTracker[filePath]) return;
+  /**
+   * Register a discovered route after filtering
+   */
+  private registerRoute(method: string, filePath: string, dataTypes: DataTypes): void {
+    const routePath = this.strategy.getRoutePath(filePath);
 
-    const content = fs.readFileSync(filePath, "utf-8");
-    const ast = parseTypeScriptFile(content);
+    if (this.shouldIgnoreRoute(routePath, dataTypes)) {
+      logger.debug(`Ignoring route: ${routePath}`);
+      return;
+    }
 
-    traverse(ast, {
-      ExportNamedDeclaration: (path) => {
-        const declaration = path.node.declaration;
+    if (this.config.includeOpenApiRoutes && !dataTypes.isOpenApi) {
+      return;
+    }
 
-        if (
-          t.isFunctionDeclaration(declaration) &&
-          t.isIdentifier(declaration.id)
-        ) {
-          const dataTypes = extractJSDocComments(path);
-          if (this.isRoute(declaration.id.name)) {
-            const routePath = this.getRoutePath(filePath);
+    const pathParams = extractPathParameters(routePath);
+    if (pathParams.length > 0 && !dataTypes.pathParamsType) {
+      logger.debug(
+        `Route ${routePath} contains path parameters ${pathParams.join(
+          ", "
+        )} but no @pathParams type is defined.`
+      );
+    }
 
-            // Skip if route should be ignored
-            if (this.shouldIgnoreRoute(routePath, dataTypes)) {
-              logger.debug(`Ignoring route: ${routePath}`);
-              return;
-            }
-
-            // Don't bother adding routes for processing if only including OpenAPI routes and the route is not OpenAPI
-            if (
-              !this.config.includeOpenApiRoutes ||
-              (this.config.includeOpenApiRoutes && dataTypes.isOpenApi)
-            ) {
-              // Check for URL parameters in the route path
-              const pathParams = extractPathParameters(routePath);
-
-              // If we have path parameters but no pathParamsType defined, we should log a warning
-              if (pathParams.length > 0 && !dataTypes.pathParamsType) {
-                logger.debug(
-                  `Route ${routePath} contains path parameters ${pathParams.join(
-                    ", "
-                  )} but no @pathParams type is defined.`
-                );
-              }
-
-              this.addRouteToPaths(declaration.id.name, filePath, dataTypes);
-            }
-          }
-        }
-
-        if (t.isVariableDeclaration(declaration)) {
-          declaration.declarations.forEach((decl) => {
-            if (t.isVariableDeclarator(decl) && t.isIdentifier(decl.id)) {
-              if (this.isRoute(decl.id.name)) {
-                const dataTypes = extractJSDocComments(path);
-                const routePath = this.getRoutePath(filePath);
-
-                // Skip if route should be ignored
-                if (this.shouldIgnoreRoute(routePath, dataTypes)) {
-                  logger.debug(`Ignoring route: ${routePath}`);
-                  return;
-                }
-
-                // Don't bother adding routes for processing if only including OpenAPI routes and the route is not OpenAPI
-                if (
-                  !this.config.includeOpenApiRoutes ||
-                  (this.config.includeOpenApiRoutes && dataTypes.isOpenApi)
-                ) {
-                  const pathParams = extractPathParameters(routePath);
-
-                  if (pathParams.length > 0 && !dataTypes.pathParamsType) {
-                    logger.debug(
-                      `Route ${routePath} contains path parameters ${pathParams.join(
-                        ", "
-                      )} but no @pathParams type is defined.`
-                    );
-                  }
-
-                  this.addRouteToPaths(decl.id.name, filePath, dataTypes);
-                }
-              }
-            }
-          });
-        }
-      },
-    });
-
-    this.processFileTracker[filePath] = true;
+    this.addRouteToPaths(method, filePath, dataTypes);
   }
 
   public scanApiRoutes(dir: string): void {
@@ -327,10 +262,12 @@ export class RouteProcessor {
 
       if (stat.isDirectory()) {
         this.scanApiRoutes(filePath);
-        // @ts-ignore
-      } else if (file.endsWith(".ts") || file.endsWith(".tsx")) {
-        if (file === "route.ts" || file === "route.tsx") {
-          this.processFile(filePath);
+      } else if (this.strategy.shouldProcessFile(file)) {
+        if (!this.processFileTracker[filePath]) {
+          this.strategy.processFile(filePath, (method, fp, dataTypes) => {
+            this.registerRoute(method, fp, dataTypes);
+          });
+          this.processFileTracker[filePath] = true;
         }
       }
     });
@@ -342,7 +279,7 @@ export class RouteProcessor {
     dataTypes: DataTypes
   ): void {
     const method = varName.toLowerCase();
-    const routePath = this.getRoutePath(filePath);
+    const routePath = this.strategy.getRoutePath(filePath);
     const rootPath = capitalize(routePath.split("/")[1]);
     const operationId = dataTypes.operationId || getOperationId(routePath, method);
     const {
@@ -467,54 +404,6 @@ export class RouteProcessor {
     }
 
     this.swaggerPaths[routePath][method] = definition;
-  }
-
-  private getRoutePath(filePath: string): string {
-    // Normalize path separators first
-    const normalizedPath = filePath.replaceAll("\\", "/");
-
-    // Normalize apiDir to ensure consistent format
-    const normalizedApiDir = this.config.apiDir
-      .replaceAll("\\", "/")
-      .replace(/^\.\//, "")
-      .replace(/\/$/, "");
-
-    // Find the apiDir position in the normalized path
-    const apiDirIndex = normalizedPath.indexOf(normalizedApiDir);
-
-    if (apiDirIndex === -1) {
-      throw new Error(
-        `Could not find apiDir "${this.config.apiDir}" in file path "${filePath}"`
-      );
-    }
-
-    // Extract the path after apiDir
-    let relativePath = normalizedPath.substring(
-      apiDirIndex + normalizedApiDir.length
-    );
-
-    // Remove the /route.ts or /route.tsx suffix
-    relativePath = relativePath.replace(/\/route\.tsx?$/, "");
-
-    // Ensure the path starts with /
-    if (!relativePath.startsWith("/")) {
-      relativePath = "/" + relativePath;
-    }
-
-    // Remove trailing slash
-    relativePath = relativePath.replace(/\/$/, "");
-
-    // Remove Next.js route groups (folders in parentheses like (authenticated), (marketing))
-    relativePath = relativePath.replace(/\/\([^)]+\)/g, "");
-
-    // Handle catch-all routes ([...param]) before converting dynamic routes
-    // This must come first because [...param] would also match the [param] pattern
-    relativePath = relativePath.replace(/\/\[\.\.\.(.*?)\]/g, "/{$1}");
-
-    // Convert Next.js dynamic route syntax to OpenAPI parameter syntax
-    relativePath = relativePath.replace(/\/\[([^\]]+)\]/g, "/{$1}");
-
-    return relativePath || "/";
   }
 
   private getSortedPaths(paths: Record<string, any>): Record<string, any> {

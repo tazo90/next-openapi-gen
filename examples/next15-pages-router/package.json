@@ -1,0 +1,28 @@
+{
+  "name": "next15-pages-router",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "generate": "next-openapi-gen generate"
+  },
+  "dependencies": {
+    "@scalar/api-reference-react": "^0.6.30",
+    "next": "15.3.2",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.18",
+    "@types/react": "^19.1.4",
+    "@types/react-dom": "^19.1.5",
+    "eslint": "^9.26.0",
+    "eslint-config-next": "15.3.2",
+    "next-openapi-gen": "file:../..",
+    "typescript": "^5.8.3"
+  }
+}

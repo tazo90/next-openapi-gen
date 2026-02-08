@@ -1,0 +1,33 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Next.js Pages Router API",
+    "version": "1.0.0",
+    "description": "API documentation for Next.js Pages Router example"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000/api",
+      "description": "Local development server"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  },
+  "routerType": "pages",
+  "apiDir": "./pages/api",
+  "schemaDir": "./schemas",
+  "docsUrl": "api-docs",
+  "schemaType": "zod",
+  "ui": "scalar",
+  "outputFile": "openapi.json",
+  "outputDir": "./public",
+  "includeOpenApiRoutes": false,
+  "debug": true
+}

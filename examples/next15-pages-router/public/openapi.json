@@ -1,0 +1,649 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Next.js Pages Router API",
+    "version": "1.0.0",
+    "description": "API documentation for Next.js Pages Router example"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000/api",
+      "description": "Local development server"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "schemas": {
+      "ProductListParamsSchema": {
+        "type": "object",
+        "properties": {
+          "category": {
+            "type": "string",
+            "nullable": true,
+            "description": "Filter by category"
+          },
+          "minPrice": {
+            "type": "number",
+            "nullable": true,
+            "description": "Minimum price"
+          },
+          "maxPrice": {
+            "type": "number",
+            "nullable": true,
+            "description": "Maximum price"
+          },
+          "page": {
+            "type": "number",
+            "nullable": true,
+            "description": "Page number"
+          },
+          "limit": {
+            "type": "number",
+            "nullable": true,
+            "description": "Results per page"
+          }
+        }
+      },
+      "ProductSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Product ID"
+          },
+          "name": {
+            "type": "string",
+            "description": "Product name"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true,
+            "description": "Product description"
+          },
+          "price": {
+            "type": "number",
+            "minimum": 0,
+            "exclusiveMinimum": true,
+            "description": "Product price"
+          },
+          "stock": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Stock quantity"
+          },
+          "category": {
+            "type": "string",
+            "description": "Product category"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "price",
+          "stock",
+          "category"
+        ]
+      },
+      "CreateProductSchema": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Product name"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true,
+            "description": "Product description"
+          },
+          "price": {
+            "type": "number",
+            "minimum": 0,
+            "exclusiveMinimum": true,
+            "description": "Product price"
+          },
+          "stock": {
+            "type": "integer",
+            "minimum": 0,
+            "default": 0,
+            "description": "Stock quantity"
+          },
+          "category": {
+            "type": "string",
+            "description": "Product category"
+          }
+        },
+        "required": [
+          "name",
+          "price",
+          "stock",
+          "category"
+        ]
+      },
+      "ProductIdParamsSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Product ID"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "UserListParamsSchema": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "number",
+            "nullable": true,
+            "description": "Page number"
+          },
+          "limit": {
+            "type": "number",
+            "nullable": true,
+            "description": "Results per page"
+          },
+          "search": {
+            "type": "string",
+            "nullable": true,
+            "description": "Search query"
+          }
+        }
+      },
+      "UserSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "User ID"
+          },
+          "name": {
+            "type": "string",
+            "description": "Full name"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "Email address"
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "Creation date"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "email",
+          "createdAt"
+        ]
+      },
+      "CreateUserSchema": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 2,
+            "description": "Full name"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "Email address"
+          },
+          "password": {
+            "type": "string",
+            "minLength": 8,
+            "description": "Password (min 8 characters)"
+          }
+        },
+        "required": [
+          "name",
+          "email",
+          "password"
+        ]
+      },
+      "UserIdParamsSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "User ID"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "UpdateUserSchema": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 2,
+            "nullable": true,
+            "description": "Full name"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "nullable": true,
+            "description": "Email address"
+          }
+        }
+      }
+    },
+    "responses": {}
+  },
+  "paths": {
+    "/products": {
+      "get": {
+        "operationId": "get-products",
+        "summary": "Get all products",
+        "description": "Retrieve a list of products with optional filtering",
+        "tags": [
+          "Products"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "category",
+            "schema": {
+              "type": "string",
+              "description": "Filter by category"
+            },
+            "required": false,
+            "description": "Filter by category"
+          },
+          {
+            "in": "query",
+            "name": "minPrice",
+            "schema": {
+              "type": "number",
+              "description": "Minimum price"
+            },
+            "required": false,
+            "description": "Minimum price"
+          },
+          {
+            "in": "query",
+            "name": "maxPrice",
+            "schema": {
+              "type": "number",
+              "description": "Maximum price"
+            },
+            "required": false,
+            "description": "Maximum price"
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "number",
+              "description": "Page number"
+            },
+            "required": false,
+            "description": "Page number"
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "number",
+              "description": "Results per page"
+            },
+            "required": false,
+            "description": "Results per page"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ProductSchema"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "post-products",
+        "summary": "Create a new product",
+        "description": "Add a new product to the catalog",
+        "tags": [
+          "Products"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateProductSchema"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductSchema"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/products/{id}": {
+      "get": {
+        "operationId": "get-products-{id}",
+        "summary": "Get product by ID",
+        "description": "Retrieve a specific product by its ID",
+        "tags": [
+          "Products"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string",
+              "description": "Product ID"
+            },
+            "required": true,
+            "description": "Product ID",
+            "example": "123"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductSchema"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "operationId": "put-products-{id}",
+        "summary": "Update product",
+        "description": "Update an existing product's information",
+        "tags": [
+          "Products"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string",
+              "description": "Product ID"
+            },
+            "required": true,
+            "description": "Product ID",
+            "example": "123"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateProductSchema"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductSchema"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "delete-products-{id}",
+        "summary": "Delete product",
+        "description": "Remove a product from the catalog",
+        "tags": [
+          "Products"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string",
+              "description": "Product ID"
+            },
+            "required": true,
+            "description": "Product ID",
+            "example": "123"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        }
+      }
+    },
+    "/users": {
+      "get": {
+        "operationId": "get-users",
+        "summary": "Get all users",
+        "description": "Retrieve a list of all users with optional filtering",
+        "tags": [
+          "Users"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "number",
+              "description": "Page number"
+            },
+            "required": false,
+            "description": "Page number"
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "number",
+              "description": "Results per page"
+            },
+            "required": false,
+            "description": "Results per page"
+          },
+          {
+            "in": "query",
+            "name": "search",
+            "schema": {
+              "type": "string",
+              "description": "Search query"
+            },
+            "required": false,
+            "description": "Search query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/UserSchema"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "post-users",
+        "summary": "Create a new user",
+        "description": "Create a new user account",
+        "tags": [
+          "Users"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateUserSchema"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserSchema"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/{id}": {
+      "get": {
+        "operationId": "get-users-{id}",
+        "summary": "Get user by ID",
+        "description": "Retrieve a specific user by their ID",
+        "tags": [
+          "Users"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string",
+              "description": "User ID"
+            },
+            "required": true,
+            "description": "User ID",
+            "example": "123"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserSchema"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "operationId": "put-users-{id}",
+        "summary": "Update user",
+        "description": "Update an existing user's information",
+        "tags": [
+          "Users"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string",
+              "description": "User ID"
+            },
+            "required": true,
+            "description": "User ID",
+            "example": "123"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateUserSchema"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserSchema"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "delete-users-{id}",
+        "summary": "Delete user",
+        "description": "Remove a user from the system",
+        "tags": [
+          "Users"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string",
+              "description": "User ID"
+            },
+            "required": true,
+            "description": "User ID",
+            "example": "123"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        }
+      }
+    }
+  }
+}

@@ -44,6 +44,7 @@ export function extractJSDocComments(path: NodePath): DataTypes {
   let addResponses = "";
   let successCode = "";
   let operationId = "";
+  let method = "";
 
   if (comments) {
     comments.forEach((comment) => {
@@ -162,6 +163,14 @@ export function extractJSDocComments(path: NodePath): DataTypes {
         }
       }
 
+      if (commentValue.includes("@method")) {
+        const regex = /@method\s+(\S+)/;
+        const match = commentValue.match(regex);
+        if (match && match[1]) {
+          method = match[1].trim().toUpperCase();
+        }
+      }
+
       if (commentValue.includes("@response")) {
         // Updated regex to support generic types
         const responseMatch = commentValue.match(
@@ -206,6 +215,7 @@ export function extractJSDocComments(path: NodePath): DataTypes {
     addResponses,
     successCode,
     operationId,
+    method,
   };
 }
 
@@ -229,6 +239,7 @@ export function cleanComment(commentValue: string): string {
 export function cleanSpec(spec: any) {
   const propsToRemove = [
     "apiDir",
+    "routerType",
     "schemaDir",
     "docsUrl",
     "ui",
