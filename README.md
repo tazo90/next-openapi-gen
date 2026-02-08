@@ -237,50 +237,6 @@ The library now supports the legacy Next.js Pages Router. To use it:
 1. Set `routerType` to `"pages"` in your configuration
 2. Use the `@method` JSDoc tag to specify HTTP methods
 
-### Configuration
-
-```json
-{
-  "routerType": "pages",
-  "apiDir": "./pages/api",
-  "schemaDir": "./schemas",
-  "schemaType": "zod"
-}
-```
-
-### Documenting Pages Router APIs
-
-Since Pages Router uses a single `handler` function for all HTTP methods, add separate JSDoc blocks for each method with the `@method` tag:
-
-```typescript
-// pages/api/users/index.ts
-import type { NextApiRequest, NextApiResponse } from "next";
-
-/**
- * Get all users
- * @description Retrieve a list of all users
- * @params UserListParamsSchema
- * @response UserSchema[]
- * @method GET
- * @openapi
- */
-/**
- * Create a new user
- * @description Create a new user account
- * @body CreateUserSchema
- * @response 201:UserSchema
- * @method POST
- * @openapi
- */
-export default function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method === "GET") {
-    // Handle GET
-  } else if (req.method === "POST") {
-    // Handle POST
-  }
-}
-```
-
 See **[next15-pages-router](./examples/next15-pages-router)** for a complete working example.
 
 ## CLI Usage
