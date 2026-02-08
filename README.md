@@ -4,9 +4,9 @@ Automatically generate OpenAPI 3.0 documentation from Next.js projects, with sup
 
 ## Features
 
-- ✅ Automatic OpenAPI 3.0 documentation generation from Next.js App Router
-- ✅ Multiple schema types: `TypeScript`, `Zod`, `Drizzle-Zod`, or `custom YAML/JSON` files 🆕
-- ✅ Mix schema sources simultaneously - perfect for gradual migrations 🆕
+- ✅ Automatic OpenAPI 3.0 documentation generation from Next.js App Router and Pages Router 🆕
+- ✅ Multiple schema types: `TypeScript`, `Zod`, `Drizzle-Zod`, or `custom YAML/JSON` files
+- ✅ Mix schema sources simultaneously - perfect for gradual migrations
 - ✅ JSDoc comments with intelligent parameter examples
 - ✅ Multiple UI interfaces: `Scalar`, `Swagger`, `Redoc`, `Stoplight`, and `RapiDoc` available at `/api-docs` url
 - ✅ Auto-detection of path parameters (e.g., `/users/[id]/route.ts`)
@@ -70,7 +70,8 @@ During initialization (`npx next-openapi-gen init`), a configuration file `next.
       "description": "Local server"
     }
   ],
-  "apiDir": "src/app/api",
+  "apiDir": "src/app/api", // or "pages/api" for Pages Router
+  "routerType": "app", // "app" (default) or "pages" for legacy Pages Router
   "schemaDir": "src/types", // or "src/schemas" for Zod schemas
   "schemaType": "zod", // or "typescript", or ["zod", "typescript"] for multiple
   "schemaFiles": [], // Optional: ["./schemas/models.yaml", "./schemas/api.json"]
@@ -88,6 +89,7 @@ During initialization (`npx next-openapi-gen init`), a configuration file `next.
 | Option                 | Description                                                                   |
 | ---------------------- | ----------------------------------------------------------------------------- |
 | `apiDir`               | Path to the API directory                                                     |
+| `routerType`           | Router type: `"app"` (default) or `"pages"` for legacy Pages Router           |
 | `schemaDir`            | Path to the types/schemas directory                                           |
 | `schemaType`           | Schema type: `"zod"`, `"typescript"`, or `["zod", "typescript"]` for multiple |
 | `schemaFiles`          | Optional: Array of custom OpenAPI schema files (YAML/JSON) to include         |
@@ -226,6 +228,60 @@ export async function POST(request: NextRequest) {
 | `@deprecated`          | Marks the route as deprecated                                                                                            |
 | `@openapi`             | Marks the route for inclusion in documentation (if includeOpenApiRoutes is enabled)                                      |
 | `@ignore`              | Excludes the route from OpenAPI documentation                                                                            |
+| `@method`              | HTTP method for Pages Router (`GET`, `POST`, `PUT`, `PATCH`, `DELETE`) - required for Pages Router only                  |
+
+## Pages Router Support 🆕
+
+The library now supports the legacy Next.js Pages Router. To use it:
+
+1. Set `routerType` to `"pages"` in your configuration
+2. Use the `@method` JSDoc tag to specify HTTP methods
+
+### Configuration
+
+```json
+{
+  "routerType": "pages",
+  "apiDir": "./pages/api",
+  "schemaDir": "./schemas",
+  "schemaType": "zod"
+}
+```
+
+### Documenting Pages Router APIs
+
+Since Pages Router uses a single `handler` function for all HTTP methods, add separate JSDoc blocks for each method with the `@method` tag:
+
+```typescript
+// pages/api/users/index.ts
+import type { NextApiRequest, NextApiResponse } from "next";
+
+/**
+ * Get all users
+ * @description Retrieve a list of all users
+ * @params UserListParamsSchema
+ * @response UserSchema[]
+ * @method GET
+ * @openapi
+ */
+/**
+ * Create a new user
+ * @description Create a new user account
+ * @body CreateUserSchema
+ * @response 201:UserSchema
+ * @method POST
+ * @openapi
+ */
+export default function handler(req: NextApiRequest, res: NextApiResponse) {
+  if (req.method === "GET") {
+    // Handle GET
+  } else if (req.method === "POST") {
+    // Handle POST
+  }
+}
+```
+
+See **[next15-pages-router](./examples/next15-pages-router)** for a complete working example.
 
 ## CLI Usage
 

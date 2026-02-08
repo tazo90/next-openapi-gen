@@ -34,10 +34,11 @@ export class OpenApiGenerator {
 
   public getConfig() {
     // @ts-ignore
-    const { apiDir, schemaDir, docsUrl, ui, outputFile, outputDir, includeOpenApiRoutes, ignoreRoutes, schemaType = "typescript", schemaFiles, defaultResponseSet, responseSets, errorConfig, debug } = this.template;
+    const { apiDir, routerType, schemaDir, docsUrl, ui, outputFile, outputDir, includeOpenApiRoutes, ignoreRoutes, schemaType = "typescript", schemaFiles, defaultResponseSet, responseSets, errorConfig, debug } = this.template;
 
     return {
       apiDir: apiDir || "./src/app/api",
+      routerType: routerType || "app",
       schemaDir: schemaDir || "./src",
       docsUrl: docsUrl || "api-docs",
       ui: ui || "scalar",

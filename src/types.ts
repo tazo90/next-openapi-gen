@@ -2,9 +2,11 @@ export type ResponseSetDefinition = string[]; // ["400:BadRequest", "401:Unautho
 export type ResponseSets = Record<string, ResponseSetDefinition>;
 
 export type SchemaType = "typescript" | "zod";
+export type RouterType = "app" | "pages";
 
 export type OpenApiConfig = {
   apiDir: string;
+  routerType?: RouterType;
   schemaDir: string;
   docsUrl: string;
   ui: string;
@@ -164,6 +166,7 @@ export type DataTypes = {
   addResponses?: string; // e.g. "409:ConflictResponse,429:RateLimitResponse"
   successCode?: string; // e.g "201" for POST
   operationId?: string; // Custom operation ID (overrides auto-generated)
+  method?: string; // HTTP method for Pages Router (e.g. "GET", "POST")
 };
 
 export type RouteConfig = {
