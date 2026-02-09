@@ -84,6 +84,37 @@
           "email"
         ]
       },
+      "ApiResponseSchema": {
+        "type": "object",
+        "discriminator": {
+          "propertyName": "status"
+        },
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/SuccessResponseSchema"
+          },
+          {
+            "$ref": "#/components/schemas/ErrorResponseSchema"
+          }
+        ]
+      },
+      "NotificationSchema": {
+        "type": "object",
+        "discriminator": {
+          "propertyName": "type"
+        },
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/EmailNotificationSchema"
+          },
+          {
+            "$ref": "#/components/schemas/SmsNotificationSchema"
+          },
+          {
+            "$ref": "#/components/schemas/PushNotificationSchema"
+          }
+        ]
+      },
       "OrdersQueryParams": {
         "type": "object",
         "properties": {
@@ -227,7 +258,11 @@
             "description": "ID of saved payment method"
           },
           "paymentMethod": {
-            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PaymentMethodSchema"
+              }
+            ],
             "description": "New payment method"
           },
           "notes": {
@@ -1021,6 +1056,349 @@
           "total"
         ]
       },
+      "EmailNotificationSchema": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "email"
+            ]
+          },
+          "to": {
+            "type": "string",
+            "format": "email",
+            "description": "Recipient email address"
+          },
+          "subject": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Email subject"
+          },
+          "body": {
+            "type": "string",
+            "description": "Email body content"
+          }
+        },
+        "required": [
+          "type",
+          "to",
+          "subject",
+          "body"
+        ]
+      },
+      "SmsNotificationSchema": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "sms"
+            ]
+          },
+          "phoneNumber": {
+            "type": "string",
+            "description": "Phone number with country code (e.g., +1234567890)"
+          },
+          "message": {
+            "type": "string",
+            "maxLength": 160,
+            "description": "SMS message (max 160 characters)"
+          }
+        },
+        "required": [
+          "type",
+          "phoneNumber",
+          "message"
+        ]
+      },
+      "PushNotificationSchema": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "push"
+            ]
+          },
+          "deviceId": {
+            "type": "string",
+            "description": "Device identifier for push notification"
+          },
+          "title": {
+            "type": "string",
+            "description": "Notification title"
+          },
+          "body": {
+            "type": "string",
+            "description": "Notification body"
+          }
+        },
+        "required": [
+          "type",
+          "deviceId",
+          "title",
+          "body"
+        ]
+      },
+      "NotificationTypeSchema": {
+        "type": "string",
+        "enum": [
+          "email",
+          "sms",
+          "push"
+        ]
+      },
+      "NotificationTypeEnumSchema": {
+        "type": "string",
+        "enum": [
+          "email",
+          "sms",
+          "push"
+        ]
+      },
+      "SuccessResponseSchema": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "success"
+            ]
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "description": "Unique identifier"
+              },
+              "message": {
+                "type": "string",
+                "description": "Success message"
+              }
+            },
+            "required": [
+              "id",
+              "message"
+            ]
+          }
+        },
+        "required": [
+          "status",
+          "data"
+        ]
+      },
+      "ErrorResponseSchema": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "error"
+            ]
+          },
+          "error": {
+            "type": "string",
+            "description": "Error message"
+          },
+          "code": {
+            "type": "number",
+            "description": "Error code"
+          }
+        },
+        "required": [
+          "status",
+          "error",
+          "code"
+        ]
+      },
+      "OptionalMessageSchema": {
+        "type": "string",
+        "nullable": true
+      },
+      "OptionalMessageAlternativeSchema": {
+        "type": "string",
+        "nullable": true
+      },
+      "ProcessingStatusSchema": {
+        "type": "string",
+        "enum": [
+          "pending",
+          "processing",
+          "completed",
+          "failed"
+        ]
+      },
+      "PermissionSchema": {
+        "type": "string",
+        "enum": [
+          "read",
+          "write",
+          "admin"
+        ]
+      },
+      "StringOrNumberSchema": {
+        "oneOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "number"
+          }
+        ]
+      },
+      "MixedArraySchema": {
+        "type": "array",
+        "items": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "boolean"
+            }
+          ]
+        }
+      },
+      "UserDataSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "User ID"
+          },
+          "name": {
+            "type": "string",
+            "description": "User name"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "User email"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "email"
+        ]
+      },
+      "LoadingStateSchema": {
+        "oneOf": [
+          {
+            "type": "string",
+            "enum": [
+              "loading"
+            ]
+          },
+          {
+            "type": "string",
+            "enum": [
+              "error"
+            ]
+          },
+          {
+            "$ref": "#/components/schemas/UserDataSchema"
+          }
+        ]
+      },
+      "CreditCardPaymentSchema": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "credit_card"
+            ]
+          },
+          "cardNumber": {
+            "type": "string",
+            "description": "Credit card number"
+          },
+          "expiryDate": {
+            "type": "string",
+            "pattern": "^\\d{2}\\/\\d{2}$",
+            "description": "Expiry date in MM/YY format"
+          },
+          "cvv": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 3,
+            "description": "CVV code"
+          }
+        },
+        "required": [
+          "type",
+          "cardNumber",
+          "expiryDate",
+          "cvv"
+        ]
+      },
+      "PayPalPaymentSchema": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "paypal"
+            ]
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "PayPal account email"
+          }
+        },
+        "required": [
+          "type",
+          "email"
+        ]
+      },
+      "BankTransferPaymentSchema": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "bank_transfer"
+            ]
+          },
+          "accountNumber": {
+            "type": "string",
+            "description": "Bank account number"
+          },
+          "routingNumber": {
+            "type": "string",
+            "description": "Bank routing number"
+          }
+        },
+        "required": [
+          "type",
+          "accountNumber",
+          "routingNumber"
+        ]
+      },
+      "PaymentMethodSchema": {
+        "type": "object",
+        "discriminator": {
+          "propertyName": "type"
+        },
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/CreditCardPaymentSchema"
+          },
+          {
+            "$ref": "#/components/schemas/PayPalPaymentSchema"
+          },
+          {
+            "$ref": "#/components/schemas/BankTransferPaymentSchema"
+          }
+        ]
+      },
       "OrderStatusSchema": {
         "type": "string",
         "enum": [
@@ -1270,7 +1648,11 @@
             "description": "ID of saved payment method"
           },
           "paymentMethod": {
-            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PaymentMethodSchema"
+              }
+            ],
             "description": "New payment method"
           },
           "notes": {
@@ -1281,93 +1663,6 @@
         },
         "required": [
           "cartId"
-        ]
-      },
-      "PaymentMethodSchema": {
-        "type": "object",
-        "discriminator": {
-          "propertyName": "type"
-        },
-        "oneOf": [
-          {
-            "type": "object",
-            "properties": {
-              "type": {
-                "type": "string",
-                "enum": [
-                  "card"
-                ],
-                "description": "Payment method type"
-              },
-              "cardNumber": {
-                "type": "string",
-                "pattern": "^\\d{4} \\d{4} \\d{4} \\d{4}$",
-                "description": "Card number (format: XXXX XXXX XXXX XXXX)"
-              },
-              "expiryDate": {
-                "type": "string",
-                "pattern": "^\\d{2}\\/\\d{2}$",
-                "description": "Expiry date (format: MM/YY)"
-              },
-              "cardholderName": {
-                "type": "string",
-                "description": "Cardholder's name"
-              }
-            },
-            "required": [
-              "type",
-              "cardNumber",
-              "expiryDate",
-              "cardholderName"
-            ]
-          },
-          {
-            "type": "object",
-            "properties": {
-              "type": {
-                "type": "string",
-                "enum": [
-                  "bankTransfer"
-                ],
-                "description": "Payment method type"
-              },
-              "accountNumber": {
-                "type": "string",
-                "pattern": "^\\d{26}$",
-                "description": "Bank account number (26 digits)"
-              },
-              "bankName": {
-                "type": "string",
-                "description": "Bank name"
-              }
-            },
-            "required": [
-              "type",
-              "accountNumber",
-              "bankName"
-            ]
-          },
-          {
-            "type": "object",
-            "properties": {
-              "type": {
-                "type": "string",
-                "enum": [
-                  "paypal"
-                ],
-                "description": "Payment method type"
-              },
-              "email": {
-                "type": "string",
-                "format": "email",
-                "description": "Email address associated with PayPal"
-              }
-            },
-            "required": [
-              "type",
-              "email"
-            ]
-          }
         ]
       },
       "UserBaseSchema": {
@@ -1447,83 +1742,13 @@
         },
         "oneOf": [
           {
-            "type": "object",
-            "properties": {
-              "type": {
-                "type": "string",
-                "enum": [
-                  "card"
-                ],
-                "description": "Payment method type"
-              },
-              "cardNumber": {
-                "type": "string",
-                "pattern": "^\\d{4} \\d{4} \\d{4} \\d{4}$",
-                "description": "Card number (format: XXXX XXXX XXXX XXXX)"
-              },
-              "expiryDate": {
-                "type": "string",
-                "pattern": "^\\d{2}\\/\\d{2}$",
-                "description": "Expiry date (format: MM/YY)"
-              },
-              "cardholderName": {
-                "type": "string",
-                "description": "Cardholder's name"
-              }
-            },
-            "required": [
-              "type",
-              "cardNumber",
-              "expiryDate",
-              "cardholderName"
-            ]
+            "$ref": "#/components/schemas/CreditCardPaymentSchema"
           },
           {
-            "type": "object",
-            "properties": {
-              "type": {
-                "type": "string",
-                "enum": [
-                  "bankTransfer"
-                ],
-                "description": "Payment method type"
-              },
-              "accountNumber": {
-                "type": "string",
-                "pattern": "^\\d{26}$",
-                "description": "Bank account number (26 digits)"
-              },
-              "bankName": {
-                "type": "string",
-                "description": "Bank name"
-              }
-            },
-            "required": [
-              "type",
-              "accountNumber",
-              "bankName"
-            ]
+            "$ref": "#/components/schemas/PayPalPaymentSchema"
           },
           {
-            "type": "object",
-            "properties": {
-              "type": {
-                "type": "string",
-                "enum": [
-                  "paypal"
-                ],
-                "description": "Payment method type"
-              },
-              "email": {
-                "type": "string",
-                "format": "email",
-                "description": "Email address associated with PayPal"
-              }
-            },
-            "required": [
-              "type",
-              "email"
-            ]
+            "$ref": "#/components/schemas/BankTransferPaymentSchema"
           }
         ]
       },
@@ -2018,6 +2243,78 @@
           },
           "400": {
             "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    },
+    "/notifications": {
+      "get": {
+        "operationId": "get-notifications",
+        "summary": "Get notification status\r",
+        "description": "Returns success or error response (demonstrates Zod discriminated union)",
+        "tags": [
+          "Notifications"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseSchema"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      },
+      "post": {
+        "operationId": "post-notifications",
+        "summary": "Send a notification\r",
+        "description": "Send notification via email, SMS, or push (demonstrates Zod discriminated unions with validation)",
+        "tags": [
+          "Notifications"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NotificationSchema"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseSchema:Notification sent successfully"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseSchema"
+                }
+              }
+            }
           },
           "500": {
             "$ref": "#/components/responses/500"

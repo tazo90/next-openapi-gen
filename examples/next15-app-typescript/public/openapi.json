@@ -121,6 +121,215 @@
           }
         }
       },
+      "ApiResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "data": {},
+          "timestamp": {
+            "type": "string"
+          }
+        }
+      },
+      "SuccessResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "success"
+            ]
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "message": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "error"
+            ]
+          },
+          "error": {
+            "type": "string",
+            "description": "Error message"
+          },
+          "code": {
+            "type": "number",
+            "description": "Error code"
+          }
+        }
+      },
+      "Notification": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "email"
+                ],
+                "nullable": false
+              },
+              "to": {
+                "type": "string",
+                "description": "Recipient email address",
+                "nullable": false
+              },
+              "subject": {
+                "type": "string",
+                "description": "Email subject",
+                "nullable": false
+              },
+              "body": {
+                "type": "string",
+                "description": "Email body content",
+                "nullable": false
+              }
+            }
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "sms"
+                ],
+                "nullable": false
+              },
+              "phoneNumber": {
+                "type": "string",
+                "description": "Phone number with country code (e.g., +1234567890)",
+                "nullable": false
+              },
+              "message": {
+                "type": "string",
+                "description": "SMS message (max 160 characters)",
+                "nullable": false
+              }
+            }
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "push"
+                ],
+                "nullable": false
+              },
+              "deviceId": {
+                "type": "string",
+                "description": "Device identifier for push notification",
+                "nullable": false
+              },
+              "title": {
+                "type": "string",
+                "description": "Notification title",
+                "nullable": false
+              },
+              "body": {
+                "type": "string",
+                "description": "Notification body",
+                "nullable": false
+              }
+            }
+          }
+        ]
+      },
+      "EmailNotification": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "email"
+            ],
+            "nullable": false
+          },
+          "to": {
+            "type": "string",
+            "description": "Recipient email address",
+            "nullable": false
+          },
+          "subject": {
+            "type": "string",
+            "description": "Email subject",
+            "nullable": false
+          },
+          "body": {
+            "type": "string",
+            "description": "Email body content",
+            "nullable": false
+          }
+        }
+      },
+      "SmsNotification": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "sms"
+            ],
+            "nullable": false
+          },
+          "phoneNumber": {
+            "type": "string",
+            "description": "Phone number with country code (e.g., +1234567890)",
+            "nullable": false
+          },
+          "message": {
+            "type": "string",
+            "description": "SMS message (max 160 characters)",
+            "nullable": false
+          }
+        }
+      },
+      "PushNotification": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "push"
+            ],
+            "nullable": false
+          },
+          "deviceId": {
+            "type": "string",
+            "description": "Device identifier for push notification",
+            "nullable": false
+          },
+          "title": {
+            "type": "string",
+            "description": "Notification title",
+            "nullable": false
+          },
+          "body": {
+            "type": "string",
+            "description": "Notification body",
+            "nullable": false
+          }
+        }
+      },
       "CommentsQueryParams": {
         "type": "object",
         "properties": {
@@ -1570,18 +1779,6 @@
           }
         }
       },
-      "ApiResponse": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean"
-          },
-          "data": {},
-          "timestamp": {
-            "type": "string"
-          }
-        }
-      },
       "CreateProductResponse": {
         "type": "object",
         "properties": {
@@ -1882,6 +2079,78 @@
           },
           "400": {
             "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    },
+    "/notifications": {
+      "get": {
+        "operationId": "get-notifications",
+        "summary": "Get notification status\r",
+        "description": "Returns success or error response (demonstrates discriminated union types)",
+        "tags": [
+          "Notifications"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      },
+      "post": {
+        "operationId": "post-notifications",
+        "summary": "Send a notification\r",
+        "description": "Send notification via email, SMS, or push (demonstrates discriminated unions)",
+        "tags": [
+          "Notifications"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Notification"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse:Notification sent successfully"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
           },
           "500": {
             "$ref": "#/components/responses/500"
