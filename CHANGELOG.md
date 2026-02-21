@@ -1,3 +1,17 @@
+## [0.10.1](https://github.com/tazo90/next-openapi-gen/compare/v0.10.0...v0.10.1) (2026-02-21)
+
+
+### ✨ Features
+
+* add comprehensive union type examples and tests ([#82](https://github.com/tazo90/next-openapi-gen/issues/82)) ([9831e0d](https://github.com/tazo90/next-openapi-gen/commit/9831e0dbc905af8eb148f1c66f119f2f0550cb9b))
+
+
+### 🐛 Bug Fixes
+
+* distinguish between optional, nullable, and nullish modifiers in OpenAPI output ([#85](https://github.com/tazo90/next-openapi-gen/issues/85)) ([3ccbcab](https://github.com/tazo90/next-openapi-gen/commit/3ccbcab5cb186b7020b62083354e6d85666ab3fa))
+
+
+
 # [0.10.0](https://github.com/tazo90/next-openapi-gen/compare/v0.9.4...v0.10.0) (2026-02-08)
 
 
