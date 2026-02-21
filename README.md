@@ -72,7 +72,7 @@ During initialization (`npx next-openapi-gen init`), a configuration file `next.
   ],
   "apiDir": "src/app/api", // or "pages/api" for Pages Router
   "routerType": "app", // "app" (default) or "pages" for legacy Pages Router
-  "schemaDir": "src/types", // or "src/schemas" for Zod schemas
+  "schemaDir": "src/types", // or ["src/types", "src/schemas"] for multiple directories
   "schemaType": "zod", // or "typescript", or ["zod", "typescript"] for multiple
   "schemaFiles": [], // Optional: ["./schemas/models.yaml", "./schemas/api.json"]
   "outputFile": "openapi.json",
@@ -90,7 +90,7 @@ During initialization (`npx next-openapi-gen init`), a configuration file `next.
 | ---------------------- | ----------------------------------------------------------------------------- |
 | `apiDir`               | Path to the API directory                                                     |
 | `routerType`           | Router type: `"app"` (default) or `"pages"` for legacy Pages Router           |
-| `schemaDir`            | Path to the types/schemas directory                                           |
+| `schemaDir`            | Path to types/schemas directory, or array of paths for multiple directories   |
 | `schemaType`           | Schema type: `"zod"`, `"typescript"`, or `["zod", "typescript"]` for multiple |
 | `schemaFiles`          | Optional: Array of custom OpenAPI schema files (YAML/JSON) to include         |
 | `outputFile`           | Name of the OpenAPI output file                                               |

@@ -7,7 +7,7 @@ export type RouterType = "app" | "pages";
 export type OpenApiConfig = {
   apiDir: string;
   routerType?: RouterType;
-  schemaDir: string;
+  schemaDir: string | string[];
   docsUrl: string;
   ui: string;
   outputFile: string;
@@ -170,7 +170,7 @@ export type DataTypes = {
 };
 
 export type RouteConfig = {
-  schemaDir: string;
+  schemaDir: string | string[];
   schemaType: string;
   includeOpenApiRoutes?: boolean;
   ignoreRoutes?: string[];

@@ -56,7 +56,7 @@
     }
   },
   "apiDir": "./src/app/api",
-  "schemaDir": "./src/schemas",
+  "schemaDir": ["./src/schemas", "./src/types"],
   "schemaType": ["zod", "typescript"],
   "schemaFiles": ["./src/schemas/custom-schemas.yaml"],
   "docsUrl": "api-docs",
