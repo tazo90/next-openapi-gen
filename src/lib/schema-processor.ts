@@ -27,8 +27,17 @@ function normalizeSchemaTypes(
   return Array.isArray(schemaType) ? schemaType : [schemaType];
 }
 
+/**
+ * Normalize schemaDir to array
+ */
+function normalizeSchemaDirs(
+  schemaDir: string | string[]
+): string[] {
+  return Array.isArray(schemaDir) ? schemaDir : [schemaDir];
+}
+
 export class SchemaProcessor {
-  private schemaDir: string;
+  private schemaDirs: string[];
   private typeDefinitions: Record<string, any> = {};
   private openapiDefinitions: Record<string, OpenAPIDefinition> = {};
   private contentType: ContentType = "";
@@ -48,11 +57,11 @@ export class SchemaProcessor {
   private currentFilePath: string = ""; // Track the file being processed
 
   constructor(
-    schemaDir: string,
+    schemaDir: string | string[],
     schemaType: SchemaType | SchemaType[] = "typescript",
     schemaFiles?: string[]
   ) {
-    this.schemaDir = path.resolve(schemaDir);
+    this.schemaDirs = normalizeSchemaDirs(schemaDir).map((d) => path.resolve(d));
     this.schemaTypes = normalizeSchemaTypes(schemaType);
 
     // Initialize Zod converter if Zod is enabled
@@ -194,8 +203,18 @@ export class SchemaProcessor {
     }
 
     // Fall back to TypeScript types
-    this.scanSchemaDir(this.schemaDir, schemaName);
+    this.scanAllSchemaDirs(schemaName);
     return this.openapiDefinitions[schemaName] || {};
+  }
+
+  private scanAllSchemaDirs(schemaName: string) {
+    for (const dir of this.schemaDirs) {
+      if (!fs.existsSync(dir)) {
+        logger.warn(`Schema directory not found: ${dir}`);
+        continue;
+      }
+      this.scanSchemaDir(dir, schemaName);
+    }
   }
 
   private scanSchemaDir(dir: string, schemaName: string) {
@@ -1530,7 +1549,7 @@ export class SchemaProcessor {
     const { baseTypeName, typeArguments } = parsed;
 
     // Find the base generic type definition
-    this.scanSchemaDir(this.schemaDir, baseTypeName);
+    this.scanAllSchemaDirs(baseTypeName);
     const genericDefEntry = this.typeDefinitions[baseTypeName];
     const genericTypeDefinition = genericDefEntry?.node || genericDefEntry;
 
@@ -1546,7 +1565,7 @@ export class SchemaProcessor {
         !argTypeName.includes("<") &&
         !this.isGenericTypeParameter(argTypeName)
       ) {
-        this.scanSchemaDir(this.schemaDir, argTypeName);
+        this.scanAllSchemaDirs(argTypeName);
       }
     });
 

@@ -15,7 +15,7 @@ import { DrizzleZodProcessor } from "./drizzle-zod-processor.js";
  * Class for converting Zod schemas to OpenAPI specifications
  */
 export class ZodSchemaConverter {
-  schemaDir: string;
+  schemaDirs: string[];
   zodSchemas: Record<string, OpenApiSchema> = {};
   processingSchemas: Set<string> = new Set();
   processedModules: Set<string> = new Set();
@@ -31,8 +31,9 @@ export class ZodSchemaConverter {
   currentAST?: t.File;
   currentImports?: Record<string, string>;
 
-  constructor(schemaDir: string) {
-    this.schemaDir = path.resolve(schemaDir);
+  constructor(schemaDir: string | string[]) {
+    const dirs = Array.isArray(schemaDir) ? schemaDir : [schemaDir];
+    this.schemaDirs = dirs.map((d) => path.resolve(d));
   }
 
   /**
@@ -83,8 +84,11 @@ export class ZodSchemaConverter {
         }
       }
 
-      // Scan schema directory
-      this.scanDirectoryForZodSchema(this.schemaDir, schemaName);
+      // Scan schema directories
+      for (const dir of this.schemaDirs) {
+        this.scanDirectoryForZodSchema(dir, schemaName);
+        if (this.zodSchemas[schemaName]) break;
+      }
 
       // Return the schema if found, or null if not
       if (this.zodSchemas[schemaName]) {
@@ -1880,8 +1884,10 @@ export class ZodSchemaConverter {
       this.scanFileForTypeMappings(routeFile);
     }
 
-    // Scan schema directory
-    this.scanDirectoryForTypeMappings(this.schemaDir);
+    // Scan schema directories
+    for (const dir of this.schemaDirs) {
+      this.scanDirectoryForTypeMappings(dir);
+    }
   }
 
   /**
