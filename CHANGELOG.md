@@ -1,3 +1,12 @@
+## [0.10.2](https://github.com/tazo90/next-openapi-gen/compare/v0.10.1...v0.10.2) (2026-02-21)
+
+
+### ✨ Features
+
+* add support to multiple schema directories ([#86](https://github.com/tazo90/next-openapi-gen/issues/86)) ([22c155d](https://github.com/tazo90/next-openapi-gen/commit/22c155dba832598d9f2471c029a92ef319b59305))
+
+
+
 ## [0.10.1](https://github.com/tazo90/next-openapi-gen/compare/v0.10.0...v0.10.1) (2026-02-21)
 
 
