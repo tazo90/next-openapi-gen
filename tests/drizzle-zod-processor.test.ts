@@ -515,7 +515,9 @@ describe("DrizzleZodProcessor", () => {
         },
       });
 
-      expect(processedSchema?.required).not.toContain("bio");
+      // nullable means T | null — field IS required but can be null
+      expect(processedSchema?.required).toContain("bio");
+      expect(processedSchema?.properties?.bio?.nullable).toBe(true);
     });
 
     it("should detect nullish() modifier", () => {
