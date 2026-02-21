@@ -74,7 +74,6 @@
             "type": "integer",
             "minimum": 0,
             "exclusiveMinimum": true,
-            "nullable": true,
             "description": "Age in years"
           }
         },
@@ -122,7 +121,6 @@
             "type": "integer",
             "minimum": 0,
             "exclusiveMinimum": true,
-            "nullable": true,
             "default": 1,
             "description": "Page number"
           },
@@ -131,7 +129,6 @@
             "minimum": 0,
             "exclusiveMinimum": true,
             "maximum": 100,
-            "nullable": true,
             "default": 20,
             "description": "Results per page"
           },
@@ -146,13 +143,11 @@
           "dateFrom": {
             "type": "string",
             "format": "date-time",
-            "nullable": true,
             "description": "Filter orders from date"
           },
           "dateTo": {
             "type": "string",
             "format": "date-time",
-            "nullable": true,
             "description": "Filter orders to date"
           },
           "sort": {
@@ -163,7 +158,6 @@
               "total_asc",
               "total_desc"
             ],
-            "nullable": true,
             "default": "date_desc",
             "description": "Sort results"
           }
@@ -230,12 +224,10 @@
           },
           "shippingAddressId": {
             "type": "integer",
-            "nullable": true,
             "description": "ID of shipping address from user profile"
           },
           "billingAddressId": {
             "type": "integer",
-            "nullable": true,
             "description": "ID of billing address from user profile"
           },
           "shippingAddress": {
@@ -248,13 +240,11 @@
           },
           "useShippingAsBilling": {
             "type": "boolean",
-            "nullable": true,
             "default": true,
             "description": "Use shipping address as billing address"
           },
           "paymentMethodId": {
             "type": "integer",
-            "nullable": true,
             "description": "ID of saved payment method"
           },
           "paymentMethod": {
@@ -267,7 +257,6 @@
           },
           "notes": {
             "type": "string",
-            "nullable": true,
             "description": "Additional order notes"
           }
         },
@@ -355,7 +344,6 @@
           },
           "notes": {
             "type": "string",
-            "nullable": true,
             "description": "Additional notes"
           },
           "createdAt": {
@@ -401,7 +389,10 @@
           "tax",
           "total",
           "createdAt",
-          "updatedAt"
+          "updatedAt",
+          "paymentDate",
+          "shippingDate",
+          "deliveryDate"
         ]
       },
       "OrderIdParams": {
@@ -430,7 +421,6 @@
           },
           "notes": {
             "type": "string",
-            "nullable": true,
             "description": "Additional notes about the status change"
           }
         },
@@ -443,7 +433,6 @@
         "properties": {
           "include_variants": {
             "type": "boolean",
-            "nullable": true,
             "description": "Whether to include product variants"
           },
           "currency": {
@@ -488,7 +477,6 @@
           },
           "description": {
             "type": "string",
-            "nullable": true,
             "description": "Product description"
           },
           "price": {
@@ -500,7 +488,6 @@
           "image_url": {
             "type": "string",
             "format": "uri",
-            "nullable": true,
             "description": "URL to main product image"
           },
           "gallery": {
@@ -523,7 +510,6 @@
             "items": {
               "$ref": "#/components/schemas/ProductVariantSchema"
             },
-            "nullable": true,
             "description": "Product variants"
           },
           "created_at": {
@@ -549,7 +535,6 @@
             "type": "number",
             "minimum": 0,
             "maximum": 5,
-            "nullable": true,
             "description": "Average product rating"
           }
         },
@@ -570,25 +555,21 @@
           "name": {
             "type": "string",
             "minLength": 3,
-            "nullable": true,
             "description": "Product name"
           },
           "description": {
             "type": "string",
-            "nullable": true,
             "description": "Product description"
           },
           "price": {
             "type": "number",
             "minimum": 0,
             "exclusiveMinimum": true,
-            "nullable": true,
             "description": "Base product price"
           },
           "image_url": {
             "type": "string",
             "format": "uri",
-            "nullable": true,
             "description": "URL to main product image"
           },
           "gallery": {
@@ -597,7 +578,6 @@
               "type": "string",
               "format": "uri"
             },
-            "nullable": true,
             "description": "Product image gallery"
           },
           "category_ids": {
@@ -605,7 +585,6 @@
             "items": {
               "type": "string"
             },
-            "nullable": true,
             "description": "Product category identifiers"
           },
           "status": {
@@ -615,7 +594,6 @@
               "published",
               "archived"
             ],
-            "nullable": true,
             "description": "Product status"
           }
         }
@@ -630,7 +608,6 @@
           },
           "description": {
             "type": "string",
-            "nullable": true,
             "description": "Optional file description"
           },
           "category": {
@@ -674,7 +651,6 @@
           },
           "description": {
             "type": "string",
-            "nullable": true,
             "description": "File description"
           },
           "uploadedAt": {
@@ -707,8 +683,7 @@
             },
             "required": [
               "name"
-            ],
-            "nullable": true
+            ]
           }
         },
         "required": [
@@ -746,13 +721,11 @@
           "phone": {
             "type": "string",
             "pattern": "^\\+48 \\d{3} \\d{3} \\d{3}$",
-            "nullable": true,
             "description": "Phone number (format: +48 XXX XXX XXX)"
           },
           "birthDate": {
             "type": "string",
             "format": "date-time",
-            "nullable": true,
             "description": "Date of birth"
           },
           "addresses": {
@@ -760,13 +733,11 @@
             "items": {
               "$ref": "#/components/schemas/AddressSchema"
             },
-            "nullable": true,
             "description": "List of user addresses"
           },
           "primaryAddress": {
             "type": "integer",
             "minimum": 0,
-            "nullable": true,
             "description": "Index of primary address"
           },
           "preferences": {
@@ -803,7 +774,6 @@
               "theme",
               "notifications"
             ],
-            "nullable": true,
             "description": "User preferences"
           },
           "paymentMethods": {
@@ -811,7 +781,6 @@
             "items": {
               "$ref": "#/components/schemas/PaymentMethodSchema"
             },
-            "nullable": true,
             "description": "Saved payment methods"
           },
           "createdAt": {
@@ -839,7 +808,6 @@
         "properties": {
           "fields": {
             "type": "string",
-            "nullable": true,
             "description": "Comma-separated list of fields to include"
           }
         }
@@ -864,19 +832,16 @@
             "type": "string",
             "minLength": 2,
             "maxLength": 100,
-            "nullable": true,
             "description": "User's full name"
           },
           "email": {
             "type": "string",
             "format": "email",
-            "nullable": true,
             "description": "User's email address"
           },
           "phone": {
             "type": "string",
             "pattern": "^\\+\\d{1,3} \\d{3} \\d{3} \\d{3}$",
-            "nullable": true,
             "description": "Phone number (format: +XX XXX XXX XXX)"
           },
           "preferences": {
@@ -889,7 +854,6 @@
                   "en",
                   "de"
                 ],
-                "nullable": true,
                 "description": "Preferred language"
               },
               "theme": {
@@ -899,16 +863,13 @@
                   "dark",
                   "system"
                 ],
-                "nullable": true,
                 "description": "Preferred theme"
               },
               "notifications": {
                 "type": "boolean",
-                "nullable": true,
                 "description": "Whether notifications are enabled"
               }
             },
-            "nullable": true,
             "description": "User preferences"
           }
         }
@@ -934,11 +895,11 @@
           "total": {
             "type": "integer",
             "minimum": 0,
-            "nullable": true,
             "description": "Total count of items"
           }
         },
         "required": [
+          "nextCursor",
           "hasMore",
           "limit"
         ]
@@ -1016,7 +977,6 @@
           },
           "description": {
             "type": "string",
-            "nullable": true,
             "description": "Product description"
           },
           "price": {
@@ -1038,12 +998,10 @@
           "imageUrl": {
             "type": "string",
             "format": "uri",
-            "nullable": true,
             "description": "Product image URL"
           },
           "variant": {
             "type": "string",
-            "nullable": true,
             "description": "Product variant (e.g., size, color)"
           }
         },
@@ -1507,7 +1465,6 @@
           },
           "notes": {
             "type": "string",
-            "nullable": true,
             "description": "Additional notes"
           },
           "createdAt": {
@@ -1553,7 +1510,10 @@
           "tax",
           "total",
           "createdAt",
-          "updatedAt"
+          "updatedAt",
+          "paymentDate",
+          "shippingDate",
+          "deliveryDate"
         ]
       },
       "OrdersQuery": {
@@ -1563,7 +1523,6 @@
             "type": "integer",
             "minimum": 0,
             "exclusiveMinimum": true,
-            "nullable": true,
             "default": 1,
             "description": "Page number"
           },
@@ -1572,7 +1531,6 @@
             "minimum": 0,
             "exclusiveMinimum": true,
             "maximum": 100,
-            "nullable": true,
             "default": 20,
             "description": "Results per page"
           },
@@ -1587,13 +1545,11 @@
           "dateFrom": {
             "type": "string",
             "format": "date-time",
-            "nullable": true,
             "description": "Filter orders from date"
           },
           "dateTo": {
             "type": "string",
             "format": "date-time",
-            "nullable": true,
             "description": "Filter orders to date"
           },
           "sort": {
@@ -1604,7 +1560,6 @@
               "total_asc",
               "total_desc"
             ],
-            "nullable": true,
             "default": "date_desc",
             "description": "Sort results"
           }
@@ -1620,12 +1575,10 @@
           },
           "shippingAddressId": {
             "type": "integer",
-            "nullable": true,
             "description": "ID of shipping address from user profile"
           },
           "billingAddressId": {
             "type": "integer",
-            "nullable": true,
             "description": "ID of billing address from user profile"
           },
           "shippingAddress": {
@@ -1638,13 +1591,11 @@
           },
           "useShippingAsBilling": {
             "type": "boolean",
-            "nullable": true,
             "default": true,
             "description": "Use shipping address as billing address"
           },
           "paymentMethodId": {
             "type": "integer",
-            "nullable": true,
             "description": "ID of saved payment method"
           },
           "paymentMethod": {
@@ -1657,7 +1608,6 @@
           },
           "notes": {
             "type": "string",
-            "nullable": true,
             "description": "Additional order notes"
           }
         },
@@ -1733,6 +1683,33 @@
           "city",
           "postalCode",
           "country"
+        ]
+      },
+      "UserProfileSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "ID"
+          },
+          "username": {
+            "type": "string",
+            "description": "Username"
+          },
+          "firstName": {
+            "type": "string",
+            "nullable": true,
+            "description": "First name"
+          },
+          "middleName": {
+            "type": "string",
+            "nullable": true,
+            "description": "Middle name"
+          }
+        },
+        "required": [
+          "id",
+          "firstName"
         ]
       },
       "PaymentMethod": {
@@ -1831,7 +1808,6 @@
           },
           "description": {
             "type": "string",
-            "nullable": true,
             "description": "Optional file description"
           },
           "category": {
@@ -1875,7 +1851,6 @@
           },
           "description": {
             "type": "string",
-            "nullable": true,
             "description": "File description"
           },
           "uploadedAt": {
@@ -1960,13 +1935,11 @@
           "phone": {
             "type": "string",
             "pattern": "^\\+48 \\d{3} \\d{3} \\d{3}$",
-            "nullable": true,
             "description": "Phone number (format: +48 XXX XXX XXX)"
           },
           "birthDate": {
             "type": "string",
             "format": "date-time",
-            "nullable": true,
             "description": "Date of birth"
           },
           "addresses": {
@@ -1974,13 +1947,11 @@
             "items": {
               "$ref": "#/components/schemas/AddressSchema"
             },
-            "nullable": true,
             "description": "List of user addresses"
           },
           "primaryAddress": {
             "type": "integer",
             "minimum": 0,
-            "nullable": true,
             "description": "Index of primary address"
           },
           "preferences": {
@@ -2017,7 +1988,6 @@
               "theme",
               "notifications"
             ],
-            "nullable": true,
             "description": "User preferences"
           },
           "paymentMethods": {
@@ -2025,7 +1995,6 @@
             "items": {
               "$ref": "#/components/schemas/PaymentMethodSchema"
             },
-            "nullable": true,
             "description": "Saved payment methods"
           },
           "createdAt": {

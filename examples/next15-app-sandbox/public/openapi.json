@@ -25,12 +25,10 @@
         "properties": {
           "page": {
             "type": "number",
-            "nullable": true,
             "description": "Page number"
           },
           "limit": {
             "type": "number",
-            "nullable": true,
             "description": "Items per page"
           },
           "role": {
@@ -39,7 +37,6 @@
               "admin",
               "user"
             ],
-            "nullable": true,
             "description": "Filter by role"
           },
           "status": {
@@ -49,7 +46,6 @@
               "inactive",
               "banned"
             ],
-            "nullable": true,
             "description": "Filter by status"
           }
         }
@@ -287,7 +283,8 @@
           }
         },
         "required": [
-          "name"
+          "name",
+          "avatar"
         ]
       },
       "SearchQueryParams": {
@@ -299,12 +296,10 @@
           },
           "page": {
             "type": "number",
-            "nullable": true,
             "description": "Page number"
           },
           "limit": {
             "type": "number",
-            "nullable": true,
             "description": "Items per page"
           },
           "sort": {
@@ -313,7 +308,6 @@
               "asc",
               "desc"
             ],
-            "nullable": true,
             "description": "Sort order"
           }
         },

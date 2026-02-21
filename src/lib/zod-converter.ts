@@ -433,12 +433,8 @@ export class ZodSchemaConverter {
                   break;
 
                 case "partial":
-                  // All fields become optional
+                  // All fields become optional (T | undefined), not nullable
                   if (schema.properties) {
-                    Object.keys(schema.properties).forEach((key) => {
-                      schema.properties[key].nullable = true;
-                    });
-                    // Remove all required
                     delete schema.required;
                   }
                   break;
@@ -485,14 +481,9 @@ export class ZodSchemaConverter {
                   break;
 
                 case "required":
-                  // All fields become required
+                  // All fields become required — preserve genuine nullable flags
                   if (schema.properties) {
-                    const requiredFields = Object.keys(schema.properties);
-                    schema.required = requiredFields;
-                    // Remove nullable from fields
-                    Object.keys(schema.properties).forEach((key) => {
-                      delete schema.properties[key].nullable;
-                    });
+                    schema.required = Object.keys(schema.properties);
                   }
                   break;
 
@@ -519,8 +510,9 @@ export class ZodSchemaConverter {
                           if (propSchema) {
                             extensionProperties[key] = propSchema;
 
-                            // Check if the schema itself has nullable set (which processZodNode sets for optional fields)
-                            const isOptional = propSchema.nullable === true;
+                            const isOptional =
+                              // @ts-ignore
+                              this.isOptional(prop.value) || this.hasOptionalMethod(prop.value);
 
                             if (!isOptional) {
                               extensionRequired.push(key);
@@ -1532,20 +1524,17 @@ export class ZodSchemaConverter {
     // Apply the current method
     switch (methodName) {
       case "optional":
-        // Don't add nullable for schema references wrapped in allOf
-        // as it doesn't make sense in that context
-        if (!schema.allOf) {
-          schema.nullable = true;
-        }
+        // optional means T | undefined — not in required array, no nullable flag
+        // Required array exclusion is handled by hasOptionalMethod() in processZodObject()
         break;
       case "nullable":
-        // Don't add nullable for schema references wrapped in allOf
+        // nullable means T | null — field stays required but can be null
         if (!schema.allOf) {
           schema.nullable = true;
         }
         break;
-      case "nullish": // Handles both null and undefined
-        // Don't add nullable for schema references wrapped in allOf
+      case "nullish": // T | null | undefined
+        // Not in required array (handled by hasOptionalMethod) AND can be null
         if (!schema.allOf) {
           schema.nullable = true;
         }
@@ -1857,7 +1846,6 @@ export class ZodSchemaConverter {
       t.isMemberExpression(node.callee) &&
       t.isIdentifier(node.callee.property) &&
       (node.callee.property.name === "optional" ||
-        node.callee.property.name === "nullable" ||
         node.callee.property.name === "nullish")
     ) {
       return true;

@@ -148,7 +148,6 @@ export class DrizzleZodProcessor {
 
       if (
         methodName === "optional" ||
-        methodName === "nullable" ||
         methodName === "nullish"
       ) {
         return true;
@@ -356,10 +355,13 @@ export class DrizzleZodProcessor {
         break;
 
       case "optional":
+        // Handled by isFieldOptional check, no schema modification needed
+        break;
       case "nullable":
+        result.nullable = true;
+        break;
       case "nullish":
-        // These are handled by the isFieldOptional check
-        // Don't modify the schema here
+        result.nullable = true;
         break;
 
       case "describe":

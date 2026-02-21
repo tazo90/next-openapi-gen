@@ -128,6 +128,14 @@ export const UserEnvelopeSchema = wrapInEnvelope(UserDetailedSchema);
 // Also works with inline schemas
 export const PaginatedStringsSchema = createPaginatedSchema(z.string().describe("A simple string"));
 
+// Demonstrates optional vs nullable vs nullish (GitHub issue #84)
+export const UserProfileSchema = z.object({
+  id: z.string().describe("ID"),
+  username: z.string().optional().describe("Username"),       // string | undefined
+  firstName: z.string().nullable().describe("First name"),    // string | null (required)
+  middleName: z.string().nullish().describe("Middle name"),   // string | null | undefined
+});
+
 // Export TypeScript types using z.infer
 export type User = z.infer<typeof UserBaseSchema>;
 export type UserDetailed = z.infer<typeof UserDetailedSchema>;
