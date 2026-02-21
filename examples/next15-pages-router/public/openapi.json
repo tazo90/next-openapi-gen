@@ -25,27 +25,22 @@
         "properties": {
           "category": {
             "type": "string",
-            "nullable": true,
             "description": "Filter by category"
           },
           "minPrice": {
             "type": "number",
-            "nullable": true,
             "description": "Minimum price"
           },
           "maxPrice": {
             "type": "number",
-            "nullable": true,
             "description": "Maximum price"
           },
           "page": {
             "type": "number",
-            "nullable": true,
             "description": "Page number"
           },
           "limit": {
             "type": "number",
-            "nullable": true,
             "description": "Results per page"
           }
         }
@@ -63,7 +58,6 @@
           },
           "description": {
             "type": "string",
-            "nullable": true,
             "description": "Product description"
           },
           "price": {
@@ -100,7 +94,6 @@
           },
           "description": {
             "type": "string",
-            "nullable": true,
             "description": "Product description"
           },
           "price": {
@@ -144,17 +137,14 @@
         "properties": {
           "page": {
             "type": "number",
-            "nullable": true,
             "description": "Page number"
           },
           "limit": {
             "type": "number",
-            "nullable": true,
             "description": "Results per page"
           },
           "search": {
             "type": "string",
-            "nullable": true,
             "description": "Search query"
           }
         }
@@ -230,13 +220,11 @@
           "name": {
             "type": "string",
             "minLength": 2,
-            "nullable": true,
             "description": "Full name"
           },
           "email": {
             "type": "string",
             "format": "email",
-            "nullable": true,
             "description": "Email address"
           }
         }

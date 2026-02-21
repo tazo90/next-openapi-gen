@@ -272,13 +272,11 @@
           "page": {
             "type": "string",
             "pattern": "^\\d+$",
-            "nullable": true,
             "description": "Page number"
           },
           "limit": {
             "type": "string",
             "pattern": "^\\d+$",
-            "nullable": true,
             "description": "Items per page"
           },
           "published": {
@@ -287,13 +285,11 @@
               "true",
               "false"
             ],
-            "nullable": true,
             "description": "Filter by publication status"
           },
           "authorId": {
             "type": "string",
             "pattern": "^\\d+$",
-            "nullable": true,
             "description": "Filter by author ID"
           }
         }
