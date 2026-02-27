@@ -4,7 +4,7 @@ import traverseModule from "@babel/traverse";
 const traverse = (traverseModule as any).default || traverseModule;
 
 import { RouterStrategy, HTTP_METHODS } from "./router-strategy.js";
-import { parseTypeScriptFile } from "./utils.js";
+import { parseTypeScriptFile, performAuthPresetReplacements } from "./utils.js";
 import { DataTypes, OpenApiConfig } from "../types.js";
 
 export class PagesRouterStrategy implements RouterStrategy {
@@ -225,6 +225,8 @@ export class PagesRouterStrategy implements RouterStrategy {
         case "apikey":
           auth = "ApiKeyAuth";
           break;
+        default:
+          auth = performAuthPresetReplacements(authValue);
       }
     }
 

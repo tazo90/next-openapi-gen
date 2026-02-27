@@ -90,6 +90,8 @@ export function extractJSDocComments(path: NodePath): DataTypes {
           case "apikey":
             auth = "ApiKeyAuth";
             break;
+          default:
+            auth = performAuthPresetReplacements(value);
         }
       }
 
@@ -289,6 +291,22 @@ export function cleanSpec(spec: any) {
 
   return newSpec;
 }
+
+const AUTH_PRESET_REPLACEMENTS: Record<string, string> = {
+  bearer: "BearerAuth",
+  basic: "BasicAuth",
+  apikey: "ApiKeyAuth",
+};
+
+export function performAuthPresetReplacements(authValue: string): string {
+  const authParts = authValue.split(",").map((part) => part.trim());
+  const mappedParts = authParts.map(
+    (part) => AUTH_PRESET_REPLACEMENTS[part.toLowerCase()] || part
+  );
+
+  return mappedParts.join(",");
+}
+
 export function getOperationId(routePath: string, method: string) {
   const operation = routePath.replaceAll(/\//g, "-").replace(/^-/, "");
 
