@@ -281,7 +281,7 @@ describe('extractJSDocComments - @operationId tag', () => {
        * @operationId createNewUser
        * @body CreateUserBody
        * @response 201:UserResponse
-       * @auth bearer
+       * @auth bearer,CustomType
        * @tag Users
        */
       export async function POST() {}
@@ -301,7 +301,7 @@ describe('extractJSDocComments - @operationId tag', () => {
     expect(dataTypes?.bodyType).toBe('CreateUserBody');
     expect(dataTypes?.successCode).toBe('201');
     expect(dataTypes?.responseType).toBe('UserResponse');
-    expect(dataTypes?.auth).toBe('BearerAuth');
+    expect(dataTypes?.auth).toBe('BearerAuth,CustomType');
     expect(dataTypes?.tag).toBe('Users');
   });
 

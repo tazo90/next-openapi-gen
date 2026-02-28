@@ -210,25 +210,25 @@ export async function POST(request: NextRequest) {
 
 ## JSDoc Documentation Tags
 
-| Tag                    | Description                                                                                                              |
-| ---------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| `@description`         | Endpoint description                                                                                                     |
-| `@operationId`         | Custom operation ID (overrides auto-generated ID)                                                                        |
-| `@pathParams`          | Path parameters type/schema                                                                                              |
-| `@params`              | Query parameters type/schema (use `@queryParams` if you have prettier-plugin-jsdoc conflicts)                           |
-| `@body`                | Request body type/schema                                                                                                 |
-| `@bodyDescription`     | Request body description                                                                                                 |
-| `@response`            | Response type/schema with optional code and description (`User`, `201:User`, `User:Description`, `201:User:Description`) |
-| `@responseDescription` | Response description                                                                                                     |
-| `@responseSet`         | Override default response set (`public`, `auth`, `none`)                                                                 |
-| `@add`                 | Add custom response codes (`409:ConflictResponse`, `429`)                                                                |
-| `@contentType`         | Request body content type (`application/json`, `multipart/form-data`)                                                    |
-| `@auth`                | Authorization type (`bearer`, `basic`, `apikey`)                                                                         |
-| `@tag`                 | Custom tag                                                                                                               |
-| `@deprecated`          | Marks the route as deprecated                                                                                            |
-| `@openapi`             | Marks the route for inclusion in documentation (if includeOpenApiRoutes is enabled)                                      |
-| `@ignore`              | Excludes the route from OpenAPI documentation                                                                            |
-| `@method`              | HTTP method for Pages Router (`GET`, `POST`, `PUT`, `PATCH`, `DELETE`) - required for Pages Router only                  |
+| Tag                    | Description                                                                                                                                          |
+|------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `@description`         | Endpoint description                                                                                                                                 |
+| `@operationId`         | Custom operation ID (overrides auto-generated ID)                                                                                                    |
+| `@pathParams`          | Path parameters type/schema                                                                                                                          |
+| `@params`              | Query parameters type/schema (use `@queryParams` if you have prettier-plugin-jsdoc conflicts)                                                        |
+| `@body`                | Request body type/schema                                                                                                                             |
+| `@bodyDescription`     | Request body description                                                                                                                             |
+| `@response`            | Response type/schema with optional code and description (`User`, `201:User`, `User:Description`, `201:User:Description`)                             |
+| `@responseDescription` | Response description                                                                                                                                 |
+| `@responseSet`         | Override default response set (`public`, `auth`, `none`)                                                                                             |
+| `@add`                 | Add custom response codes (`409:ConflictResponse`, `429`)                                                                                            |
+| `@contentType`         | Request body content type (`application/json`, `multipart/form-data`)                                                                                |
+| `@auth`                | Authorization type (e.g., `bearer`, `basic`, `apikey`, or a custom type) — supports multiple auths using comma separator (e.g., `bearer,CustomType`) |
+| `@tag`                 | Custom tag                                                                                                                                           |
+| `@deprecated`          | Marks the route as deprecated                                                                                                                        |
+| `@openapi`             | Marks the route for inclusion in documentation (if includeOpenApiRoutes is enabled)                                                                  |
+| `@ignore`              | Excludes the route from OpenAPI documentation                                                                                                        |
+| `@method`              | HTTP method for Pages Router (`GET`, `POST`, `PUT`, `PATCH`, `DELETE`) - required for Pages Router only                                              |
 
 ## Pages Router Support 🆕
 

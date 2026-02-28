@@ -319,11 +319,11 @@ export class RouteProcessor {
 
     // Add auth
     if (auth) {
-      definition.security = [
-        {
-          [auth]: [],
-        },
-      ];
+      const authItems = auth.split(",").map(item => item.trim());
+
+      definition.security = authItems.map(authItem => ({
+        [authItem]: [],
+      }));
     }
 
     if (params) {
