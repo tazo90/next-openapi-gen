@@ -1,3 +1,17 @@
+## [0.10.3](https://github.com/tazo90/next-openapi-gen/compare/v0.10.2...v0.10.3) (2026-02-28)
+
+
+### ✅ Tests
+
+* add [@auth](https://github.com/auth) coverage and multi-auth example for app-typescript ([7efa7d0](https://github.com/tazo90/next-openapi-gen/commit/7efa7d0529ab77f666e86255d8a094dc43ad3270))
+
+
+### ✨ Features
+
+* support custom and multiple authorization types per route in JSDoc and OpenAPI output ([#87](https://github.com/tazo90/next-openapi-gen/issues/87)) ([7b52002](https://github.com/tazo90/next-openapi-gen/commit/7b52002a1944bc78af2cce75e4ef6511b43b9925))
+
+
+
 ## [0.10.2](https://github.com/tazo90/next-openapi-gen/compare/v0.10.1...v0.10.2) (2026-02-21)
 
 
