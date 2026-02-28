@@ -325,3 +325,50 @@ describe('extractJSDocComments - @operationId tag', () => {
     expect(dataTypes?.operationId).toBe('listAllUsersWithFilters');
   });
 });
+
+describe('extractJSDocComments - @auth tag', () => {
+  function parseAuth(authValue: string) {
+    const code = `
+      /**
+       * @auth ${authValue}
+       */
+      export async function GET() {}
+    `;
+    const ast = parseTypeScriptFile(code);
+    let dataTypes: any;
+    traverse(ast, {
+      ExportNamedDeclaration: (path) => {
+        dataTypes = extractJSDocComments(path);
+      },
+    });
+    return dataTypes?.auth;
+  }
+
+  it('should map bearer preset to BearerAuth', () => {
+    expect(parseAuth('bearer')).toBe('BearerAuth');
+  });
+
+  it('should map basic preset to BasicAuth', () => {
+    expect(parseAuth('basic')).toBe('BasicAuth');
+  });
+
+  it('should map apikey preset to ApiKeyAuth', () => {
+    expect(parseAuth('apikey')).toBe('ApiKeyAuth');
+  });
+
+  it('should preserve a single custom auth type as-is', () => {
+    expect(parseAuth('myApiKey')).toBe('myApiKey');
+  });
+
+  it('should map multiple presets in comma-separated list', () => {
+    expect(parseAuth('bearer,basic')).toBe('BearerAuth,BasicAuth');
+  });
+
+  it('should mix preset and custom auth types', () => {
+    expect(parseAuth('bearer,CustomType')).toBe('BearerAuth,CustomType');
+  });
+
+  it('should handle spaces around comma separator', () => {
+    expect(parseAuth('bearer, apikey')).toBe('BearerAuth,ApiKeyAuth');
+  });
+});

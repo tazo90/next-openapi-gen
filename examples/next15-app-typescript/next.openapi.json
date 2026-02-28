@@ -17,6 +17,16 @@
         "type": "http",
         "scheme": "bearer",
         "bearerFormat": "JWT"
+      },
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key"
+      },
+      "PartnerToken": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-Partner-Token"
       }
     }
   },

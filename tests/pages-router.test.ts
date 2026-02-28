@@ -157,6 +157,19 @@ describe("PagesRouterStrategy", () => {
       expect(result.auth).toBe("BearerAuth,CustomType");
     });
 
+    it("should preserve single custom auth type as-is", () => {
+      strategy = new PagesRouterStrategy(pagesConfig);
+
+      const comment = `
+        * Protected endpoint
+        * @method GET
+        * @auth myApiKey
+      `;
+
+      const result = strategy.extractJSDocFromComment(comment);
+      expect(result.auth).toBe("myApiKey");
+    });
+
     it("should extract @deprecated and @ignore", () => {
       strategy = new PagesRouterStrategy(pagesConfig);
 

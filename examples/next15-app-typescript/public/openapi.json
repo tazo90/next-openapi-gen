@@ -17,6 +17,16 @@
         "type": "http",
         "scheme": "bearer",
         "bearerFormat": "JWT"
+      },
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key"
+      },
+      "PartnerToken": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-Partner-Token"
       }
     },
     "schemas": {
@@ -1849,6 +1859,77 @@
           }
         }
       },
+      "ReportQuery": {
+        "type": "object",
+        "properties": {
+          "from": {
+            "type": "string",
+            "description": "start date (ISO 8601)"
+          },
+          "to": {
+            "type": "string",
+            "description": "end date (ISO 8601)"
+          }
+        }
+      },
+      "ReportsResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "title": {
+                  "type": "string"
+                },
+                "generatedAt": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "total": {
+            "type": "number"
+          }
+        }
+      },
+      "Report": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "generatedAt": {
+            "type": "string"
+          }
+        }
+      },
+      "CreateReportBody": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "nullable": false
+          },
+          "from": {
+            "type": "string",
+            "description": "start date (ISO 8601)",
+            "nullable": false
+          },
+          "to": {
+            "type": "string",
+            "description": "end date (ISO 8601)",
+            "nullable": false
+          }
+        }
+      },
       "UploadFormData": {
         "type": "object",
         "properties": {
@@ -2647,6 +2728,92 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ProductSummaryResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    },
+    "/reports": {
+      "get": {
+        "operationId": "get-reports",
+        "summary": "List reports\r",
+        "description": "Returns a paginated list of reports. Requires both Bearer token and API key.",
+        "tags": [
+          "Reports"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "from",
+            "schema": {
+              "type": "string",
+              "description": "start date (ISO 8601)"
+            },
+            "required": false,
+            "description": "start date (ISO 8601)"
+          },
+          {
+            "in": "query",
+            "name": "to",
+            "schema": {
+              "type": "string",
+              "description": "end date (ISO 8601)"
+            },
+            "required": false,
+            "description": "end date (ISO 8601)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      },
+      "post": {
+        "operationId": "post-reports",
+        "summary": "Create report\r",
+        "description": "Creates a new report. Requires Bearer token and a partner-specific token.",
+        "tags": [
+          "Reports"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateReportBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Report"
                 }
               }
             }

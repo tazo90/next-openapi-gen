@@ -223,7 +223,7 @@ export async function POST(request: NextRequest) {
 | `@responseSet`         | Override default response set (`public`, `auth`, `none`)                                                                                             |
 | `@add`                 | Add custom response codes (`409:ConflictResponse`, `429`)                                                                                            |
 | `@contentType`         | Request body content type (`application/json`, `multipart/form-data`)                                                                                |
-| `@auth`                | Authorization type (e.g., `bearer`, `basic`, `apikey`, or a custom type) — supports multiple auths using comma separator (e.g., `bearer,CustomType`) |
+| `@auth`                | Authorization type (e.g., `bearer`, `basic`, `apikey`, or a custom type) — supports multiple auths using comma separator (e.g., `bearer, CustomType`) |
 | `@tag`                 | Custom tag                                                                                                                                           |
 | `@deprecated`          | Marks the route as deprecated                                                                                                                        |
 | `@openapi`             | Marks the route for inclusion in documentation (if includeOpenApiRoutes is enabled)                                                                  |
