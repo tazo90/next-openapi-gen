@@ -1,3 +1,12 @@
+## [0.10.4](https://github.com/tazo90/next-openapi-gen/compare/v0.10.3...v0.10.4) (2026-03-11)
+
+
+### 🐛 Bug Fixes
+
+* restrict findRouteFiles() to configured apiDir ([#90](https://github.com/tazo90/next-openapi-gen/issues/90)) ([bc06730](https://github.com/tazo90/next-openapi-gen/commit/bc06730bed5a535f0b008d3b7f0d04a5ef05af4d))
+
+
+
 ## [0.10.3](https://github.com/tazo90/next-openapi-gen/compare/v0.10.2...v0.10.3) (2026-02-28)
 
 
