@@ -428,6 +428,25 @@
           "status"
         ]
       },
+      "AdminStatsSchema": {
+        "type": "object",
+        "properties": {
+          "totalUsers": {
+            "type": "integer"
+          },
+          "revenue": {
+            "type": "number"
+          },
+          "secretKey": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "totalUsers",
+          "revenue",
+          "secretKey"
+        ]
+      },
       "ProductQueryParams": {
         "type": "object",
         "properties": {
@@ -2558,6 +2577,35 @@
         "responses": {
           "204": {
             "description": "No Content"
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    },
+    "/private/admin": {
+      "get": {
+        "operationId": "get-private-admin",
+        "summary": "Admin stats – private, not documented in the public API\r",
+        "description": "",
+        "tags": [
+          "Private"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminStatsSchema"
+                }
+              }
+            }
           },
           "400": {
             "$ref": "#/components/responses/400"

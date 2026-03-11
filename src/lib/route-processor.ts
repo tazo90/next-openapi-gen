@@ -30,7 +30,8 @@ export class RouteProcessor {
     this.schemaProcessor = new SchemaProcessor(
       config.schemaDir,
       config.schemaType,
-      config.schemaFiles
+      config.schemaFiles,
+      config.apiDir
     );
     this.strategy = config.routerType === "pages"
       ? new PagesRouterStrategy(config)
