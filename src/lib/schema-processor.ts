@@ -59,14 +59,15 @@ export class SchemaProcessor {
   constructor(
     schemaDir: string | string[],
     schemaType: SchemaType | SchemaType[] = "typescript",
-    schemaFiles?: string[]
+    schemaFiles?: string[],
+    apiDir?: string
   ) {
     this.schemaDirs = normalizeSchemaDirs(schemaDir).map((d) => path.resolve(d));
     this.schemaTypes = normalizeSchemaTypes(schemaType);
 
     // Initialize Zod converter if Zod is enabled
     if (this.schemaTypes.includes("zod")) {
-      this.zodSchemaConverter = new ZodSchemaConverter(schemaDir);
+      this.zodSchemaConverter = new ZodSchemaConverter(schemaDir, apiDir);
     }
 
     // Load custom schema files if provided

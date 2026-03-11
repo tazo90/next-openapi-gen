@@ -16,6 +16,7 @@ import { DrizzleZodProcessor } from "./drizzle-zod-processor.js";
  */
 export class ZodSchemaConverter {
   schemaDirs: string[];
+  apiDir?: string;
   zodSchemas: Record<string, OpenApiSchema> = {};
   processingSchemas: Set<string> = new Set();
   processedModules: Set<string> = new Set();
@@ -31,9 +32,10 @@ export class ZodSchemaConverter {
   currentAST?: t.File;
   currentImports?: Record<string, string>;
 
-  constructor(schemaDir: string | string[]) {
+  constructor(schemaDir: string | string[], apiDir?: string) {
     const dirs = Array.isArray(schemaDir) ? schemaDir : [schemaDir];
     this.schemaDirs = dirs.map((d) => path.resolve(d));
+    this.apiDir = apiDir ? path.resolve(apiDir) : undefined;
   }
 
   /**
@@ -109,6 +111,15 @@ export class ZodSchemaConverter {
    */
   findRouteFiles(): string[] {
     const routeFiles: string[] = [];
+
+    // When apiDir is configured, scan only that directory to prevent
+    // leaking schemas from routes outside the configured API boundary.
+    if (this.apiDir) {
+      if (fs.existsSync(this.apiDir)) {
+        this.findRouteFilesInDir(this.apiDir, routeFiles);
+      }
+      return routeFiles;
+    }
 
     // Look for route files in common Next.js API directories
     const possibleApiDirs = [
