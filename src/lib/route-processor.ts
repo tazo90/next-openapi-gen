@@ -132,6 +132,9 @@ export class RouteProcessor {
       customResponses.forEach((responseRef) => {
         const [code, ref] = responseRef.split(":");
         if (ref) {
+          // Ensure the referenced schema is resolved (triggers Zod converter)
+          this.schemaProcessor.getSchemaContent({ responseType: ref });
+
           // Custom schema: "409:ConflictResponse"
           // 204 No Content should not have a content section per HTTP/OpenAPI spec
           if (code === "204") {

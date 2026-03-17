@@ -202,9 +202,9 @@ export class PagesRouterStrategy implements RouterStrategy {
       responseSet = respSetMatch[1].trim();
     }
 
-    const addMatch = cleanedComment.match(/@add\s+(.*)/);
-    if (addMatch) {
-      addResponses = addMatch[1].trim();
+    const addMatches = [...cleanedComment.matchAll(/@add\s+([^\n\r@]*)/g)];
+    if (addMatches.length > 0) {
+      addResponses = addMatches.map((m) => m[1].trim()).join(",");
     }
 
     const opIdMatch = cleanedComment.match(/@operationId\s+(\S+)/);

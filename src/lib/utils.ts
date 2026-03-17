@@ -150,10 +150,9 @@ export function extractJSDocComments(path: NodePath): DataTypes {
       }
 
       if (commentValue.includes("@add")) {
-        const regex = /@add\s*(.*)/;
-        const match = commentValue.match(regex);
-        if (match && match[1]) {
-          addResponses = match[1].trim();
+        const matches = [...commentValue.matchAll(/@add\s+([^\n\r@]*)/g)];
+        if (matches.length > 0) {
+          addResponses = matches.map((m) => m[1].trim()).join(",");
         }
       }
 

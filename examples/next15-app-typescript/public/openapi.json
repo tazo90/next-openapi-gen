@@ -2233,6 +2233,16 @@
               }
             }
           },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
           "500": {
             "$ref": "#/components/responses/500"
           }
@@ -2771,6 +2781,14 @@
             "description": "end date (ISO 8601)"
           }
         ],
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "ApiKeyAuth": []
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful response",
@@ -2798,6 +2816,14 @@
           "Reports"
         ],
         "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "PartnerToken": []
+          }
+        ],
         "requestBody": {
           "content": {
             "application/json": {
