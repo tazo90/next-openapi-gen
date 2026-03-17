@@ -1,3 +1,12 @@
+## [0.10.5](https://github.com/tazo90/next-openapi-gen/compare/v0.10.4...v0.10.5) (2026-03-17)
+
+
+### 🐛 Bug Fixes
+
+* support multiple [@add](https://github.com/add) tags and resolve [@add](https://github.com/add) schema references ([#91](https://github.com/tazo90/next-openapi-gen/issues/91)) ([534af42](https://github.com/tazo90/next-openapi-gen/commit/534af420effdb84267802202011233c455d90534))
+
+
+
 ## [0.10.4](https://github.com/tazo90/next-openapi-gen/compare/v0.10.3...v0.10.4) (2026-03-11)
 
 
