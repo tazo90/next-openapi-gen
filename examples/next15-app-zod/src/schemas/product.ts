@@ -60,6 +60,15 @@ export const ProductResponseSchema = z.object({
     .describe("Average product rating"),
 });
 
+// Error response with z.literal(false) for success field
+export const ProductErrorSchema = z.object({
+  success: z.literal(false).describe("Always false for errors"),
+  message: z.string().describe("Error message"),
+});
+
+// Type alias via z.infer (used in @add responses)
+export type ProductError = z.infer<typeof ProductErrorSchema>;
+
 // Define schema for product updates
 export const UpdateProductSchema = z.object({
   name: z.string().min(3).optional().describe("Product name"),

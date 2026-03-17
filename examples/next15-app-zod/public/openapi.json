@@ -568,6 +568,26 @@
           "status"
         ]
       },
+      "ProductError": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "enum": [
+              false
+            ],
+            "description": "Always false for errors"
+          },
+          "message": {
+            "type": "string",
+            "description": "Error message"
+          }
+        },
+        "required": [
+          "success",
+          "message"
+        ]
+      },
       "UpdateProductSchema": {
         "type": "object",
         "properties": {
@@ -1817,6 +1837,26 @@
           "attributes"
         ]
       },
+      "ProductErrorSchema": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "enum": [
+              false
+            ],
+            "description": "Always false for errors"
+          },
+          "message": {
+            "type": "string",
+            "description": "Error message"
+          }
+        },
+        "required": [
+          "success",
+          "message"
+        ]
+      },
       "UploadFormData": {
         "type": "object",
         "properties": {
@@ -2304,6 +2344,16 @@
               }
             }
           },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseSchema"
+                }
+              }
+            }
+          },
           "500": {
             "$ref": "#/components/responses/500"
           }
@@ -2681,8 +2731,25 @@
           "400": {
             "$ref": "#/components/responses/400"
           },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductError"
+                }
+              }
+            }
+          },
           "500": {
-            "$ref": "#/components/responses/500"
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductError"
+                }
+              }
+            }
           }
         }
       },

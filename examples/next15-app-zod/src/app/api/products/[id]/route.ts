@@ -6,6 +6,8 @@ import { NextRequest, NextResponse } from "next/server";
  * @pathParams ProductIdParams
  * @params ProductQueryParams
  * @response ProductResponseSchema
+ * @add 401:ProductError
+ * @add 500:ProductError
  * @auth bearer
  * @openapi
  */
