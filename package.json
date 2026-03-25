@@ -3,11 +3,18 @@
   "version": "0.10.5",
   "description": "Automatically generate OpenAPI 3.0 documentation from Next.js projects, with support for Zod schemas and TypeScript types.",
   "type": "module",
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
-  "typings": "dist/index.d.ts",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
   "bin": {
-    "next-openapi-gen": "./dist/index.js"
+    "next-openapi-gen": "./dist/cli.js"
   },
   "files": [
     "dist"
@@ -15,7 +22,9 @@
   "scripts": {
     "clean": "rm -rf dist",
     "build": "npm run clean && tsc",
-    "prepare": "npm run build",
+    "typecheck": "tsc --noEmit",
+    "verify": "npm run typecheck && npm run test && npm run build",
+    "prepack": "npm run build",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
