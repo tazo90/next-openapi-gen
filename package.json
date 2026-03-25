@@ -14,8 +14,11 @@
   ],
   "scripts": {
     "clean": "rm -rf dist",
-    "build": "npm run clean && tsc",
+    "build": "npm run clean && tsc -p tsconfig.json",
     "prepare": "npm run build",
+    "typecheck": "npm run typecheck:src && npm run typecheck:tests",
+    "typecheck:src": "tsc --noEmit -p tsconfig.json",
+    "typecheck:tests": "tsc --noEmit -p tsconfig.tests.json",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
@@ -59,6 +62,8 @@
     "ora": "^8.2.0"
   },
   "devDependencies": {
+    "@types/babel__traverse": "^7.28.0",
+    "@types/fs-extra": "^11.0.4",
     "@types/js-yaml": "^4.0.9",
     "@types/node": "^24.3.0",
     "@vitest/ui": "^3.2.4",

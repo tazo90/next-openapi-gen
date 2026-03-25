@@ -32,7 +32,7 @@ export async function getUser(id: number): Promise<User> {
     fs.writeFileSync(
       path.join(fixturesDir, "types.ts"),
       `
-import { getUser } from "./helper";
+        import { getUser } from "./helper.js";
 
 export type UserResponse = Awaited<ReturnType<typeof getUser>>;
       `.trim()

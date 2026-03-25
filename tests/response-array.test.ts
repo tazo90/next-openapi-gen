@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { extractTypeFromComment } from "../src/lib/utils";
+import { extractTypeFromComment } from "../src/lib/utils.js";
 
 describe("Array Response Annotation Parsing", () => {
   describe("extractTypeFromComment with array notation", () => {

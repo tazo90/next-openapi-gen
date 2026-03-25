@@ -7,13 +7,23 @@ import {
   extractPathParameters,
   getOperationId,
 } from "./utils.js";
-import { DataTypes, OpenApiConfig, RouteDefinition } from "../types.js";
+import type { DataTypes, OpenApiConfig, RouteDefinition } from "../types.js";
 import { logger } from "./logger.js";
-import { RouterStrategy } from "./router-strategy.js";
+import type { RouterStrategy } from "./router-strategy.js";
 import { AppRouterStrategy } from "./app-router-strategy.js";
 import { PagesRouterStrategy } from "./pages-router-strategy.js";
 
 const MUTATION_HTTP_METHODS = ["PATCH", "POST", "PUT"];
+const DEFAULT_ERROR_DESCRIPTIONS: Record<string, string> = {
+  "400": "Bad Request",
+  "401": "Unauthorized",
+  "403": "Forbidden",
+  "404": "Not Found",
+  "409": "Conflict",
+  "422": "Unprocessable Entity",
+  "429": "Too Many Requests",
+  "500": "Internal Server Error",
+};
 
 export class RouteProcessor {
   private swaggerPaths: Record<string, any> = {};
@@ -131,7 +141,7 @@ export class RouteProcessor {
 
       customResponses.forEach((responseRef) => {
         const [code, ref] = responseRef.split(":");
-        if (ref) {
+        if (code && ref) {
           // Ensure the referenced schema is resolved (triggers Zod converter)
           this.schemaProcessor.getSchemaContent({ responseType: ref });
 
@@ -153,7 +163,7 @@ export class RouteProcessor {
               },
             };
           }
-        } else {
+        } else if (code) {
           // Only code: "409" - use $ref fro components/responses
           responses[code] = {
             $ref: `#/components/responses/${code}`,
@@ -177,17 +187,7 @@ export class RouteProcessor {
   }
 
   private getDefaultErrorDescription(code: string): string {
-    const defaults = {
-      400: "Bad Request",
-      401: "Unauthorized",
-      403: "Forbidden",
-      404: "Not Found",
-      409: "Conflict",
-      422: "Unprocessable Entity",
-      429: "Too Many Requests",
-      500: "Internal Server Error",
-    };
-    return defaults[code] || `HTTP ${code}`;
+    return DEFAULT_ERROR_DESCRIPTIONS[code] || `HTTP ${code}`;
   }
 
   /**
@@ -284,7 +284,7 @@ export class RouteProcessor {
   ): void {
     const method = varName.toLowerCase();
     const routePath = this.strategy.getRoutePath(filePath);
-    const rootPath = capitalize(routePath.split("/")[1]);
+    const rootPath = capitalize(routePath.split("/")[1] ?? routePath);
     const operationId = dataTypes.operationId || getOperationId(routePath, method);
     const {
       tag,
@@ -310,9 +310,9 @@ export class RouteProcessor {
       this.schemaProcessor.getSchemaContent(dataTypes);
 
     const definition: RouteDefinition = {
-      operationId: operationId,
-      summary: summary,
-      description: description,
+      operationId,
+      summary,
+      description,
       tags: [tag || rootPath],
       parameters: [],
     };
@@ -323,9 +323,9 @@ export class RouteProcessor {
 
     // Add auth
     if (auth) {
-      const authItems = auth.split(",").map(item => item.trim());
+      const authItems = auth.split(",").map((item) => item.trim());
 
-      definition.security = authItems.map(authItem => ({
+      definition.security = authItems.map((authItem) => ({
         [authItem]: [],
       }));
     }
@@ -342,13 +342,13 @@ export class RouteProcessor {
       if (!pathParams) {
         const defaultPathParams =
           this.schemaProcessor.createDefaultPathParamsSchema(pathParamNames);
-        definition.parameters.push(...defaultPathParams);
+        definition.parameters?.push(...defaultPathParams);
       } else {
         const moreParams = this.schemaProcessor.createRequestParamsSchema(
           pathParams,
           true
         );
-        definition.parameters.push(...moreParams);
+        definition.parameters?.push(...moreParams);
       }
     } else if (pathParams) {
       // If no path parameters in route but we have a schema, use it
@@ -356,7 +356,7 @@ export class RouteProcessor {
         pathParams,
         true
       );
-      definition.parameters.push(...moreParams);
+      definition.parameters?.push(...moreParams);
     }
 
     // Add request body
@@ -411,7 +411,7 @@ export class RouteProcessor {
   }
 
   private getSortedPaths(paths: Record<string, any>): Record<string, any> {
-    function comparePaths(a, b) {
+    const comparePaths = (a: string, b: string): number => {
       const aMethods = this.swaggerPaths[a] || {};
       const bMethods = this.swaggerPaths[b] || {};
 
@@ -439,11 +439,11 @@ export class RouteProcessor {
       const bLength = b.split("/").length;
 
       return aLength - bLength; // Shorter paths come before longer ones
-    }
+    };
 
     return Object.keys(paths)
-      .sort(comparePaths.bind(this))
-      .reduce((sorted, key) => {
+      .sort(comparePaths)
+      .reduce<Record<string, any>>((sorted, key) => {
         sorted[key] = paths[key];
 
         return sorted;

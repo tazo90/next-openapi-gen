@@ -1,5 +1,5 @@
 import * as t from "@babel/types";
-import { OpenApiSchema } from "../types.js";
+import type { OpenApiSchema } from "../types.js";
 import { logger } from "./logger.js";
 
 /**
@@ -60,11 +60,11 @@ export class DrizzleZodProcessor {
             const fieldSchema = this.extractFieldSchema(arrowFunc.body);
 
             if (fieldSchema) {
-              schema.properties[key] = fieldSchema;
+              (schema.properties ??= {})[key] = fieldSchema;
 
               // Determine if field is required based on schema modifiers
               if (!this.isFieldOptional(arrowFunc.body)) {
-                schema.required.push(key);
+                (schema.required ??= []).push(key);
               }
             }
           }
@@ -73,7 +73,7 @@ export class DrizzleZodProcessor {
     }
 
     // If no properties were extracted, return a generic object schema
-    if (Object.keys(schema.properties).length === 0) {
+    if (Object.keys(schema.properties ?? {}).length === 0) {
       logger.debug(
         "No properties extracted from drizzle-zod schema, returning generic object"
       );

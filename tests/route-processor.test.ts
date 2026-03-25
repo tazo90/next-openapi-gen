@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { RouteProcessor } from '../src/lib/route-processor.js';
-import { OpenApiConfig, DataTypes } from '../src/types.js';
+import type { OpenApiConfig, DataTypes } from '../src/types.js';
 
 describe('RouteProcessor - Ignore Routes', () => {
   let routeProcessor: RouteProcessor;

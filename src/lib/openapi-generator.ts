@@ -3,7 +3,7 @@ import fs from "fs";
 
 import { RouteProcessor } from "./route-processor.js";
 import { cleanSpec } from "./utils.js";
-import {
+import type {
   ErrorDefinition,
   ErrorTemplateConfig,
   OpenApiConfig,
@@ -101,6 +101,7 @@ export class OpenApiGenerator {
     if (!this.template.components.responses) {
       this.template.components.responses = {};
     }
+    const responseComponents = this.template.components.responses;
 
     const errorConfig = this.config.errorConfig;
     if (errorConfig) {
@@ -109,8 +110,10 @@ export class OpenApiGenerator {
       // Use manual definitions (existing logic - if exists)
       Object.entries(this.config.errorDefinitions).forEach(
         ([code, errorDef]) => {
-          this.template.components.responses[code] =
-            this.createErrorResponseComponent(code, errorDef);
+          responseComponents[code] = this.createErrorResponseComponent(
+            code,
+            errorDef
+          );
         }
       );
     }
@@ -137,6 +140,10 @@ export class OpenApiGenerator {
     errorConfig: ErrorTemplateConfig
   ): void {
     const { template, codes, variables: globalVars = {} } = errorConfig;
+    const responseComponents = this.template.components?.responses;
+    if (!responseComponents) {
+      return;
+    }
 
     Object.entries(codes).forEach(([errorCode, config]) => {
       const httpStatus = (
@@ -154,7 +161,7 @@ export class OpenApiGenerator {
 
       const processedSchema = this.processTemplate(template, allVariables);
 
-      this.template.components.responses[httpStatus] = {
+      responseComponents[httpStatus] = {
         description: config.description,
         content: {
           "application/json": {

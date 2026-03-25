@@ -1,8 +1,10 @@
 import { describe, it, expect } from "vitest";
 import { DrizzleZodProcessor } from "../src/lib/drizzle-zod-processor.js";
 import { parseTypeScriptFile } from "../src/lib/utils.js";
-import traverse from "@babel/traverse";
 import * as t from "@babel/types";
+import traverseModule from "@babel/traverse";
+
+const traverse = (traverseModule as any).default || traverseModule;
 
 // Integration tests focusing on end-to-end drizzle-zod schema conversion
 describe("Drizzle-Zod Integration", () => {

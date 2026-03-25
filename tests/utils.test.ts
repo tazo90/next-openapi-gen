@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { extractJSDocComments, parseTypeScriptFile } from '../src/lib/utils.js';
 import traverseModule from '@babel/traverse';
 
-const traverse = traverseModule.default || traverseModule;
+const traverse = (traverseModule as any).default || traverseModule;
 
 describe('extractJSDocComments - @ignore tag', () => {
   it('should detect @ignore tag in JSDoc comments', () => {

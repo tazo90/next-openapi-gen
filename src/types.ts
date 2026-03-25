@@ -6,20 +6,20 @@ export type RouterType = "app" | "pages";
 
 export type OpenApiConfig = {
   apiDir: string;
-  routerType?: RouterType;
+  routerType?: RouterType | undefined;
   schemaDir: string | string[];
   docsUrl: string;
   ui: string;
   outputFile: string;
   outputDir: string;
   includeOpenApiRoutes: boolean;
-  ignoreRoutes?: string[];
+  ignoreRoutes?: string[] | undefined;
   schemaType: SchemaType | SchemaType[]; // Support both single type and array of types
-  schemaFiles?: string[]; // Array of custom OpenAPI schema files (YAML/JSON)
-  defaultResponseSet?: string;
-  responseSets?: ResponseSets;
-  errorConfig?: ErrorTemplateConfig;
-  errorDefinitions?: Record<string, ErrorDefinition>;
+  schemaFiles?: string[] | undefined; // Array of custom OpenAPI schema files (YAML/JSON)
+  defaultResponseSet?: string | undefined;
+  responseSets?: ResponseSets | undefined;
+  errorConfig?: ErrorTemplateConfig | undefined;
+  errorDefinitions?: Record<string, ErrorDefinition> | undefined;
   debug: boolean;
 };
 
@@ -36,39 +36,39 @@ export type OpenApiTemplate = {
   }>;
   basePath: string;
   components?: {
-    securitySchemes?: Record<string, any>;
-    schemas?: Record<string, any>;
-    responses?: Record<string, any>;
-  };
+    securitySchemes?: Record<string, any> | undefined;
+    schemas?: Record<string, any> | undefined;
+    responses?: Record<string, any> | undefined;
+  } | undefined;
   paths: Record<string, any>;
 };
 
 export type RouteDefinition = {
   operationId: string;
-  summary: string;
-  description: string;
+  summary?: string | undefined;
+  description?: string | undefined;
   tags: string[];
-  security?: Array<Record<string, any>>;
-  parameters?: ParamSchema[];
+  security?: Array<Record<string, any>> | undefined;
+  parameters?: ParamSchema[] | undefined;
   requestBody?: any;
-  responses?: Record<string, any>;
-  deprecated?: boolean;
+  responses?: Record<string, any> | undefined;
+  deprecated?: boolean | undefined;
 };
 
 export type Property = {
-  in?: "query" | "path";
-  name?: string;
-  type?: string;
-  description?: string;
-  required?: boolean;
-  nullable?: boolean;
+  in?: "query" | "path" | undefined;
+  name?: string | undefined;
+  type?: string | undefined;
+  description?: string | undefined;
+  required?: boolean | undefined;
+  nullable?: boolean | undefined;
   enum?: any;
-  example?: string;
+  example?: string | undefined;
   schema?: {
     type: string;
     enum?: any;
-    description?: string;
-  };
+    description?: string | undefined;
+  } | undefined;
 };
 
 export type Params = {
@@ -76,48 +76,49 @@ export type Params = {
 };
 
 export type OpenApiSchema = {
-  type?: string;
-  properties?: Record<string, OpenApiSchema>;
-  required?: string[];
-  items?: OpenApiSchema;
-  nullable?: boolean;
-  description?: string;
-  deprecated?: boolean;
-  format?: string;
-  minLength?: number;
-  maxLength?: number;
-  minimum?: number;
-  maximum?: number;
-  exclusiveMinimum?: boolean;
-  exclusiveMaximum?: boolean;
-  pattern?: string;
-  minItems?: number;
-  maxItems?: number;
-  uniqueItems?: boolean;
-  enum?: Array<string | number | boolean | null>;
+  type?: string | undefined;
+  properties?: Record<string, OpenApiSchema> | undefined;
+  required?: string[] | undefined;
+  items?: OpenApiSchema | undefined;
+  nullable?: boolean | undefined;
+  description?: string | undefined;
+  deprecated?: boolean | undefined;
+  format?: string | undefined;
+  minLength?: number | undefined;
+  maxLength?: number | undefined;
+  minimum?: number | undefined;
+  maximum?: number | undefined;
+  exclusiveMinimum?: boolean | undefined;
+  exclusiveMaximum?: boolean | undefined;
+  pattern?: string | undefined;
+  minItems?: number | undefined;
+  maxItems?: number | undefined;
+  uniqueItems?: boolean | undefined;
+  enum?: Array<string | number | boolean | null> | undefined;
   default?: any;
-  oneOf?: OpenApiSchema[];
-  allOf?: OpenApiSchema[];
-  additionalProperties?: OpenApiSchema | boolean;
+  oneOf?: OpenApiSchema[] | undefined;
+  allOf?: OpenApiSchema[] | undefined;
+  additionalProperties?: OpenApiSchema | boolean | undefined;
+  prefixItems?: OpenApiSchema[] | undefined;
   discriminator?: {
     propertyName: string;
-  };
-  $ref?: string;
+  } | undefined;
+  $ref?: string | undefined;
 };
 
 export type ContentType = "params" | "pathParams" | "body" | "response" | "";
 
 export type PropertyOptions = {
-  description?: string;
-  required?: boolean;
-  nullable?: boolean;
+  description?: string | undefined;
+  required?: boolean | undefined;
+  nullable?: boolean | undefined;
 };
 
 export type SchemaContent = {
-  paramsType?: string;
-  pathParamsType?: string;
-  bodyType?: string;
-  responseType?: string;
+  paramsType?: string | undefined;
+  pathParamsType?: string | undefined;
+  bodyType?: string | undefined;
+  responseType?: string | undefined;
 };
 
 export type ParamSchema = {
@@ -125,63 +126,66 @@ export type ParamSchema = {
   name: string;
   schema: {
     type: string;
-    enum?: (string | number | boolean)[];
-    description?: string;
+    enum?: (string | number | boolean)[] | undefined;
+    description?: string | undefined;
   };
-  required?: boolean;
+  required?: boolean | undefined;
   example?: any;
-  description?: string;
+  description?: string | undefined;
 };
 
 export type OpenAPIDefinition = {
-  type?: string;
-  properties?: Record<string, any>;
+  type?: string | undefined;
+  properties?: Record<string, any> | undefined;
   items?: any;
-  enum?: any[];
-  format?: string;
-  nullable?: boolean;
-  required?: string[];
-  oneOf?: any[];
+  enum?: any[] | undefined;
+  format?: string | undefined;
+  nullable?: boolean | undefined;
+  required?: string[] | undefined;
+  oneOf?: any[] | undefined;
   additionalProperties?: any;
-  $ref?: string;
+  prefixItems?: any[] | undefined;
+  minItems?: number | undefined;
+  maxItems?: number | undefined;
+  $ref?: string | undefined;
   [key: string]: any;
 };
 
 export type DataTypes = {
-  tag?: string;
-  pathParamsType?: string;
-  paramsType?: string;
-  bodyType?: string;
-  responseType?: string;
-  summary?: string;
-  description?: string;
-  auth?: string;
-  isOpenApi?: boolean;
-  isIgnored?: boolean;
-  deprecated?: boolean;
-  bodyDescription?: string;
-  responseDescription?: string;
-  contentType?: string;
-  responseSet?: string; // e.g. "authErrors" or "publicErrors,crudErrors"
-  addResponses?: string; // e.g. "409:ConflictResponse,429:RateLimitResponse"
-  successCode?: string; // e.g "201" for POST
-  operationId?: string; // Custom operation ID (overrides auto-generated)
-  method?: string; // HTTP method for Pages Router (e.g. "GET", "POST")
+  tag?: string | undefined;
+  pathParamsType?: string | undefined;
+  paramsType?: string | undefined;
+  bodyType?: string | undefined;
+  responseType?: string | undefined;
+  summary?: string | undefined;
+  description?: string | undefined;
+  auth?: string | undefined;
+  isOpenApi?: boolean | undefined;
+  isIgnored?: boolean | undefined;
+  deprecated?: boolean | undefined;
+  bodyDescription?: string | undefined;
+  responseDescription?: string | undefined;
+  contentType?: string | undefined;
+  responseSet?: string | undefined; // e.g. "authErrors" or "publicErrors,crudErrors"
+  addResponses?: string | undefined; // e.g. "409:ConflictResponse,429:RateLimitResponse"
+  successCode?: string | undefined; // e.g "201" for POST
+  operationId?: string | undefined; // Custom operation ID (overrides auto-generated)
+  method?: string | undefined; // HTTP method for Pages Router (e.g. "GET", "POST")
 };
 
 export type RouteConfig = {
   schemaDir: string | string[];
   schemaType: string;
-  includeOpenApiRoutes?: boolean;
-  ignoreRoutes?: string[];
+  includeOpenApiRoutes?: boolean | undefined;
+  ignoreRoutes?: string[] | undefined;
 };
 
 export type PathDefinition = {
   operationId: string;
-  summary?: string;
-  description?: string;
+  summary?: string | undefined;
+  description?: string | undefined;
   tags: string[];
-  security?: Array<Record<string, any[]>>;
+  security?: Array<Record<string, any[]>> | undefined;
   parameters: any[];
   requestBody?: any;
   responses: Record<string, any>;
@@ -190,18 +194,18 @@ export type PathDefinition = {
 export interface ErrorTemplateConfig {
   template: any; // Any schema template with placeholders
   codes: Record<string, ErrorCodeConfig>;
-  variables?: Record<string, string>; // Global variables
+  variables?: Record<string, string> | undefined; // Global variables
 }
 
 export interface ErrorCodeConfig {
   description: string;
-  httpStatus?: number;
-  variables?: Record<string, string>; // Per-code variables
+  httpStatus?: number | undefined;
+  variables?: Record<string, string> | undefined; // Per-code variables
 }
 
 export interface ErrorConfig {
   globalTemplate?: any;
-  variables?: Record<string, string>;
+  variables?: Record<string, string> | undefined;
 }
 
 export interface ErrorDefinition {

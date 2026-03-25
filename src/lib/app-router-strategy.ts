@@ -1,12 +1,14 @@
 import * as t from "@babel/types";
 import fs from "fs";
 import traverseModule from "@babel/traverse";
+import type { NodePath } from "@babel/traverse";
 
 const traverse = (traverseModule as any).default || traverseModule;
 
-import { RouterStrategy, HTTP_METHODS } from "./router-strategy.js";
+import { HTTP_METHODS } from "./router-strategy.js";
+import type { RouterStrategy } from "./router-strategy.js";
 import { extractJSDocComments, parseTypeScriptFile } from "./utils.js";
-import { DataTypes, OpenApiConfig } from "../types.js";
+import type { DataTypes, OpenApiConfig } from "../types.js";
 
 export class AppRouterStrategy implements RouterStrategy {
   private config: OpenApiConfig;
@@ -27,7 +29,7 @@ export class AppRouterStrategy implements RouterStrategy {
     const ast = parseTypeScriptFile(content);
 
     traverse(ast, {
-      ExportNamedDeclaration: (path) => {
+      ExportNamedDeclaration: (path: NodePath<t.ExportNamedDeclaration>) => {
         const declaration = path.node.declaration;
 
         if (

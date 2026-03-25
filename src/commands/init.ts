@@ -16,6 +16,15 @@ const execPromise = util.promisify(exec);
 
 const spinner = ora("Initializing project with OpenAPI template...\n");
 
+type DocsUi = "none" | "scalar" | "swagger" | "redoc" | "stoplight" | "rapidoc";
+
+type InitCommandOptions = {
+  ui?: DocsUi;
+  docsUrl?: string;
+  schema?: "typescript" | "zod";
+  output?: string;
+};
+
 async function hasDependency(packageName: string): Promise<boolean> {
   try {
     const packageJsonPath = path.join(process.cwd(), "package.json");
@@ -26,7 +35,7 @@ async function hasDependency(packageName: string): Promise<boolean> {
   }
 }
 
-const getPackageManager = async () => {
+const getPackageManager = async (): Promise<"npm" | "pnpm" | "yarn"> => {
   let currentDir = process.cwd();
 
   while (true) {
@@ -50,7 +59,7 @@ const getPackageManager = async () => {
   return "npm";
 };
 
-function getDocsPage(ui: string, outputFile: string) {
+function getDocsPage(ui: DocsUi, outputFile: string): string {
   let DocsComponent = ScalarUI;
 
   if (ui === "swagger") {
@@ -66,7 +75,10 @@ function getDocsPage(ui: string, outputFile: string) {
   return DocsComponent(outputFile);
 }
 
-function getDocsPageInstallFlags(ui: string, packageManager: string) {
+function getDocsPageInstallFlags(
+  ui: DocsUi,
+  packageManager: "npm" | "pnpm" | "yarn"
+): string {
   let installFlags = "";
   if (ui === "swagger") {
     // @temp: swagger-ui-react does not support React 19 now.
@@ -82,8 +94,8 @@ function getDocsPageInstallFlags(ui: string, packageManager: string) {
   return installFlags;
 }
 
-function getDocsPageDependencies(ui: string) {
-  let deps = [];
+function getDocsPageDependencies(ui: DocsUi): string {
+  let deps: string[] = [];
 
   if (ui === "scalar") {
     deps = scalarDeps;
@@ -100,8 +112,8 @@ function getDocsPageDependencies(ui: string) {
   return deps.join(" ");
 }
 
-function getDocsPageDevDependencies(ui: string) {
-  let devDeps = [];
+function getDocsPageDevDependencies(ui: DocsUi): string {
+  let devDeps: string[] = [];
 
   if (ui === "scalar") {
     devDeps = scalarDevDeps;
@@ -118,7 +130,7 @@ function getDocsPageDevDependencies(ui: string) {
   return devDeps.join(" ");
 }
 
-async function createDocsPage(ui: string, outputFile: string) {
+async function createDocsPage(ui: DocsUi, outputFile: string): Promise<void> {
   if (ui === "none") {
     return;
   }
@@ -140,7 +152,10 @@ async function createDocsPage(ui: string, outputFile: string) {
   spinner.succeed(`Created ${paths.join("/")}/page.tsx for ${ui}.`);
 }
 
-async function installDependencies(ui: string, schema: string | string[]) {
+async function installDependencies(
+  ui: DocsUi,
+  schema: "typescript" | "zod" | Array<"typescript" | "zod">
+): Promise<void> {
   const packageManager = await getPackageManager();
   const installCmd = `${packageManager} ${
     packageManager === "npm" ? "install" : "add"
@@ -183,7 +198,10 @@ async function installDependencies(ui: string, schema: string | string[]) {
   }
 }
 
-function extendOpenApiTemplate(spec, options) {
+function extendOpenApiTemplate(
+  spec: typeof openapiTemplate,
+  options: InitCommandOptions
+): void {
   spec.ui = options.ui ?? spec.ui;
   spec.docsUrl = options.docsUrl ?? spec.docsUrl;
   spec.schemaType = options.schema ?? spec.schemaType;
@@ -197,7 +215,7 @@ function getOutputPath(output?: string) {
   return path.join(process.cwd(), "next.openapi.json");
 }
 
-export async function init(options) {
+export async function init(options: InitCommandOptions): Promise<void> {
   const { ui, output, schema } = options;
 
   spinner.start();
@@ -211,9 +229,10 @@ export async function init(options) {
     await fse.writeJson(outputPath, template, { spaces: 2 });
     spinner.succeed(`Created OpenAPI template in ${outputPath}`);
 
-    createDocsPage(ui, template.outputFile);
-    installDependencies(ui, schema);
+    await createDocsPage(ui ?? "scalar", template.outputFile);
+    await installDependencies(ui ?? "scalar", schema ?? "zod");
   } catch (error) {
-    spinner.fail(`Failed to initialize project: ${error.message}`);
+    const message = error instanceof Error ? error.message : String(error);
+    spinner.fail(`Failed to initialize project: ${message}`);
   }
 }

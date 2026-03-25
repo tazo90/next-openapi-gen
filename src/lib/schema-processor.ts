@@ -9,7 +9,7 @@ const traverse = (traverseModule as any).default || traverseModule;
 
 import { parseTypeScriptFile } from "./utils.js";
 import { ZodSchemaConverter } from "./zod-converter.js";
-import {
+import type {
   ContentType,
   OpenAPIDefinition,
   ParamSchema,
@@ -115,8 +115,9 @@ export class SchemaProcessor {
           );
         }
       } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
         logger.warn(
-          `Failed to load schema file ${filePath}: ${error.message}`
+          `Failed to load schema file ${filePath}: ${message}`
         );
       }
     }
@@ -133,7 +134,7 @@ export class SchemaProcessor {
     const merged: Record<string, OpenAPIDefinition> = {};
 
     // Layer 1: TypeScript types (base layer)
-    const filteredSchemas = {};
+    const filteredSchemas: Record<string, OpenAPIDefinition> = {};
     Object.entries(this.openapiDefinitions).forEach(([key, value]) => {
       if (
         !this.isGenericTypeParameter(key) &&
@@ -247,6 +248,7 @@ export class SchemaProcessor {
     if (!this.importMap[normalizedPath]) {
       this.importMap[normalizedPath] = {};
     }
+    const fileImports = this.importMap[normalizedPath];
 
     traverse(ast, {
       ImportDeclaration: (path: any) => {
@@ -256,17 +258,17 @@ export class SchemaProcessor {
         path.node.specifiers.forEach((specifier: any) => {
           if (t.isImportSpecifier(specifier)) {
             const importedName = t.isIdentifier(specifier.imported) ? specifier.imported.name : specifier.imported.value;
-            this.importMap[normalizedPath][importedName] = importPath;
+            fileImports[importedName] = importPath;
           }
           // Handle default imports: import foo from './file'
           else if (t.isImportDefaultSpecifier(specifier)) {
             const importedName = specifier.local.name;
-            this.importMap[normalizedPath][importedName] = importPath;
+            fileImports[importedName] = importPath;
           }
           // Handle namespace imports: import * as foo from './file'
           else if (t.isImportNamespaceSpecifier(specifier)) {
             const importedName = specifier.local.name;
-            this.importMap[normalizedPath][importedName] = importPath;
+            fileImports[importedName] = importPath;
           }
         });
       },
@@ -285,6 +287,19 @@ export class SchemaProcessor {
 
     const fromDir = path.dirname(fromFilePath);
     let resolvedPath = path.resolve(fromDir, importPath);
+
+    // NodeNext source often imports sibling TS files through emitted .js specifiers.
+    if (resolvedPath.endsWith(".js")) {
+      const tsPath = resolvedPath.replace(/\.js$/, ".ts");
+      if (fs.existsSync(tsPath)) {
+        return tsPath;
+      }
+
+      const tsxPath = resolvedPath.replace(/\.js$/, ".tsx");
+      if (fs.existsSync(tsxPath)) {
+        return tsxPath;
+      }
+    }
 
     // Try with .ts extension
     if (fs.existsSync(resolvedPath + '.ts')) {
@@ -453,10 +468,10 @@ export class SchemaProcessor {
       // If we are using Zod and the given type is not found yet, try using Zod converter first
       if (
         this.schemaTypes.includes("zod") &&
-        !this.openapiDefinitions[typeName]
+        !this.openapiDefinitions[typeName] &&
+        this.zodSchemaConverter
       ) {
-        const zodSchema =
-          this.zodSchemaConverter.convertZodSchemaToOpenApi(typeName);
+        const zodSchema = this.zodSchemaConverter.convertZodSchemaToOpenApi(typeName);
         if (zodSchema) {
           this.openapiDefinitions[typeName] = zodSchema;
           return zodSchema;
@@ -482,7 +497,7 @@ export class SchemaProcessor {
         t.isIdentifier(typeNode.callee.object) &&
         typeNode.callee.object.name === "z"
       ) {
-        if (this.schemaTypes.includes("zod")) {
+        if (this.schemaTypes.includes("zod") && this.zodSchemaConverter) {
           const zodSchema = this.zodSchemaConverter.processZodNode(typeNode);
           if (zodSchema) {
             this.openapiDefinitions[typeName] = zodSchema;
@@ -925,18 +940,19 @@ export class SchemaProcessor {
           this.isResolvingPickOmitBase = false;
 
           if (baseType.properties) {
+            const baseProperties = baseType.properties;
             const properties: Record<string, any> = {};
             const keyNames = this.extractKeysFromLiteralType(keysParam);
 
             if (typeName === "Pick") {
               keyNames.forEach((key) => {
-                if (baseType.properties[key]) {
-                  properties[key] = baseType.properties[key];
+                if (baseProperties[key]) {
+                  properties[key] = baseProperties[key];
                 }
               });
             } else {
               // Omit
-              Object.entries(baseType.properties).forEach(([key, value]) => {
+              Object.entries(baseProperties).forEach(([key, value]) => {
                 if (!keyNames.includes(key)) {
                   properties[key] = value;
                 }
@@ -1653,8 +1669,8 @@ export class SchemaProcessor {
       return null;
     }
 
-    const baseTypeName = match[1].trim();
-    const typeArgsString = match[2].trim();
+    const baseTypeName = match[1]?.trim() ?? "";
+    const typeArgsString = match[2]?.trim() ?? "";
 
     // Split type arguments by comma, handling nested generics
     const typeArguments = this.splitTypeArguments(typeArgsString);

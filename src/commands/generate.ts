@@ -5,14 +5,18 @@ import ora from "ora";
 
 import { OpenApiGenerator } from "../lib/openapi-generator.js";
 
-export async function generate(options) {
-  const { template } = options;
+type GenerateCommandOptions = {
+  template?: string;
+};
+
+export async function generate(options: GenerateCommandOptions): Promise<void> {
+  const generatorOptions = options.template
+    ? { templatePath: options.template }
+    : {};
 
   const spinner = ora("Generating OpenAPI specification...\n").start();
 
-  const generator = new OpenApiGenerator({
-    templatePath: template,
-  });
+  const generator = new OpenApiGenerator(generatorOptions);
   const config = generator.getConfig();
 
   // Create api dir if not exists

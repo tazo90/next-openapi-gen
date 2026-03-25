@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { AppRouterStrategy } from "../src/lib/app-router-strategy.js";
-import { OpenApiConfig } from "../src/types.js";
+import type { OpenApiConfig } from "../src/types.js";
 
 describe("AppRouterStrategy - getRoutePath", () => {
   let strategy: AppRouterStrategy;

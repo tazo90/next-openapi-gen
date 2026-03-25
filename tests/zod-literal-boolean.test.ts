@@ -5,7 +5,7 @@ import traverseModule from "@babel/traverse";
 import path from "path";
 import fs from "fs";
 
-const traverse = traverseModule.default || traverseModule;
+const traverse = (traverseModule as any).default || traverseModule;
 
 describe("Zod Literal Boolean", () => {
   describe("z.literal(false) should produce enum: [false]", () => {

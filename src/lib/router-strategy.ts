@@ -1,4 +1,4 @@
-import { DataTypes } from "../types.js";
+import type { DataTypes } from "../types.js";
 
 export const HTTP_METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE"];
 

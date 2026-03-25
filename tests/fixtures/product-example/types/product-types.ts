@@ -13,7 +13,7 @@ import {
   getProductSummary,
   createProduct,
   updateStock,
-} from "../api/route.utils";
+} from "../api/route.utils.js";
 
 // ============================================================================
 // Example 1: Awaited<ReturnType<typeof func>> - The main bug fix!
