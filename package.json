@@ -3,6 +3,7 @@
   "version": "0.10.5",
   "description": "Automatically generate OpenAPI 3.0 documentation from Next.js projects, with support for Zod schemas and TypeScript types.",
   "type": "module",
+  "packageManager": "pnpm@10.32.1",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "typings": "dist/index.d.ts",
@@ -14,8 +15,10 @@
   ],
   "scripts": {
     "clean": "rm -rf dist",
-    "build": "npm run clean && tsc",
-    "prepare": "npm run build",
+    "build": "pnpm run clean && tsc",
+    "build:turbo": "turbo run build --filter=next-openapi-gen",
+    "dev:examples": "turbo run dev --filter='./examples/*' --parallel",
+    "prepare": "pnpm run build",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
@@ -64,6 +67,7 @@
     "@vitest/ui": "^3.2.4",
     "conventional-changelog-cli": "^5.0.0",
     "np": "^10.2.0",
+    "turbo": "^2.8.20",
     "typescript": "^5.9.2",
     "vitest": "^3.2.4"
   },

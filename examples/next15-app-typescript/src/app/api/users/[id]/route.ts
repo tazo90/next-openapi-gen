@@ -8,12 +8,14 @@ import { NextRequest, NextResponse } from "next/server";
  * @openapi
  */
 export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
+
   // In a real app, you would fetch user data from a database
   const user = {
-    id: params.id,
+    id,
     name: "John Doe",
     email: "john.doe@example.com",
     role: "user",

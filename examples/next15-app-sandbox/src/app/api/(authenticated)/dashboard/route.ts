@@ -16,7 +16,7 @@ export const DashboardResponse = z.object({
  * @tag Dashboard
  * @openapi
  */
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   return NextResponse.json({
     id: "dashboard-123",
     name: "My Dashboard",

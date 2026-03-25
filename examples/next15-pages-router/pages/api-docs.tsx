@@ -7,9 +7,7 @@ export default function ApiDocs() {
   return (
     <ApiReferenceReact
       configuration={{
-        spec: {
-          url: "/openapi.json",
-        },
+        url: "/openapi.json",
         theme: "purple",
       }}
     />

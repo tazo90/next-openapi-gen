@@ -39,7 +39,7 @@ cd next-openapi-gen
 ### 2. Install Dependencies
 
 ```bash
-npm install
+pnpm install
 ```
 
 ### 3. Create a Branch
@@ -137,13 +137,13 @@ Before submitting a PR:
 
 ```bash
 # Run tests
-npm test
+pnpm test
 
 # Build the project
-npm run build
+pnpm run build
 
 # Ensure no TypeScript errors
-npx tsc --noEmit
+pnpm exec tsc --noEmit
 ```
 
 ### 2. Update Documentation
@@ -214,29 +214,29 @@ next-openapi-gen/
 
 ```bash
 # Clean build artifacts
-npm run clean
+pnpm run clean
 
 # Build TypeScript
-npm run build
+pnpm run build
 
 # Watch mode (auto-rebuild on changes)
-npx tsc --watch
+pnpm exec tsc --watch
 ```
 
 ### Testing
 
 ```bash
 # Run all tests
-npm test
+pnpm test
 
 # Watch mode
-npm run test:watch
+pnpm run test:watch
 
 # UI mode
-npm run test:ui
+pnpm run test:ui
 
 # Coverage report
-npm run test:coverage
+pnpm run test:coverage
 ```
 
 ### Local Testing
@@ -245,10 +245,10 @@ To test the CLI locally:
 
 ```bash
 # Build first
-npm run build
+pnpm run build
 
 # Link globally
-npm link
+pnpm link --global
 
 # Now you can use it in any Next.js project
 cd /path/to/your/nextjs/app
@@ -256,7 +256,7 @@ next-openapi-gen init
 next-openapi-gen generate
 
 # Unlink when done
-npm unlink -g next-openapi-gen
+pnpm unlink --global next-openapi-gen
 ```
 
 ---
@@ -272,7 +272,7 @@ We use [`np`](https://github.com/sindresorhus/np) for interactive releases with 
 #### Creating a Release
 
 ```bash
-npm run release
+pnpm run release
 ```
 
 This will:
@@ -291,13 +291,13 @@ This will:
 
 ```bash
 # Specific version
-npx np 1.0.0
+pnpm exec np 1.0.0
 
 # Beta release
-npx np 1.0.0-beta.1
+pnpm exec np 1.0.0-beta.1
 
 # Only tag, skip npm publish
-npx np --no-publish
+pnpm exec np --no-publish
 ```
 
 #### Version Bump Guidelines

@@ -1,12 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
-enum ROLE {
-  OWNER,
-  MEMBER,
-}
-
 // Define path parameter type
-type UserIdParam = {
+export type UserIdParam = {
   id: string; // User's unique identifier
 };
 
@@ -18,7 +13,7 @@ type UserAddress = {
 };
 
 // Define response type
-type UserResponse = {
+export type UserResponse = {
   id: string; // User's unique identifier
   name: string; // User's full name
   email: string; // User's email address
@@ -34,12 +29,14 @@ type UserResponse = {
  * @openapi
  */
 export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
+
   // In a real app, you would fetch user data from a database
   const user = {
-    id: params.id,
+    id,
     name: "John Doe",
     email: "john.doe@example.com",
     role: "user",

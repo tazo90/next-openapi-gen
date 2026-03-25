@@ -1,9 +1,9 @@
-type LoginBody = {
+export type LoginBody = {
   email: string; // user email
   password: string; // user password
 };
 
-type LoginResponse = {
+export type LoginResponse = {
   token: string; // auth token
   refresh_token: string; // refresh token
 };
@@ -14,6 +14,6 @@ type LoginResponse = {
  * @body LoginBody
  * @response LoginResponse
  */
-export async function POST(req: Request) {
+export async function POST() {
   return Response.json({});
 }

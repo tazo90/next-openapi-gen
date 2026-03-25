@@ -33,7 +33,7 @@ export const AdminUserQuery = z.object({
  * @tag Admin
  * @openapi
  */
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   return NextResponse.json({
     users: [
       {

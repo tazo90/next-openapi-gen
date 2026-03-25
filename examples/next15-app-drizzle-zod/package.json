@@ -30,7 +30,7 @@
     "drizzle-kit": "^0.29.1",
     "eslint": "^9.26.0",
     "eslint-config-next": "15.3.2",
-    "next-openapi-gen": "file:../..",
+    "next-openapi-gen": "workspace:*",
     "postcss": "^8.5.3",
     "tailwindcss": "^3.4.1",
     "typescript": "^5.8.3"

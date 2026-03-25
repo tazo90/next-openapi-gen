@@ -10,8 +10,7 @@ import { NextRequest, NextResponse } from "next/server";
  * @openapi
  */
 export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
+  _request: NextRequest
 ) {
   // Implementation here...
 

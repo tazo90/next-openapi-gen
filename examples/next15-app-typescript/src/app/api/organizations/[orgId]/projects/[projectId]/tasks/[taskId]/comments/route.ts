@@ -21,9 +21,11 @@ import { NextRequest, NextResponse } from "next/server";
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { orgId: string; projectId: string; taskId: string } }
+  {
+    params,
+  }: { params: Promise<{ orgId: string; projectId: string; taskId: string }> }
 ) {
-  const { orgId, projectId, taskId } = params;
+  const { orgId, projectId, taskId } = await params;
 
   // Extract query parameters
   const url = new URL(request.url);
@@ -118,9 +120,13 @@ export async function GET(
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { orgId: string; projectId: string; taskId: string } }
+  {
+    params,
+  }: { params: Promise<{ orgId: string; projectId: string; taskId: string }> }
 ) {
   try {
+    await params;
+
     // Parse request body
     const body: CreateCommentBody = await request.json();
 
@@ -182,8 +188,12 @@ export async function POST(
  */
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { orgId: string; projectId: string; taskId: string } }
+  {
+    params,
+  }: { params: Promise<{ orgId: string; projectId: string; taskId: string }> }
 ) {
+  await params;
+
   // Get the comment ID from the query parameter
   const url = new URL(request.url);
   const commentId = url.searchParams.get("commentId");
@@ -263,8 +273,12 @@ export async function PATCH(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { orgId: string; projectId: string; taskId: string } }
+  {
+    params,
+  }: { params: Promise<{ orgId: string; projectId: string; taskId: string }> }
 ) {
+  await params;
+
   // Get the comment ID from the query parameter
   const url = new URL(request.url);
   const commentId = url.searchParams.get("commentId");

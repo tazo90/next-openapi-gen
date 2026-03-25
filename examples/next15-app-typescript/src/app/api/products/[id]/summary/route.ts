@@ -14,11 +14,12 @@ import { getProductSummary } from "../../route.utils";
  * @openapi
  */
 export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const summary = await getProductSummary(params.id);
+    const { id } = await params;
+    const summary = await getProductSummary(id);
 
     return NextResponse.json({
       success: true,

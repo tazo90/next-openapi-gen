@@ -24,7 +24,7 @@ export const SearchResponse = z.object({
  * @response SearchResponse
  * @openapi
  */
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   return NextResponse.json({
     results: [
       {

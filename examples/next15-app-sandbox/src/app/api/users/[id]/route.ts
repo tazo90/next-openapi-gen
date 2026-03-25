@@ -5,7 +5,7 @@ const GetUserProfilePathParams = z.object({
   id: z.string().describe("User ID"),
 });
 
-const Users = z.object({
+export const Users = z.object({
   id: z.string().describe("User ID"),
   name: z.string(),
 });
@@ -34,7 +34,7 @@ export async function GET() {
  * @openapi
  */
 export async function DELETE(
-  request: Request,
+  _request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;

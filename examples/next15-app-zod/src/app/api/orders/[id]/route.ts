@@ -11,9 +11,11 @@ import { NextRequest, NextResponse } from "next/server";
  * @openapi
  */
 export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  await params;
+
   // Implementation here...
 
   return NextResponse.json({});
@@ -29,9 +31,11 @@ export async function GET(
  * @openapi
  */
 export async function PATCH(
-  request: NextRequest,
-  { params }: { params: { id: string } }
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  await params;
+
   // Implementation here...
 
   return NextResponse.json({});
@@ -45,9 +49,11 @@ export async function PATCH(
  * @openapi
  */
 export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { id: string } }
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  await params;
+
   // Implementation here...
 
   return NextResponse.json({});
