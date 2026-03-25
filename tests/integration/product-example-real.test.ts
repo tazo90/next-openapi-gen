@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { SchemaProcessor } from "../src/lib/schema-processor.js";
+import { SchemaProcessor } from "../../src/lib/schema-processor.js";
 import path from "path";
 
 describe("Product Example - Real Test", () => {

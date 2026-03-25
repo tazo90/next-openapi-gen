@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "openapi:generate": "next-openapi-gen generate"
   },
   "dependencies": {
     "@scalar/api-reference-react": "^0.6.30",    

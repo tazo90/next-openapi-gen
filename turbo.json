@@ -1,0 +1,28 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "tasks": {
+    "//#build": {
+      "outputs": ["dist/**"]
+    },
+    "test:unit": {
+      "dependsOn": ["//#build"],
+      "cache": false,
+      "outputs": []
+    },
+    "test:integration": {
+      "dependsOn": ["//#build"],
+      "cache": false,
+      "outputs": []
+    },
+    "test:e2e": {
+      "dependsOn": ["//#build"],
+      "cache": false,
+      "outputs": []
+    },
+    "test:coverage": {
+      "dependsOn": ["//#build"],
+      "cache": false,
+      "outputs": ["coverage/**", "playwright-report/**", "test-results/**"]
+    }
+  }
+}

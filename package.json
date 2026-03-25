@@ -2,6 +2,7 @@
   "name": "next-openapi-gen",
   "version": "0.10.5",
   "description": "Automatically generate OpenAPI 3.0 documentation from Next.js projects, with support for Zod schemas and TypeScript types.",
+  "packageManager": "npm@11.6.2",
   "type": "module",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
@@ -12,14 +13,20 @@
   "files": [
     "dist"
   ],
+  "workspaces": [
+    "tests"
+  ],
   "scripts": {
     "clean": "rm -rf dist",
     "build": "npm run clean && tsc",
     "prepare": "npm run build",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "test:ui": "vitest --ui",
-    "test:coverage": "vitest run --coverage",
+    "test": "turbo run test:unit test:integration test:e2e --filter=@next-openapi-gen/tests --continue=never",
+    "test:unit": "turbo run test:unit --filter=@next-openapi-gen/tests --continue=never",
+    "test:integration": "turbo run test:integration --filter=@next-openapi-gen/tests --continue=never",
+    "test:e2e": "turbo run test:e2e --filter=@next-openapi-gen/tests --continue=never",
+    "test:watch": "vitest --config vitest.config.ts",
+    "test:ui": "vitest --config vitest.config.ts --ui",
+    "test:coverage": "turbo run test:coverage --filter=@next-openapi-gen/tests --continue=never",
     "release": "np --no-cleanup --no-tests",
     "version": "conventional-changelog -p angular -i CHANGELOG.md -s -n .changelogrc.cjs && git add CHANGELOG.md"
   },
@@ -59,11 +66,14 @@
     "ora": "^8.2.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.54.2",
     "@types/js-yaml": "^4.0.9",
     "@types/node": "^24.3.0",
+    "@vitest/coverage-v8": "^3.2.4",
     "@vitest/ui": "^3.2.4",
     "conventional-changelog-cli": "^5.0.0",
     "np": "^10.2.0",
+    "turbo": "^2.5.5",
     "typescript": "^5.9.2",
     "vitest": "^3.2.4"
   },

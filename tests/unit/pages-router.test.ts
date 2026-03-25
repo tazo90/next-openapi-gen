@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { RouteProcessor } from "../src/lib/route-processor.js";
-import { PagesRouterStrategy } from "../src/lib/pages-router-strategy.js";
-import { OpenApiConfig } from "../src/types.js";
+import { RouteProcessor } from "../../src/lib/route-processor.js";
+import { PagesRouterStrategy } from "../../src/lib/pages-router-strategy.js";
+import { OpenApiConfig } from "../../src/types.js";
 
 describe("PagesRouterStrategy", () => {
   let strategy: PagesRouterStrategy;

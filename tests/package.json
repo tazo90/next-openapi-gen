@@ -1,0 +1,11 @@
+{
+  "name": "@next-openapi-gen/tests",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test:unit": "cd .. && vitest run --config vitest.config.ts --project unit",
+    "test:integration": "cd .. && vitest run --config vitest.config.ts --project integration",
+    "test:e2e": "cd .. && PLAYWRIGHT_BROWSERS_PATH=0 playwright install chromium && PLAYWRIGHT_BROWSERS_PATH=0 playwright test --config tests/e2e/playwright.config.ts",
+    "test:coverage": "cd .. && vitest run --config vitest.config.ts --coverage"
+  }
+}
