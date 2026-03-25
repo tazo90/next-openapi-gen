@@ -1,0 +1,36 @@
+{
+  "$schema": "./node_modules/oxfmt/configuration_schema.json",
+  "endOfLine": "lf",
+  "printWidth": 100,
+  "semi": true,
+  "singleQuote": false,
+  "sortImports": {
+    "ignoreCase": true,
+    "newlinesBetween": true,
+    "order": "asc"
+  },
+  "sortPackageJson": {
+    "sortScripts": true
+  },
+  "overrides": [
+    {
+      "files": ["**/*.md"],
+      "options": {
+        "printWidth": 120
+      }
+    }
+  ],
+  "ignorePatterns": [
+    "node_modules",
+    "dist",
+    "coverage",
+    ".next",
+    ".turbo",
+    ".vercel",
+    ".cursor/hooks/state",
+    ".agents",
+    ".claude",
+    "package-lock.json",
+    "CHANGELOG.md"
+  ]
+}

@@ -1,12 +1,13 @@
-import * as t from "@babel/types";
 import fs from "fs";
+
 import traverseModule from "@babel/traverse";
+import * as t from "@babel/types";
 
 const traverse = (traverseModule as any).default || traverseModule;
 
+import { DataTypes, OpenApiConfig } from "../types.js";
 import { RouterStrategy, HTTP_METHODS } from "./router-strategy.js";
 import { extractJSDocComments, parseTypeScriptFile } from "./utils.js";
-import { DataTypes, OpenApiConfig } from "../types.js";
 
 export class AppRouterStrategy implements RouterStrategy {
   private config: OpenApiConfig;
@@ -21,7 +22,7 @@ export class AppRouterStrategy implements RouterStrategy {
 
   processFile(
     filePath: string,
-    addRoute: (method: string, filePath: string, dataTypes: DataTypes) => void
+    addRoute: (method: string, filePath: string, dataTypes: DataTypes) => void,
   ): void {
     const content = fs.readFileSync(filePath, "utf-8");
     const ast = parseTypeScriptFile(content);
@@ -30,10 +31,7 @@ export class AppRouterStrategy implements RouterStrategy {
       ExportNamedDeclaration: (path) => {
         const declaration = path.node.declaration;
 
-        if (
-          t.isFunctionDeclaration(declaration) &&
-          t.isIdentifier(declaration.id)
-        ) {
+        if (t.isFunctionDeclaration(declaration) && t.isIdentifier(declaration.id)) {
           if (HTTP_METHODS.includes(declaration.id.name)) {
             const dataTypes = extractJSDocComments(path);
             addRoute(declaration.id.name, filePath, dataTypes);
@@ -65,14 +63,10 @@ export class AppRouterStrategy implements RouterStrategy {
     const apiDirIndex = normalizedPath.indexOf(normalizedApiDir);
 
     if (apiDirIndex === -1) {
-      throw new Error(
-        `Could not find apiDir "${this.config.apiDir}" in file path "${filePath}"`
-      );
+      throw new Error(`Could not find apiDir "${this.config.apiDir}" in file path "${filePath}"`);
     }
 
-    let relativePath = normalizedPath.substring(
-      apiDirIndex + normalizedApiDir.length
-    );
+    let relativePath = normalizedPath.substring(apiDirIndex + normalizedApiDir.length);
 
     // Remove the /route.ts or /route.tsx suffix
     relativePath = relativePath.replace(/\/route\.tsx?$/, "");

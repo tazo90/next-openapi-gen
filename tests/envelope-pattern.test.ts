@@ -1,7 +1,9 @@
-import { describe, it, expect } from "vitest";
-import { ZodSchemaConverter } from "../src/lib/zod-converter.js";
-import path from "path";
 import fs from "fs";
+import path from "path";
+
+import { describe, it, expect } from "vitest";
+
+import { ZodSchemaConverter } from "../src/lib/zod-converter.js";
 
 describe("Envelope Pattern with Nested Schema References", () => {
   it("should create $ref for nested schemas in envelope objects", () => {
@@ -27,16 +29,14 @@ const userSchema = z.object({
 export const UserResponseEnvelope = z.object({
   data: userSchema,
 });
-    `.trim()
+    `.trim(),
     );
 
     try {
       const converter = new ZodSchemaConverter(testDir);
 
       // Convert the envelope schema
-      const envelopeSchema = converter.convertZodSchemaToOpenApi(
-        "UserResponseEnvelope"
-      );
+      const envelopeSchema = converter.convertZodSchemaToOpenApi("UserResponseEnvelope");
 
       expect(envelopeSchema).toBeDefined();
       expect(envelopeSchema.type).toBe("object");
@@ -44,9 +44,7 @@ export const UserResponseEnvelope = z.object({
       expect(envelopeSchema.properties.data).toBeDefined();
 
       // The key fix: data property should have a $ref, not type: "object"
-      expect(envelopeSchema.properties.data.$ref).toBe(
-        "#/components/schemas/userSchema"
-      );
+      expect(envelopeSchema.properties.data.$ref).toBe("#/components/schemas/userSchema");
       expect(envelopeSchema.properties.data.type).toBeUndefined();
 
       // Check required fields - should only have "data" once
@@ -100,22 +98,18 @@ export const UserResponseEnvelope = z.object({
     timestamp: z.string(),
   }),
 });
-    `.trim()
+    `.trim(),
     );
 
     try {
       const converter = new ZodSchemaConverter(testDir);
 
-      const envelopeSchema = converter.convertZodSchemaToOpenApi(
-        "UserResponseEnvelope"
-      );
+      const envelopeSchema = converter.convertZodSchemaToOpenApi("UserResponseEnvelope");
 
       expect(envelopeSchema).toBeDefined();
 
       // Check the data property has a proper reference
-      expect(envelopeSchema.properties.data.$ref).toBe(
-        "#/components/schemas/userSchema"
-      );
+      expect(envelopeSchema.properties.data.$ref).toBe("#/components/schemas/userSchema");
 
       // Check required array has no duplicates
       const requiredSet = new Set(envelopeSchema.required);
@@ -127,9 +121,7 @@ export const UserResponseEnvelope = z.object({
       expect(schemas.addressSchema).toBeDefined();
 
       // Verify userSchema also has proper reference to addressSchema
-      expect(schemas.userSchema.properties.address.$ref).toBe(
-        "#/components/schemas/addressSchema"
-      );
+      expect(schemas.userSchema.properties.address.$ref).toBe("#/components/schemas/addressSchema");
     } finally {
       if (fs.existsSync(testFile)) {
         fs.unlinkSync(testFile);
@@ -158,7 +150,7 @@ export const DataEnvelope = z.object({
   data: z.string(),
   meta: metaSchema.optional(),
 });
-    `.trim()
+    `.trim(),
     );
 
     try {
@@ -175,9 +167,7 @@ export const DataEnvelope = z.object({
       // meta should still have a $ref even though it's optional
       expect(envelopeSchema.properties.meta).toBeDefined();
       expect(envelopeSchema.properties.meta.allOf).toBeDefined();
-      expect(envelopeSchema.properties.meta.allOf[0].$ref).toBe(
-        "#/components/schemas/metaSchema"
-      );
+      expect(envelopeSchema.properties.meta.allOf[0].$ref).toBe("#/components/schemas/metaSchema");
     } finally {
       if (fs.existsSync(testFile)) {
         fs.unlinkSync(testFile);

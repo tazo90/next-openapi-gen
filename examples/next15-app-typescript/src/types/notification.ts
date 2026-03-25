@@ -74,10 +74,7 @@ export interface PushNotification {
  * This demonstrates a discriminated union with a 'type' field as the discriminator
  * Each variant has different properties based on the notification channel
  */
-export type Notification =
-  | EmailNotification
-  | SmsNotification
-  | PushNotification;
+export type Notification = EmailNotification | SmsNotification | PushNotification;
 
 // ========================================
 // 5. Status Enum Pattern

@@ -1,6 +1,7 @@
 import fs from "fs";
-import fse from "fs-extra";
 import path from "path";
+
+import fse from "fs-extra";
 import ora from "ora";
 
 import { OpenApiGenerator } from "../lib/openapi-generator.js";

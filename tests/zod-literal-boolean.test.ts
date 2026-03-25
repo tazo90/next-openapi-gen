@@ -1,9 +1,11 @@
-import { describe, it, expect } from "vitest";
-import { ZodSchemaConverter } from "../src/lib/zod-converter.js";
-import { extractJSDocComments, parseTypeScriptFile } from "../src/lib/utils.js";
-import traverseModule from "@babel/traverse";
-import path from "path";
 import fs from "fs";
+import path from "path";
+
+import traverseModule from "@babel/traverse";
+import { describe, it, expect } from "vitest";
+
+import { extractJSDocComments, parseTypeScriptFile } from "../src/lib/utils.js";
+import { ZodSchemaConverter } from "../src/lib/zod-converter.js";
 
 const traverse = traverseModule.default || traverseModule;
 
@@ -27,7 +29,7 @@ export const successSchema = z.object({
   success: z.literal(true),
   data: z.string()
 });
-        `.trim()
+        `.trim(),
       );
 
       try {
@@ -41,8 +43,7 @@ export const successSchema = z.object({
           enum: [false],
         });
 
-        const successResult =
-          converter.convertZodSchemaToOpenApi("successSchema");
+        const successResult = converter.convertZodSchemaToOpenApi("successSchema");
         expect(successResult).toBeDefined();
         expect(successResult.type).toBe("object");
         expect(successResult.properties.success).toEqual({
@@ -69,15 +70,14 @@ export const errorSchema = z.object({
 });
 
 export type ServiceError = z.infer<typeof errorSchema>;
-        `.trim()
+        `.trim(),
       );
 
       try {
         const converter = new ZodSchemaConverter(testDir);
 
         // Resolve the type alias through z.infer mapping
-        const schema =
-          converter.convertZodSchemaToOpenApi("ServiceError");
+        const schema = converter.convertZodSchemaToOpenApi("ServiceError");
         expect(schema).toBeDefined();
         expect(schema.type).toBe("object");
         expect(schema.properties.success).toEqual({

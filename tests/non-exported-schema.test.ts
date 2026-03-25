@@ -1,7 +1,9 @@
-import { describe, it, expect } from "vitest";
-import { ZodSchemaConverter } from "../src/lib/zod-converter.js";
-import path from "path";
 import fs from "fs";
+import path from "path";
+
+import { describe, it, expect } from "vitest";
+
+import { ZodSchemaConverter } from "../src/lib/zod-converter.js";
 
 describe("Non-exported nested schemas", () => {
   it("should handle non-exported schemas referenced in exported schemas", () => {
@@ -24,7 +26,7 @@ const innerSchema = z.object({
 export const ResponseEnvelope = z.object({ 
   data: innerSchema 
 });
-    `.trim()
+    `.trim(),
     );
 
     try {
@@ -36,16 +38,14 @@ export const ResponseEnvelope = z.object({
       expect(envelopeSchema.properties.data).toBeDefined();
 
       // Should create a $ref even for non-exported schema
-      expect(envelopeSchema.properties.data.$ref).toBe(
-        "#/components/schemas/innerSchema"
-      );
+      expect(envelopeSchema.properties.data.$ref).toBe("#/components/schemas/innerSchema");
 
       // Verify the non-exported schema was also processed
       const schemas = converter.getProcessedSchemas();
       expect(schemas.innerSchema).toBeDefined();
       expect(schemas.innerSchema.properties.foo).toBeDefined();
       expect(schemas.innerSchema.properties.bar).toBeDefined();
-      
+
       // Should not have duplicate required fields
       expect(envelopeSchema.required).toEqual(["data"]);
     } finally {

@@ -33,19 +33,12 @@
           },
           "role": {
             "type": "string",
-            "enum": [
-              "admin",
-              "user"
-            ],
+            "enum": ["admin", "user"],
             "description": "Filter by role"
           },
           "status": {
             "type": "string",
-            "enum": [
-              "active",
-              "inactive",
-              "banned"
-            ],
+            "enum": ["active", "inactive", "banned"],
             "description": "Filter by status"
           }
         }
@@ -73,19 +66,12 @@
                 },
                 "role": {
                   "type": "string",
-                  "enum": [
-                    "admin",
-                    "user"
-                  ],
+                  "enum": ["admin", "user"],
                   "description": "User role"
                 },
                 "status": {
                   "type": "string",
-                  "enum": [
-                    "active",
-                    "inactive",
-                    "banned"
-                  ],
+                  "enum": ["active", "inactive", "banned"],
                   "description": "User status"
                 },
                 "createdAt": {
@@ -93,14 +79,7 @@
                   "description": "Account creation date"
                 }
               },
-              "required": [
-                "id",
-                "email",
-                "name",
-                "role",
-                "status",
-                "createdAt"
-              ]
+              "required": ["id", "email", "name", "role", "status", "createdAt"]
             },
             "description": "List of users"
           },
@@ -120,18 +99,11 @@
                 "description": "Total number of users"
               }
             },
-            "required": [
-              "page",
-              "limit",
-              "total"
-            ],
+            "required": ["page", "limit", "total"],
             "description": "Pagination information"
           }
         },
-        "required": [
-          "users",
-          "pagination"
-        ]
+        "required": ["users", "pagination"]
       },
       "DashboardResponse": {
         "type": "object",
@@ -156,22 +128,14 @@
             "description": "Owner user ID"
           }
         },
-        "required": [
-          "id",
-          "name",
-          "widgets",
-          "userId"
-        ]
+        "required": ["id", "name", "widgets", "userId"]
       },
       "UserSettings": {
         "type": "object",
         "properties": {
           "theme": {
             "type": "string",
-            "enum": [
-              "light",
-              "dark"
-            ],
+            "enum": ["light", "dark"],
             "description": "UI theme preference"
           },
           "notifications": {
@@ -187,12 +151,7 @@
             "description": "User timezone"
           }
         },
-        "required": [
-          "theme",
-          "notifications",
-          "language",
-          "timezone"
-        ]
+        "required": ["theme", "notifications", "language", "timezone"]
       },
       "LoginRequest": {
         "type": "object",
@@ -208,10 +167,7 @@
             "description": "User password"
           }
         },
-        "required": [
-          "email",
-          "password"
-        ]
+        "required": ["email", "password"]
       },
       "LoginResponse": {
         "type": "object",
@@ -237,18 +193,11 @@
                 "description": "User full name"
               }
             },
-            "required": [
-              "id",
-              "email",
-              "name"
-            ],
+            "required": ["id", "email", "name"],
             "description": "User information"
           }
         },
-        "required": [
-          "token",
-          "user"
-        ]
+        "required": ["token", "user"]
       },
       "User": {
         "type": "object",
@@ -282,10 +231,7 @@
             "description": "The banner image"
           }
         },
-        "required": [
-          "name",
-          "avatar"
-        ]
+        "required": ["name", "avatar"]
       },
       "SearchQueryParams": {
         "type": "object",
@@ -304,16 +250,11 @@
           },
           "sort": {
             "type": "string",
-            "enum": [
-              "asc",
-              "desc"
-            ],
+            "enum": ["asc", "desc"],
             "description": "Sort order"
           }
         },
-        "required": [
-          "q"
-        ]
+        "required": ["q"]
       },
       "SearchResponse": {
         "type": "object",
@@ -336,11 +277,7 @@
                   "description": "Relevance score"
                 }
               },
-              "required": [
-                "id",
-                "title",
-                "score"
-              ]
+              "required": ["id", "title", "score"]
             },
             "description": "Search results"
           },
@@ -349,10 +286,7 @@
             "description": "Total results found"
           }
         },
-        "required": [
-          "results",
-          "total"
-        ]
+        "required": ["results", "total"]
       },
       "GetUserProfilePathParams": {
         "type": "object",
@@ -362,9 +296,7 @@
             "description": "User ID"
           }
         },
-        "required": [
-          "id"
-        ]
+        "required": ["id"]
       },
       "Users": {
         "type": "object",
@@ -377,10 +309,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "id",
-          "name"
-        ]
+        "required": ["id", "name"]
       },
       "Image": {
         "type": "object",
@@ -390,9 +319,7 @@
             "description": "The url"
           }
         },
-        "required": [
-          "url"
-        ]
+        "required": ["url"]
       }
     },
     "responses": {
@@ -464,9 +391,7 @@
         "operationId": "get-users",
         "summary": "List all users (Admin only)\r",
         "description": "Retrieves a paginated list of all users in the system",
-        "tags": [
-          "Admin"
-        ],
+        "tags": ["Admin"],
         "parameters": [
           {
             "in": "query",
@@ -493,10 +418,7 @@
             "name": "role",
             "schema": {
               "type": "string",
-              "enum": [
-                "admin",
-                "user"
-              ],
+              "enum": ["admin", "user"],
               "description": "Filter by role"
             },
             "required": false,
@@ -507,11 +429,7 @@
             "name": "status",
             "schema": {
               "type": "string",
-              "enum": [
-                "active",
-                "inactive",
-                "banned"
-              ],
+              "enum": ["active", "inactive", "banned"],
               "description": "Filter by status"
             },
             "required": false,
@@ -548,9 +466,7 @@
         "operationId": "post-auth",
         "summary": "User login\r",
         "description": "Authenticate user and return access token",
-        "tags": [
-          "Authentication"
-        ],
+        "tags": ["Authentication"],
         "parameters": [],
         "requestBody": {
           "content": {
@@ -586,9 +502,7 @@
         "operationId": "get-dashboard",
         "summary": "Get user dashboard\r",
         "description": "Retrieves the user's dashboard configuration",
-        "tags": [
-          "Dashboard"
-        ],
+        "tags": ["Dashboard"],
         "parameters": [],
         "security": [
           {
@@ -618,9 +532,7 @@
         "operationId": "put-dashboard",
         "summary": "Update dashboard\r",
         "description": "Updates the user's dashboard configuration",
-        "tags": [
-          "Dashboard"
-        ],
+        "tags": ["Dashboard"],
         "parameters": [],
         "security": [
           {
@@ -661,9 +573,7 @@
         "operationId": "get-settings",
         "summary": "Get user settings\r",
         "description": "Retrieves the user's personal settings",
-        "tags": [
-          "Settings"
-        ],
+        "tags": ["Settings"],
         "parameters": [],
         "security": [
           {
@@ -693,9 +603,7 @@
         "operationId": "patch-settings",
         "summary": "Update user settings\r",
         "description": "Updates the user's personal settings",
-        "tags": [
-          "Settings"
-        ],
+        "tags": ["Settings"],
         "parameters": [],
         "security": [
           {
@@ -736,9 +644,7 @@
         "operationId": "get-test-optional",
         "summary": "This is a test user endpoint\r",
         "description": "Test User Description",
-        "tags": [
-          "Test-optional"
-        ],
+        "tags": ["Test-optional"],
         "parameters": [],
         "responses": {
           "200": {
@@ -765,9 +671,7 @@
         "operationId": "get-test-query-params",
         "summary": "Search endpoint with @queryParams tag\r",
         "description": "Test endpoint to verify @queryParams works (to avoid prettier-plugin-jsdoc conflicts)",
-        "tags": [
-          "Test-query-params"
-        ],
+        "tags": ["Test-query-params"],
         "parameters": [
           {
             "in": "query",
@@ -804,10 +708,7 @@
             "name": "sort",
             "schema": {
               "type": "string",
-              "enum": [
-                "asc",
-                "desc"
-              ],
+              "enum": ["asc", "desc"],
               "description": "Sort order"
             },
             "required": false,
@@ -839,9 +740,7 @@
         "operationId": "get-users-{id}",
         "summary": "Read the user profile\r",
         "description": "Detailed user profile",
-        "tags": [
-          "Users"
-        ],
+        "tags": ["Users"],
         "parameters": [
           {
             "in": "path",
@@ -889,9 +788,7 @@
         "operationId": "delete-users-{id}",
         "summary": "Delete user\r",
         "description": "Delete a user by ID",
-        "tags": [
-          "Users"
-        ],
+        "tags": ["Users"],
         "parameters": [
           {
             "in": "path",

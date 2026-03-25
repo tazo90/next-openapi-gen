@@ -8,11 +8,13 @@ export const LoginRequest = z.object({
 
 export const LoginResponse = z.object({
   token: z.string().describe("JWT access token"),
-  user: z.object({
-    id: z.string().describe("User ID"),
-    email: z.string().email().describe("User email"),
-    name: z.string().describe("User full name"),
-  }).describe("User information"),
+  user: z
+    .object({
+      id: z.string().describe("User ID"),
+      email: z.string().email().describe("User email"),
+      name: z.string().describe("User full name"),
+    })
+    .describe("User information"),
 });
 
 /**
@@ -25,7 +27,7 @@ export const LoginResponse = z.object({
  */
 export async function POST(request: NextRequest) {
   const body = await request.json();
-  
+
   return NextResponse.json({
     token: "jwt-token-here",
     user: {

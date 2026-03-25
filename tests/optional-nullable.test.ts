@@ -1,7 +1,9 @@
-import { describe, it, expect } from "vitest";
-import { ZodSchemaConverter } from "../src/lib/zod-converter.js";
-import path from "path";
 import fs from "fs";
+import path from "path";
+
+import { describe, it, expect } from "vitest";
+
+import { ZodSchemaConverter } from "../src/lib/zod-converter.js";
 
 describe("Optional vs Nullable vs Nullish handling (GitHub #84)", () => {
   const testDir = path.join(process.cwd(), "tests", "fixtures");

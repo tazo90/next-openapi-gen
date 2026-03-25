@@ -1,16 +1,17 @@
-import path from "path";
-import fse from "fs-extra";
-import fs from "fs";
-import ora from "ora";
 import { exec } from "child_process";
+import fs from "fs";
+import path from "path";
 import util from "util";
 
-import openapiTemplate from "../openapi-template.js";
-import { scalarDeps, scalarDevDeps, ScalarUI } from "../components/scalar.js";
-import { swaggerDeps, swaggerDevDeps, SwaggerUI } from "../components/swagger.js";
-import { redocDeps, redocDevDeps, RedocUI } from "../components/redoc.js";
-import { stoplightDeps, stoplightDevDeps, StoplightUI } from "../components/stoplight.js";
+import fse from "fs-extra";
+import ora from "ora";
+
 import { rapidocDeps, rapidocDevDeps, RapidocUI } from "../components/rapidoc.js";
+import { redocDeps, redocDevDeps, RedocUI } from "../components/redoc.js";
+import { scalarDeps, scalarDevDeps, ScalarUI } from "../components/scalar.js";
+import { stoplightDeps, stoplightDevDeps, StoplightUI } from "../components/stoplight.js";
+import { swaggerDeps, swaggerDevDeps, SwaggerUI } from "../components/swagger.js";
+import openapiTemplate from "../openapi-template.js";
 
 const execPromise = util.promisify(exec);
 
@@ -20,7 +21,9 @@ async function hasDependency(packageName: string): Promise<boolean> {
   try {
     const packageJsonPath = path.join(process.cwd(), "package.json");
     const packageJson = await fse.readJson(packageJsonPath);
-    return !!(packageJson.dependencies?.[packageName] || packageJson.devDependencies?.[packageName]);
+    return !!(
+      packageJson.dependencies?.[packageName] || packageJson.devDependencies?.[packageName]
+    );
   } catch {
     return false;
   }
@@ -142,9 +145,7 @@ async function createDocsPage(ui: string, outputFile: string) {
 
 async function installDependencies(ui: string, schema: string | string[]) {
   const packageManager = await getPackageManager();
-  const installCmd = `${packageManager} ${
-    packageManager === "npm" ? "install" : "add"
-  }`;
+  const installCmd = `${packageManager} ${packageManager === "npm" ? "install" : "add"}`;
 
   // Install UI dependencies
   if (ui !== "none") {

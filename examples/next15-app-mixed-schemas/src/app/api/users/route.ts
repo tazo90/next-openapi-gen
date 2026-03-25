@@ -48,6 +48,6 @@ export async function POST(request: NextRequest) {
       ...body,
       createdAt: new Date(),
     },
-    { status: 201 }
+    { status: 201 },
   );
 }

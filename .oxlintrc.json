@@ -1,0 +1,24 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "env": {
+    "node": true
+  },
+  "ignorePatterns": [
+    "dist",
+    "coverage",
+    "node_modules",
+    ".next",
+    ".turbo",
+    ".vercel",
+    ".agents",
+    ".claude"
+  ],
+  "overrides": [
+    {
+      "files": ["tests/fixtures/**/*.ts"],
+      "rules": {
+        "no-unused-vars": "off"
+      }
+    }
+  ]
+}

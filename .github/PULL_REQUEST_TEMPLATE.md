@@ -40,6 +40,7 @@ Update README
 ```
 
 **Why?** We use squash merge - your PR title becomes the commit message and is used for:
+
 - 📊 Auto-generating changelogs
 - 🏷️ Version bumping (`feat:` = minor, `fix:` = patch)
 - 📖 Clean git history

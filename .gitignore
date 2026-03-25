@@ -1,4 +1,14 @@
 **/node_modules
 **/dist
+**/.next
+**/coverage
+.turbo
+.vercel
+.vitest
+*.tsbuildinfo
+.DS_Store
 .npmrc
+.agents/
+.claude/
+.cursor/hooks/state/
 

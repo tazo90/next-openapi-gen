@@ -1,13 +1,10 @@
-import { describe, it, expect } from "vitest";
-import { SchemaProcessor } from "../src/lib/schema-processor.js";
 import path from "path";
 
-const fixtureBase = path.join(
-  process.cwd(),
-  "tests",
-  "fixtures",
-  "multi-schema-dir"
-);
+import { describe, it, expect } from "vitest";
+
+import { SchemaProcessor } from "../src/lib/schema-processor.js";
+
+const fixtureBase = path.join(process.cwd(), "tests", "fixtures", "multi-schema-dir");
 const typesDir = path.join(fixtureBase, "types");
 const schemasDir = path.join(fixtureBase, "schemas");
 
@@ -39,7 +36,7 @@ describe("Multiple schemaDir support", () => {
   it("should handle non-existent directory gracefully", () => {
     const processor = new SchemaProcessor(
       [typesDir, path.join(fixtureBase, "nonexistent")],
-      "typescript"
+      "typescript",
     );
 
     const userDef = processor.findSchemaDefinition("User", "response");

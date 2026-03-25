@@ -1,7 +1,9 @@
-import { describe, it, expect, beforeEach } from "vitest";
-import { ZodSchemaConverter } from "../src/lib/zod-converter.js";
 import path from "path";
 import { fileURLToPath } from "url";
+
+import { describe, it, expect, beforeEach } from "vitest";
+
+import { ZodSchemaConverter } from "../src/lib/zod-converter.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -209,7 +211,7 @@ describe("Zod Factory Functions", () => {
     });
 
     it("should handle optional fields in pagination metadata", () => {
-      const result = converter.convertZodSchemaToOpenApi("PaginatedUsersSchema");
+      converter.convertZodSchemaToOpenApi("PaginatedUsersSchema");
 
       // Get the PaginationMeta schema (referenced by pagination field)
       const paginationMeta = converter.zodSchemas["PaginationMeta"];
@@ -239,19 +241,23 @@ describe("Zod Factory Functions", () => {
     });
 
     it("should preserve field-level descriptions in pagination meta", () => {
-      const result = converter.convertZodSchemaToOpenApi("PaginatedUsersSchema");
+      converter.convertZodSchemaToOpenApi("PaginatedUsersSchema");
 
       // Get the PaginationMeta schema (referenced by pagination field)
       const paginationMeta = converter.zodSchemas["PaginationMeta"];
       expect(paginationMeta).toBeDefined();
-      expect(paginationMeta.properties!.nextCursor.description).toContain("Cursor for the next page");
-      expect(paginationMeta.properties!.hasMore.description).toContain("Whether there are more items");
+      expect(paginationMeta.properties!.nextCursor.description).toContain(
+        "Cursor for the next page",
+      );
+      expect(paginationMeta.properties!.hasMore.description).toContain(
+        "Whether there are more items",
+      );
     });
   });
 
   describe("Type Validation", () => {
     it("should generate correct types for pagination fields", () => {
-      const result = converter.convertZodSchemaToOpenApi("PaginatedUsersSchema");
+      converter.convertZodSchemaToOpenApi("PaginatedUsersSchema");
 
       // Get the PaginationMeta schema (referenced by pagination field)
       const paginationMeta = converter.zodSchemas["PaginationMeta"];
@@ -264,7 +270,7 @@ describe("Zod Factory Functions", () => {
     });
 
     it("should apply validation constraints", () => {
-      const result = converter.convertZodSchemaToOpenApi("PaginatedUsersSchema");
+      converter.convertZodSchemaToOpenApi("PaginatedUsersSchema");
 
       // Get the PaginationMeta schema (referenced by pagination field)
       const paginationMeta = converter.zodSchemas["PaginationMeta"];
@@ -279,7 +285,7 @@ describe("Zod Factory Functions", () => {
     });
 
     it("should handle nullable fields correctly", () => {
-      const result = converter.convertZodSchemaToOpenApi("PaginatedUsersSchema");
+      converter.convertZodSchemaToOpenApi("PaginatedUsersSchema");
 
       // Get the PaginationMeta schema (referenced by pagination field)
       const paginationMeta = converter.zodSchemas["PaginationMeta"];
@@ -287,7 +293,9 @@ describe("Zod Factory Functions", () => {
 
       // nextCursor is nullable
       const nextCursor = paginationMeta.properties!.nextCursor;
-      expect(nextCursor.nullable || nextCursor.type === "null" || Array.isArray(nextCursor.type)).toBeTruthy();
+      expect(
+        nextCursor.nullable || nextCursor.type === "null" || Array.isArray(nextCursor.type),
+      ).toBeTruthy();
     });
   });
 });

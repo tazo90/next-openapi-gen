@@ -1,0 +1,19 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Vitest Watch",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "npm run test:watch",
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "name": "Vitest UI",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "npm run test:ui",
+      "cwd": "${workspaceFolder}"
+    }
+  ]
+}

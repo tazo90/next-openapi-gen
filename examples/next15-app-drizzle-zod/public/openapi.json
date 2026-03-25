@@ -17,9 +17,7 @@
         "operationId": "get-posts",
         "summary": "Get all posts\r",
         "description": "Retrieve a paginated list of blog posts with optional filters",
-        "tags": [
-          "Posts"
-        ],
+        "tags": ["Posts"],
         "parameters": [
           {
             "in": "query",
@@ -46,10 +44,7 @@
             "name": "published",
             "schema": {
               "type": "string",
-              "enum": [
-                "true",
-                "false"
-              ],
+              "enum": ["true", "false"],
               "description": "Filter by publication status"
             },
             "required": false,
@@ -95,9 +90,7 @@
         "operationId": "post-posts",
         "summary": "Create a new post\r",
         "description": "Create a new blog post with Drizzle-Zod validation",
-        "tags": [
-          "Posts"
-        ],
+        "tags": ["Posts"],
         "parameters": [],
         "requestBody": {
           "content": {
@@ -137,9 +130,7 @@
         "operationId": "get-posts-{id}",
         "summary": "Get post by ID\r",
         "description": "Retrieve a single blog post by its ID",
-        "tags": [
-          "Posts"
-        ],
+        "tags": ["Posts"],
         "parameters": [
           {
             "in": "path",
@@ -179,9 +170,7 @@
         "operationId": "patch-posts-{id}",
         "summary": "Update post\r",
         "description": "Update an existing blog post",
-        "tags": [
-          "Posts"
-        ],
+        "tags": ["Posts"],
         "parameters": [
           {
             "in": "path",
@@ -231,9 +220,7 @@
         "operationId": "delete-posts-{id}",
         "summary": "Delete post\r",
         "description": "Delete a blog post by ID",
-        "tags": [
-          "Posts"
-        ],
+        "tags": ["Posts"],
         "parameters": [
           {
             "in": "path",
@@ -281,10 +268,7 @@
           },
           "published": {
             "type": "string",
-            "enum": [
-              "true",
-              "false"
-            ],
+            "enum": ["true", "false"],
             "description": "Filter by publication status"
           },
           "authorId": {
@@ -380,12 +364,7 @@
             "description": "ID of the post author"
           }
         },
-        "required": [
-          "title",
-          "slug",
-          "content",
-          "authorId"
-        ]
+        "required": ["title", "slug", "content", "authorId"]
       },
       "PostIdParams": {
         "type": "object",
@@ -396,9 +375,7 @@
             "description": "Post ID"
           }
         },
-        "required": [
-          "id"
-        ]
+        "required": ["id"]
       },
       "UpdatePostSchema": {
         "type": "object",

@@ -1,8 +1,10 @@
+import path from "path";
+
+import fs from "fs-extra";
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
+
 import { RouteProcessor } from "../src/lib/route-processor.js";
 import { OpenApiConfig } from "../src/types.js";
-import fs from "fs-extra";
-import path from "path";
 
 describe("Ignore Routes - Integration Tests", () => {
   const testDir = path.join(process.cwd(), "tests", "fixtures", "app", "api");

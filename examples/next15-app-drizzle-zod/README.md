@@ -74,14 +74,7 @@ src/
 
 ```typescript
 // src/db/schema.ts
-import {
-  pgTable,
-  serial,
-  varchar,
-  text,
-  boolean,
-  timestamp,
-} from "drizzle-orm/pg-core";
+import { pgTable, serial, varchar, text, boolean, timestamp } from "drizzle-orm/pg-core";
 
 export const posts = pgTable("posts", {
   id: serial("id").primaryKey(),

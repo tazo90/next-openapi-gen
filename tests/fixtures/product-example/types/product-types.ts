@@ -8,12 +8,7 @@
  * - Nested utility types: Awaited<ReturnType<typeof func>>
  */
 
-import {
-  getProductById,
-  getProductSummary,
-  createProduct,
-  updateStock,
-} from "../api/route.utils";
+import { getProductById, getProductSummary, createProduct, updateStock } from "../api/route.utils";
 
 // ============================================================================
 // Example 1: Awaited<ReturnType<typeof func>> - The main bug fix!
@@ -31,9 +26,7 @@ export type ProductByIdResponse = Awaited<ReturnType<typeof getProductById>>;
 /**
  * Another example: Extract return type from async function
  */
-export type ProductSummaryResponse = Awaited<
-  ReturnType<typeof getProductSummary>
->;
+export type ProductSummaryResponse = Awaited<ReturnType<typeof getProductSummary>>;
 
 // ============================================================================
 // Example 2: ReturnType<typeof func> - Sync functions
@@ -89,9 +82,7 @@ export type UpdateStockResponse = ReturnType<typeof updateStock>;
 /**
  * You can create complex type transformations
  */
-export type ProductResponseData = Awaited<
-  ReturnType<typeof getProductById>
->["product"];
+export type ProductResponseData = Awaited<ReturnType<typeof getProductById>>["product"];
 
 // ============================================================================
 // Example 6: Request/Response types for API routes

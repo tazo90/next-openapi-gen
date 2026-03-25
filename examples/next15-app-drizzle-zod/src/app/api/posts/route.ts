@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import {
-  CreatePostSchema,
-  PostResponseSchema,
-  PostsQueryParams,
-} from "@/schemas/post";
+
+import { CreatePostSchema, PostResponseSchema, PostsQueryParams } from "@/schemas/post";
 
 /**
  * Get all posts
@@ -82,12 +79,9 @@ export async function POST(request: NextRequest) {
     if (error instanceof Error) {
       return NextResponse.json(
         { error: "Validation failed", details: error.message },
-        { status: 400 }
+        { status: 400 },
       );
     }
-    return NextResponse.json(
-      { error: "Failed to create post" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to create post" }, { status: 500 });
   }
 }

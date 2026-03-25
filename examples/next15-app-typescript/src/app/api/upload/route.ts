@@ -25,26 +25,17 @@ export async function POST(request: NextRequest) {
     }
 
     if (!category) {
-      return NextResponse.json(
-        { error: "Category is required" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Category is required" }, { status: 400 });
     }
 
     // Validate file type
     if (!file.type.startsWith("image/")) {
-      return NextResponse.json(
-        { error: "Only image files are allowed" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Only image files are allowed" }, { status: 400 });
     }
 
     // Validate file size (5MB max)
     if (file.size > 5 * 1024 * 1024) {
-      return NextResponse.json(
-        { error: "File size must be less than 5MB" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "File size must be less than 5MB" }, { status: 400 });
     }
 
     // Here you would typically:

@@ -1,5 +1,6 @@
 import fs from "fs";
 import path from "path";
+
 import traverseModule from "@babel/traverse";
 import * as t from "@babel/types";
 import yaml from "js-yaml";
@@ -7,8 +8,6 @@ import yaml from "js-yaml";
 // Handle both ES modules and CommonJS
 const traverse = (traverseModule as any).default || traverseModule;
 
-import { parseTypeScriptFile } from "./utils.js";
-import { ZodSchemaConverter } from "./zod-converter.js";
 import {
   ContentType,
   OpenAPIDefinition,
@@ -17,22 +16,20 @@ import {
   SchemaType,
 } from "../types.js";
 import { logger } from "./logger.js";
+import { parseTypeScriptFile } from "./utils.js";
+import { ZodSchemaConverter } from "./zod-converter.js";
 
 /**
  * Normalize schemaType to array
  */
-function normalizeSchemaTypes(
-  schemaType: SchemaType | SchemaType[]
-): SchemaType[] {
+function normalizeSchemaTypes(schemaType: SchemaType | SchemaType[]): SchemaType[] {
   return Array.isArray(schemaType) ? schemaType : [schemaType];
 }
 
 /**
  * Normalize schemaDir to array
  */
-function normalizeSchemaDirs(
-  schemaDir: string | string[]
-): string[] {
+function normalizeSchemaDirs(schemaDir: string | string[]): string[] {
   return Array.isArray(schemaDir) ? schemaDir : [schemaDir];
 }
 
@@ -60,7 +57,7 @@ export class SchemaProcessor {
     schemaDir: string | string[],
     schemaType: SchemaType | SchemaType[] = "typescript",
     schemaFiles?: string[],
-    apiDir?: string
+    apiDir?: string,
   ) {
     this.schemaDirs = normalizeSchemaDirs(schemaDir).map((d) => path.resolve(d));
     this.schemaTypes = normalizeSchemaTypes(schemaType);
@@ -103,21 +100,18 @@ export class SchemaProcessor {
         }
 
         // Extract schemas from OpenAPI structure or use file content directly
-        const schemas =
-          parsed?.components?.schemas || parsed?.schemas || parsed;
+        const schemas = parsed?.components?.schemas || parsed?.schemas || parsed;
 
         if (typeof schemas === "object" && schemas !== null) {
           Object.assign(this.customSchemas, schemas);
           logger.log(`✓ Loaded custom schemas from: ${filePath}`);
         } else {
           logger.warn(
-            `No valid schemas found in ${filePath}. Expected OpenAPI format with components.schemas or plain object.`
+            `No valid schemas found in ${filePath}. Expected OpenAPI format with components.schemas or plain object.`,
           );
         }
       } catch (error) {
-        logger.warn(
-          `Failed to load schema file ${filePath}: ${error.message}`
-        );
+        logger.warn(`Failed to load schema file ${filePath}: ${error.message}`);
       }
     }
   }
@@ -158,10 +152,7 @@ export class SchemaProcessor {
     return merged;
   }
 
-  public findSchemaDefinition(
-    schemaName: string,
-    contentType: ContentType
-  ): OpenAPIDefinition {
+  public findSchemaDefinition(schemaName: string, contentType: ContentType): OpenAPIDefinition {
     // Assign type that is actually processed
     this.contentType = contentType;
 
@@ -181,26 +172,20 @@ export class SchemaProcessor {
       logger.debug(`Looking for Zod schema: ${schemaName}`);
 
       // Check type mapping first
-      const mappedSchemaName =
-        this.zodSchemaConverter.typeToSchemaMapping[schemaName];
+      const mappedSchemaName = this.zodSchemaConverter.typeToSchemaMapping[schemaName];
       if (mappedSchemaName) {
-        logger.debug(
-          `Type '${schemaName}' is mapped to Zod schema '${mappedSchemaName}'`
-        );
+        logger.debug(`Type '${schemaName}' is mapped to Zod schema '${mappedSchemaName}'`);
       }
 
       // Try to convert Zod schema
-      const zodSchema =
-        this.zodSchemaConverter.convertZodSchemaToOpenApi(schemaName);
+      const zodSchema = this.zodSchemaConverter.convertZodSchemaToOpenApi(schemaName);
       if (zodSchema) {
         logger.debug(`Found and processed Zod schema: ${schemaName}`);
         this.openapiDefinitions[schemaName] = zodSchema;
         return zodSchema;
       }
 
-      logger.debug(
-        `No Zod schema found for ${schemaName}, trying TypeScript fallback`
-      );
+      logger.debug(`No Zod schema found for ${schemaName}, trying TypeScript fallback`);
     }
 
     // Fall back to TypeScript types
@@ -255,7 +240,9 @@ export class SchemaProcessor {
         // Handle named imports: import { foo, bar } from './file'
         path.node.specifiers.forEach((specifier: any) => {
           if (t.isImportSpecifier(specifier)) {
-            const importedName = t.isIdentifier(specifier.imported) ? specifier.imported.name : specifier.imported.value;
+            const importedName = t.isIdentifier(specifier.imported)
+              ? specifier.imported.name
+              : specifier.imported.value;
             this.importMap[normalizedPath][importedName] = importPath;
           }
           // Handle default imports: import foo from './file'
@@ -279,7 +266,7 @@ export class SchemaProcessor {
    */
   private resolveImportPath(importPath: string, fromFilePath: string): string | null {
     // Skip node_modules imports
-    if (!importPath.startsWith('.')) {
+    if (!importPath.startsWith(".")) {
       return null;
     }
 
@@ -287,13 +274,13 @@ export class SchemaProcessor {
     let resolvedPath = path.resolve(fromDir, importPath);
 
     // Try with .ts extension
-    if (fs.existsSync(resolvedPath + '.ts')) {
-      return resolvedPath + '.ts';
+    if (fs.existsSync(resolvedPath + ".ts")) {
+      return resolvedPath + ".ts";
     }
 
     // Try with .tsx extension
-    if (fs.existsSync(resolvedPath + '.tsx')) {
-      return resolvedPath + '.tsx';
+    if (fs.existsSync(resolvedPath + ".tsx")) {
+      return resolvedPath + ".tsx";
     }
 
     // Try as-is (might already have extension)
@@ -316,9 +303,10 @@ export class SchemaProcessor {
         if (path.node.id && t.isIdentifier(path.node.id)) {
           const name = path.node.id.name;
           if (!this.typeDefinitions[name]) {
-            const node = (path.node.typeParameters && path.node.typeParameters.params.length > 0)
-              ? path.node
-              : path.node.typeAnnotation;
+            const node =
+              path.node.typeParameters && path.node.typeParameters.params.length > 0
+                ? path.node
+                : path.node.typeAnnotation;
             this.typeDefinitions[name] = { node, filePath: currentFile };
           }
         }
@@ -356,9 +344,10 @@ export class SchemaProcessor {
           if (typeDecl.id && t.isIdentifier(typeDecl.id)) {
             const name = typeDecl.id.name;
             if (!this.typeDefinitions[name]) {
-              const node = (typeDecl.typeParameters && typeDecl.typeParameters.params.length > 0)
-                ? typeDecl
-                : typeDecl.typeAnnotation;
+              const node =
+                typeDecl.typeParameters && typeDecl.typeParameters.params.length > 0
+                  ? typeDecl
+                  : typeDecl.typeAnnotation;
               this.typeDefinitions[name] = { node, filePath: currentFile };
             }
           }
@@ -381,9 +370,10 @@ export class SchemaProcessor {
         if (t.isIdentifier(path.node.id, { name: schemaName })) {
           const name = path.node.id.name;
           // Store the full node for generic types, just the type annotation for regular types
-          const node = (path.node.typeParameters && path.node.typeParameters.params.length > 0)
-            ? path.node // Store the full declaration for generic types
-            : path.node.typeAnnotation; // Store just the type annotation for regular types
+          const node =
+            path.node.typeParameters && path.node.typeParameters.params.length > 0
+              ? path.node // Store the full declaration for generic types
+              : path.node.typeAnnotation; // Store just the type annotation for regular types
           this.typeDefinitions[name] = { node, filePath: currentFile };
         }
       },
@@ -451,12 +441,8 @@ export class SchemaProcessor {
 
     try {
       // If we are using Zod and the given type is not found yet, try using Zod converter first
-      if (
-        this.schemaTypes.includes("zod") &&
-        !this.openapiDefinitions[typeName]
-      ) {
-        const zodSchema =
-          this.zodSchemaConverter.convertZodSchemaToOpenApi(typeName);
+      if (this.schemaTypes.includes("zod") && !this.openapiDefinitions[typeName]) {
+        const zodSchema = this.zodSchemaConverter.convertZodSchemaToOpenApi(typeName);
         if (zodSchema) {
           this.openapiDefinitions[typeName] = zodSchema;
           return zodSchema;
@@ -529,9 +515,7 @@ export class SchemaProcessor {
               const options = this.getPropertyOptions(member);
 
               const property = {
-                ...this.resolveTSNodeType(
-                  member.typeAnnotation?.typeAnnotation
-                ),
+                ...this.resolveTSNodeType(member.typeAnnotation?.typeAnnotation),
                 ...options,
               };
 
@@ -579,9 +563,7 @@ export class SchemaProcessor {
   }
 
   private isDateObject(node: any): boolean {
-    return (
-      t.isNewExpression(node) && t.isIdentifier(node.callee, { name: "Date" })
-    );
+    return t.isNewExpression(node) && t.isIdentifier(node.callee, { name: "Date" });
   }
 
   private isDateNode(node: any): boolean {
@@ -594,13 +576,8 @@ export class SchemaProcessor {
     if (t.isTSStringKeyword(node)) return { type: "string" };
     if (t.isTSNumberKeyword(node)) return { type: "number" };
     if (t.isTSBooleanKeyword(node)) return { type: "boolean" };
-    if (t.isTSAnyKeyword(node) || t.isTSUnknownKeyword(node))
-      return { type: "object" };
-    if (
-      t.isTSVoidKeyword(node) ||
-      t.isTSNullKeyword(node) ||
-      t.isTSUndefinedKeyword(node)
-    )
+    if (t.isTSAnyKeyword(node) || t.isTSUnknownKeyword(node)) return { type: "object" };
+    if (t.isTSVoidKeyword(node) || t.isTSNullKeyword(node) || t.isTSUndefinedKeyword(node))
       return { type: "null" };
     if (this.isDateNode(node)) return { type: "string", format: "date-time" };
 
@@ -706,10 +683,7 @@ export class SchemaProcessor {
 
       if (typeName === "Record") {
         if (node.typeParameters && node.typeParameters.params.length > 1) {
-          const keyType = this.resolveTSNodeType(node.typeParameters.params[0]);
-          const valueType = this.resolveTSNodeType(
-            node.typeParameters.params[1]
-          );
+          const valueType = this.resolveTSNodeType(node.typeParameters.params[1]);
 
           return {
             type: "object",
@@ -719,11 +693,7 @@ export class SchemaProcessor {
         return { type: "object", additionalProperties: true };
       }
 
-      if (
-        typeName === "Partial" ||
-        typeName === "Required" ||
-        typeName === "Readonly"
-      ) {
+      if (typeName === "Partial" || typeName === "Required" || typeName === "Readonly") {
         if (node.typeParameters && node.typeParameters.params.length > 0) {
           return this.resolveTSNodeType(node.typeParameters.params[0]);
         }
@@ -744,9 +714,7 @@ export class SchemaProcessor {
 
           // ReturnType<typeof functionName>
           if (t.isTSTypeQuery(typeParam)) {
-            const funcName = t.isIdentifier(typeParam.exprName)
-              ? typeParam.exprName.name
-              : null;
+            const funcName = t.isIdentifier(typeParam.exprName) ? typeParam.exprName.name : null;
 
             if (funcName) {
               // Save current file path before findSchemaDefinition which may change it
@@ -756,7 +724,6 @@ export class SchemaProcessor {
               this.findSchemaDefinition(funcName, this.contentType);
               let funcDefEntry = this.typeDefinitions[funcName];
               let funcNode = funcDefEntry?.node || funcDefEntry; // Support both old and new format
-              const funcFilePath = funcDefEntry?.filePath;
 
               // If not found, check if it's an imported function
               // Use the saved file path (where the utility type is defined)
@@ -797,14 +764,14 @@ export class SchemaProcessor {
                 } else {
                   logger.warn(
                     `ReturnType<typeof ${funcName}>: Function '${funcName}' does not have an explicit return type annotation. ` +
-                      `Add a return type to the function signature for accurate schema generation.`
+                      `Add a return type to the function signature for accurate schema generation.`,
                   );
                   return { type: "object" };
                 }
               } else {
                 logger.warn(
                   `ReturnType<typeof ${funcName}>: Function '${funcName}' not found in schema files or imports. ` +
-                    `Ensure the function is exported and imported correctly.`
+                    `Ensure the function is exported and imported correctly.`,
                 );
                 return { type: "object" };
               }
@@ -814,7 +781,7 @@ export class SchemaProcessor {
           // Fallback: If not TSTypeQuery, try resolving directly
           logger.warn(
             `ReturnType<T>: Expected 'typeof functionName' but got a different type. ` +
-              `Use ReturnType<typeof yourFunction> pattern for best results.`
+              `Use ReturnType<typeof yourFunction> pattern for best results.`,
           );
           return this.resolveTSNodeType(typeParam);
         }
@@ -827,9 +794,7 @@ export class SchemaProcessor {
 
           // Parameters<typeof functionName>
           if (t.isTSTypeQuery(typeParam)) {
-            const funcName = t.isIdentifier(typeParam.exprName)
-              ? typeParam.exprName.name
-              : null;
+            const funcName = t.isIdentifier(typeParam.exprName) ? typeParam.exprName.name : null;
 
             if (funcName) {
               // Save current file path before findSchemaDefinition which may change it
@@ -839,7 +804,6 @@ export class SchemaProcessor {
               this.findSchemaDefinition(funcName, this.contentType);
               let funcDefEntry = this.typeDefinitions[funcName];
               let funcNode = funcDefEntry?.node || funcDefEntry; // Support both old and new format
-              const funcFilePath = funcDefEntry?.filePath;
 
               // If not found, check if it's an imported function
               // Use the saved file path (where the utility type is defined)
@@ -877,13 +841,8 @@ export class SchemaProcessor {
                 if (params && params.length > 0) {
                   // Parameters<T> returns a tuple type [Param1, Param2, ...]
                   const paramTypes = params.map((param: any) => {
-                    if (
-                      param.typeAnnotation &&
-                      param.typeAnnotation.typeAnnotation
-                    ) {
-                      return this.resolveTSNodeType(
-                        param.typeAnnotation.typeAnnotation
-                      );
+                    if (param.typeAnnotation && param.typeAnnotation.typeAnnotation) {
+                      return this.resolveTSNodeType(param.typeAnnotation.typeAnnotation);
                     }
                     return { type: "any" };
                   });
@@ -905,7 +864,7 @@ export class SchemaProcessor {
                 }
               } else {
                 logger.warn(
-                  `Parameters<typeof ${funcName}>: Function '${funcName}' not found in schema files or imports.`
+                  `Parameters<typeof ${funcName}>: Function '${funcName}' not found in schema files or imports.`,
                 );
                 return { type: "array", items: { type: "object" } };
               }
@@ -962,11 +921,7 @@ export class SchemaProcessor {
 
         if (genericTypeDefinition) {
           // Resolve the generic type by substituting type parameters
-          return this.resolveGenericType(
-            genericTypeDefinition,
-            node.typeParameters.params,
-            typeName
-          );
+          return this.resolveGenericType(genericTypeDefinition, node.typeParameters.params);
         }
       }
 
@@ -993,9 +948,7 @@ export class SchemaProcessor {
       node.members.forEach((member: any) => {
         if (t.isTSPropertySignature(member) && t.isIdentifier(member.key)) {
           const propName = member.key.name;
-          properties[propName] = this.resolveTSNodeType(
-            member.typeAnnotation?.typeAnnotation
-          );
+          properties[propName] = this.resolveTSNodeType(member.typeAnnotation?.typeAnnotation);
         }
       });
       return { type: "object", properties };
@@ -1003,9 +956,7 @@ export class SchemaProcessor {
 
     if (t.isTSUnionType(node)) {
       // Handle union types with literal types, like "admin" | "member" | "guest"
-      const literals = node.types.filter((type: any) =>
-        t.isTSLiteralType(type)
-      );
+      const literals = node.types.filter((type: any) => t.isTSLiteralType(type));
 
       // Check if all union elements are literals
       if (literals.length === node.types.length) {
@@ -1014,15 +965,9 @@ export class SchemaProcessor {
           .map((type: any) => {
             if (t.isTSLiteralType(type) && t.isStringLiteral(type.literal)) {
               return type.literal.value;
-            } else if (
-              t.isTSLiteralType(type) &&
-              t.isNumericLiteral(type.literal)
-            ) {
+            } else if (t.isTSLiteralType(type) && t.isNumericLiteral(type.literal)) {
               return type.literal.value;
-            } else if (
-              t.isTSLiteralType(type) &&
-              t.isBooleanLiteral(type.literal)
-            ) {
+            } else if (t.isTSLiteralType(type) && t.isBooleanLiteral(type.literal)) {
               return type.literal.value;
             }
             return null;
@@ -1032,9 +977,7 @@ export class SchemaProcessor {
         if (enumValues.length > 0) {
           // Check if all enum values are of the same type
           const firstType = typeof enumValues[0];
-          const sameType = enumValues.every(
-            (val: any) => typeof val === firstType
-          );
+          const sameType = enumValues.every((val: any) => typeof val === firstType);
 
           if (sameType) {
             return {
@@ -1048,16 +991,12 @@ export class SchemaProcessor {
       // Handling null | undefined in type union
       const nullableTypes = node.types.filter(
         (type: any) =>
-          t.isTSNullKeyword(type) ||
-          t.isTSUndefinedKeyword(type) ||
-          t.isTSVoidKeyword(type)
+          t.isTSNullKeyword(type) || t.isTSUndefinedKeyword(type) || t.isTSVoidKeyword(type),
       );
 
       const nonNullableTypes = node.types.filter(
         (type: any) =>
-          !t.isTSNullKeyword(type) &&
-          !t.isTSUndefinedKeyword(type) &&
-          !t.isTSVoidKeyword(type)
+          !t.isTSNullKeyword(type) && !t.isTSUndefinedKeyword(type) && !t.isTSVoidKeyword(type),
       );
 
       // If a type can be null/undefined, we mark it as nullable
@@ -1074,9 +1013,7 @@ export class SchemaProcessor {
         oneOf: node.types
           .filter(
             (type: any) =>
-              !t.isTSNullKeyword(type) &&
-              !t.isTSUndefinedKeyword(type) &&
-              !t.isTSVoidKeyword(type)
+              !t.isTSNullKeyword(type) && !t.isTSUndefinedKeyword(type) && !t.isTSVoidKeyword(type),
           )
           .map((subNode: any) => this.resolveTSNodeType(subNode)),
       };
@@ -1102,8 +1039,7 @@ export class SchemaProcessor {
       return {
         type: "object",
         properties: allProperties,
-        required:
-          requiredProperties.length > 0 ? requiredProperties : undefined,
+        required: requiredProperties.length > 0 ? requiredProperties : undefined,
       };
     }
 
@@ -1116,10 +1052,7 @@ export class SchemaProcessor {
     return { type: "object" }; // By default we return an object
   }
 
-  private processSchemaFile(
-    filePath: string,
-    schemaName: string
-  ): OpenAPIDefinition | undefined {
+  private processSchemaFile(filePath: string, schemaName: string): OpenAPIDefinition | undefined {
     // Check if the file has already been processed
     if (this.processSchemaTracker[`${filePath}-${schemaName}`]) return;
 
@@ -1147,9 +1080,7 @@ export class SchemaProcessor {
       this.processSchemaTracker[`${filePath}-${schemaName}`] = true;
       return definition;
     } catch (error) {
-      logger.error(
-        `Error processing schema file ${filePath} for schema ${schemaName}: ${error}`
-      );
+      logger.error(`Error processing schema file ${filePath} for schema ${schemaName}: ${error}`);
       return { type: "object" }; // By default we return an empty object on error
     }
   }
@@ -1230,11 +1161,7 @@ export class SchemaProcessor {
    */
   public getExampleForParam(paramName: string, type: string = "string"): any {
     // Common ID-like parameters
-    if (
-      paramName === "id" ||
-      paramName.endsWith("Id") ||
-      paramName.endsWith("_id")
-    ) {
+    if (paramName === "id" || paramName.endsWith("Id") || paramName.endsWith("_id")) {
       return type === "string" ? "123" : 123;
     }
 
@@ -1265,10 +1192,7 @@ export class SchemaProcessor {
     }
   }
 
-  public detectContentType(
-    bodyType: string,
-    explicitContentType?: string
-  ): string {
+  public detectContentType(bodyType: string, explicitContentType?: string): string {
     if (explicitContentType) {
       return explicitContentType;
     }
@@ -1288,7 +1212,7 @@ export class SchemaProcessor {
 
   public createMultipleResponsesSchema(
     responses: Record<string, any>,
-    defaultDescription?: string
+    defaultDescription?: string,
   ): Record<string, any> {
     const result: Record<string, any> = {};
 
@@ -1322,8 +1246,7 @@ export class SchemaProcessor {
       // Convert File types to binary format
       if (
         value.type === "object" &&
-        (key.toLowerCase().includes("file") ||
-          value.description?.toLowerCase().includes("file"))
+        (key.toLowerCase().includes("file") || value.description?.toLowerCase().includes("file"))
       ) {
         formDataProperties[key] = {
           type: "string",
@@ -1376,7 +1299,7 @@ export class SchemaProcessor {
 
   public createRequestParamsSchema(
     params: OpenAPIDefinition,
-    isPathParam: boolean = false
+    isPathParam: boolean = false,
   ): ParamSchema[] {
     const queryParams: ParamSchema[] = [];
 
@@ -1415,12 +1338,9 @@ export class SchemaProcessor {
   public createRequestBodySchema(
     body: OpenAPIDefinition,
     description?: string,
-    contentType?: string
+    contentType?: string,
   ): any {
-    const detectedContentType = this.detectContentType(
-      body?.type || "",
-      contentType
-    );
+    const detectedContentType = this.detectContentType(body?.type || "", contentType);
 
     let schema = body;
 
@@ -1444,10 +1364,7 @@ export class SchemaProcessor {
     return requestBody;
   }
 
-  public createResponseSchema(
-    responses: OpenAPIDefinition,
-    description?: string
-  ): any {
+  public createResponseSchema(responses: OpenAPIDefinition, description?: string): any {
     return {
       200: {
         description: description || "Successful response",
@@ -1460,13 +1377,7 @@ export class SchemaProcessor {
     };
   }
 
-  public getSchemaContent({
-    tag,
-    paramsType,
-    pathParamsType,
-    bodyType,
-    responseType,
-  }: any): {
+  public getSchemaContent({ tag, paramsType, pathParamsType, bodyType, responseType }: any): {
     tag: OpenAPIDefinition;
     params: OpenAPIDefinition;
     pathParams: OpenAPIDefinition;
@@ -1477,7 +1388,7 @@ export class SchemaProcessor {
     const stripArrayNotation = (typeName: string | undefined): string | undefined => {
       if (!typeName) return typeName;
       let baseType = typeName;
-      while (baseType.endsWith('[]')) {
+      while (baseType.endsWith("[]")) {
         baseType = baseType.slice(0, -2);
       }
       return baseType;
@@ -1511,12 +1422,9 @@ export class SchemaProcessor {
     let responses = baseResponseType ? this.openapiDefinitions[baseResponseType] || {} : {};
 
     if (this.schemaTypes.includes("zod")) {
-      const schemasToProcess = [
-        paramsType,
-        pathParamsType,
-        baseBodyType,
-        baseResponseType,
-      ].filter(Boolean);
+      const schemasToProcess = [paramsType, pathParamsType, baseBodyType, baseResponseType].filter(
+        Boolean,
+      );
       schemasToProcess.forEach((schemaName) => {
         if (!this.openapiDefinitions[schemaName]) {
           this.findSchemaDefinition(schemaName, "");
@@ -1538,9 +1446,7 @@ export class SchemaProcessor {
    * @param genericTypeString - The generic type string to parse and resolve
    * @returns The resolved OpenAPI schema
    */
-  private resolveGenericTypeFromString(
-    genericTypeString: string
-  ): OpenAPIDefinition {
+  private resolveGenericTypeFromString(genericTypeString: string): OpenAPIDefinition {
     // Parse the generic type string
     const parsed = this.parseGenericTypeString(genericTypeString);
     if (!parsed) {
@@ -1562,25 +1468,18 @@ export class SchemaProcessor {
     // Also find all the type argument definitions
     typeArguments.forEach((argTypeName: string) => {
       // If it's a simple type reference (not another generic), find its definition
-      if (
-        !argTypeName.includes("<") &&
-        !this.isGenericTypeParameter(argTypeName)
-      ) {
+      if (!argTypeName.includes("<") && !this.isGenericTypeParameter(argTypeName)) {
         this.scanAllSchemaDirs(argTypeName);
       }
     });
 
     // Create AST nodes for the type arguments by parsing them
     const typeArgumentNodes = typeArguments.map((arg: string) =>
-      this.createTypeNodeFromString(arg)
+      this.createTypeNodeFromString(arg),
     );
 
     // Resolve the generic type
-    const resolved = this.resolveGenericType(
-      genericTypeDefinition,
-      typeArgumentNodes,
-      baseTypeName
-    );
+    const resolved = this.resolveGenericType(genericTypeDefinition, typeArgumentNodes);
 
     // Cache the resolved type for future reference
     this.openapiDefinitions[genericTypeString] = resolved;
@@ -1617,11 +1516,34 @@ export class SchemaProcessor {
    */
   private isBuiltInUtilityType(typeName: string) {
     const builtInTypes = [
-      'Awaited', 'Partial', 'Required', 'Readonly', 'Record', 'Pick', 'Omit',
-      'Exclude', 'Extract', 'NonNullable', 'Parameters', 'ConstructorParameters',
-      'ReturnType', 'InstanceType', 'ThisParameterType', 'OmitThisParameter',
-      'ThisType', 'Uppercase', 'Lowercase', 'Capitalize', 'Uncapitalize',
-      'Promise', 'Array', 'ReadonlyArray', 'Map', 'Set', 'WeakMap', 'WeakSet'
+      "Awaited",
+      "Partial",
+      "Required",
+      "Readonly",
+      "Record",
+      "Pick",
+      "Omit",
+      "Exclude",
+      "Extract",
+      "NonNullable",
+      "Parameters",
+      "ConstructorParameters",
+      "ReturnType",
+      "InstanceType",
+      "ThisParameterType",
+      "OmitThisParameter",
+      "ThisType",
+      "Uppercase",
+      "Lowercase",
+      "Capitalize",
+      "Uncapitalize",
+      "Promise",
+      "Array",
+      "ReadonlyArray",
+      "Map",
+      "Set",
+      "WeakMap",
+      "WeakSet",
     ];
     return builtInTypes.includes(typeName);
   }
@@ -1635,9 +1557,11 @@ export class SchemaProcessor {
     if (!entry) return false;
 
     const node = entry.node || entry;
-    return t.isFunctionDeclaration(node) ||
-           t.isFunctionExpression(node) ||
-           t.isArrowFunctionExpression(node);
+    return (
+      t.isFunctionDeclaration(node) ||
+      t.isFunctionExpression(node) ||
+      t.isArrowFunctionExpression(node)
+    );
   }
 
   /**
@@ -1646,7 +1570,7 @@ export class SchemaProcessor {
    * @returns Object with baseTypeName and typeArguments array
    */
   private parseGenericTypeString(
-    genericTypeString: string
+    genericTypeString: string,
   ): { baseTypeName: string; typeArguments: string[] } | null {
     const match = genericTypeString.match(/^([^<]+)<(.+)>$/);
     if (!match) {
@@ -1716,7 +1640,7 @@ export class SchemaProcessor {
     const parsed = this.parseGenericTypeString(typeString);
     if (parsed) {
       const typeParameterNodes = parsed.typeArguments.map((arg: string) =>
-        this.createTypeNodeFromString(arg)
+        this.createTypeNodeFromString(arg),
       );
       return {
         type: "TSTypeReference",
@@ -1745,54 +1669,35 @@ export class SchemaProcessor {
    * Resolve generic types by substituting type parameters with actual types
    * @param genericTypeDefinition - The AST node of the generic type definition
    * @param typeArguments - The type arguments passed to the generic type
-   * @param typeName - The name of the generic type
    * @returns The resolved OpenAPI schema
    */
-  private resolveGenericType(
-    genericTypeDefinition: any,
-    typeArguments: any[],
-    typeName: string
-  ): OpenAPIDefinition {
+  private resolveGenericType(genericTypeDefinition: any, typeArguments: any[]): OpenAPIDefinition {
     // Extract type parameters from the generic type definition
     let typeParameters: string[] = [];
     let bodyToResolve: any = null;
 
     // Handle type alias declarations
     if (t.isTSTypeAliasDeclaration(genericTypeDefinition)) {
-      if (
-        genericTypeDefinition.typeParameters &&
-        genericTypeDefinition.typeParameters.params
-      ) {
-        typeParameters = genericTypeDefinition.typeParameters.params.map(
-          (param: any) => {
-            if (t.isTSTypeParameter(param)) {
-              return param.name;
-            }
-            return t.isIdentifier(param)
-              ? param.name
-              : param.name?.name || param;
+      if (genericTypeDefinition.typeParameters && genericTypeDefinition.typeParameters.params) {
+        typeParameters = genericTypeDefinition.typeParameters.params.map((param: any) => {
+          if (t.isTSTypeParameter(param)) {
+            return param.name;
           }
-        );
+          return t.isIdentifier(param) ? param.name : param.name?.name || param;
+        });
       }
       bodyToResolve = genericTypeDefinition.typeAnnotation;
     }
 
     // Handle interface declarations
     if (t.isTSInterfaceDeclaration(genericTypeDefinition)) {
-      if (
-        genericTypeDefinition.typeParameters &&
-        genericTypeDefinition.typeParameters.params
-      ) {
-        typeParameters = genericTypeDefinition.typeParameters.params.map(
-          (param: any) => {
-            if (t.isTSTypeParameter(param)) {
-              return param.name;
-            }
-            return t.isIdentifier(param)
-              ? param.name
-              : param.name?.name || param;
+      if (genericTypeDefinition.typeParameters && genericTypeDefinition.typeParameters.params) {
+        typeParameters = genericTypeDefinition.typeParameters.params.map((param: any) => {
+          if (t.isTSTypeParameter(param)) {
+            return param.name;
           }
-        );
+          return t.isIdentifier(param) ? param.name : param.name?.name || param;
+        });
       }
       bodyToResolve = genericTypeDefinition.body;
     }
@@ -1810,10 +1715,7 @@ export class SchemaProcessor {
     });
 
     // Resolve the type annotation with substituted type parameters
-    return this.resolveTypeWithSubstitution(
-      bodyToResolve,
-      typeParameterMap
-    );
+    return this.resolveTypeWithSubstitution(bodyToResolve, typeParameterMap);
   }
 
   /**
@@ -1824,7 +1726,7 @@ export class SchemaProcessor {
    */
   private resolveTypeWithSubstitution(
     node: any,
-    typeParameterMap: Record<string, any>
+    typeParameterMap: Record<string, any>,
   ): OpenAPIDefinition {
     if (!node) return { type: "object" };
 
@@ -1834,10 +1736,7 @@ export class SchemaProcessor {
       if (typeParameterMap[paramName]) {
         // The mapped value is an AST node, resolve it
         const mappedNode = typeParameterMap[paramName];
-        if (
-          t.isTSTypeReference(mappedNode) &&
-          t.isIdentifier(mappedNode.typeName)
-        ) {
+        if (t.isTSTypeReference(mappedNode) && t.isIdentifier(mappedNode.typeName)) {
           // If it's a reference to another type, get the resolved schema from openapiDefinitions
           const referencedTypeName = mappedNode.typeName.name;
           if (this.openapiDefinitions[referencedTypeName]) {
@@ -1856,22 +1755,16 @@ export class SchemaProcessor {
       const allProperties: Record<string, any> = {};
       const requiredProperties: string[] = [];
 
-      node.types.forEach((typeNode: any, index: number) => {
+      node.types.forEach((typeNode: any) => {
         let resolvedType: OpenAPIDefinition;
 
         // Check if this is a type parameter reference
-        if (
-          t.isTSTypeReference(typeNode) &&
-          t.isIdentifier(typeNode.typeName)
-        ) {
+        if (t.isTSTypeReference(typeNode) && t.isIdentifier(typeNode.typeName)) {
           const paramName = typeNode.typeName.name;
 
           if (typeParameterMap[paramName]) {
             const mappedNode = typeParameterMap[paramName];
-            if (
-              t.isTSTypeReference(mappedNode) &&
-              t.isIdentifier(mappedNode.typeName)
-            ) {
+            if (t.isTSTypeReference(mappedNode) && t.isIdentifier(mappedNode.typeName)) {
               // If it's a reference to another type, get the resolved schema
               const referencedTypeName = mappedNode.typeName.name;
 
@@ -1880,8 +1773,7 @@ export class SchemaProcessor {
               } else {
                 // If not in openapiDefinitions, try to resolve it
                 this.findSchemaDefinition(referencedTypeName, this.contentType);
-                resolvedType =
-                  this.openapiDefinitions[referencedTypeName] || {};
+                resolvedType = this.openapiDefinitions[referencedTypeName] || {};
               }
             } else {
               resolvedType = this.resolveTSNodeType(mappedNode);
@@ -1890,29 +1782,23 @@ export class SchemaProcessor {
             resolvedType = this.resolveTSNodeType(typeNode);
           }
         } else {
-          resolvedType = this.resolveTypeWithSubstitution(
-            typeNode,
-            typeParameterMap
-          );
+          resolvedType = this.resolveTypeWithSubstitution(typeNode, typeParameterMap);
         }
 
         if (resolvedType.type === "object" && resolvedType.properties) {
-          Object.entries(resolvedType.properties).forEach(
-            ([key, value]: [string, any]) => {
-              allProperties[key] = value;
-              if (value.required) {
-                requiredProperties.push(key);
-              }
+          Object.entries(resolvedType.properties).forEach(([key, value]: [string, any]) => {
+            allProperties[key] = value;
+            if (value.required) {
+              requiredProperties.push(key);
             }
-          );
+          });
         }
       });
 
       return {
         type: "object",
         properties: allProperties,
-        required:
-          requiredProperties.length > 0 ? requiredProperties : undefined,
+        required: requiredProperties.length > 0 ? requiredProperties : undefined,
       };
     }
 
@@ -1924,7 +1810,7 @@ export class SchemaProcessor {
           const propName = member.key.name;
           properties[propName] = this.resolveTypeWithSubstitution(
             member.typeAnnotation?.typeAnnotation,
-            typeParameterMap
+            typeParameterMap,
           );
         }
       });
@@ -1939,7 +1825,7 @@ export class SchemaProcessor {
           const propName = member.key.name;
           properties[propName] = this.resolveTypeWithSubstitution(
             member.typeAnnotation?.typeAnnotation,
-            typeParameterMap
+            typeParameterMap,
           );
         }
       });
@@ -1971,10 +1857,7 @@ export class SchemaProcessor {
     }
 
     // Handle VariableDeclarator with arrow function
-    if (
-      t.isVariableDeclarator(funcNode) &&
-      t.isArrowFunctionExpression(funcNode.init)
-    ) {
+    if (t.isVariableDeclarator(funcNode) && t.isArrowFunctionExpression(funcNode.init)) {
       return funcNode.init.returnType && t.isTSTypeAnnotation(funcNode.init.returnType)
         ? funcNode.init.returnType.typeAnnotation
         : null;
@@ -2000,10 +1883,7 @@ export class SchemaProcessor {
     }
 
     // Handle VariableDeclarator with arrow function
-    if (
-      t.isVariableDeclarator(funcNode) &&
-      t.isArrowFunctionExpression(funcNode.init)
-    ) {
+    if (t.isVariableDeclarator(funcNode) && t.isArrowFunctionExpression(funcNode.init)) {
       return funcNode.init.params || [];
     }
 

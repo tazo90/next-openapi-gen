@@ -1,15 +1,16 @@
 import fs from "fs";
 import path from "path";
+
 import traverseModule from "@babel/traverse";
 import * as t from "@babel/types";
 
 // Handle both ES modules and CommonJS
 const traverse = (traverseModule as any).default || traverseModule;
 
-import { parseTypeScriptFile } from "./utils.js";
 import { OpenApiSchema } from "../types.js";
-import { logger } from "./logger.js";
 import { DrizzleZodProcessor } from "./drizzle-zod-processor.js";
+import { logger } from "./logger.js";
+import { parseTypeScriptFile } from "./utils.js";
 
 /**
  * Class for converting Zod schemas to OpenAPI specifications
@@ -52,9 +53,7 @@ export class ZodSchemaConverter {
     // Check mapped types
     const mappedSchemaName = this.typeToSchemaMapping[schemaName];
     if (mappedSchemaName) {
-      logger.debug(
-        `Type '${schemaName}' is mapped to schema '${mappedSchemaName}'`
-      );
+      logger.debug(`Type '${schemaName}' is mapped to schema '${mappedSchemaName}'`);
       schemaName = mappedSchemaName;
     }
 
@@ -79,9 +78,7 @@ export class ZodSchemaConverter {
         this.processFileForZodSchema(routeFile, schemaName);
 
         if (this.zodSchemas[schemaName]) {
-          logger.debug(
-            `Found Zod schema '${schemaName}' in route file: ${routeFile}`
-          );
+          logger.debug(`Found Zod schema '${schemaName}' in route file: ${routeFile}`);
           return this.zodSchemas[schemaName];
         }
       }
@@ -227,10 +224,7 @@ export class ZodSchemaConverter {
             // Track drizzle-zod imports
             if (source === "drizzle-zod") {
               path.node.specifiers.forEach((specifier) => {
-                if (
-                  t.isImportSpecifier(specifier) ||
-                  t.isImportDefaultSpecifier(specifier)
-                ) {
+                if (t.isImportSpecifier(specifier) || t.isImportDefaultSpecifier(specifier)) {
                   this.drizzleZodImports.add(specifier.local.name);
                 }
               });
@@ -238,10 +232,7 @@ export class ZodSchemaConverter {
 
             // Process each import specifier
             path.node.specifiers.forEach((specifier) => {
-              if (
-                t.isImportSpecifier(specifier) ||
-                t.isImportDefaultSpecifier(specifier)
-              ) {
+              if (t.isImportSpecifier(specifier) || t.isImportDefaultSpecifier(specifier)) {
                 const importedName = specifier.local.name;
                 importedModules[importedName] = source;
               }
@@ -260,7 +251,6 @@ export class ZodSchemaConverter {
 
       // Look for all exported Zod schemas
       traverse(ast, {
-
         // For export const SchemaName = z.object({...})
         ExportNamedDeclaration: (path) => {
           if (t.isVariableDeclaration(path.node.declaration)) {
@@ -311,16 +301,25 @@ export class ZodSchemaConverter {
                   t.isIdentifier(declaration.init.callee)
                 ) {
                   const factoryName = declaration.init.callee.name;
-                  logger.debug(`[Schema] Detected potential factory function call: ${factoryName} for schema ${schemaName}`);
+                  logger.debug(
+                    `[Schema] Detected potential factory function call: ${factoryName} for schema ${schemaName}`,
+                  );
 
-                  const factoryNode = this.findFactoryFunction(factoryName, filePath, ast, importedModules);
+                  const factoryNode = this.findFactoryFunction(
+                    factoryName,
+                    filePath,
+                    ast,
+                    importedModules,
+                  );
 
                   if (factoryNode) {
                     logger.debug(`[Schema] Found factory function, attempting to expand...`);
-                    const schema = this.expandFactoryCall(factoryNode, declaration.init, filePath);
+                    const schema = this.expandFactoryCall(factoryNode, declaration.init);
                     if (schema) {
                       this.zodSchemas[schemaName] = schema;
-                      logger.debug(`[Schema] Successfully expanded factory function '${factoryName}' for schema '${schemaName}'`);
+                      logger.debug(
+                        `[Schema] Successfully expanded factory function '${factoryName}' for schema '${schemaName}'`,
+                      );
                     } else {
                       logger.debug(`[Schema] Failed to expand factory function '${factoryName}'`);
                     }
@@ -348,21 +347,16 @@ export class ZodSchemaConverter {
                 if (
                   typeAnnotation.typeParameters &&
                   typeAnnotation.typeParameters.params.length > 0 &&
-                  t.isTSTypeReference(
-                    typeAnnotation.typeParameters.params[0]
-                  ) &&
-                  t.isTSTypeQuery(
-                    typeAnnotation.typeParameters.params[0].typeName
-                  ) &&
+                  t.isTSTypeReference(typeAnnotation.typeParameters.params[0]) &&
+                  t.isTSTypeQuery(typeAnnotation.typeParameters.params[0].typeName) &&
                   t.isIdentifier(
                     // @ts-ignore
-                    typeAnnotation.typeParameters.params[0].typeName.exprName
+                    typeAnnotation.typeParameters.params[0].typeName.exprName,
                   )
                 ) {
                   const referencedSchema =
                     // @ts-ignore
-                    typeAnnotation.typeParameters.params[0].typeName.exprName
-                      .name;
+                    typeAnnotation.typeParameters.params[0].typeName.exprName.name;
 
                   // Look for the referenced schema in the same file
                   if (!this.zodSchemas[referencedSchema]) {
@@ -371,8 +365,7 @@ export class ZodSchemaConverter {
 
                   // Use the referenced schema for this type alias
                   if (this.zodSchemas[referencedSchema]) {
-                    this.zodSchemas[schemaName] =
-                      this.zodSchemas[referencedSchema];
+                    this.zodSchemas[schemaName] = this.zodSchemas[referencedSchema];
                   }
                 }
               }
@@ -382,11 +375,7 @@ export class ZodSchemaConverter {
 
         // For const SchemaName = z.object({...})
         VariableDeclarator: (path) => {
-          if (
-            t.isIdentifier(path.node.id) &&
-            path.node.id.name === schemaName &&
-            path.node.init
-          ) {
+          if (t.isIdentifier(path.node.id) && path.node.id.name === schemaName && path.node.init) {
             // Check if this is any Zod schema (including chained calls)
             if (this.isZodSchema(path.node.init)) {
               const schema = this.processZodNode(path.node.init);
@@ -398,10 +387,7 @@ export class ZodSchemaConverter {
 
             // Helper function for processing the call chain
             const processChainedCall = (node, baseSchema) => {
-              if (
-                !t.isCallExpression(node) ||
-                !t.isMemberExpression(node.callee)
-              ) {
+              if (!t.isCallExpression(node) || !t.isMemberExpression(node.callee)) {
                 return baseSchema;
               }
 
@@ -417,10 +403,7 @@ export class ZodSchemaConverter {
               // Now apply the current method
               switch (methodName) {
                 case "omit":
-                  if (
-                    node.arguments.length > 0 &&
-                    t.isObjectExpression(node.arguments[0])
-                  ) {
+                  if (node.arguments.length > 0 && t.isObjectExpression(node.arguments[0])) {
                     node.arguments[0].properties.forEach((prop) => {
                       if (
                         t.isObjectProperty(prop) &&
@@ -430,16 +413,14 @@ export class ZodSchemaConverter {
                         const key = t.isIdentifier(prop.key)
                           ? prop.key.name
                           : t.isStringLiteral(prop.key)
-                          ? prop.key.value
-                          : null;
+                            ? prop.key.value
+                            : null;
 
                         if (key && schema.properties) {
                           logger.debug(`Removing property: ${key}`);
                           delete schema.properties[key];
                           if (schema.required) {
-                            schema.required = schema.required.filter(
-                              (r) => r !== key
-                            );
+                            schema.required = schema.required.filter((r) => r !== key);
                           }
                         }
                       }
@@ -455,10 +436,7 @@ export class ZodSchemaConverter {
                   break;
 
                 case "pick":
-                  if (
-                    node.arguments.length > 0 &&
-                    t.isObjectExpression(node.arguments[0])
-                  ) {
+                  if (node.arguments.length > 0 && t.isObjectExpression(node.arguments[0])) {
                     const keysToPick = [];
                     node.arguments[0].properties.forEach((prop) => {
                       if (
@@ -469,8 +447,8 @@ export class ZodSchemaConverter {
                         const key = t.isIdentifier(prop.key)
                           ? prop.key.name
                           : t.isStringLiteral(prop.key)
-                          ? prop.key.value
-                          : null;
+                            ? prop.key.value
+                            : null;
                         if (key) keysToPick.push(key);
                       }
                     });
@@ -487,9 +465,7 @@ export class ZodSchemaConverter {
 
                       // Update required
                       if (schema.required) {
-                        schema.required = schema.required.filter((key) =>
-                          keysToPick.includes(key)
-                        );
+                        schema.required = schema.required.filter((key) => keysToPick.includes(key));
                       }
                     }
                   }
@@ -504,10 +480,7 @@ export class ZodSchemaConverter {
 
                 case "extend":
                   // Extend the schema with new properties
-                  if (
-                    node.arguments.length > 0 &&
-                    t.isObjectExpression(node.arguments[0])
-                  ) {
+                  if (node.arguments.length > 0 && t.isObjectExpression(node.arguments[0])) {
                     const extensionProperties = {};
                     const extensionRequired = [];
 
@@ -516,8 +489,8 @@ export class ZodSchemaConverter {
                         const key = t.isIdentifier(prop.key)
                           ? prop.key.name
                           : t.isStringLiteral(prop.key)
-                          ? prop.key.value
-                          : null;
+                            ? prop.key.value
+                            : null;
 
                         if (key) {
                           // Process the Zod type for this property
@@ -549,10 +522,7 @@ export class ZodSchemaConverter {
 
                     // Merge required arrays
                     if (extensionRequired.length > 0) {
-                      schema.required = [
-                        ...(schema.required || []),
-                        ...extensionRequired,
-                      ];
+                      schema.required = [...(schema.required || []), ...extensionRequired];
                       // Deduplicate
                       schema.required = [...new Set(schema.required)];
                     }
@@ -569,10 +539,7 @@ export class ZodSchemaConverter {
                 return node.name;
               } else if (t.isMemberExpression(node)) {
                 return findBaseSchema(node.object);
-              } else if (
-                t.isCallExpression(node) &&
-                t.isMemberExpression(node.callee)
-              ) {
+              } else if (t.isCallExpression(node) && t.isMemberExpression(node.callee)) {
                 return findBaseSchema(node.callee.object);
               }
               return null;
@@ -583,15 +550,11 @@ export class ZodSchemaConverter {
               const baseSchemaName = findBaseSchema(path.node.init);
 
               if (baseSchemaName && baseSchemaName !== "z") {
-                logger.debug(
-                  `Found chained call starting from: ${baseSchemaName}`
-                );
+                logger.debug(`Found chained call starting from: ${baseSchemaName}`);
 
                 // First make sure the underlying schema is processed
                 if (!this.zodSchemas[baseSchemaName]) {
-                  logger.debug(
-                    `Base schema ${baseSchemaName} not found, processing it first`
-                  );
+                  logger.debug(`Base schema ${baseSchemaName} not found, processing it first`);
                   this.processFileForZodSchema(filePath, baseSchemaName);
                 }
 
@@ -599,21 +562,16 @@ export class ZodSchemaConverter {
                   logger.debug("Base schema found, applying transformations");
 
                   // Copy base schema
-                  const baseSchema = JSON.parse(
-                    JSON.stringify(this.zodSchemas[baseSchemaName])
-                  );
+                  const baseSchema = JSON.parse(JSON.stringify(this.zodSchemas[baseSchemaName]));
 
                   // Process the entire call chain
-                  const finalSchema = processChainedCall(
-                    path.node.init,
-                    baseSchema
-                  );
+                  const finalSchema = processChainedCall(path.node.init, baseSchema);
 
                   this.zodSchemas[schemaName] = finalSchema;
                   logger.debug(
                     `Created ${schemaName} with properties: ${Object.keys(
-                      finalSchema.properties || {}
-                    )}`
+                      finalSchema.properties || {},
+                    )}`,
                   );
 
                   return;
@@ -667,22 +625,16 @@ export class ZodSchemaConverter {
 
                   // Save mapping: TypeName -> SchemaName
                   this.typeToSchemaMapping[typeName] = referencedSchemaName;
-                  logger.debug(
-                    `Mapped type '${typeName}' to schema '${referencedSchemaName}'`
-                  );
+                  logger.debug(`Mapped type '${typeName}' to schema '${referencedSchemaName}'`);
 
                   // Process the referenced schema if not already processed
                   if (!this.zodSchemas[referencedSchemaName]) {
-                    this.processFileForZodSchema(
-                      filePath,
-                      referencedSchemaName
-                    );
+                    this.processFileForZodSchema(filePath, referencedSchemaName);
                   }
 
                   // Use the referenced schema for this type
                   if (this.zodSchemas[referencedSchemaName]) {
-                    this.zodSchemas[typeName] =
-                      this.zodSchemas[referencedSchemaName];
+                    this.zodSchemas[typeName] = this.zodSchemas[referencedSchemaName];
                   }
                 }
               }
@@ -703,8 +655,7 @@ export class ZodSchemaConverter {
                   // Find the referenced schema
                   this.processFileForZodSchema(filePath, referencedSchemaName);
                   if (this.zodSchemas[referencedSchemaName]) {
-                    this.zodSchemas[schemaName] =
-                      this.zodSchemas[referencedSchemaName];
+                    this.zodSchemas[schemaName] = this.zodSchemas[referencedSchemaName];
                   }
                 }
               }
@@ -713,9 +664,7 @@ export class ZodSchemaConverter {
         },
       });
     } catch (error) {
-      logger.error(
-        `Error processing file ${filePath} for schema ${schemaName}: ${error}`
-      );
+      logger.error(`Error processing file ${filePath} for schema ${schemaName}: ${error}`);
     }
   }
 
@@ -740,10 +689,7 @@ export class ZodSchemaConverter {
                 declaration.init.callee.object.name === "z"
               ) {
                 const schemaName = declaration.id.name;
-                if (
-                  !this.zodSchemas[schemaName] &&
-                  !this.processingSchemas.has(schemaName)
-                ) {
+                if (!this.zodSchemas[schemaName] && !this.processingSchemas.has(schemaName)) {
                   this.processingSchemas.add(schemaName);
                   const schema = this.processZodNode(declaration.init);
                   if (schema) {
@@ -757,9 +703,7 @@ export class ZodSchemaConverter {
         },
       });
     } catch (error) {
-      logger.error(
-        `Error processing all schemas in file ${filePath}: ${error}`
-      );
+      logger.error(`Error processing all schemas in file ${filePath}: ${error}`);
     }
   }
 
@@ -811,7 +755,7 @@ export class ZodSchemaConverter {
       // Create a synthetic node for the underlying type using Babel types
       const syntheticNode = t.callExpression(
         t.memberExpression(t.identifier("z"), t.identifier(coerceType)),
-        []
+        [],
       );
 
       return this.processZodPrimitive(syntheticNode);
@@ -835,10 +779,7 @@ export class ZodSchemaConverter {
         return this.processZodIntersection(node);
       } else if (methodName === "tuple" && node.arguments.length > 0) {
         return this.processZodTuple(node);
-      } else if (
-        methodName === "discriminatedUnion" &&
-        node.arguments.length > 1
-      ) {
+      } else if (methodName === "discriminatedUnion" && node.arguments.length > 1) {
         return this.processZodDiscriminatedUnion(node);
       } else if (methodName === "literal" && node.arguments.length > 0) {
         return this.processZodLiteral(node);
@@ -878,10 +819,7 @@ export class ZodSchemaConverter {
             // The fact that it's optional is handled by not including it in required array
             break;
           case "describe":
-            if (
-              node.arguments.length > 0 &&
-              t.isStringLiteral(node.arguments[0])
-            ) {
+            if (node.arguments.length > 0 && t.isStringLiteral(node.arguments[0])) {
               schema.description = node.arguments[0].value;
             }
             break;
@@ -918,11 +856,10 @@ export class ZodSchemaConverter {
 
     // Handle potential factory function calls (e.g., createPaginatedSchema(UserSchema))
     // This must be checked before falling back to "Unknown Zod schema node"
-    if (
-      t.isCallExpression(node) &&
-      t.isIdentifier(node.callee)
-    ) {
-      logger.debug(`[processZodNode] Attempting to handle potential factory function: ${node.callee.name}`);
+    if (t.isCallExpression(node) && t.isIdentifier(node.callee)) {
+      logger.debug(
+        `[processZodNode] Attempting to handle potential factory function: ${node.callee.name}`,
+      );
 
       // We need the current file context - try to get it from the processing context
       // Note: This is a limitation - we may not have file context during preprocessing
@@ -936,31 +873,35 @@ export class ZodSchemaConverter {
           node.callee.name,
           currentFilePath,
           currentAST,
-          importedModules
+          importedModules,
         );
 
         if (factoryNode) {
           logger.debug(`[processZodNode] Found factory function, expanding...`);
-          const schema = this.expandFactoryCall(factoryNode, node, currentFilePath);
+          const schema = this.expandFactoryCall(factoryNode, node);
           if (schema) {
-            logger.debug(`[processZodNode] Successfully expanded factory function '${node.callee.name}'`);
+            logger.debug(
+              `[processZodNode] Successfully expanded factory function '${node.callee.name}'`,
+            );
             return schema;
           }
         }
       }
 
-      logger.debug(`[processZodNode] Could not expand factory function '${node.callee.name}' - missing context or not a factory`);
+      logger.debug(
+        `[processZodNode] Could not expand factory function '${node.callee.name}' - missing context or not a factory`,
+      );
     }
 
     // Handle standalone identifier references (e.g., userSchema used directly)
     if (t.isIdentifier(node)) {
       const schemaName = node.name;
-      
+
       // Try to find and process the referenced schema
       if (!this.zodSchemas[schemaName]) {
         this.convertZodSchemaToOpenApi(schemaName);
       }
-      
+
       // Return a reference to the schema
       return { $ref: `#/components/schemas/${schemaName}` };
     }
@@ -1071,16 +1012,11 @@ export class ZodSchemaConverter {
    * Process a Zod tuple schema: z.tuple([z.string(), z.number()])
    */
   processZodTuple(node: t.CallExpression): OpenApiSchema {
-    if (
-      node.arguments.length === 0 ||
-      !t.isArrayExpression(node.arguments[0])
-    ) {
+    if (node.arguments.length === 0 || !t.isArrayExpression(node.arguments[0])) {
       return { type: "array", items: { type: "string" } };
     }
 
-    const tupleItems = node.arguments[0].elements.map((element) =>
-      this.processZodNode(element)
-    );
+    const tupleItems = node.arguments[0].elements.map((element) => this.processZodNode(element));
 
     // In OpenAPI, we can represent this as an array with prefixItems (OpenAPI 3.1+)
     // For OpenAPI 3.0.x, we'll use items with type: array
@@ -1112,30 +1048,23 @@ export class ZodSchemaConverter {
    * Process a Zod union schema: z.union([schema1, schema2])
    */
   processZodUnion(node: t.CallExpression): OpenApiSchema {
-    if (
-      node.arguments.length === 0 ||
-      !t.isArrayExpression(node.arguments[0])
-    ) {
+    if (node.arguments.length === 0 || !t.isArrayExpression(node.arguments[0])) {
       return { type: "object" };
     }
 
-    const unionItems = node.arguments[0].elements.map((element) =>
-      this.processZodNode(element)
-    );
+    const unionItems = node.arguments[0].elements.map((element) => this.processZodNode(element));
 
     // Check for common pattern: z.union([z.string(), z.null()]) which should be nullable string
     if (unionItems.length === 2) {
       const isNullable = unionItems.some(
         (item) =>
-          item.type === "null" ||
-          (item.enum && item.enum.length === 1 && item.enum[0] === null)
+          item.type === "null" || (item.enum && item.enum.length === 1 && item.enum[0] === null),
       );
 
       if (isNullable) {
         const nonNullItem = unionItems.find(
           (item) =>
-            item.type !== "null" &&
-            !(item.enum && item.enum.length === 1 && item.enum[0] === null)
+            item.type !== "null" && !(item.enum && item.enum.length === 1 && item.enum[0] === null),
         );
 
         if (nonNullItem) {
@@ -1173,10 +1102,7 @@ export class ZodSchemaConverter {
    * Process a Zod object schema: z.object({...})
    */
   processZodObject(node: t.CallExpression): OpenApiSchema {
-    if (
-      node.arguments.length === 0 ||
-      !t.isObjectExpression(node.arguments[0])
-    ) {
+    if (node.arguments.length === 0 || !t.isObjectExpression(node.arguments[0])) {
       return { type: "object" };
     }
 
@@ -1214,10 +1140,7 @@ export class ZodSchemaConverter {
 
           // For describe method, use reference with description
           if (methodName === "describe" && this.zodSchemas[schemaName]) {
-            if (
-              prop.value.arguments.length > 0 &&
-              t.isStringLiteral(prop.value.arguments[0])
-            ) {
+            if (prop.value.arguments.length > 0 && t.isStringLiteral(prop.value.arguments[0])) {
               properties[propName] = {
                 allOf: [{ $ref: `#/components/schemas/${schemaName}` }],
                 description: prop.value.arguments[0].value,
@@ -1235,8 +1158,7 @@ export class ZodSchemaConverter {
           const processedSchema = this.processZodNode(prop.value);
           if (processedSchema) {
             properties[propName] = processedSchema;
-            const isOptional =
-              this.isOptional(prop.value) || this.hasOptionalMethod(prop.value);
+            const isOptional = this.isOptional(prop.value) || this.hasOptionalMethod(prop.value);
             if (!isOptional) {
               required.push(propName);
             }
@@ -1282,8 +1204,7 @@ export class ZodSchemaConverter {
           };
           properties[propName] = arraySchema;
 
-          const isOptional =
-            this.isOptional(prop.value) || this.hasOptionalMethod(prop.value);
+          const isOptional = this.isOptional(prop.value) || this.hasOptionalMethod(prop.value);
           if (!isOptional) {
             required.push(propName);
           }
@@ -1326,10 +1247,7 @@ export class ZodSchemaConverter {
    * Process a Zod primitive schema: z.string(), z.number(), etc.
    */
   processZodPrimitive(node: t.CallExpression): OpenApiSchema {
-    if (
-      !t.isMemberExpression(node.callee) ||
-      !t.isIdentifier(node.callee.property)
-    ) {
+    if (!t.isMemberExpression(node.callee) || !t.isIdentifier(node.callee.property)) {
       return { type: "string" };
     }
 
@@ -1381,10 +1299,7 @@ export class ZodSchemaConverter {
         schema = { type: "array", items: itemsType };
         break;
       case "enum":
-        if (
-          node.arguments.length > 0 &&
-          t.isArrayExpression(node.arguments[0])
-        ) {
+        if (node.arguments.length > 0 && t.isArrayExpression(node.arguments[0])) {
           const enumValues = node.arguments[0].elements
             .filter((el) => t.isStringLiteral(el) || t.isNumericLiteral(el))
             // @ts-ignore
@@ -1397,10 +1312,7 @@ export class ZodSchemaConverter {
             type: valueType === "number" ? "number" : "string",
             enum: enumValues,
           };
-        } else if (
-          node.arguments.length > 0 &&
-          t.isObjectExpression(node.arguments[0])
-        ) {
+        } else if (node.arguments.length > 0 && t.isObjectExpression(node.arguments[0])) {
           // Handle z.enum({ KEY1: "value1", KEY2: "value2" })
           const enumValues: string[] = [];
 
@@ -1476,10 +1388,7 @@ export class ZodSchemaConverter {
             // Other generic types default to string
             schema = { type: "string" };
           }
-        } else if (
-          node.arguments.length > 0 &&
-          t.isArrowFunctionExpression(node.arguments[0])
-        ) {
+        } else if (node.arguments.length > 0 && t.isArrowFunctionExpression(node.arguments[0])) {
           // Legacy support: FormData validation
           schema = {
             type: "object",
@@ -1524,10 +1433,7 @@ export class ZodSchemaConverter {
    * Process a Zod chained method call: z.string().email().min(5)
    */
   processZodChain(node: t.CallExpression): OpenApiSchema {
-    if (
-      !t.isMemberExpression(node.callee) ||
-      !t.isIdentifier(node.callee.property)
-    ) {
+    if (!t.isMemberExpression(node.callee) || !t.isIdentifier(node.callee.property)) {
       return { type: "object" };
     }
 
@@ -1571,10 +1477,7 @@ export class ZodSchemaConverter {
         schema.deprecated = true;
         break;
       case "min":
-        if (
-          node.arguments.length > 0 &&
-          t.isNumericLiteral(node.arguments[0])
-        ) {
+        if (node.arguments.length > 0 && t.isNumericLiteral(node.arguments[0])) {
           if (schema.type === "string") {
             schema.minLength = node.arguments[0].value;
           } else if (schema.type === "number" || schema.type === "integer") {
@@ -1585,10 +1488,7 @@ export class ZodSchemaConverter {
         }
         break;
       case "max":
-        if (
-          node.arguments.length > 0 &&
-          t.isNumericLiteral(node.arguments[0])
-        ) {
+        if (node.arguments.length > 0 && t.isNumericLiteral(node.arguments[0])) {
           if (schema.type === "string") {
             schema.maxLength = node.arguments[0].value;
           } else if (schema.type === "number" || schema.type === "integer") {
@@ -1599,10 +1499,7 @@ export class ZodSchemaConverter {
         }
         break;
       case "length":
-        if (
-          node.arguments.length > 0 &&
-          t.isNumericLiteral(node.arguments[0])
-        ) {
+        if (node.arguments.length > 0 && t.isNumericLiteral(node.arguments[0])) {
           if (schema.type === "string") {
             schema.minLength = node.arguments[0].value;
             schema.maxLength = node.arguments[0].value;
@@ -1692,16 +1589,14 @@ export class ZodSchemaConverter {
                   t.isNumericLiteral(prop.value) ||
                   t.isBooleanLiteral(prop.value))
               ) {
-                const key = t.isIdentifier(prop.key)
-                  ? prop.key.name
-                  : prop.key.value;
+                const key = t.isIdentifier(prop.key) ? prop.key.name : prop.key.value;
                 const value = t.isStringLiteral(prop.value)
                   ? prop.value.value
                   : t.isNumericLiteral(prop.value)
-                  ? prop.value.value
-                  : t.isBooleanLiteral(prop.value)
-                  ? prop.value.value
-                  : null;
+                    ? prop.value.value
+                    : t.isBooleanLiteral(prop.value)
+                      ? prop.value.value
+                      : null;
 
                 if (key !== null && value !== null) {
                   defaultObj[key] = value;
@@ -1714,24 +1609,18 @@ export class ZodSchemaConverter {
         }
         break;
       case "extend":
-        if (
-          node.arguments.length > 0 &&
-          t.isObjectExpression(node.arguments[0])
-        ) {
+        if (node.arguments.length > 0 && t.isObjectExpression(node.arguments[0])) {
           // Get the base schema by processing the object that extend is called on
           const baseSchemaResult = this.processZodNode(node.callee.object);
 
           // If it's a reference, resolve it to the actual schema
           let baseSchema = baseSchemaResult;
           if (baseSchemaResult && baseSchemaResult.$ref) {
-            const schemaName = baseSchemaResult.$ref.replace(
-              "#/components/schemas/",
-              ""
-            );
+            const schemaName = baseSchemaResult.$ref.replace("#/components/schemas/", "");
             // Try to convert the base schema if not already processed
             if (!this.zodSchemas[schemaName]) {
               logger.debug(
-                `[extend] Base schema ${schemaName} not found, attempting to convert it`
+                `[extend] Base schema ${schemaName} not found, attempting to convert it`,
               );
               this.convertZodSchemaToOpenApi(schemaName);
             }
@@ -1739,9 +1628,7 @@ export class ZodSchemaConverter {
             if (this.zodSchemas[schemaName]) {
               baseSchema = this.zodSchemas[schemaName];
             } else {
-              logger.debug(
-                `Could not resolve reference for extend: ${schemaName}`
-              );
+              logger.debug(`Could not resolve reference for extend: ${schemaName}`);
             }
           }
 
@@ -1766,17 +1653,15 @@ export class ZodSchemaConverter {
               type: "object",
               properties: {
                 ...baseSchema.properties,
-                ...(extendedProps?.properties || {}),
+                ...extendedProps?.properties,
               },
-              required: [
-                ...(baseSchema.required || []),
-                ...(extendedProps?.required || []),
-              ].filter((item, index, arr) => arr.indexOf(item) === index), // Remove duplicates
+              required: [...(baseSchema.required || []), ...(extendedProps?.required || [])].filter(
+                (item, index, arr) => arr.indexOf(item) === index,
+              ), // Remove duplicates
             };
 
             // Copy other properties from base schema
-            if (baseSchema.description)
-              schema.description = baseSchema.description;
+            if (baseSchema.description) schema.description = baseSchema.description;
           } else {
             logger.debug("Could not resolve base schema for extend");
             schema = extendedProps || { type: "object" };
@@ -1860,16 +1745,12 @@ export class ZodSchemaConverter {
     if (
       t.isMemberExpression(node.callee) &&
       t.isIdentifier(node.callee.property) &&
-      (node.callee.property.name === "optional" ||
-        node.callee.property.name === "nullish")
+      (node.callee.property.name === "optional" || node.callee.property.name === "nullish")
     ) {
       return true;
     }
 
-    if (
-      t.isMemberExpression(node.callee) &&
-      t.isCallExpression(node.callee.object)
-    ) {
+    if (t.isMemberExpression(node.callee) && t.isCallExpression(node.callee.object)) {
       return this.hasOptionalMethod(node.callee.object);
     }
 
@@ -1929,10 +1810,7 @@ export class ZodSchemaConverter {
                 typeRef.typeName.right.name === "infer"
               ) {
                 isInferType = true;
-              } else if (
-                t.isIdentifier(typeRef.typeName) &&
-                typeRef.typeName.name === "infer"
-              ) {
+              } else if (t.isIdentifier(typeRef.typeName) && typeRef.typeName.name === "infer") {
                 isInferType = true;
               }
 
@@ -1946,7 +1824,7 @@ export class ZodSchemaConverter {
                   const referencedSchemaName = param.exprName.name;
                   this.typeToSchemaMapping[typeName] = referencedSchemaName;
                   logger.debug(
-                    `Pre-scan: Mapped type '${typeName}' to schema '${referencedSchemaName}'`
+                    `Pre-scan: Mapped type '${typeName}' to schema '${referencedSchemaName}'`,
                   );
                 }
               }
@@ -1955,9 +1833,7 @@ export class ZodSchemaConverter {
         },
       });
     } catch (error) {
-      logger.error(
-        `Error scanning file ${filePath} for type mappings: ${error}`
-      );
+      logger.error(`Error scanning file ${filePath} for type mappings: ${error}`);
     }
   }
 
@@ -1978,9 +1854,7 @@ export class ZodSchemaConverter {
         }
       }
     } catch (error) {
-      logger.error(
-        `Error scanning directory ${dir} for type mappings: ${error}`
-      );
+      logger.error(`Error scanning directory ${dir} for type mappings: ${error}`);
     }
   }
 
@@ -2004,10 +1878,7 @@ export class ZodSchemaConverter {
           const source = path.node.source.value;
           if (source === "drizzle-zod") {
             path.node.specifiers.forEach((specifier) => {
-              if (
-                t.isImportSpecifier(specifier) ||
-                t.isImportDefaultSpecifier(specifier)
-              ) {
+              if (t.isImportSpecifier(specifier) || t.isImportDefaultSpecifier(specifier)) {
                 this.drizzleZodImports.add(specifier.local.name);
               }
             });
@@ -2015,10 +1886,7 @@ export class ZodSchemaConverter {
 
           // Track all imports for factory function resolution
           path.node.specifiers.forEach((specifier) => {
-            if (
-              t.isImportSpecifier(specifier) ||
-              t.isImportDefaultSpecifier(specifier)
-            ) {
+            if (t.isImportSpecifier(specifier) || t.isImportDefaultSpecifier(specifier)) {
               const importedName = specifier.local.name;
               importedModules[importedName] = source;
             }
@@ -2043,10 +1911,7 @@ export class ZodSchemaConverter {
                 const schemaName = declaration.id.name;
 
                 // Check if is Zos schema
-                if (
-                  this.isZodSchema(declaration.init) &&
-                  !this.zodSchemas[schemaName]
-                ) {
+                if (this.isZodSchema(declaration.init) && !this.zodSchemas[schemaName]) {
                   logger.debug(`Pre-processing Zod schema: ${schemaName}`);
                   this.processingSchemas.add(schemaName);
                   const schema = this.processZodNode(declaration.init);
@@ -2092,13 +1957,8 @@ export class ZodSchemaConverter {
   isZodSchema(node) {
     if (t.isCallExpression(node)) {
       // Check for drizzle-zod helper functions (e.g., createInsertSchema, createSelectSchema)
-      if (
-        t.isIdentifier(node.callee) &&
-        this.drizzleZodImports.has(node.callee.name)
-      ) {
-        logger.debug(
-          `[isZodSchema] Detected drizzle-zod function: ${node.callee.name}`
-        );
+      if (t.isIdentifier(node.callee) && this.drizzleZodImports.has(node.callee.name)) {
+        logger.debug(`[isZodSchema] Detected drizzle-zod function: ${node.callee.name}`);
         return true;
       }
 
@@ -2112,10 +1972,7 @@ export class ZodSchemaConverter {
       }
 
       // Check chained calls like z.string().regex()
-      if (
-        t.isMemberExpression(node.callee) &&
-        t.isCallExpression(node.callee.object)
-      ) {
+      if (t.isMemberExpression(node.callee) && t.isCallExpression(node.callee.object)) {
         return this.isZodSchema(node.callee.object);
       }
 
@@ -2138,7 +1995,7 @@ export class ZodSchemaConverter {
     functionName: string,
     currentFilePath: string,
     currentAST: t.File,
-    importedModules: Record<string, string>
+    importedModules: Record<string, string>,
   ): t.Node | null {
     // Check positive cache first
     if (this.factoryCache.has(functionName)) {
@@ -2181,7 +2038,9 @@ export class ZodSchemaConverter {
             this.factoryCache.set(functionName, importedFactory);
             return importedFactory;
           } else {
-            logger.debug(`[Factory] Function '${functionName}' found in imported file but does not return Zod schema`);
+            logger.debug(
+              `[Factory] Function '${functionName}' found in imported file but does not return Zod schema`,
+            );
           }
         }
       } else {
@@ -2216,8 +2075,7 @@ export class ZodSchemaConverter {
         if (
           t.isIdentifier(path.node.id) &&
           path.node.id.name === functionName &&
-          (t.isArrowFunctionExpression(path.node.init) ||
-            t.isFunctionExpression(path.node.init))
+          (t.isArrowFunctionExpression(path.node.init) || t.isFunctionExpression(path.node.init))
         ) {
           foundFunction = path.node.init;
           path.stop();
@@ -2243,10 +2101,7 @@ export class ZodSchemaConverter {
     let returnsZod = false;
 
     // For arrow functions with direct return (no block)
-    if (
-      t.isArrowFunctionExpression(functionNode) &&
-      !t.isBlockStatement(functionNode.body)
-    ) {
+    if (t.isArrowFunctionExpression(functionNode) && !t.isBlockStatement(functionNode.body)) {
       returnsZod = this.isZodSchema(functionNode.body);
       logger.debug(`[Factory] Arrow function direct return, isZodSchema: ${returnsZod}`);
       return returnsZod;
@@ -2314,10 +2169,7 @@ export class ZodSchemaConverter {
             // Track drizzle-zod imports
             if (source === "drizzle-zod") {
               path.node.specifiers.forEach((specifier) => {
-                if (
-                  t.isImportSpecifier(specifier) ||
-                  t.isImportDefaultSpecifier(specifier)
-                ) {
+                if (t.isImportSpecifier(specifier) || t.isImportDefaultSpecifier(specifier)) {
                   this.drizzleZodImports.add(specifier.local.name);
                 }
               });
@@ -2325,10 +2177,7 @@ export class ZodSchemaConverter {
 
             // Process each import specifier
             path.node.specifiers.forEach((specifier) => {
-              if (
-                t.isImportSpecifier(specifier) ||
-                t.isImportDefaultSpecifier(specifier)
-              ) {
+              if (t.isImportSpecifier(specifier) || t.isImportDefaultSpecifier(specifier)) {
                 const importedName = specifier.local.name;
                 importedModules[importedName] = source;
               }
@@ -2384,11 +2233,7 @@ export class ZodSchemaConverter {
   /**
    * Expand a factory function call by substituting arguments
    */
-  expandFactoryCall(
-    factoryNode: t.Node,
-    callNode: t.CallExpression,
-    filePath: string
-  ): OpenApiSchema | null {
+  expandFactoryCall(factoryNode: t.Node, callNode: t.CallExpression): OpenApiSchema | null {
     if (
       !t.isFunctionDeclaration(factoryNode) &&
       !t.isArrowFunctionExpression(factoryNode) &&
@@ -2426,7 +2271,7 @@ export class ZodSchemaConverter {
     logger.debug(`[Factory] Return node type: ${returnNode.type}`);
 
     // Clone and substitute parameters in return node
-    const substitutedNode = this.substituteParameters(returnNode, paramMap, filePath);
+    const substitutedNode = this.substituteParameters(returnNode, paramMap);
 
     logger.debug(`[Factory] Substituted node type: ${substitutedNode.type}`);
 
@@ -2434,7 +2279,9 @@ export class ZodSchemaConverter {
     const result = this.processZodNode(substitutedNode);
 
     if (result) {
-      logger.debug(`[Factory] Successfully processed substituted node, result has ${Object.keys(result).length} keys`);
+      logger.debug(
+        `[Factory] Successfully processed substituted node, result has ${Object.keys(result).length} keys`,
+      );
     } else {
       logger.debug(`[Factory] Failed to process substituted node`);
     }
@@ -2447,19 +2294,17 @@ export class ZodSchemaConverter {
    */
   extractReturnNode(functionNode: t.Node): t.Node | null {
     // For arrow functions with direct return (no block)
-    if (
-      t.isArrowFunctionExpression(functionNode) &&
-      !t.isBlockStatement(functionNode.body)
-    ) {
+    if (t.isArrowFunctionExpression(functionNode) && !t.isBlockStatement(functionNode.body)) {
       return functionNode.body;
     }
 
     // For functions with block statements
-    const body = t.isFunctionDeclaration(functionNode) ||
+    const body =
+      t.isFunctionDeclaration(functionNode) ||
       t.isArrowFunctionExpression(functionNode) ||
       t.isFunctionExpression(functionNode)
-      ? functionNode.body
-      : null;
+        ? functionNode.body
+        : null;
 
     if (!body || !t.isBlockStatement(body)) {
       return null;
@@ -2498,11 +2343,7 @@ export class ZodSchemaConverter {
   /**
    * Substitute parameters with actual arguments in an AST node (deep clone and replace)
    */
-  substituteParameters(
-    node: t.Node,
-    paramMap: Map<string, t.Node>,
-    filePath: string
-  ): t.Node {
+  substituteParameters(node: t.Node, paramMap: Map<string, t.Node>): t.Node {
     // Deep clone the node to avoid modifying the original
     const cloned = t.cloneNode(node, /* deep */ true, /* withoutLoc */ false);
 
@@ -2526,7 +2367,7 @@ export class ZodSchemaConverter {
               return t.spreadElement(substitute(arg.argument) as t.Expression);
             }
             return substitute(arg) as t.Expression;
-          })
+          }),
         );
       }
 
@@ -2535,7 +2376,7 @@ export class ZodSchemaConverter {
         return t.memberExpression(
           substitute(n.object) as t.Expression,
           n.computed ? (substitute(n.property) as t.Expression) : n.property,
-          n.computed
+          n.computed,
         );
       }
 
@@ -2548,14 +2389,14 @@ export class ZodSchemaConverter {
                 prop.computed ? (substitute(prop.key) as t.Expression) : prop.key,
                 substitute(prop.value) as t.Expression,
                 prop.computed,
-                prop.shorthand
+                prop.shorthand,
               );
             }
             if (t.isSpreadElement(prop)) {
               return t.spreadElement(substitute(prop.argument) as t.Expression);
             }
             return prop;
-          })
+          }),
         );
       }
 
@@ -2568,7 +2409,7 @@ export class ZodSchemaConverter {
               return t.spreadElement(substitute(elem.argument) as t.Expression);
             }
             return substitute(elem) as t.Expression;
-          })
+          }),
         );
       }
 

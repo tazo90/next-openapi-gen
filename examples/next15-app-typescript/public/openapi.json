@@ -63,9 +63,7 @@
         "properties": {
           "success": {
             "type": "boolean",
-            "enum": [
-              true
-            ]
+            "enum": [true]
           },
           "httpCode": {
             "type": "string"
@@ -122,9 +120,7 @@
           },
           "success": {
             "type": "boolean",
-            "enum": [
-              true
-            ]
+            "enum": [true]
           },
           "httpCode": {
             "type": "string"
@@ -148,9 +144,7 @@
         "properties": {
           "status": {
             "type": "string",
-            "enum": [
-              "success"
-            ]
+            "enum": ["success"]
           },
           "data": {
             "type": "object",
@@ -170,9 +164,7 @@
         "properties": {
           "status": {
             "type": "string",
-            "enum": [
-              "error"
-            ]
+            "enum": ["error"]
           },
           "error": {
             "type": "string",
@@ -191,9 +183,7 @@
             "properties": {
               "type": {
                 "type": "string",
-                "enum": [
-                  "email"
-                ],
+                "enum": ["email"],
                 "nullable": false
               },
               "to": {
@@ -218,9 +208,7 @@
             "properties": {
               "type": {
                 "type": "string",
-                "enum": [
-                  "sms"
-                ],
+                "enum": ["sms"],
                 "nullable": false
               },
               "phoneNumber": {
@@ -240,9 +228,7 @@
             "properties": {
               "type": {
                 "type": "string",
-                "enum": [
-                  "push"
-                ],
+                "enum": ["push"],
                 "nullable": false
               },
               "deviceId": {
@@ -269,9 +255,7 @@
         "properties": {
           "type": {
             "type": "string",
-            "enum": [
-              "email"
-            ],
+            "enum": ["email"],
             "nullable": false
           },
           "to": {
@@ -296,9 +280,7 @@
         "properties": {
           "type": {
             "type": "string",
-            "enum": [
-              "sms"
-            ],
+            "enum": ["sms"],
             "nullable": false
           },
           "phoneNumber": {
@@ -318,9 +300,7 @@
         "properties": {
           "type": {
             "type": "string",
-            "enum": [
-              "push"
-            ],
+            "enum": ["push"],
             "nullable": false
           },
           "deviceId": {
@@ -353,11 +333,7 @@
           },
           "sort": {
             "type": "string",
-            "enum": [
-              "newest",
-              "oldest",
-              "likes"
-            ],
+            "enum": ["newest", "oldest", "likes"],
             "description": "Sort order"
           },
           "includeDeleted": {
@@ -457,10 +433,7 @@
                     },
                     "role": {
                       "type": "string",
-                      "enum": [
-                        "admin",
-                        "user"
-                      ]
+                      "enum": ["admin", "user"]
                     },
                     "address": {
                       "type": "object",
@@ -550,10 +523,7 @@
                       },
                       "role": {
                         "type": "string",
-                        "enum": [
-                          "admin",
-                          "user"
-                        ]
+                        "enum": ["admin", "user"]
                       },
                       "address": {
                         "type": "object",
@@ -692,10 +662,7 @@
               },
               "role": {
                 "type": "string",
-                "enum": [
-                  "admin",
-                  "user"
-                ]
+                "enum": ["admin", "user"]
               },
               "address": {
                 "type": "object",
@@ -785,10 +752,7 @@
                 },
                 "role": {
                   "type": "string",
-                  "enum": [
-                    "admin",
-                    "user"
-                  ]
+                  "enum": ["admin", "user"]
                 },
                 "address": {
                   "type": "object",
@@ -867,10 +831,7 @@
                     },
                     "role": {
                       "type": "string",
-                      "enum": [
-                        "admin",
-                        "user"
-                      ]
+                      "enum": ["admin", "user"]
                     },
                     "address": {
                       "type": "object",
@@ -960,10 +921,7 @@
                       },
                       "role": {
                         "type": "string",
-                        "enum": [
-                          "admin",
-                          "user"
-                        ]
+                        "enum": ["admin", "user"]
                       },
                       "address": {
                         "type": "object",
@@ -1072,10 +1030,7 @@
           },
           "role": {
             "type": "string",
-            "enum": [
-              "admin",
-              "user"
-            ]
+            "enum": ["admin", "user"]
           },
           "address": {
             "type": "object",
@@ -1220,10 +1175,7 @@
                   },
                   "role": {
                     "type": "string",
-                    "enum": [
-                      "admin",
-                      "user"
-                    ]
+                    "enum": ["admin", "user"]
                   },
                   "address": {
                     "type": "object",
@@ -1313,10 +1265,7 @@
                     },
                     "role": {
                       "type": "string",
-                      "enum": [
-                        "admin",
-                        "user"
-                      ]
+                      "enum": ["admin", "user"]
                     },
                     "address": {
                       "type": "object",
@@ -1473,10 +1422,7 @@
                   },
                   "role": {
                     "type": "string",
-                    "enum": [
-                      "admin",
-                      "user"
-                    ]
+                    "enum": ["admin", "user"]
                   },
                   "address": {
                     "type": "object",
@@ -1566,10 +1512,7 @@
                     },
                     "role": {
                       "type": "string",
-                      "enum": [
-                        "admin",
-                        "user"
-                      ]
+                      "enum": ["admin", "user"]
                     },
                     "address": {
                       "type": "object",
@@ -2003,10 +1946,7 @@
           },
           "role": {
             "type": "string",
-            "enum": [
-              "admin",
-              "user"
-            ]
+            "enum": ["admin", "user"]
           },
           "address": {
             "type": "object",
@@ -2105,9 +2045,7 @@
         "operationId": "post-auth-login",
         "summary": "Authenticate as a user.\r",
         "description": "Login a user",
-        "tags": [
-          "Auth"
-        ],
+        "tags": ["Auth"],
         "parameters": [],
         "requestBody": {
           "content": {
@@ -2143,9 +2081,7 @@
         "operationId": "get-llms",
         "summary": "GET /api/llms\r",
         "description": "Get list of available LLMs",
-        "tags": [
-          "Llms"
-        ],
+        "tags": ["Llms"],
         "parameters": [],
         "responses": {
           "200": {
@@ -2172,9 +2108,7 @@
         "operationId": "get-notifications",
         "summary": "Get notification status\r",
         "description": "Returns success or error response (demonstrates discriminated union types)",
-        "tags": [
-          "Notifications"
-        ],
+        "tags": ["Notifications"],
         "parameters": [],
         "responses": {
           "200": {
@@ -2199,9 +2133,7 @@
         "operationId": "post-notifications",
         "summary": "Send a notification\r",
         "description": "Send notification via email, SMS, or push (demonstrates discriminated unions)",
-        "tags": [
-          "Notifications"
-        ],
+        "tags": ["Notifications"],
         "parameters": [],
         "requestBody": {
           "content": {
@@ -2254,9 +2186,7 @@
         "operationId": "get-organizations-{orgId}-projects-{projectId}-tasks-{taskId}-comments",
         "summary": "Get Task Comments\r",
         "description": "Retrieve comments for a specific task within a project and organization",
-        "tags": [
-          "Organizations"
-        ],
+        "tags": ["Organizations"],
         "parameters": [
           {
             "in": "query",
@@ -2283,11 +2213,7 @@
             "name": "sort",
             "schema": {
               "type": "string",
-              "enum": [
-                "newest",
-                "oldest",
-                "likes"
-              ],
+              "enum": ["newest", "oldest", "likes"],
               "description": "Sort order"
             },
             "required": false,
@@ -2385,9 +2311,7 @@
         "operationId": "post-organizations-{orgId}-projects-{projectId}-tasks-{taskId}-comments",
         "summary": "Create Task Comment\r",
         "description": "Add a new comment to a specific task",
-        "tags": [
-          "Organizations"
-        ],
+        "tags": ["Organizations"],
         "parameters": [
           {
             "in": "path",
@@ -2460,9 +2384,7 @@
         "operationId": "patch-organizations-{orgId}-projects-{projectId}-tasks-{taskId}-comments",
         "summary": "Update Task Comment\r",
         "description": "Modify an existing comment on a task",
-        "tags": [
-          "Organizations"
-        ],
+        "tags": ["Organizations"],
         "parameters": [
           {
             "in": "path",
@@ -2535,9 +2457,7 @@
         "operationId": "delete-organizations-{orgId}-projects-{projectId}-tasks-{taskId}-comments",
         "summary": "Delete Task Comment\r",
         "description": "Remove a comment from a task (soft delete)",
-        "tags": [
-          "Organizations"
-        ],
+        "tags": ["Organizations"],
         "parameters": [
           {
             "in": "path",
@@ -2596,9 +2516,7 @@
         "operationId": "get-products",
         "summary": "Get Product by ID\r",
         "description": "Demonstrates Awaited<ReturnType<typeof func>> utility type support",
-        "tags": [
-          "Products"
-        ],
+        "tags": ["Products"],
         "parameters": [
           {
             "in": "path",
@@ -2633,9 +2551,7 @@
         "operationId": "post-products",
         "summary": "Create New Product\r",
         "description": "Demonstrates ReturnType and Parameters utility types",
-        "tags": [
-          "Products"
-        ],
+        "tags": ["Products"],
         "parameters": [],
         "requestBody": {
           "content": {
@@ -2669,9 +2585,7 @@
         "operationId": "patch-products",
         "summary": "Update Product Stock\r",
         "description": "Demonstrates Awaited<ReturnType<typeof func>> with async functions",
-        "tags": [
-          "Products"
-        ],
+        "tags": ["Products"],
         "parameters": [
           {
             "in": "path",
@@ -2717,9 +2631,7 @@
         "operationId": "get-products-{id}-summary",
         "summary": "Get Product Summary\r",
         "description": "Demonstrates simple Awaited<ReturnType<>> pattern",
-        "tags": [
-          "Products"
-        ],
+        "tags": ["Products"],
         "parameters": [
           {
             "in": "path",
@@ -2756,9 +2668,7 @@
         "operationId": "get-reports",
         "summary": "List reports\r",
         "description": "Returns a paginated list of reports. Requires both Bearer token and API key.",
-        "tags": [
-          "Reports"
-        ],
+        "tags": ["Reports"],
         "parameters": [
           {
             "in": "query",
@@ -2812,9 +2722,7 @@
         "operationId": "post-reports",
         "summary": "Create report\r",
         "description": "Creates a new report. Requires Bearer token and a partner-specific token.",
-        "tags": [
-          "Reports"
-        ],
+        "tags": ["Reports"],
         "parameters": [],
         "security": [
           {
@@ -2858,9 +2766,7 @@
         "operationId": "post-upload",
         "summary": "Upload image file\r",
         "description": "Uploads PNG or JPG image files with validation and metadata",
-        "tags": [
-          "Uploads"
-        ],
+        "tags": ["Uploads"],
         "parameters": [],
         "requestBody": {
           "content": {
@@ -2897,9 +2803,7 @@
         "operationId": "get-users-{id}",
         "summary": "Get User by ID\r",
         "description": "Retrieves a user's profile information",
-        "tags": [
-          "Users"
-        ],
+        "tags": ["Users"],
         "parameters": [
           {
             "in": "path",

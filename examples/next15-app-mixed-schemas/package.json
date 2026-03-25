@@ -3,11 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
     "build": "next build",
-    "start": "next start",
+    "dev": "next dev",
     "lint": "next lint",
-    "openapi:generate": "next-openapi-gen generate"
+    "openapi:generate": "next-openapi-gen generate",
+    "start": "next start"
   },
   "dependencies": {
     "@scalar/api-reference-react": "^0.8.1",

@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import {
-  PostIdParams,
-  PostResponseSchema,
-  UpdatePostSchema,
-} from "@/schemas/post";
+
+import { PostIdParams, PostResponseSchema, UpdatePostSchema } from "@/schemas/post";
 
 /**
  * Get post by ID
@@ -14,10 +11,7 @@ import {
  * @tag Posts
  * @openapi
  */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
 
   // Validate path params
@@ -51,10 +45,7 @@ export async function GET(
  * @tag Posts
  * @openapi
  */
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
     const body = await request.json();
@@ -83,13 +74,10 @@ export async function PATCH(
     if (error instanceof Error) {
       return NextResponse.json(
         { error: "Validation failed", details: error.message },
-        { status: 400 }
+        { status: 400 },
       );
     }
-    return NextResponse.json(
-      { error: "Failed to update post" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to update post" }, { status: 500 });
   }
 }
 
@@ -104,7 +92,7 @@ export async function PATCH(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
 

@@ -70,7 +70,7 @@
         "variables": {
           "ERROR_MESSAGE": "Something went wrong"
         }
-      }      
+      }
     }
   },
   "apiDir": "./src/app/api",

@@ -123,7 +123,7 @@ type UpdateCommentResponse = {
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { orgId: string; projectId: string; taskId: string } }
+  { params }: { params: { orgId: string; projectId: string; taskId: string } },
 ) {
   const { orgId, projectId, taskId } = params;
 
@@ -220,7 +220,7 @@ export async function GET(
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { orgId: string; projectId: string; taskId: string } }
+  { params }: { params: { orgId: string; projectId: string; taskId: string } },
 ) {
   try {
     // Parse request body
@@ -230,7 +230,7 @@ export async function POST(
     if (!body.content || body.content.trim().length === 0) {
       return NextResponse.json(
         { success: false, message: "Comment content is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -268,7 +268,7 @@ export async function POST(
         success: false,
         message: "An error occurred while creating the comment",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -284,7 +284,7 @@ export async function POST(
  */
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { orgId: string; projectId: string; taskId: string } }
+  { params }: { params: { orgId: string; projectId: string; taskId: string } },
 ) {
   // Get the comment ID from the query parameter
   const url = new URL(request.url);
@@ -293,7 +293,7 @@ export async function PATCH(
   if (!commentId) {
     return NextResponse.json(
       { success: false, message: "Comment ID is required" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -311,7 +311,7 @@ export async function PATCH(
     ) {
       return NextResponse.json(
         { success: false, message: "No update parameters provided" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -350,7 +350,7 @@ export async function PATCH(
         success: false,
         message: "An error occurred while updating the comment",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -365,7 +365,7 @@ export async function PATCH(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { orgId: string; projectId: string; taskId: string } }
+  { params }: { params: { orgId: string; projectId: string; taskId: string } },
 ) {
   // Get the comment ID from the query parameter
   const url = new URL(request.url);
@@ -374,7 +374,7 @@ export async function DELETE(
   if (!commentId) {
     return NextResponse.json(
       { success: false, message: "Comment ID is required" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -391,7 +391,7 @@ export async function DELETE(
         success: false,
         message: "An error occurred while deleting the comment",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

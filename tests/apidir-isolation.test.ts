@@ -1,8 +1,10 @@
-import { describe, it, expect } from "vitest";
-import { ZodSchemaConverter } from "../src/lib/zod-converter.js";
-import path from "path";
-import os from "os";
 import fs from "fs";
+import os from "os";
+import path from "path";
+
+import { describe, it, expect } from "vitest";
+
+import { ZodSchemaConverter } from "../src/lib/zod-converter.js";
 
 /**
  * Regression test for: @response ignores apiDir and leaks schemas from private routes
@@ -34,7 +36,7 @@ export const PublicItemSchema = z.object({ id: z.string(), name: z.string() });
  * @response PublicItemSchema
  */
 export async function GET() {}
-`
+`,
     );
 
     // Private route – defines SecretSchema (must NOT appear in output)
@@ -47,7 +49,7 @@ export const SecretSchema = z.object({ token: z.string() });
  * @response SecretSchema
  */
 export async function GET() {}
-`
+`,
     );
 
     return {

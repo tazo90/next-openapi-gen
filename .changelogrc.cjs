@@ -51,8 +51,7 @@ module.exports = {
       if (
         commit.type === "chore" &&
         commit.subject &&
-        (commit.subject.match(/^bump/i) ||
-          commit.subject.match(/^v?\d+\.\d+\.\d+/))
+        (commit.subject.match(/^bump/i) || commit.subject.match(/^v?\d+\.\d+\.\d+/))
       ) {
         return;
       }
@@ -62,8 +61,7 @@ module.exports = {
 
       // Add emoji to type and capitalize
       if (newCommit.type && emojis[newCommit.type]) {
-        const typeName =
-          newCommit.type.charAt(0).toUpperCase() + newCommit.type.slice(1);
+        const typeName = newCommit.type.charAt(0).toUpperCase() + newCommit.type.slice(1);
         const typeNames = {
           Feat: "Features",
           Fix: "Bug Fixes",
@@ -77,9 +75,7 @@ module.exports = {
           Chore: "Chores",
           Revert: "Reverts",
         };
-        newCommit.type = `${emojis[newCommit.type]} ${
-          typeNames[typeName] || typeName
-        }`;
+        newCommit.type = `${emojis[newCommit.type]} ${typeNames[typeName] || typeName}`;
       }
 
       // Handle breaking changes
@@ -99,13 +95,10 @@ module.exports = {
         if (url) {
           url = `${url}/issues/`;
           // Issue URLs.
-          newCommit.subject = newCommit.subject.replace(
-            /#([0-9]+)/g,
-            (_, issue) => {
-              issues.push(issue);
-              return `[#${issue}](${url}${issue})`;
-            }
-          );
+          newCommit.subject = newCommit.subject.replace(/#([0-9]+)/g, (_, issue) => {
+            issues.push(issue);
+            return `[#${issue}](${url}${issue})`;
+          });
         }
         if (context.host) {
           // User URLs.
@@ -117,7 +110,7 @@ module.exports = {
               }
 
               return `[@${username}](${context.host}/${username})`;
-            }
+            },
           );
         }
       }

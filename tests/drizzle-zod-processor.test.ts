@@ -1,37 +1,28 @@
-import { describe, it, expect } from "vitest";
-import { DrizzleZodProcessor } from "../src/lib/drizzle-zod-processor.js";
-import { parseTypeScriptFile } from "../src/lib/utils.js";
 import traverse from "@babel/traverse";
 import * as t from "@babel/types";
+import { describe, it, expect } from "vitest";
+
+import { DrizzleZodProcessor } from "../src/lib/drizzle-zod-processor.js";
+import { parseTypeScriptFile } from "../src/lib/utils.js";
 
 describe("DrizzleZodProcessor", () => {
   describe("isDrizzleZodHelper", () => {
     it("should recognize createInsertSchema as drizzle-zod helper", () => {
-      expect(DrizzleZodProcessor.isDrizzleZodHelper("createInsertSchema")).toBe(
-        true
-      );
+      expect(DrizzleZodProcessor.isDrizzleZodHelper("createInsertSchema")).toBe(true);
     });
 
     it("should recognize createSelectSchema as drizzle-zod helper", () => {
-      expect(DrizzleZodProcessor.isDrizzleZodHelper("createSelectSchema")).toBe(
-        true
-      );
+      expect(DrizzleZodProcessor.isDrizzleZodHelper("createSelectSchema")).toBe(true);
     });
 
     it("should recognize createUpdateSchema as drizzle-zod helper", () => {
-      expect(DrizzleZodProcessor.isDrizzleZodHelper("createUpdateSchema")).toBe(
-        true
-      );
+      expect(DrizzleZodProcessor.isDrizzleZodHelper("createUpdateSchema")).toBe(true);
     });
 
     it("should not recognize non-drizzle-zod functions", () => {
-      expect(DrizzleZodProcessor.isDrizzleZodHelper("createSchema")).toBe(
-        false
-      );
+      expect(DrizzleZodProcessor.isDrizzleZodHelper("createSchema")).toBe(false);
       expect(DrizzleZodProcessor.isDrizzleZodHelper("z.object")).toBe(false);
-      expect(DrizzleZodProcessor.isDrizzleZodHelper("randomFunction")).toBe(
-        false
-      );
+      expect(DrizzleZodProcessor.isDrizzleZodHelper("randomFunction")).toBe(false);
     });
   });
 
@@ -51,10 +42,7 @@ describe("DrizzleZodProcessor", () => {
 
       traverse(ast, {
         CallExpression: (path: any) => {
-          if (
-            t.isIdentifier(path.node.callee) &&
-            path.node.callee.name === "createInsertSchema"
-          ) {
+          if (t.isIdentifier(path.node.callee) && path.node.callee.name === "createInsertSchema") {
             processedSchema = DrizzleZodProcessor.processSchema(path.node);
           }
         },
@@ -80,10 +68,7 @@ describe("DrizzleZodProcessor", () => {
 
       traverse(ast, {
         CallExpression: (path: any) => {
-          if (
-            t.isIdentifier(path.node.callee) &&
-            path.node.callee.name === "createInsertSchema"
-          ) {
+          if (t.isIdentifier(path.node.callee) && path.node.callee.name === "createInsertSchema") {
             processedSchema = DrizzleZodProcessor.processSchema(path.node);
           }
         },
@@ -104,10 +89,7 @@ describe("DrizzleZodProcessor", () => {
 
       traverse(ast, {
         CallExpression: (path: any) => {
-          if (
-            t.isIdentifier(path.node.callee) &&
-            path.node.callee.name === "createInsertSchema"
-          ) {
+          if (t.isIdentifier(path.node.callee) && path.node.callee.name === "createInsertSchema") {
             processedSchema = DrizzleZodProcessor.processSchema(path.node);
           }
         },
@@ -130,10 +112,7 @@ describe("DrizzleZodProcessor", () => {
 
       traverse(ast, {
         CallExpression: (path: any) => {
-          if (
-            t.isIdentifier(path.node.callee) &&
-            path.node.callee.name === "createInsertSchema"
-          ) {
+          if (t.isIdentifier(path.node.callee) && path.node.callee.name === "createInsertSchema") {
             processedSchema = DrizzleZodProcessor.processSchema(path.node);
           }
         },
@@ -156,18 +135,13 @@ describe("DrizzleZodProcessor", () => {
 
       traverse(ast, {
         CallExpression: (path: any) => {
-          if (
-            t.isIdentifier(path.node.callee) &&
-            path.node.callee.name === "createInsertSchema"
-          ) {
+          if (t.isIdentifier(path.node.callee) && path.node.callee.name === "createInsertSchema") {
             processedSchema = DrizzleZodProcessor.processSchema(path.node);
           }
         },
       });
 
-      expect(processedSchema?.properties?.title?.description).toBe(
-        "Post title"
-      );
+      expect(processedSchema?.properties?.title?.description).toBe("Post title");
     });
   });
 
@@ -187,10 +161,7 @@ describe("DrizzleZodProcessor", () => {
 
       traverse(ast, {
         CallExpression: (path: any) => {
-          if (
-            t.isIdentifier(path.node.callee) &&
-            path.node.callee.name === "createInsertSchema"
-          ) {
+          if (t.isIdentifier(path.node.callee) && path.node.callee.name === "createInsertSchema") {
             processedSchema = DrizzleZodProcessor.processSchema(path.node);
           }
         },
@@ -217,10 +188,7 @@ describe("DrizzleZodProcessor", () => {
 
       traverse(ast, {
         CallExpression: (path: any) => {
-          if (
-            t.isIdentifier(path.node.callee) &&
-            path.node.callee.name === "createInsertSchema"
-          ) {
+          if (t.isIdentifier(path.node.callee) && path.node.callee.name === "createInsertSchema") {
             processedSchema = DrizzleZodProcessor.processSchema(path.node);
           }
         },
@@ -244,10 +212,7 @@ describe("DrizzleZodProcessor", () => {
 
       traverse(ast, {
         CallExpression: (path: any) => {
-          if (
-            t.isIdentifier(path.node.callee) &&
-            path.node.callee.name === "createInsertSchema"
-          ) {
+          if (t.isIdentifier(path.node.callee) && path.node.callee.name === "createInsertSchema") {
             processedSchema = DrizzleZodProcessor.processSchema(path.node);
           }
         },
@@ -271,10 +236,7 @@ describe("DrizzleZodProcessor", () => {
 
       traverse(ast, {
         CallExpression: (path: any) => {
-          if (
-            t.isIdentifier(path.node.callee) &&
-            path.node.callee.name === "createInsertSchema"
-          ) {
+          if (t.isIdentifier(path.node.callee) && path.node.callee.name === "createInsertSchema") {
             processedSchema = DrizzleZodProcessor.processSchema(path.node);
           }
         },
@@ -299,10 +261,7 @@ describe("DrizzleZodProcessor", () => {
 
       traverse(ast, {
         CallExpression: (path: any) => {
-          if (
-            t.isIdentifier(path.node.callee) &&
-            path.node.callee.name === "createInsertSchema"
-          ) {
+          if (t.isIdentifier(path.node.callee) && path.node.callee.name === "createInsertSchema") {
             processedSchema = DrizzleZodProcessor.processSchema(path.node);
           }
         },
@@ -330,10 +289,7 @@ describe("DrizzleZodProcessor", () => {
 
       traverse(ast, {
         CallExpression: (path: any) => {
-          if (
-            t.isIdentifier(path.node.callee) &&
-            path.node.callee.name === "createInsertSchema"
-          ) {
+          if (t.isIdentifier(path.node.callee) && path.node.callee.name === "createInsertSchema") {
             processedSchema = DrizzleZodProcessor.processSchema(path.node);
           }
         },
@@ -354,10 +310,7 @@ describe("DrizzleZodProcessor", () => {
 
       traverse(ast, {
         CallExpression: (path: any) => {
-          if (
-            t.isIdentifier(path.node.callee) &&
-            path.node.callee.name === "createInsertSchema"
-          ) {
+          if (t.isIdentifier(path.node.callee) && path.node.callee.name === "createInsertSchema") {
             processedSchema = DrizzleZodProcessor.processSchema(path.node);
           }
         },
@@ -378,10 +331,7 @@ describe("DrizzleZodProcessor", () => {
 
       traverse(ast, {
         CallExpression: (path: any) => {
-          if (
-            t.isIdentifier(path.node.callee) &&
-            path.node.callee.name === "createInsertSchema"
-          ) {
+          if (t.isIdentifier(path.node.callee) && path.node.callee.name === "createInsertSchema") {
             processedSchema = DrizzleZodProcessor.processSchema(path.node);
           }
         },
@@ -402,10 +352,7 @@ describe("DrizzleZodProcessor", () => {
 
       traverse(ast, {
         CallExpression: (path: any) => {
-          if (
-            t.isIdentifier(path.node.callee) &&
-            path.node.callee.name === "createInsertSchema"
-          ) {
+          if (t.isIdentifier(path.node.callee) && path.node.callee.name === "createInsertSchema") {
             processedSchema = DrizzleZodProcessor.processSchema(path.node);
           }
         },
@@ -428,10 +375,7 @@ describe("DrizzleZodProcessor", () => {
 
       traverse(ast, {
         CallExpression: (path: any) => {
-          if (
-            t.isIdentifier(path.node.callee) &&
-            path.node.callee.name === "createInsertSchema"
-          ) {
+          if (t.isIdentifier(path.node.callee) && path.node.callee.name === "createInsertSchema") {
             processedSchema = DrizzleZodProcessor.processSchema(path.node);
           }
         },
@@ -453,19 +397,14 @@ describe("DrizzleZodProcessor", () => {
 
       traverse(ast, {
         CallExpression: (path: any) => {
-          if (
-            t.isIdentifier(path.node.callee) &&
-            path.node.callee.name === "createInsertSchema"
-          ) {
+          if (t.isIdentifier(path.node.callee) && path.node.callee.name === "createInsertSchema") {
             processedSchema = DrizzleZodProcessor.processSchema(path.node);
           }
         },
       });
 
       expect(processedSchema?.properties?.count?.minimum).toBe(0);
-      expect(
-        processedSchema?.properties?.count?.exclusiveMinimum
-      ).toBeUndefined();
+      expect(processedSchema?.properties?.count?.exclusiveMinimum).toBeUndefined();
     });
   });
 
@@ -482,10 +421,7 @@ describe("DrizzleZodProcessor", () => {
 
       traverse(ast, {
         CallExpression: (path: any) => {
-          if (
-            t.isIdentifier(path.node.callee) &&
-            path.node.callee.name === "createInsertSchema"
-          ) {
+          if (t.isIdentifier(path.node.callee) && path.node.callee.name === "createInsertSchema") {
             processedSchema = DrizzleZodProcessor.processSchema(path.node);
           }
         },
@@ -506,10 +442,7 @@ describe("DrizzleZodProcessor", () => {
 
       traverse(ast, {
         CallExpression: (path: any) => {
-          if (
-            t.isIdentifier(path.node.callee) &&
-            path.node.callee.name === "createInsertSchema"
-          ) {
+          if (t.isIdentifier(path.node.callee) && path.node.callee.name === "createInsertSchema") {
             processedSchema = DrizzleZodProcessor.processSchema(path.node);
           }
         },
@@ -532,10 +465,7 @@ describe("DrizzleZodProcessor", () => {
 
       traverse(ast, {
         CallExpression: (path: any) => {
-          if (
-            t.isIdentifier(path.node.callee) &&
-            path.node.callee.name === "createInsertSchema"
-          ) {
+          if (t.isIdentifier(path.node.callee) && path.node.callee.name === "createInsertSchema") {
             processedSchema = DrizzleZodProcessor.processSchema(path.node);
           }
         },
@@ -556,10 +486,7 @@ describe("DrizzleZodProcessor", () => {
 
       traverse(ast, {
         CallExpression: (path: any) => {
-          if (
-            t.isIdentifier(path.node.callee) &&
-            path.node.callee.name === "createInsertSchema"
-          ) {
+          if (t.isIdentifier(path.node.callee) && path.node.callee.name === "createInsertSchema") {
             processedSchema = DrizzleZodProcessor.processSchema(path.node);
           }
         },
@@ -587,10 +514,7 @@ describe("DrizzleZodProcessor", () => {
 
       traverse(ast, {
         CallExpression: (path: any) => {
-          if (
-            t.isIdentifier(path.node.callee) &&
-            path.node.callee.name === "createInsertSchema"
-          ) {
+          if (t.isIdentifier(path.node.callee) && path.node.callee.name === "createInsertSchema") {
             processedSchema = DrizzleZodProcessor.processSchema(path.node);
           }
         },

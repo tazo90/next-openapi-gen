@@ -2,19 +2,25 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
 export const AdminUserListResponse = z.object({
-  users: z.array(z.object({
-    id: z.string().describe("User ID"),
-    email: z.string().email().describe("User email"),
-    name: z.string().describe("User full name"),
-    role: z.enum(["admin", "user"]).describe("User role"),
-    status: z.enum(["active", "inactive", "banned"]).describe("User status"),
-    createdAt: z.string().describe("Account creation date"),
-  })).describe("List of users"),
-  pagination: z.object({
-    page: z.number().describe("Current page"),
-    limit: z.number().describe("Items per page"),
-    total: z.number().describe("Total number of users"),
-  }).describe("Pagination information"),
+  users: z
+    .array(
+      z.object({
+        id: z.string().describe("User ID"),
+        email: z.string().email().describe("User email"),
+        name: z.string().describe("User full name"),
+        role: z.enum(["admin", "user"]).describe("User role"),
+        status: z.enum(["active", "inactive", "banned"]).describe("User status"),
+        createdAt: z.string().describe("Account creation date"),
+      }),
+    )
+    .describe("List of users"),
+  pagination: z
+    .object({
+      page: z.number().describe("Current page"),
+      limit: z.number().describe("Items per page"),
+      total: z.number().describe("Total number of users"),
+    })
+    .describe("Pagination information"),
 });
 
 export const AdminUserQuery = z.object({

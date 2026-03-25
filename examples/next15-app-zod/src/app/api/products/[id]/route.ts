@@ -11,10 +11,7 @@ import { NextRequest, NextResponse } from "next/server";
  * @auth bearer
  * @openapi
  */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   // Implementation here...
 
   return NextResponse.json({});
@@ -29,10 +26,7 @@ export async function GET(
  * @auth bearer
  * @openapi
  */
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
   // Implementation here...
 
   return NextResponse.json({});
@@ -45,10 +39,7 @@ export async function PATCH(
  * @auth bearer
  * @openapi
  */
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
   // Implementation here...
 
   return new NextResponse(null, { status: 204 });

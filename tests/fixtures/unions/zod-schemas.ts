@@ -11,11 +11,7 @@ export const StringOrNumberSchema = z.union([z.string(), z.number()]);
 
 export const StringOrBooleanSchema = z.union([z.string(), z.boolean()]);
 
-export const PrimitiveUnionSchema = z.union([
-  z.string(),
-  z.number(),
-  z.boolean(),
-]);
+export const PrimitiveUnionSchema = z.union([z.string(), z.number(), z.boolean()]);
 
 // ========================================
 // 2. Literal Unions (should become enums)
@@ -81,10 +77,7 @@ const ErrorResponseSchema = z.object({
   code: z.number().describe("Error code"),
 });
 
-export const ApiResponseSchema = z.union([
-  SuccessResponseSchema,
-  ErrorResponseSchema,
-]);
+export const ApiResponseSchema = z.union([SuccessResponseSchema, ErrorResponseSchema]);
 
 // ========================================
 // 5. Discriminated Unions (recommended pattern)
@@ -131,7 +124,10 @@ export const NotificationRegularUnionSchema = z.union([
 const CreditCardPaymentSchema = z.object({
   type: z.literal("credit_card"),
   cardNumber: z.string().describe("Credit card number"),
-  expiryDate: z.string().regex(/^\d{2}\/\d{2}$/).describe("MM/YY format"),
+  expiryDate: z
+    .string()
+    .regex(/^\d{2}\/\d{2}$/)
+    .describe("MM/YY format"),
   cvv: z.string().length(3).describe("CVV code"),
 });
 
@@ -190,30 +186,20 @@ export const GetUserResponseSchema = z.discriminatedUnion("status", [
 
 export const OptionalStringSchema = z.union([z.string(), z.undefined()]);
 
-export const NullableOrUndefinedSchema = z.union([
-  z.string(),
-  z.null(),
-  z.undefined(),
-]);
+export const NullableOrUndefinedSchema = z.union([z.string(), z.null(), z.undefined()]);
 
 // ========================================
 // 10. Array of Union Types
 // ========================================
 
-export const MixedArraySchema = z.array(
-  z.union([z.string(), z.number(), z.boolean()])
-);
+export const MixedArraySchema = z.array(z.union([z.string(), z.number(), z.boolean()]));
 
 // ========================================
 // 11. Union in Object Properties
 // ========================================
 
 export const ApiResultSchema = z.object({
-  status: z.union([
-    z.literal("success"),
-    z.literal("error"),
-    z.literal("pending"),
-  ]),
+  status: z.union([z.literal("success"), z.literal("error"), z.literal("pending")]),
   data: z.union([z.string(), z.number(), z.null()]),
   message: z.union([z.string(), z.null()]).optional(),
 });

@@ -7,14 +7,8 @@ export const ProductIdParams = z.object({
 
 // Define schema for query parameters
 export const ProductQueryParams = z.object({
-  include_variants: z
-    .boolean()
-    .optional()
-    .describe("Whether to include product variants"),
-  currency: z
-    .enum(["USD", "EUR", "PLN"])
-    .default("USD")
-    .describe("Currency for prices"),
+  include_variants: z.boolean().optional().describe("Whether to include product variants"),
+  currency: z.enum(["USD", "EUR", "PLN"]).default("USD").describe("Currency for prices"),
 });
 
 // Define schema for product category
@@ -31,9 +25,7 @@ export const ProductVariantSchema = z.object({
   sku: z.string().describe("Variant SKU code"),
   price: z.number().positive().describe("Variant price"),
   stock: z.number().int().nonnegative().describe("Stock quantity"),
-  attributes: z
-    .record(z.string(), z.string())
-    .describe("Variant attributes (color, size, etc.)"),
+  attributes: z.record(z.string(), z.string()).describe("Variant attributes (color, size, etc.)"),
 });
 
 // Define main product schema
@@ -45,19 +37,11 @@ export const ProductResponseSchema = z.object({
   image_url: z.string().url().optional().describe("URL to main product image"),
   gallery: z.array(z.string().url()).describe("Product image gallery"),
   categories: z.array(ProductCategorySchema).describe("Product categories"),
-  variants: z
-    .array(ProductVariantSchema)
-    .optional()
-    .describe("Product variants"),
+  variants: z.array(ProductVariantSchema).optional().describe("Product variants"),
   created_at: z.date().describe("Product creation date"),
   updated_at: z.date().describe("Product last update date"),
   status: z.enum(["draft", "published", "archived"]).describe("Product status"),
-  average_rating: z
-    .number()
-    .min(0)
-    .max(5)
-    .optional()
-    .describe("Average product rating"),
+  average_rating: z.number().min(0).max(5).optional().describe("Average product rating"),
 });
 
 // Error response with z.literal(false) for success field
@@ -75,16 +59,7 @@ export const UpdateProductSchema = z.object({
   description: z.string().optional().describe("Product description"),
   price: z.number().positive().optional().describe("Base product price"),
   image_url: z.string().url().optional().describe("URL to main product image"),
-  gallery: z
-    .array(z.string().url())
-    .optional()
-    .describe("Product image gallery"),
-  category_ids: z
-    .array(z.string())
-    .optional()
-    .describe("Product category identifiers"),
-  status: z
-    .enum(["draft", "published", "archived"])
-    .optional()
-    .describe("Product status"),
+  gallery: z.array(z.string().url()).optional().describe("Product image gallery"),
+  category_ids: z.array(z.string()).optional().describe("Product category identifiers"),
+  status: z.enum(["draft", "published", "archived"]).optional().describe("Product status"),
 });

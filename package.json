@@ -2,52 +2,53 @@
   "name": "next-openapi-gen",
   "version": "0.10.5",
   "description": "Automatically generate OpenAPI 3.0 documentation from Next.js projects, with support for Zod schemas and TypeScript types.",
-  "type": "module",
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
-  "typings": "dist/index.d.ts",
+  "keywords": [
+    "api",
+    "api-docs",
+    "docs",
+    "drizzle",
+    "nextjs",
+    "openapi",
+    "react",
+    "redoc",
+    "scalar",
+    "swagger",
+    "typescript",
+    "zod"
+  ],
+  "license": "MIT",
+  "author": "Mariusz Winnik",
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/tazo90/next-openapi-gen.git"
+  },
   "bin": {
     "next-openapi-gen": "./dist/index.js"
   },
   "files": [
     "dist"
   ],
-  "scripts": {
-    "clean": "rm -rf dist",
-    "build": "npm run clean && tsc",
-    "prepare": "npm run build",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "test:ui": "vitest --ui",
-    "test:coverage": "vitest run --coverage",
-    "release": "np --no-cleanup --no-tests",
-    "version": "conventional-changelog -p angular -i CHANGELOG.md -s -n .changelogrc.cjs && git add CHANGELOG.md"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+ssh://git@github.com/tazo90/next-openapi-gen.git"
-  },
-  "keywords": [
-    "nextjs",
-    "openapi",
-    "swagger",
-    "typescript",
-    "zod",
-    "api-docs",
-    "api",
-    "docs",
-    "react",
-    "scalar",
-    "redoc",
-    "drizzle"
-  ],
+  "type": "module",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "typings": "dist/index.d.ts",
   "publishConfig": {
     "access": "public"
   },
-  "author": "Mariusz Winnik",
-  "license": "MIT",
-  "engines": {
-    "node": ">=18.0.0"
+  "scripts": {
+    "build": "npm run clean && tsc",
+    "clean": "rm -rf dist",
+    "format": "oxfmt --config .oxfmtrc.json --write .",
+    "format:check": "oxfmt --config .oxfmtrc.json --check .",
+    "lint": "oxlint --config .oxlintrc.json --deny-warnings src tests",
+    "lint:fix": "oxlint --config .oxlintrc.json --fix --deny-warnings src tests",
+    "prepare": "simple-git-hooks && npm run build",
+    "release": "np --no-cleanup --no-tests",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:ui": "vitest --ui",
+    "test:watch": "vitest",
+    "version": "conventional-changelog -p angular -i CHANGELOG.md -s -n .changelogrc.cjs && git add CHANGELOG.md"
   },
   "dependencies": {
     "@babel/parser": "^7.28.3",
@@ -59,13 +60,30 @@
     "ora": "^8.2.0"
   },
   "devDependencies": {
+    "@commitlint/cli": "^20.5.0",
+    "@commitlint/config-conventional": "^20.5.0",
     "@types/js-yaml": "^4.0.9",
     "@types/node": "^24.3.0",
     "@vitest/ui": "^3.2.4",
     "conventional-changelog-cli": "^5.0.0",
+    "lint-staged": "^16.4.0",
     "np": "^10.2.0",
+    "oxfmt": "^0.42.0",
+    "oxlint": "^1.57.0",
+    "simple-git-hooks": "^2.13.1",
     "typescript": "^5.9.2",
     "vitest": "^3.2.4"
+  },
+  "simple-git-hooks": {
+    "pre-commit": "npx lint-staged",
+    "commit-msg": "npx commitlint --edit $1"
+  },
+  "lint-staged": {
+    "*": "oxfmt --config .oxfmtrc.json --write --no-error-on-unmatched-pattern",
+    "*.{js,jsx,ts,tsx,mjs,cjs,mts,cts}": "oxlint --config .oxlintrc.json --fix --deny-warnings"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   },
   "np": {
     "yarn": false,

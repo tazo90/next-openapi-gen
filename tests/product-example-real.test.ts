@@ -1,6 +1,8 @@
-import { describe, it, expect } from "vitest";
-import { SchemaProcessor } from "../src/lib/schema-processor.js";
 import path from "path";
+
+import { describe, it, expect } from "vitest";
+
+import { SchemaProcessor } from "../src/lib/schema-processor.js";
 
 describe("Product Example - Real Test", () => {
   it("should resolve ProductByIdResponse with types dir only", () => {

@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import {
-  ApiResponseSchema,
-  NotificationSchema,
-} from "@/schemas/notification";
 import { z } from "zod";
+
+import { ApiResponseSchema, NotificationSchema } from "@/schemas/notification";
 
 /**
  * Get notification status

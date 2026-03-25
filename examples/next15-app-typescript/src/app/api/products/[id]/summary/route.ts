@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+
 import { getProductSummary } from "../../route.utils";
 
 /**
@@ -13,10 +14,7 @@ import { getProductSummary } from "../../route.utils";
  * @response ProductSummaryResponse
  * @openapi
  */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const summary = await getProductSummary(params.id);
 
@@ -30,7 +28,7 @@ export async function GET(
         success: false,
         error: "Failed to get product summary",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

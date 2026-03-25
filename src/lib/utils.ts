@@ -1,5 +1,5 @@
-import { NodePath } from "@babel/traverse";
 import { parse, ParserOptions } from "@babel/parser";
+import { NodePath } from "@babel/traverse";
 import * as t from "@babel/types";
 
 import { DataTypes } from "../types.js";
@@ -109,8 +109,9 @@ export function extractJSDocComments(path: NodePath): DataTypes {
       }
 
       if (commentValue.includes("@params") || commentValue.includes("@queryParams")) {
-        paramsType = extractTypeFromComment(commentValue, "@queryParams") ||
-                     extractTypeFromComment(commentValue, "@params");
+        paramsType =
+          extractTypeFromComment(commentValue, "@queryParams") ||
+          extractTypeFromComment(commentValue, "@params");
       }
 
       if (commentValue.includes("@pathParams")) {
@@ -174,9 +175,7 @@ export function extractJSDocComments(path: NodePath): DataTypes {
 
       if (commentValue.includes("@response")) {
         // Updated regex to support generic types
-        const responseMatch = commentValue.match(
-          /@response\s+(?:(\d+):)?([^@\n\r]+)(?:\s+(.*))?/
-        );
+        const responseMatch = commentValue.match(/@response\s+(?:(\d+):)?([^@\n\r]+)(?:\s+(.*))?/);
         if (responseMatch) {
           const [, code, type] = responseMatch;
           const trimmedType = type?.trim();
@@ -220,15 +219,12 @@ export function extractJSDocComments(path: NodePath): DataTypes {
   };
 }
 
-export function extractTypeFromComment(
-  commentValue: string,
-  tag: string
-): string {
+export function extractTypeFromComment(commentValue: string, tag: string): string {
   // Updated regex to support generic types with angle brackets and array brackets
   // Use multiline mode (m flag) to match tag at start of line (after optional * from JSDoc)
   return (
     commentValue
-      .match(new RegExp(`^\\s*\\*?\\s*${tag}\\s+([\\w<>,\\s\\[\\]]+)`, 'm'))?.[1]
+      .match(new RegExp(`^\\s*\\*?\\s*${tag}\\s+([\\w<>,\\s\\[\\]]+)`, "m"))?.[1]
       ?.trim() || ""
   );
 }
@@ -299,9 +295,7 @@ const AUTH_PRESET_REPLACEMENTS: Record<string, string> = {
 
 export function performAuthPresetReplacements(authValue: string): string {
   const authParts = authValue.split(",").map((part) => part.trim());
-  const mappedParts = authParts.map(
-    (part) => AUTH_PRESET_REPLACEMENTS[part.toLowerCase()] || part
-  );
+  const mappedParts = authParts.map((part) => AUTH_PRESET_REPLACEMENTS[part.toLowerCase()] || part);
 
   return mappedParts.join(",");
 }
@@ -326,10 +320,7 @@ const DEFAULT_PARSER_OPTIONS: ParserOptions = {
  * @param options - Optional parser options to override defaults
  * @returns Parsed AST
  */
-export function parseTypeScriptFile(
-  content: string,
-  options?: Partial<ParserOptions>
-): t.File {
+export function parseTypeScriptFile(content: string, options?: Partial<ParserOptions>): t.File {
   return parse(content, {
     ...DEFAULT_PARSER_OPTIONS,
     ...options,
