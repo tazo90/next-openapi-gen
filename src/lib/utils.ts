@@ -233,7 +233,7 @@ export function extractTypeFromComment(
   );
 }
 
-export function cleanComment(commentValue: string): string {
+function cleanComment(commentValue: string): string {
   return commentValue.replace(/\*\s*/g, "").trim();
 }
 

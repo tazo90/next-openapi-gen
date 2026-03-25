@@ -1,0 +1,8 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "ignoreFiles": [".changelogrc.cjs", "examples/**", "tests/fixtures/**"],
+  "ignoreIssues": {
+    "src/lib/openapi-generator.ts": ["types"],
+    "src/types.ts": ["exports", "types"]
+  }
+}

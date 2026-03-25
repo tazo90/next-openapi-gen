@@ -16,10 +16,17 @@
     "clean": "rm -rf dist",
     "build": "npm run clean && tsc",
     "prepare": "npm run build",
+    "format:check": "prettier --check \"package.json\" \"tsconfig.json\" \"vitest.config.ts\" \"CONTRIBUTING.md\" \"eslint.config.mjs\" \"prettier.config.mjs\" \"knip.json\" \"verify-examples.mjs\" \".github/workflows/*.yml\"",
+    "format:write": "prettier --write \"package.json\" \"tsconfig.json\" \"vitest.config.ts\" \"CONTRIBUTING.md\" \"eslint.config.mjs\" \"prettier.config.mjs\" \"knip.json\" \"verify-examples.mjs\" \".github/workflows/*.yml\"",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage",
+    "verify:examples": "node ./verify-examples.mjs",
+    "analyze": "knip",
+    "verify": "npm run format:check && npm run lint && npm run typecheck && npm run test && npm run build && npm run verify:examples && npm run analyze",
     "release": "np --no-cleanup --no-tests",
     "version": "conventional-changelog -p angular -i CHANGELOG.md -s -n .changelogrc.cjs && git add CHANGELOG.md"
   },
@@ -59,12 +66,19 @@
     "ora": "^8.2.0"
   },
   "devDependencies": {
+    "@eslint/js": "^9.38.0",
     "@types/js-yaml": "^4.0.9",
     "@types/node": "^24.3.0",
+    "@vitest/coverage-v8": "^3.2.4",
     "@vitest/ui": "^3.2.4",
     "conventional-changelog-cli": "^5.0.0",
+    "eslint": "^9.38.0",
+    "globals": "^16.5.0",
+    "knip": "^5.67.1",
     "np": "^10.2.0",
+    "prettier": "^3.6.2",
     "typescript": "^5.9.2",
+    "typescript-eslint": "^8.46.1",
     "vitest": "^3.2.4"
   },
   "np": {

@@ -136,15 +136,12 @@ docs(readme): add installation instructions
 Before submitting a PR:
 
 ```bash
-# Run tests
-npm test
-
-# Build the project
-npm run build
-
-# Ensure no TypeScript errors
-npx tsc --noEmit
+# Run the shared local and CI quality gate
+npm run verify
 ```
+
+That command checks formatting, linting, type safety, tests, the production build,
+representative example generation, and repo-level static analysis.
 
 ### 2. Update Documentation
 

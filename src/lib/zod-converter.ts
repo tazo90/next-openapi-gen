@@ -1361,7 +1361,7 @@ export class ZodSchemaConverter {
       case "undefined":
         schema = { type: "null" };
         break;
-      case "array":
+      case "array": {
         let itemsType = { type: "string" };
         if (node.arguments.length > 0) {
           // Check if argument is an identifier (schema reference)
@@ -1380,6 +1380,7 @@ export class ZodSchemaConverter {
         }
         schema = { type: "array", items: itemsType };
         break;
+      }
       case "enum":
         if (
           node.arguments.length > 0 &&
@@ -1422,7 +1423,7 @@ export class ZodSchemaConverter {
           schema = { type: "string" };
         }
         break;
-      case "record":
+      case "record": {
         let valueType: OpenApiSchema = { type: "string" };
         if (node.arguments.length > 0) {
           valueType = this.processZodNode(node.arguments[0]);
@@ -1433,13 +1434,14 @@ export class ZodSchemaConverter {
           additionalProperties: valueType,
         };
         break;
+      }
       case "map":
         schema = {
           type: "object",
           additionalProperties: true,
         };
         break;
-      case "set":
+      case "set": {
         let setItemType: OpenApiSchema = { type: "string" };
         if (node.arguments.length > 0) {
           setItemType = this.processZodNode(node.arguments[0]);
@@ -1450,6 +1452,7 @@ export class ZodSchemaConverter {
           uniqueItems: true,
         };
         break;
+      }
       case "object":
         if (node.arguments.length > 0) {
           schema = this.processZodObject(node);
@@ -1639,8 +1642,9 @@ export class ZodSchemaConverter {
         break;
       case "endsWith":
         if (node.arguments.length > 0 && t.isStringLiteral(node.arguments[0])) {
-          schema.pattern = `${this.escapeRegExp(node.arguments[0].value)}`;
+          schema.pattern = `${this.escapeRegExp(node.arguments[0].value)}$`;
         }
+        break;
       case "includes":
         if (node.arguments.length > 0 && t.isStringLiteral(node.arguments[0])) {
           schema.pattern = this.escapeRegExp(node.arguments[0].value);
