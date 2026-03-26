@@ -13,10 +13,7 @@ import { getProductById, getProductSummary, createProduct, updateStock } from ".
  * @response ProductByIdResponse
  * @openapi
  */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const result = await getProductById(params.id);
 
@@ -31,7 +28,7 @@ export async function GET(
         success: false,
         error: "Product not found",
       },
-      { status: 404 }
+      { status: 404 },
     );
   }
 }
@@ -52,10 +49,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
-    const result = createProduct(
-      body.product,
-      body.options || { notify: false }
-    );
+    const result = createProduct(body.product, body.options || { notify: false });
 
     return NextResponse.json({
       success: true,
@@ -68,7 +62,7 @@ export async function POST(request: NextRequest) {
         success: false,
         error: "Failed to create product",
       },
-      { status: 400 }
+      { status: 400 },
     );
   }
 }
@@ -86,10 +80,7 @@ export async function POST(request: NextRequest) {
  * @response UpdateStockApiResponse
  * @openapi
  */
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const body = await request.json();
     const result = await updateStock(params.id, body.inStock);
@@ -105,7 +96,7 @@ export async function PATCH(
         success: false,
         error: "Failed to update stock",
       },
-      { status: 400 }
+      { status: 400 },
     );
   }
 }

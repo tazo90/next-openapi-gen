@@ -3,17 +3,12 @@ import fs from "fs";
 
 import { RouteProcessor } from "./route-processor.js";
 import { cleanSpec } from "./utils.js";
-import {
-  ErrorDefinition,
-  ErrorTemplateConfig,
-  OpenApiConfig,
-  OpenApiTemplate,
-} from "../types.js";
+import { ErrorDefinition, ErrorTemplateConfig, OpenApiConfig, OpenApiTemplate } from "../types.js";
 import { logger } from "./logger.js";
 
 export type OpenApiGeneratorOptions = {
   templatePath?: string;
-}
+};
 
 export class OpenApiGenerator {
   private config: OpenApiConfig;
@@ -33,8 +28,23 @@ export class OpenApiGenerator {
   }
 
   public getConfig() {
-    // @ts-ignore
-    const { apiDir, routerType, schemaDir, docsUrl, ui, outputFile, outputDir, includeOpenApiRoutes, ignoreRoutes, schemaType = "typescript", schemaFiles, defaultResponseSet, responseSets, errorConfig, debug } = this.template;
+    const {
+      apiDir,
+      routerType,
+      schemaDir,
+      docsUrl,
+      ui,
+      outputFile,
+      outputDir,
+      includeOpenApiRoutes,
+      ignoreRoutes,
+      schemaType = "typescript",
+      schemaFiles,
+      defaultResponseSet,
+      responseSets,
+      errorConfig,
+      debug,
+    } = this.template;
 
     return {
       apiDir: apiDir || "./src/app/api",
@@ -107,18 +117,16 @@ export class OpenApiGenerator {
       this.generateErrorResponsesFromConfig(errorConfig);
     } else if (this.config.errorDefinitions) {
       // Use manual definitions (existing logic - if exists)
-      Object.entries(this.config.errorDefinitions).forEach(
-        ([code, errorDef]) => {
-          this.template.components.responses[code] =
-            this.createErrorResponseComponent(code, errorDef);
-        }
-      );
+      Object.entries(this.config.errorDefinitions).forEach(([code, errorDef]) => {
+        this.template.components.responses[code] = this.createErrorResponseComponent(
+          code,
+          errorDef,
+        );
+      });
     }
 
     // Get defined schemas from the processor
-    const definedSchemas = this.routeProcessor
-      .getSchemaProcessor()
-      .getDefinedSchemas();
+    const definedSchemas = this.routeProcessor.getSchemaProcessor().getDefinedSchemas();
     if (definedSchemas && Object.keys(definedSchemas).length > 0) {
       this.template.components.schemas = {
         ...this.template.components.schemas,
@@ -133,15 +141,11 @@ export class OpenApiGenerator {
     return openapiSpec;
   }
 
-  private generateErrorResponsesFromConfig(
-    errorConfig: ErrorTemplateConfig
-  ): void {
+  private generateErrorResponsesFromConfig(errorConfig: ErrorTemplateConfig): void {
     const { template, codes, variables: globalVars = {} } = errorConfig;
 
     Object.entries(codes).forEach(([errorCode, config]) => {
-      const httpStatus = (
-        config.httpStatus || this.guessHttpStatus(errorCode)
-      ).toString();
+      const httpStatus = (config.httpStatus || this.guessHttpStatus(errorCode)).toString();
 
       // Merge variables: global + per-code + built-in
       const allVariables = {
@@ -165,10 +169,7 @@ export class OpenApiGenerator {
     });
   }
 
-  private processTemplate(
-    template: any,
-    variables: Record<string, string>
-  ): any {
+  private processTemplate(template: any, variables: Record<string, string>): any {
     const jsonStr = JSON.stringify(template);
     let result = jsonStr;
 
@@ -211,10 +212,7 @@ export class OpenApiGenerator {
     return 500;
   }
 
-  private createErrorResponseComponent(
-    code: string,
-    errorDef: ErrorDefinition
-  ): any {
+  private createErrorResponseComponent(code: string, errorDef: ErrorDefinition): any {
     return {
       description: errorDef.description,
       content: {

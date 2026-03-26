@@ -39,15 +39,14 @@ pnpm exec next-openapi-gen generate
 > [!TIP]
 > Scalar UI and Zod are set by default
 
-
 ### Init Command Options
 
-| Option | Choices | Default | Description |
-|--------|---------|---------|-------------|
-| `--ui` | `scalar`, `swagger`, `redoc`, `stoplight`, `rapidoc`, `none` | `scalar` | UI framework for API docs |
-| `--schema` | `zod`, `typescript` | `zod` | Schema validation tool |
-| `--docs-url` | any string | `api-docs` | URL path for documentation page |
-| `--output` | any path | `next.openapi.json` | Output file for OpenAPI template |
+| Option       | Choices                                                      | Default             | Description                      |
+| ------------ | ------------------------------------------------------------ | ------------------- | -------------------------------- |
+| `--ui`       | `scalar`, `swagger`, `redoc`, `stoplight`, `rapidoc`, `none` | `scalar`            | UI framework for API docs        |
+| `--schema`   | `zod`, `typescript`                                          | `zod`               | Schema validation tool           |
+| `--docs-url` | any string                                                   | `api-docs`          | URL path for documentation page  |
+| `--output`   | any path                                                     | `next.openapi.json` | Output file for OpenAPI template |
 
 > [!TIP]
 > Use `--ui none` to skip UI setup and only generate the OpenAPI specification file.
@@ -130,10 +129,7 @@ export const ProductResponse = z.object({
  * @response ProductResponse
  * @openapi
  */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   // Implementation...
 }
 ```
@@ -162,10 +158,7 @@ type UserResponse = {
  * @response UserResponse
  * @openapi
  */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   // Implementation...
 }
 ```
@@ -210,25 +203,25 @@ export async function POST(request: NextRequest) {
 
 ## JSDoc Documentation Tags
 
-| Tag                    | Description                                                                                                                                          |
-|------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `@description`         | Endpoint description                                                                                                                                 |
-| `@operationId`         | Custom operation ID (overrides auto-generated ID)                                                                                                    |
-| `@pathParams`          | Path parameters type/schema                                                                                                                          |
-| `@params`              | Query parameters type/schema (use `@queryParams` if you have prettier-plugin-jsdoc conflicts)                                                        |
-| `@body`                | Request body type/schema                                                                                                                             |
-| `@bodyDescription`     | Request body description                                                                                                                             |
-| `@response`            | Response type/schema with optional code and description (`User`, `201:User`, `User:Description`, `201:User:Description`)                             |
-| `@responseDescription` | Response description                                                                                                                                 |
-| `@responseSet`         | Override default response set (`public`, `auth`, `none`)                                                                                             |
-| `@add`                 | Add custom response codes (`409:ConflictResponse`, `429`)                                                                                            |
-| `@contentType`         | Request body content type (`application/json`, `multipart/form-data`)                                                                                |
+| Tag                    | Description                                                                                                                                           |
+| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@description`         | Endpoint description                                                                                                                                  |
+| `@operationId`         | Custom operation ID (overrides auto-generated ID)                                                                                                     |
+| `@pathParams`          | Path parameters type/schema                                                                                                                           |
+| `@params`              | Query parameters type/schema (use `@queryParams` if you have prettier-plugin-jsdoc conflicts)                                                         |
+| `@body`                | Request body type/schema                                                                                                                              |
+| `@bodyDescription`     | Request body description                                                                                                                              |
+| `@response`            | Response type/schema with optional code and description (`User`, `201:User`, `User:Description`, `201:User:Description`)                              |
+| `@responseDescription` | Response description                                                                                                                                  |
+| `@responseSet`         | Override default response set (`public`, `auth`, `none`)                                                                                              |
+| `@add`                 | Add custom response codes (`409:ConflictResponse`, `429`)                                                                                             |
+| `@contentType`         | Request body content type (`application/json`, `multipart/form-data`)                                                                                 |
 | `@auth`                | Authorization type (e.g., `bearer`, `basic`, `apikey`, or a custom type) — supports multiple auths using comma separator (e.g., `bearer, CustomType`) |
-| `@tag`                 | Custom tag                                                                                                                                           |
-| `@deprecated`          | Marks the route as deprecated                                                                                                                        |
-| `@openapi`             | Marks the route for inclusion in documentation (if includeOpenApiRoutes is enabled)                                                                  |
-| `@ignore`              | Excludes the route from OpenAPI documentation                                                                                                        |
-| `@method`              | HTTP method for Pages Router (`GET`, `POST`, `PUT`, `PATCH`, `DELETE`) - required for Pages Router only                                              |
+| `@tag`                 | Custom tag                                                                                                                                            |
+| `@deprecated`          | Marks the route as deprecated                                                                                                                         |
+| `@openapi`             | Marks the route for inclusion in documentation (if includeOpenApiRoutes is enabled)                                                                   |
+| `@ignore`              | Excludes the route from OpenAPI documentation                                                                                                         |
+| `@method`              | HTTP method for Pages Router (`GET`, `POST`, `PUT`, `PATCH`, `DELETE`) - required for Pages Router only                                               |
 
 ## Pages Router Support 🆕
 
@@ -758,7 +751,7 @@ export async function getProductById(id: string): Promise<{
 
 export function createProduct(
   data: { name: string; price: number },
-  options: { notify: boolean }
+  options: { notify: boolean },
 ): { success: boolean; productId: string } {
   // Implementation...
 }
@@ -796,6 +789,7 @@ export async function GET() {
 ```
 
 **Supported utility types:**
+
 - `Awaited<T>` - Unwraps Promise types
 - `ReturnType<typeof func>` - Extracts function return type
 - `Parameters<typeof func>` - Extracts function parameters as tuple
@@ -810,12 +804,7 @@ The library supports advanced Zod features such as:
 
 ```typescript
 // Zod validation chains are properly converted to OpenAPI schemas
-const EmailSchema = z
-  .string()
-  .email()
-  .min(5)
-  .max(100)
-  .describe("Email address");
+const EmailSchema = z.string().email().min(5).max(100).describe("Email address");
 
 // Converts to OpenAPI with email format, minLength and maxLength
 ```
@@ -860,6 +849,7 @@ export const PaginatedProductsSchema = createPaginatedSchema(ProductSchema);
 ```
 
 Factory functions work with any naming convention and support:
+
 - Generic type parameters
 - Inline schemas as arguments
 - Imported schemas
@@ -902,10 +892,7 @@ export const UserIdParams = z.object({
  * @response UserProfileSchema
  * @openapi
  */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   // Returns: { id, email, name, bio? }
 }
 ```

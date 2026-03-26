@@ -15,15 +15,12 @@ export class PagesRouterStrategy implements RouterStrategy {
   }
 
   shouldProcessFile(fileName: string): boolean {
-    return (
-      !fileName.startsWith("_") &&
-      (fileName.endsWith(".ts") || fileName.endsWith(".tsx"))
-    );
+    return !fileName.startsWith("_") && (fileName.endsWith(".ts") || fileName.endsWith(".tsx"));
   }
 
   processFile(
     filePath: string,
-    addRoute: (method: string, filePath: string, dataTypes: DataTypes) => void
+    addRoute: (method: string, filePath: string, dataTypes: DataTypes) => void,
   ): void {
     const content = fs.readFileSync(filePath, "utf-8");
     const ast = parseTypeScriptFile(content);
@@ -36,10 +33,7 @@ export class PagesRouterStrategy implements RouterStrategy {
         const exportStart = nodePath.node.start || 0;
 
         allComments.forEach((comment) => {
-          if (
-            comment.type === "CommentBlock" &&
-            (comment.end || 0) < exportStart
-          ) {
+          if (comment.type === "CommentBlock" && (comment.end || 0) < exportStart) {
             const commentValue = comment.value;
             if (commentValue.includes("@method")) {
               const dataTypes = this.extractJSDocFromComment(commentValue);
@@ -71,14 +65,10 @@ export class PagesRouterStrategy implements RouterStrategy {
     const apiDirIndex = normalizedPath.indexOf(normalizedApiDir);
 
     if (apiDirIndex === -1) {
-      throw new Error(
-        `Could not find apiDir "${this.config.apiDir}" in file path "${filePath}"`
-      );
+      throw new Error(`Could not find apiDir "${this.config.apiDir}" in file path "${filePath}"`);
     }
 
-    let relativePath = normalizedPath.substring(
-      apiDirIndex + normalizedApiDir.length
-    );
+    let relativePath = normalizedPath.substring(apiDirIndex + normalizedApiDir.length);
 
     // Remove the file extension (.ts or .tsx)
     relativePath = relativePath.replace(/\.tsx?$/, "");
@@ -148,20 +138,18 @@ export class PagesRouterStrategy implements RouterStrategy {
     }
 
     const paramsMatch =
-      cleanedComment.match(/@queryParams\s+([\w<>,\s\[\]]+)/) ||
-      cleanedComment.match(/@params\s+([\w<>,\s\[\]]+)/);
+      cleanedComment.match(/@queryParams\s+([\w<>,\s[\]]+)/) ||
+      cleanedComment.match(/@params\s+([\w<>,\s[\]]+)/);
     if (paramsMatch) {
       paramsType = paramsMatch[1].trim();
     }
 
-    const pathParamsMatch = cleanedComment.match(
-      /@pathParams\s+([\w<>,\s\[\]]+)/
-    );
+    const pathParamsMatch = cleanedComment.match(/@pathParams\s+([\w<>,\s[\]]+)/);
     if (pathParamsMatch) {
       pathParamsType = pathParamsMatch[1].trim();
     }
 
-    const bodyMatch = cleanedComment.match(/@body\s+([\w<>,\s\[\]]+)/);
+    const bodyMatch = cleanedComment.match(/@body\s+([\w<>,\s[\]]+)/);
     if (bodyMatch) {
       bodyType = bodyMatch[1].trim();
     }
@@ -176,9 +164,7 @@ export class PagesRouterStrategy implements RouterStrategy {
       contentType = contentTypeMatch[1].trim();
     }
 
-    const responseMatch = cleanedComment.match(
-      /@response\s+(?:(\d+):)?([^@\n\r]+)/
-    );
+    const responseMatch = cleanedComment.match(/@response\s+(?:(\d+):)?([^@\n\r]+)/);
     if (responseMatch) {
       const [, code, type] = responseMatch;
       const trimmedType = type?.trim();

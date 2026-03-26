@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect } from "vitest";
 import { extractTypeFromComment } from "../src/lib/utils";
 
 describe("Array Response Annotation Parsing", () => {
@@ -43,9 +43,7 @@ describe("Array Response Annotation Parsing", () => {
       // Note: Status codes are parsed separately by the responseMatch regex in extractJSDocComments
       // extractTypeFromComment only extracts the type part
       const comment = "@response 200:PostResponseSchema[]";
-      const responseMatch = comment.match(
-        /@response\s+(?:(\d+):)?([^@\n\r]+)(?:\s+(.*))?/
-      );
+      const responseMatch = comment.match(/@response\s+(?:(\d+):)?([^@\n\r]+)(?:\s+(.*))?/);
       expect(responseMatch).toBeTruthy();
       if (responseMatch) {
         const [, code, type] = responseMatch;

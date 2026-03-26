@@ -17,9 +17,7 @@ export interface Product {
  * @param id Product ID
  * @returns Product data
  */
-export async function getProductById(
-  id: string
-): Promise<{ product: Product; fetchedAt: string }> {
+export async function getProductById(id: string): Promise<{ product: Product; fetchedAt: string }> {
   // Simulate database fetch
   await new Promise((resolve) => setTimeout(resolve, 10));
 
@@ -39,9 +37,7 @@ export async function getProductById(
  * Gets product summary (name and price only)
  * @param id Product ID
  */
-export async function getProductSummary(
-  id: string
-): Promise<{ name: string; price: number }> {
+export async function getProductSummary(id: string): Promise<{ name: string; price: number }> {
   const { product } = await getProductById(id);
   return {
     name: product.name,
@@ -56,7 +52,7 @@ export async function getProductSummary(
  */
 export function createProduct(
   productData: { name: string; price: number },
-  options: { notify: boolean }
+  options: { notify: boolean },
 ): { success: boolean; productId: string } {
   console.log("Creating product with options:", options);
   return {
@@ -73,7 +69,7 @@ export function createProduct(
  */
 export async function updateStock(
   id: string,
-  inStock: boolean
+  inStock: boolean,
 ): Promise<{ updated: boolean; productId: string; timestamp: string }> {
   // Simulate database update
   await new Promise((resolve) => setTimeout(resolve, 10));

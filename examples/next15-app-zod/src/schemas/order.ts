@@ -25,10 +25,7 @@ export const OrderStatusSchema = z
 // Update order status request body
 export const UpdateOrderStatusBody = z.object({
   status: OrderStatusSchema.describe("New order status"),
-  notes: z
-    .string()
-    .optional()
-    .describe("Additional notes about the status change"),
+  notes: z.string().optional().describe("Additional notes about the status change"),
 });
 
 // Order
@@ -37,20 +34,11 @@ export const OrderSchema = z.object({
   userId: z.string().uuid().describe("User ID"),
   items: z.array(CartItemSchema).describe("Purchased products"),
   shippingAddress: AddressSchema.describe("Shipping address"),
-  billingAddress: AddressSchema.describe(
-    "Billing address (can be the same as shipping address)"
-  ),
+  billingAddress: AddressSchema.describe("Billing address (can be the same as shipping address)"),
   paymentMethod: PaymentMethodSchema.describe("Payment method"),
   status: OrderStatusSchema.describe("Order status"),
-  subtotal: z
-    .number()
-    .nonnegative()
-    .describe("Subtotal (without discount and shipping)"),
-  discountAmount: z
-    .number()
-    .nonnegative()
-    .default(0)
-    .describe("Discount amount"),
+  subtotal: z.number().nonnegative().describe("Subtotal (without discount and shipping)"),
+  discountAmount: z.number().nonnegative().default(0).describe("Discount amount"),
   shippingCost: z.number().nonnegative().describe("Shipping cost"),
   tax: z.number().nonnegative().describe("Tax"),
   total: z.number().nonnegative().describe("Total amount"),
@@ -66,21 +54,8 @@ export const OrderSchema = z.object({
 
 // Query parameters for order list
 export const OrdersQueryParams = z.object({
-  page: z
-    .number()
-    .int()
-    .positive()
-    .optional()
-    .default(1)
-    .describe("Page number"),
-  limit: z
-    .number()
-    .int()
-    .positive()
-    .max(100)
-    .optional()
-    .default(20)
-    .describe("Results per page"),
+  page: z.number().int().positive().optional().default(1).describe("Page number"),
+  limit: z.number().int().positive().max(100).optional().default(20).describe("Results per page"),
   status: OrderStatusSchema.optional().describe("Filter by status"),
   dateFrom: z.date().optional().describe("Filter orders from date"),
   dateTo: z.date().optional().describe("Filter orders to date"),
@@ -125,45 +100,29 @@ export const CreateOrderBody = z
       .optional()
       .default(true)
       .describe("Use shipping address as billing address"),
-    paymentMethodId: z
-      .number()
-      .int()
-      .optional()
-      .describe("ID of saved payment method"),
-    paymentMethod:
-      PaymentMethodSchema.optional().describe("New payment method"),
+    paymentMethodId: z.number().int().optional().describe("ID of saved payment method"),
+    paymentMethod: PaymentMethodSchema.optional().describe("New payment method"),
     notes: z.string().optional().describe("Additional order notes"),
   })
-  .refine(
-    (data) =>
-      data.shippingAddressId !== undefined ||
-      data.shippingAddress !== undefined,
-    {
-      message: "You must provide a shipping address or its ID",
-      path: ["shippingAddress"],
-    }
-  )
+  .refine((data) => data.shippingAddressId !== undefined || data.shippingAddress !== undefined, {
+    message: "You must provide a shipping address or its ID",
+    path: ["shippingAddress"],
+  })
   .refine(
     (data) => {
       if (data.useShippingAsBilling === true) return true;
-      return (
-        data.billingAddressId !== undefined || data.billingAddress !== undefined
-      );
+      return data.billingAddressId !== undefined || data.billingAddress !== undefined;
     },
     {
       message:
         "You must provide a billing address or its ID if it differs from the shipping address",
       path: ["billingAddress"],
-    }
+    },
   )
-  .refine(
-    (data) =>
-      data.paymentMethodId !== undefined || data.paymentMethod !== undefined,
-    {
-      message: "You must provide a payment method or its ID",
-      path: ["paymentMethod"],
-    }
-  );
+  .refine((data) => data.paymentMethodId !== undefined || data.paymentMethod !== undefined, {
+    message: "You must provide a payment method or its ID",
+    path: ["paymentMethod"],
+  });
 
 export type OrderStatus = z.infer<typeof OrderStatusSchema>;
 export type Order = z.infer<typeof OrderSchema>;

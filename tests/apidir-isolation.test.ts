@@ -34,7 +34,7 @@ export const PublicItemSchema = z.object({ id: z.string(), name: z.string() });
  * @response PublicItemSchema
  */
 export async function GET() {}
-`
+`,
     );
 
     // Private route – defines SecretSchema (must NOT appear in output)
@@ -47,7 +47,7 @@ export const SecretSchema = z.object({ token: z.string() });
  * @response SecretSchema
  */
 export async function GET() {}
-`
+`,
     );
 
     return {

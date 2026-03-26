@@ -1,11 +1,7 @@
 import { z } from "zod";
 import { PaymentMethodSchema } from "./payment";
 import { PaginatedResponse, PaginationSchema } from "./base";
-import {
-  createPaginatedSchema,
-  makePaginatedResponse,
-  wrapInEnvelope,
-} from "./pagination";
+import { createPaginatedSchema, makePaginatedResponse, wrapInEnvelope } from "./pagination";
 
 export const UserListParamsSchema = z.object({
   pagination: PaginationSchema,
@@ -19,19 +15,14 @@ export const UserIdParams = z.object({
 
 // Query parameters for optional fields selection
 export const UserFieldsQuery = z.object({
-  fields: z
-    .string()
-    .optional()
-    .describe("Comma-separated list of fields to include"),
+  fields: z.string().optional().describe("Comma-separated list of fields to include"),
 });
 
 export const UserBaseSchema = z.object({
   id: z.string().uuid().describe("Unique user identifier"),
   email: z.string().email().describe("User's email address"),
   name: z.string().min(2).max(100).describe("User's full name"),
-  role: z
-    .enum(["user", "admin", "moderator"])
-    .describe("User's role in the system"),
+  role: z.enum(["user", "admin", "moderator"]).describe("User's role in the system"),
 });
 
 export const AddressSchema = z.object({
@@ -52,37 +43,17 @@ export const UserDetailedSchema = UserBaseSchema.extend({
     .optional()
     .describe("Phone number (format: +48 XXX XXX XXX)"),
   birthDate: z.date().optional().describe("Date of birth"),
-  addresses: z
-    .array(AddressSchema)
-    .optional()
-    .describe("List of user addresses"),
-  primaryAddress: z
-    .number()
-    .int()
-    .nonnegative()
-    .optional()
-    .describe("Index of primary address"),
+  addresses: z.array(AddressSchema).optional().describe("List of user addresses"),
+  primaryAddress: z.number().int().nonnegative().optional().describe("Index of primary address"),
   preferences: z
     .object({
-      language: z
-        .enum(["pl", "en", "de"])
-        .default("en")
-        .describe("Preferred language"),
-      theme: z
-        .enum(["light", "dark", "system"])
-        .default("system")
-        .describe("Preferred theme"),
-      notifications: z
-        .boolean()
-        .default(true)
-        .describe("Whether notifications are enabled"),
+      language: z.enum(["pl", "en", "de"]).default("en").describe("Preferred language"),
+      theme: z.enum(["light", "dark", "system"]).default("system").describe("Preferred theme"),
+      notifications: z.boolean().default(true).describe("Whether notifications are enabled"),
     })
     .optional()
     .describe("User preferences"),
-  paymentMethods: z
-    .array(PaymentMethodSchema)
-    .optional()
-    .describe("Saved payment methods"),
+  paymentMethods: z.array(PaymentMethodSchema).optional().describe("Saved payment methods"),
   createdAt: z.date().describe("Account creation date"),
   updatedAt: z.date().describe("Last update date"),
 });
@@ -99,18 +70,9 @@ export const UpdateUserBody = z
       .describe("Phone number (format: +XX XXX XXX XXX)"),
     preferences: z
       .object({
-        language: z
-          .enum(["pl", "en", "de"])
-          .optional()
-          .describe("Preferred language"),
-        theme: z
-          .enum(["light", "dark", "system"])
-          .optional()
-          .describe("Preferred theme"),
-        notifications: z
-          .boolean()
-          .optional()
-          .describe("Whether notifications are enabled"),
+        language: z.enum(["pl", "en", "de"]).optional().describe("Preferred language"),
+        theme: z.enum(["light", "dark", "system"]).optional().describe("Preferred theme"),
+        notifications: z.boolean().optional().describe("Whether notifications are enabled"),
       })
       .optional()
       .describe("User preferences"),
@@ -131,9 +93,9 @@ export const PaginatedStringsSchema = createPaginatedSchema(z.string().describe(
 // Demonstrates optional vs nullable vs nullish (GitHub issue #84)
 export const UserProfileSchema = z.object({
   id: z.string().describe("ID"),
-  username: z.string().optional().describe("Username"),       // string | undefined
-  firstName: z.string().nullable().describe("First name"),    // string | null (required)
-  middleName: z.string().nullish().describe("Middle name"),   // string | null | undefined
+  username: z.string().optional().describe("Username"), // string | undefined
+  firstName: z.string().nullable().describe("First name"), // string | null (required)
+  middleName: z.string().nullish().describe("Middle name"), // string | null | undefined
 });
 
 // Export TypeScript types using z.infer

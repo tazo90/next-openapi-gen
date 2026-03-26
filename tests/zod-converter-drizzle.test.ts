@@ -28,10 +28,7 @@ describe("Drizzle-Zod Integration", () => {
 
       traverse(ast, {
         CallExpression: (path: any) => {
-          if (
-            t.isIdentifier(path.node.callee) &&
-            path.node.callee.name === "createInsertSchema"
-          ) {
+          if (t.isIdentifier(path.node.callee) && path.node.callee.name === "createInsertSchema") {
             processedSchema = DrizzleZodProcessor.processSchema(path.node);
           }
         },
@@ -103,10 +100,7 @@ describe("Drizzle-Zod Integration", () => {
 
       traverse(ast, {
         CallExpression: (path: any) => {
-          if (
-            t.isIdentifier(path.node.callee) &&
-            path.node.callee.name === "createInsertSchema"
-          ) {
+          if (t.isIdentifier(path.node.callee) && path.node.callee.name === "createInsertSchema") {
             processedSchema = DrizzleZodProcessor.processSchema(path.node);
           }
         },
@@ -154,10 +148,7 @@ describe("Drizzle-Zod Integration", () => {
 
       traverse(ast, {
         CallExpression: (path: any) => {
-          if (
-            t.isIdentifier(path.node.callee) &&
-            path.node.callee.name === "createSelectSchema"
-          ) {
+          if (t.isIdentifier(path.node.callee) && path.node.callee.name === "createSelectSchema") {
             processedSchema = DrizzleZodProcessor.processSchema(path.node);
           }
         },
@@ -182,10 +173,7 @@ describe("Drizzle-Zod Integration", () => {
 
       traverse(ast, {
         CallExpression: (path: any) => {
-          if (
-            t.isIdentifier(path.node.callee) &&
-            path.node.callee.name === "createUpdateSchema"
-          ) {
+          if (t.isIdentifier(path.node.callee) && path.node.callee.name === "createUpdateSchema") {
             processedSchema = DrizzleZodProcessor.processSchema(path.node);
           }
         },
@@ -217,10 +205,7 @@ describe("Drizzle-Zod Integration", () => {
 
       traverse(ast, {
         CallExpression: (path: any) => {
-          if (
-            t.isIdentifier(path.node.callee) &&
-            path.node.callee.name === "createInsertSchema"
-          ) {
+          if (t.isIdentifier(path.node.callee) && path.node.callee.name === "createInsertSchema") {
             processedSchema = DrizzleZodProcessor.processSchema(path.node);
           }
         },
@@ -235,15 +220,11 @@ describe("Drizzle-Zod Integration", () => {
 
       // Content constraints
       expect(processedSchema.properties.content.minLength).toBe(10);
-      expect(processedSchema.properties.content.description).toBe(
-        "Post content"
-      );
+      expect(processedSchema.properties.content.description).toBe("Post content");
 
       // Optional excerpt
       expect(processedSchema.properties.excerpt.maxLength).toBe(500);
-      expect(processedSchema.properties.excerpt.description).toBe(
-        "Short excerpt"
-      );
+      expect(processedSchema.properties.excerpt.description).toBe("Short excerpt");
       expect(processedSchema.required).not.toContain("excerpt");
 
       // IDs
@@ -254,9 +235,7 @@ describe("Drizzle-Zod Integration", () => {
 
       // Boolean
       expect(processedSchema.properties.published.type).toBe("boolean");
-      expect(processedSchema.properties.published.description).toBe(
-        "Publication status"
-      );
+      expect(processedSchema.properties.published.description).toBe("Publication status");
     });
   });
 });

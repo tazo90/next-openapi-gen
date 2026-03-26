@@ -3,8 +3,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Drizzle-Zod Blog API",
-  description:
-    "Example Next.js API with Drizzle ORM, Zod validation, and OpenAPI documentation",
+  description: "Example Next.js API with Drizzle ORM, Zod validation, and OpenAPI documentation",
 };
 
 export default function RootLayout({

@@ -7,10 +7,7 @@ import { NextRequest, NextResponse } from "next/server";
  * @response UserResponse
  * @openapi
  */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   // In a real app, you would fetch user data from a database
   const user = {
     id: params.id,

@@ -6,12 +6,12 @@ This example demonstrates how to use `next-openapi-gen` with the **legacy Pages 
 
 The Pages Router uses a different file structure and API pattern:
 
-| Feature | App Router | Pages Router |
-|---------|------------|--------------|
-| API Location | `src/app/api/` | `pages/api/` |
-| Route Files | `route.ts` | Any `.ts` file (e.g., `users.ts`, `[id].ts`) |
-| Handler Export | `export async function GET/POST/...` | `export default function handler` |
-| Method Detection | Function name (GET, POST, etc.) | `@method` JSDoc tag |
+| Feature          | App Router                           | Pages Router                                 |
+| ---------------- | ------------------------------------ | -------------------------------------------- |
+| API Location     | `src/app/api/`                       | `pages/api/`                                 |
+| Route Files      | `route.ts`                           | Any `.ts` file (e.g., `users.ts`, `[id].ts`) |
+| Handler Export   | `export async function GET/POST/...` | `export default function handler`            |
+| Method Detection | Function name (GET, POST, etc.)      | `@method` JSDoc tag                          |
 
 ## Configuration
 
@@ -89,16 +89,16 @@ Then open http://localhost:3000/api-docs to view the generated documentation.
 
 All standard tags work with Pages Router:
 
-| Tag | Description |
-|-----|-------------|
-| `@method` | **Required for Pages Router** - HTTP method (GET, POST, PUT, PATCH, DELETE) |
-| `@description` | Endpoint description |
-| `@params` / `@queryParams` | Query parameters schema |
-| `@pathParams` | Path parameters schema |
-| `@body` | Request body schema |
-| `@response` | Response schema with optional status code |
-| `@auth` | Authentication type (bearer, basic, apikey) |
-| `@tag` | Custom tag for grouping |
-| `@openapi` | Mark for inclusion when `includeOpenApiRoutes` is enabled |
-| `@ignore` | Exclude from documentation |
-| `@deprecated` | Mark as deprecated |
+| Tag                        | Description                                                                 |
+| -------------------------- | --------------------------------------------------------------------------- |
+| `@method`                  | **Required for Pages Router** - HTTP method (GET, POST, PUT, PATCH, DELETE) |
+| `@description`             | Endpoint description                                                        |
+| `@params` / `@queryParams` | Query parameters schema                                                     |
+| `@pathParams`              | Path parameters schema                                                      |
+| `@body`                    | Request body schema                                                         |
+| `@response`                | Response schema with optional status code                                   |
+| `@auth`                    | Authentication type (bearer, basic, apikey)                                 |
+| `@tag`                     | Custom tag for grouping                                                     |
+| `@openapi`                 | Mark for inclusion when `includeOpenApiRoutes` is enabled                   |
+| `@ignore`                  | Exclude from documentation                                                  |
+| `@deprecated`              | Mark as deprecated                                                          |

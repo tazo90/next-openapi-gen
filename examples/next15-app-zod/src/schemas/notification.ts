@@ -136,9 +136,7 @@ export const StringOrNumberSchema = z.union([z.string(), z.number()]);
 /**
  * Array containing mixed types
  */
-export const MixedArraySchema = z.array(
-  z.union([z.string(), z.number(), z.boolean()])
-);
+export const MixedArraySchema = z.array(z.union([z.string(), z.number(), z.boolean()]));
 
 // ========================================
 // 9. Complex Nested Union Example

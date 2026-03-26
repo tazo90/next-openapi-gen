@@ -20,7 +20,9 @@ async function hasDependency(packageName: string): Promise<boolean> {
   try {
     const packageJsonPath = path.join(process.cwd(), "package.json");
     const packageJson = await fse.readJson(packageJsonPath);
-    return !!(packageJson.dependencies?.[packageName] || packageJson.devDependencies?.[packageName]);
+    return !!(
+      packageJson.dependencies?.[packageName] || packageJson.devDependencies?.[packageName]
+    );
   } catch {
     return false;
   }
@@ -142,9 +144,7 @@ async function createDocsPage(ui: string, outputFile: string) {
 
 async function installDependencies(ui: string, schema: string | string[]) {
   const packageManager = await getPackageManager();
-  const installCmd = `${packageManager} ${
-    packageManager === "npm" ? "install" : "add"
-  }`;
+  const installCmd = `${packageManager} ${packageManager === "npm" ? "install" : "add"}`;
 
   // Install UI dependencies
   if (ui !== "none") {

@@ -2,11 +2,7 @@ import fs from "fs";
 import path from "path";
 
 import { SchemaProcessor } from "./schema-processor.js";
-import {
-  capitalize,
-  extractPathParameters,
-  getOperationId,
-} from "./utils.js";
+import { capitalize, extractPathParameters, getOperationId } from "./utils.js";
 import { DataTypes, OpenApiConfig, RouteDefinition } from "../types.js";
 import { logger } from "./logger.js";
 import { RouterStrategy } from "./router-strategy.js";
@@ -31,22 +27,19 @@ export class RouteProcessor {
       config.schemaDir,
       config.schemaType,
       config.schemaFiles,
-      config.apiDir
+      config.apiDir,
     );
-    this.strategy = config.routerType === "pages"
-      ? new PagesRouterStrategy(config)
-      : new AppRouterStrategy(config);
+    this.strategy =
+      config.routerType === "pages"
+        ? new PagesRouterStrategy(config)
+        : new AppRouterStrategy(config);
   }
 
-  private buildResponsesFromConfig(
-    dataTypes: DataTypes,
-    method: string
-  ): Record<string, any> {
+  private buildResponsesFromConfig(dataTypes: DataTypes, method: string): Record<string, any> {
     const responses: Record<string, any> = {};
 
     // 1. Add success response
-    const successCode =
-      dataTypes.successCode || this.getDefaultSuccessCode(method);
+    const successCode = dataTypes.successCode || this.getDefaultSuccessCode(method);
 
     // Handle 204 No Content responses without a schema
     if (successCode === "204" && !dataTypes.responseType) {
@@ -66,7 +59,7 @@ export class RouteProcessor {
         let arrayDepth = 0;
 
         // Count and remove array brackets
-        while (baseType.endsWith('[]')) {
+        while (baseType.endsWith("[]")) {
           arrayDepth++;
           baseType = baseType.slice(0, -2);
         }
@@ -103,8 +96,7 @@ export class RouteProcessor {
     }
 
     // 2. Add responses from ResponseSet
-    const responseSetName =
-      dataTypes.responseSet || this.config.defaultResponseSet;
+    const responseSetName = dataTypes.responseSet || this.config.defaultResponseSet;
     if (responseSetName && responseSetName !== "none") {
       const responseSets = this.config.responseSets || {};
 
@@ -125,9 +117,7 @@ export class RouteProcessor {
 
     // 3. Add custom responses (@add)
     if (dataTypes.addResponses) {
-      const customResponses = dataTypes.addResponses
-        .split(",")
-        .map((s) => s.trim());
+      const customResponses = dataTypes.addResponses.split(",").map((s) => s.trim());
 
       customResponses.forEach((responseRef) => {
         const [code, ref] = responseRef.split(":");
@@ -139,13 +129,11 @@ export class RouteProcessor {
           // 204 No Content should not have a content section per HTTP/OpenAPI spec
           if (code === "204") {
             responses[code] = {
-              description:
-                this.getDefaultErrorDescription(code) || "No Content",
+              description: this.getDefaultErrorDescription(code) || "No Content",
             };
           } else {
             responses[code] = {
-              description:
-                this.getDefaultErrorDescription(code) || `HTTP ${code} response`,
+              description: this.getDefaultErrorDescription(code) || `HTTP ${code} response`,
               content: {
                 "application/json": {
                   schema: { $ref: `#/components/schemas/${ref}` },
@@ -239,8 +227,8 @@ export class RouteProcessor {
     if (pathParams.length > 0 && !dataTypes.pathParamsType) {
       logger.debug(
         `Route ${routePath} contains path parameters ${pathParams.join(
-          ", "
-        )} but no @pathParams type is defined.`
+          ", ",
+        )} but no @pathParams type is defined.`,
       );
     }
 
@@ -277,11 +265,7 @@ export class RouteProcessor {
     });
   }
 
-  private addRouteToPaths(
-    varName: string,
-    filePath: string,
-    dataTypes: DataTypes
-  ): void {
+  private addRouteToPaths(varName: string, filePath: string, dataTypes: DataTypes): void {
     const method = varName.toLowerCase();
     const routePath = this.strategy.getRoutePath(filePath);
     const rootPath = capitalize(routePath.split("/")[1]);
@@ -323,16 +307,15 @@ export class RouteProcessor {
 
     // Add auth
     if (auth) {
-      const authItems = auth.split(",").map(item => item.trim());
+      const authItems = auth.split(",").map((item) => item.trim());
 
-      definition.security = authItems.map(authItem => ({
+      definition.security = authItems.map((authItem) => ({
         [authItem]: [],
       }));
     }
 
     if (params) {
-      definition.parameters =
-        this.schemaProcessor.createRequestParamsSchema(params);
+      definition.parameters = this.schemaProcessor.createRequestParamsSchema(params);
     }
 
     // Add path parameters
@@ -344,18 +327,12 @@ export class RouteProcessor {
           this.schemaProcessor.createDefaultPathParamsSchema(pathParamNames);
         definition.parameters.push(...defaultPathParams);
       } else {
-        const moreParams = this.schemaProcessor.createRequestParamsSchema(
-          pathParams,
-          true
-        );
+        const moreParams = this.schemaProcessor.createRequestParamsSchema(pathParams, true);
         definition.parameters.push(...moreParams);
       }
     } else if (pathParams) {
       // If no path parameters in route but we have a schema, use it
-      const moreParams = this.schemaProcessor.createRequestParamsSchema(
-        pathParams,
-        true
-      );
+      const moreParams = this.schemaProcessor.createRequestParamsSchema(pathParams, true);
       definition.parameters.push(...moreParams);
     }
 
@@ -370,7 +347,7 @@ export class RouteProcessor {
         // Use reference to the schema
         const contentType = this.schemaProcessor.detectContentType(
           dataTypes.bodyType || "",
-          dataTypes.contentType
+          dataTypes.contentType,
         );
 
         definition.requestBody = {
@@ -389,7 +366,7 @@ export class RouteProcessor {
         definition.requestBody = this.schemaProcessor.createRequestBodySchema(
           body,
           bodyDescription,
-          dataTypes.contentType
+          dataTypes.contentType,
         );
       }
     }
@@ -400,10 +377,7 @@ export class RouteProcessor {
     // If there are no responses from config, use the old logic
     if (Object.keys(definition.responses).length === 0) {
       definition.responses = responses
-        ? this.schemaProcessor.createResponseSchema(
-            responses,
-            responseDescription
-          )
+        ? this.schemaProcessor.createResponseSchema(responses, responseDescription)
         : {};
     }
 
@@ -416,13 +390,9 @@ export class RouteProcessor {
       const bMethods = this.swaggerPaths[b] || {};
 
       // Extract tags for all methods in path a
-      const aTags = Object.values(aMethods).flatMap(
-        (method: any) => method.tags || []
-      );
+      const aTags = Object.values(aMethods).flatMap((method: any) => method.tags || []);
       // Extract tags for all methods in path b
-      const bTags = Object.values(bMethods).flatMap(
-        (method: any) => method.tags || []
-      );
+      const bTags = Object.values(bMethods).flatMap((method: any) => method.tags || []);
 
       // Let's user only the first tags
       const aPrimaryTag = aTags[0] || "";

@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "oxlint --config ../../packages/oxlint-config/base.json . --ignore-path ../../.gitignore --deny-warnings"
   },
   "dependencies": {
     "next": "15.3.2",
@@ -19,8 +19,6 @@
     "@types/node": "^22.15.18",
     "@types/react": "^19.1.4",
     "@types/react-dom": "^19.1.5",
-    "eslint": "^9.26.0",
-    "eslint-config-next": "15.3.2",
     "next-openapi-gen": "workspace:*",
     "typescript": "^5.8.3"
   },

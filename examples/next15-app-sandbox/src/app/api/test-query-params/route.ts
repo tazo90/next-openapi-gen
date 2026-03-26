@@ -9,11 +9,15 @@ export const SearchQueryParams = z.object({
 });
 
 export const SearchResponse = z.object({
-  results: z.array(z.object({
-    id: z.string().describe("Result ID"),
-    title: z.string().describe("Result title"),
-    score: z.number().describe("Relevance score"),
-  })).describe("Search results"),
+  results: z
+    .array(
+      z.object({
+        id: z.string().describe("Result ID"),
+        title: z.string().describe("Result title"),
+        score: z.number().describe("Relevance score"),
+      }),
+    )
+    .describe("Search results"),
   total: z.number().describe("Total results found"),
 });
 

@@ -25,9 +25,7 @@ describe("PagesRouterStrategy", () => {
   describe("getRoutePath", () => {
     it("should handle pages/api/users/index.ts -> /users", () => {
       strategy = new PagesRouterStrategy(pagesConfig);
-      expect(strategy.getRoutePath("./pages/api/users/index.ts")).toBe(
-        "/users"
-      );
+      expect(strategy.getRoutePath("./pages/api/users/index.ts")).toBe("/users");
     });
 
     it("should handle pages/api/users.ts -> /users", () => {
@@ -37,30 +35,24 @@ describe("PagesRouterStrategy", () => {
 
     it("should handle dynamic routes pages/api/users/[id].ts -> /users/{id}", () => {
       strategy = new PagesRouterStrategy(pagesConfig);
-      expect(strategy.getRoutePath("./pages/api/users/[id].ts")).toBe(
-        "/users/{id}"
-      );
+      expect(strategy.getRoutePath("./pages/api/users/[id].ts")).toBe("/users/{id}");
     });
 
     it("should handle nested dynamic routes pages/api/users/[id]/posts/[postId].ts -> /users/{id}/posts/{postId}", () => {
       strategy = new PagesRouterStrategy(pagesConfig);
-      expect(
-        strategy.getRoutePath("./pages/api/users/[id]/posts/[postId].ts")
-      ).toBe("/users/{id}/posts/{postId}");
+      expect(strategy.getRoutePath("./pages/api/users/[id]/posts/[postId].ts")).toBe(
+        "/users/{id}/posts/{postId}",
+      );
     });
 
     it("should handle catch-all routes pages/api/[...slug].ts -> /{slug}", () => {
       strategy = new PagesRouterStrategy(pagesConfig);
-      expect(strategy.getRoutePath("./pages/api/[...slug].ts")).toBe(
-        "/{slug}"
-      );
+      expect(strategy.getRoutePath("./pages/api/[...slug].ts")).toBe("/{slug}");
     });
 
     it("should handle Windows path separators", () => {
       strategy = new PagesRouterStrategy(pagesConfig);
-      expect(strategy.getRoutePath(".\\pages\\api\\users\\[id].ts")).toBe(
-        "/users/{id}"
-      );
+      expect(strategy.getRoutePath(".\\pages\\api\\users\\[id].ts")).toBe("/users/{id}");
     });
 
     it("should handle root api route pages/api/index.ts -> /", () => {
@@ -70,9 +62,7 @@ describe("PagesRouterStrategy", () => {
 
     it("should handle .tsx files", () => {
       strategy = new PagesRouterStrategy(pagesConfig);
-      expect(strategy.getRoutePath("./pages/api/users/index.tsx")).toBe(
-        "/users"
-      );
+      expect(strategy.getRoutePath("./pages/api/users/index.tsx")).toBe("/users");
     });
   });
 

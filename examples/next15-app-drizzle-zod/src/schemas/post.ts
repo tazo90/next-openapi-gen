@@ -17,10 +17,7 @@ export const CreatePostSchema = createInsertSchema(posts, {
     schema.slug
       .min(3)
       .max(255)
-      .regex(
-        /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
-        "Slug must be lowercase with hyphens"
-      )
+      .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Slug must be lowercase with hyphens")
       .describe("URL-friendly slug"),
 
   excerpt: (schema) =>
@@ -34,13 +31,10 @@ export const CreatePostSchema = createInsertSchema(posts, {
       .min(10, "Content must be at least 10 characters")
       .describe("Post content in markdown"),
 
-  published: (schema) =>
-    schema.published.optional().describe("Whether the post is published"),
+  published: (schema) => schema.published.optional().describe("Whether the post is published"),
 
   authorId: (schema) =>
-    schema.authorId
-      .positive("Author ID must be positive")
-      .describe("ID of the post author"),
+    schema.authorId.positive("Author ID must be positive").describe("ID of the post author"),
 });
 
 /**
@@ -48,8 +42,7 @@ export const CreatePostSchema = createInsertSchema(posts, {
  * All fields are optional except id
  */
 export const UpdatePostSchema = createInsertSchema(posts, {
-  title: (schema) =>
-    schema.title.min(5).max(255).optional().describe("Post title"),
+  title: (schema) => schema.title.min(5).max(255).optional().describe("Post title"),
 
   slug: (schema) =>
     schema.slug
@@ -57,14 +50,11 @@ export const UpdatePostSchema = createInsertSchema(posts, {
       .optional()
       .describe("URL-friendly slug"),
 
-  excerpt: (schema) =>
-    schema.excerpt.max(500).optional().describe("Short excerpt"),
+  excerpt: (schema) => schema.excerpt.max(500).optional().describe("Short excerpt"),
 
-  content: (schema) =>
-    schema.content.min(10).optional().describe("Post content"),
+  content: (schema) => schema.content.min(10).optional().describe("Post content"),
 
-  published: (schema) =>
-    schema.published.optional().describe("Publication status"),
+  published: (schema) => schema.published.optional().describe("Publication status"),
 }).omit({
   id: true,
   createdAt: true,
@@ -101,13 +91,6 @@ export const PostIdParams = z.object({
 export const PostsQueryParams = z.object({
   page: z.string().regex(/^\d+$/).optional().describe("Page number"),
   limit: z.string().regex(/^\d+$/).optional().describe("Items per page"),
-  published: z
-    .enum(["true", "false"])
-    .optional()
-    .describe("Filter by publication status"),
-  authorId: z
-    .string()
-    .regex(/^\d+$/)
-    .optional()
-    .describe("Filter by author ID"),
+  published: z.enum(["true", "false"]).optional().describe("Filter by publication status"),
+  authorId: z.string().regex(/^\d+$/).optional().describe("Filter by author ID"),
 });

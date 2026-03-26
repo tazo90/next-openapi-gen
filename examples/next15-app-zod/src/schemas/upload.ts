@@ -4,14 +4,8 @@ export const UploadFormDataSchema = z.object({
   file: z
     .custom<File>()
     .refine((file) => file instanceof File, "Must be a file")
-    .refine(
-      (file) => file.size <= 5 * 1024 * 1024,
-      "File size must be less than 5MB"
-    )
-    .refine(
-      (file) => file.type.startsWith("image/"),
-      "Only image files allowed"
-    )
+    .refine((file) => file.size <= 5 * 1024 * 1024, "File size must be less than 5MB")
+    .refine((file) => file.type.startsWith("image/"), "Only image files allowed")
     .describe("Image file (PNG/JPG, max 5MB)"),
   description: z.string().optional().describe("Optional file description"),
   category: z.string().min(1).describe("File category (required)"),

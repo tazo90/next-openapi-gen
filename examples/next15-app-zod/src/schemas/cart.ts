@@ -9,8 +9,5 @@ export const CartItemSchema = z.object({
   quantity: z.number().int().positive().describe("Quantity"),
   total: z.number().nonnegative().describe("Total price (price * quantity)"),
   imageUrl: z.string().url().optional().describe("Product image URL"),
-  variant: z
-    .string()
-    .optional()
-    .describe("Product variant (e.g., size, color)"),
+  variant: z.string().optional().describe("Product variant (e.g., size, color)"),
 });

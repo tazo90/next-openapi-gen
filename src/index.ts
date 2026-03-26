@@ -10,24 +10,26 @@ const program = new Command();
 program
   .name("next-openapi-gen")
   .version("0.6.7")
-  .description(
-    "Super fast and easy way to generate OpenAPI documentation for Next.js"
-  );
+  .description("Super fast and easy way to generate OpenAPI documentation for Next.js");
 
 program
   .command("init")
   .addOption(
-    new Option("-i, --ui <type>", "Specify the UI type, e.g., scalar. Use \"none\" for no UI")
+    new Option("-i, --ui <type>", 'Specify the UI type, e.g., scalar. Use "none" for no UI')
       .choices(["scalar", "swagger", "redoc", "stoplight", "rapidoc", "none"])
-      .default("scalar")
+      .default("scalar"),
   )
   .option("-u, --docs-url <url>", "Specify the docs URL", "api-docs")
   .addOption(
     new Option("-s, --schema <schemaType>", "Specify the schema tool")
       .choices(["zod", "typescript"])
-      .default("zod")
+      .default("zod"),
   )
-  .option("-o, --output <file>", "Specify the output path for the OpenAPI template.", "next.openapi.json")
+  .option(
+    "-o, --output <file>",
+    "Specify the output path for the OpenAPI template.",
+    "next.openapi.json",
+  )
   .description("Initialize a openapi specification")
   .action(init);
 

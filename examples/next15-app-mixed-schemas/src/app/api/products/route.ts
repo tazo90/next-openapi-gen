@@ -43,6 +43,6 @@ export async function POST(request: NextRequest) {
       id: "prod-new",
       ...body,
     },
-    { status: 201 }
+    { status: 201 },
   );
 }

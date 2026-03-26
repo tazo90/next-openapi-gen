@@ -9,10 +9,7 @@ import { NextRequest, NextResponse } from "next/server";
  * @responseSet common,auth
  * @openapi
  */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   // Implementation here...
 
   return NextResponse.json({});

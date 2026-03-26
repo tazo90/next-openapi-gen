@@ -5,8 +5,8 @@ export default function Home() {
     <main style={{ padding: "2rem", fontFamily: "system-ui, sans-serif" }}>
       <h1>Next.js Pages Router + next-openapi-gen</h1>
       <p>
-        This is an example demonstrating how to use{" "}
-        <code>next-openapi-gen</code> with the Pages Router.
+        This is an example demonstrating how to use <code>next-openapi-gen</code> with the Pages
+        Router.
       </p>
       <p>
         <Link href="/api-docs" style={{ color: "#0070f3" }}>

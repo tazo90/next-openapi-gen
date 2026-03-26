@@ -30,17 +30,33 @@ export type OpenApiTemplate = {
     version: string;
     description: string;
   };
-  servers: Array<{
+  servers?: Array<{
     url: string;
     description: string;
   }>;
-  basePath: string;
+  basePath?: string;
   components?: {
     securitySchemes?: Record<string, any>;
     schemas?: Record<string, any>;
     responses?: Record<string, any>;
   };
-  paths: Record<string, any>;
+  paths?: Record<string, any>;
+  apiDir?: string;
+  routerType?: RouterType;
+  schemaDir?: string | string[];
+  docsUrl?: string;
+  ui?: string;
+  outputFile?: string;
+  outputDir?: string;
+  includeOpenApiRoutes?: boolean;
+  ignoreRoutes?: string[];
+  schemaType?: SchemaType | SchemaType[];
+  schemaFiles?: string[];
+  defaultResponseSet?: string;
+  responseSets?: ResponseSets;
+  errorConfig?: ErrorTemplateConfig;
+  errorDefinitions?: Record<string, ErrorDefinition>;
+  debug?: boolean;
 };
 
 export type RouteDefinition = {

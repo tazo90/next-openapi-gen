@@ -1,10 +1,11 @@
+import Link from "next/link";
+
 export default function Home() {
   return (
     <div style={{ padding: "2rem", fontFamily: "system-ui, sans-serif" }}>
       <h1>Mixed Schema Types API Example</h1>
       <p>
-        This example demonstrates using <strong>multiple schema types</strong>{" "}
-        simultaneously:
+        This example demonstrates using <strong>multiple schema types</strong> simultaneously:
       </p>
       <ul>
         <li>
@@ -12,8 +13,8 @@ export default function Home() {
           <code>src/schemas/zod-schemas.ts</code>)
         </li>
         <li>
-          <strong>TypeScript types</strong> - Order, OrderItem, PaginationParams
-          (<code>src/schemas/typescript-types.ts</code>)
+          <strong>TypeScript types</strong> - Order, OrderItem, PaginationParams (
+          <code>src/schemas/typescript-types.ts</code>)
         </li>
         <li>
           <strong>Custom YAML schemas</strong> - Role, Permission, ApiMetadata (
@@ -23,12 +24,10 @@ export default function Home() {
       <h2>API Endpoints:</h2>
       <ul>
         <li>
-          <code>GET /api/users</code> - Uses Zod (UserSchema) + TypeScript
-          (PaginationParams)
+          <code>GET /api/users</code> - Uses Zod (UserSchema) + TypeScript (PaginationParams)
         </li>
         <li>
-          <code>POST /api/users</code> - Uses Zod (CreateUserSchema) + YAML
-          (Role reference)
+          <code>POST /api/users</code> - Uses Zod (CreateUserSchema) + YAML (Role reference)
         </li>
         <li>
           <code>GET /api/products</code> - Uses Zod schemas
@@ -44,7 +43,7 @@ export default function Home() {
         </li>
       </ul>
       <div style={{ marginTop: "2rem" }}>
-        <a
+        <Link
           href="/api-docs"
           style={{
             display: "inline-block",
@@ -57,7 +56,7 @@ export default function Home() {
           }}
         >
           View API Documentation →
-        </a>
+        </Link>
       </div>
     </div>
   );

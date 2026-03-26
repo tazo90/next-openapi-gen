@@ -23,7 +23,7 @@ export const BaseSchema = z.object({
 export const ExtendedSchema = BaseSchema.extend({
   name: z.string().describe("Name"),
 });
-      `.trim()
+      `.trim(),
     );
 
     try {
@@ -41,8 +41,7 @@ export const ExtendedSchema = BaseSchema.extend({
       expect(baseSchema.required).toEqual(["id"]);
 
       // Convert the extended schema
-      const extendedSchema =
-        converter.convertZodSchemaToOpenApi("ExtendedSchema");
+      const extendedSchema = converter.convertZodSchemaToOpenApi("ExtendedSchema");
       expect(extendedSchema).toBeDefined();
       expect(extendedSchema.type).toBe("object");
       expect(extendedSchema.properties).toBeDefined();
@@ -89,7 +88,7 @@ export const NestedSchema = z.object({
   foo: BaseSchema,
   bar: z.string(),
 });
-      `.trim()
+      `.trim(),
     );
 
     try {
@@ -103,9 +102,7 @@ export const NestedSchema = z.object({
 
       // foo should be a $ref to BaseSchema, not an inline object
       expect(nestedSchema.properties.foo).toBeDefined();
-      expect(nestedSchema.properties.foo.$ref).toBe(
-        "#/components/schemas/BaseSchema"
-      );
+      expect(nestedSchema.properties.foo.$ref).toBe("#/components/schemas/BaseSchema");
       expect(nestedSchema.properties.foo.type).toBeUndefined();
 
       // bar should be a regular string
@@ -152,16 +149,14 @@ export const DoubleExtendedSchema = ExtendedSchema.extend({
   email: z.string().email(),
   age: z.number().int().positive().optional(),
 });
-      `.trim()
+      `.trim(),
     );
 
     try {
       const converter = new ZodSchemaConverter(testDir);
 
       // Convert the double extended schema
-      const doubleExtendedSchema = converter.convertZodSchemaToOpenApi(
-        "DoubleExtendedSchema"
-      );
+      const doubleExtendedSchema = converter.convertZodSchemaToOpenApi("DoubleExtendedSchema");
       expect(doubleExtendedSchema).toBeDefined();
       expect(doubleExtendedSchema.type).toBe("object");
       expect(doubleExtendedSchema.properties).toBeDefined();
@@ -220,14 +215,13 @@ export const ExtendedSchema = BaseSchema.extend({
   name: z.string(),
   updatedAt: z.string(),
 });
-      `.trim()
+      `.trim(),
     );
 
     try {
       const converter = new ZodSchemaConverter(testDir);
 
-      const extendedSchema =
-        converter.convertZodSchemaToOpenApi("ExtendedSchema");
+      const extendedSchema = converter.convertZodSchemaToOpenApi("ExtendedSchema");
       expect(extendedSchema).toBeDefined();
 
       // Check required array has no duplicates

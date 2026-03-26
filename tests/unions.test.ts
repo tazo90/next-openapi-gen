@@ -6,12 +6,7 @@ import path from "path";
 describe("Union Type Support", () => {
   describe("TypeScript Unions", () => {
     let processor: SchemaProcessor;
-    const fixturesDir = path.join(
-      process.cwd(),
-      "tests",
-      "fixtures",
-      "unions"
-    );
+    const fixturesDir = path.join(process.cwd(), "tests", "fixtures", "unions");
 
     beforeEach(() => {
       processor = new SchemaProcessor(fixturesDir, "typescript");
@@ -63,16 +58,12 @@ describe("Union Type Support", () => {
         const hasSuccessRef = schema.oneOf.some(
           (item: any) =>
             item.$ref === "#/components/schemas/SuccessResponse" ||
-            (item.type === "object" &&
-              item.properties?.success &&
-              item.properties?.data)
+            (item.type === "object" && item.properties?.success && item.properties?.data),
         );
         const hasErrorRef = schema.oneOf.some(
           (item: any) =>
             item.$ref === "#/components/schemas/ErrorResponse" ||
-            (item.type === "object" &&
-              item.properties?.success &&
-              item.properties?.error)
+            (item.type === "object" && item.properties?.success && item.properties?.error),
         );
 
         expect(hasSuccessRef || hasErrorRef).toBe(true);
@@ -114,10 +105,7 @@ describe("Union Type Support", () => {
       });
 
       it("should handle string | null | undefined", () => {
-        const schema = processor.findSchemaDefinition(
-          "NullableOrUndefined",
-          ""
-        );
+        const schema = processor.findSchemaDefinition("NullableOrUndefined", "");
 
         expect(schema).toBeDefined();
         expect(schema.type).toBe("string");
@@ -135,9 +123,7 @@ describe("Union Type Support", () => {
 
         // Verify that each variant is either a reference or an object
         schema.oneOf.forEach((variant: any) => {
-          expect(
-            variant.$ref !== undefined || variant.type === "object"
-          ).toBe(true);
+          expect(variant.$ref !== undefined || variant.type === "object").toBe(true);
         });
       });
 
@@ -201,12 +187,7 @@ describe("Union Type Support", () => {
 
   describe("Zod Unions", () => {
     let converter: ZodSchemaConverter;
-    const fixturesDir = path.join(
-      process.cwd(),
-      "tests",
-      "fixtures",
-      "unions"
-    );
+    const fixturesDir = path.join(process.cwd(), "tests", "fixtures", "unions");
 
     beforeEach(() => {
       converter = new ZodSchemaConverter(fixturesDir);
@@ -214,9 +195,7 @@ describe("Union Type Support", () => {
 
     describe("Simple Unions (should use oneOf)", () => {
       it("should convert z.union([z.string(), z.number()]) to oneOf", () => {
-        const schema = converter.convertZodSchemaToOpenApi(
-          "StringOrNumberSchema"
-        );
+        const schema = converter.convertZodSchemaToOpenApi("StringOrNumberSchema");
 
         expect(schema).toBeDefined();
         expect(schema.oneOf).toBeDefined();
@@ -226,9 +205,7 @@ describe("Union Type Support", () => {
       });
 
       it("should handle z.union([z.string(), z.boolean()])", () => {
-        const schema = converter.convertZodSchemaToOpenApi(
-          "StringOrBooleanSchema"
-        );
+        const schema = converter.convertZodSchemaToOpenApi("StringOrBooleanSchema");
 
         expect(schema).toBeDefined();
         expect(schema.oneOf).toBeDefined();
@@ -236,9 +213,7 @@ describe("Union Type Support", () => {
       });
 
       it("should handle primitive union", () => {
-        const schema = converter.convertZodSchemaToOpenApi(
-          "PrimitiveUnionSchema"
-        );
+        const schema = converter.convertZodSchemaToOpenApi("PrimitiveUnionSchema");
 
         expect(schema).toBeDefined();
         expect(schema.oneOf).toBeDefined();
@@ -282,9 +257,7 @@ describe("Union Type Support", () => {
 
     describe("Nullable Unions (should add nullable: true)", () => {
       it("should handle z.union([z.string(), z.null()])", () => {
-        const schema = converter.convertZodSchemaToOpenApi(
-          "NullableStringSchema"
-        );
+        const schema = converter.convertZodSchemaToOpenApi("NullableStringSchema");
 
         expect(schema).toBeDefined();
         expect(schema.type).toBe("string");
@@ -292,9 +265,7 @@ describe("Union Type Support", () => {
       });
 
       it("should handle z.union([z.number(), z.null()])", () => {
-        const schema = converter.convertZodSchemaToOpenApi(
-          "NullableNumberSchema"
-        );
+        const schema = converter.convertZodSchemaToOpenApi("NullableNumberSchema");
 
         expect(schema).toBeDefined();
         expect(schema.type).toBe("number");
@@ -302,9 +273,7 @@ describe("Union Type Support", () => {
       });
 
       it("should handle z.union([z.object(...), z.null()])", () => {
-        const schema = converter.convertZodSchemaToOpenApi(
-          "NullableObjectSchema"
-        );
+        const schema = converter.convertZodSchemaToOpenApi("NullableObjectSchema");
 
         expect(schema).toBeDefined();
         expect(schema.type).toBe("object");
@@ -325,9 +294,7 @@ describe("Union Type Support", () => {
 
     describe("Discriminated Unions", () => {
       it("should handle z.discriminatedUnion with discriminator property", () => {
-        const schema = converter.convertZodSchemaToOpenApi(
-          "NotificationSchema"
-        );
+        const schema = converter.convertZodSchemaToOpenApi("NotificationSchema");
 
         expect(schema).toBeDefined();
         expect(schema.oneOf).toBeDefined();
@@ -337,9 +304,7 @@ describe("Union Type Support", () => {
       });
 
       it("should handle payment method discriminated union", () => {
-        const schema = converter.convertZodSchemaToOpenApi(
-          "PaymentMethodSchema"
-        );
+        const schema = converter.convertZodSchemaToOpenApi("PaymentMethodSchema");
 
         expect(schema).toBeDefined();
         expect(schema.oneOf).toBeDefined();
@@ -349,9 +314,7 @@ describe("Union Type Support", () => {
       });
 
       it("should handle GetUserResponse discriminated union", () => {
-        const schema = converter.convertZodSchemaToOpenApi(
-          "GetUserResponseSchema"
-        );
+        const schema = converter.convertZodSchemaToOpenApi("GetUserResponseSchema");
 
         expect(schema).toBeDefined();
         expect(schema.oneOf).toBeDefined();
@@ -363,16 +326,11 @@ describe("Union Type Support", () => {
 
     describe("Optional/Undefined Unions", () => {
       it("should handle z.union([z.string(), z.undefined()])", () => {
-        const schema = converter.convertZodSchemaToOpenApi(
-          "OptionalStringSchema"
-        );
+        const schema = converter.convertZodSchemaToOpenApi("OptionalStringSchema");
 
         expect(schema).toBeDefined();
         // Should handle undefined as nullable
-        expect(
-          schema.type === "string" ||
-            schema.oneOf !== undefined
-        ).toBe(true);
+        expect(schema.type === "string" || schema.oneOf !== undefined).toBe(true);
       });
     });
 
@@ -413,9 +371,7 @@ describe("Union Type Support", () => {
       });
 
       it("z.union with literals should also produce enum schema", () => {
-        const schema = converter.convertZodSchemaToOpenApi(
-          "StatusLiteralUnionSchema"
-        );
+        const schema = converter.convertZodSchemaToOpenApi("StatusLiteralUnionSchema");
 
         expect(schema).toBeDefined();
         expect(schema.type).toBe("string");

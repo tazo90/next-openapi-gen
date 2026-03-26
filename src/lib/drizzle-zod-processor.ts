@@ -29,9 +29,7 @@ export class DrizzleZodProcessor {
    * @returns OpenAPI schema object
    */
   static processSchema(node: t.CallExpression): OpenApiSchema {
-    const functionName = t.isIdentifier(node.callee)
-      ? node.callee.name
-      : "unknown";
+    const functionName = t.isIdentifier(node.callee) ? node.callee.name : "unknown";
 
     logger.debug(`Processing drizzle-zod schema: ${functionName}`);
 
@@ -52,10 +50,7 @@ export class DrizzleZodProcessor {
           if (!key) return;
 
           // The value is typically an arrow function: (schema) => schema.field.method()
-          if (
-            t.isObjectProperty(prop) &&
-            t.isArrowFunctionExpression(prop.value)
-          ) {
+          if (t.isObjectProperty(prop) && t.isArrowFunctionExpression(prop.value)) {
             const arrowFunc = prop.value;
             const fieldSchema = this.extractFieldSchema(arrowFunc.body);
 
@@ -74,9 +69,7 @@ export class DrizzleZodProcessor {
 
     // If no properties were extracted, return a generic object schema
     if (Object.keys(schema.properties).length === 0) {
-      logger.debug(
-        "No properties extracted from drizzle-zod schema, returning generic object"
-      );
+      logger.debug("No properties extracted from drizzle-zod schema, returning generic object");
       return { type: "object" };
     }
 
@@ -86,9 +79,7 @@ export class DrizzleZodProcessor {
   /**
    * Extract property key from object property or method
    */
-  private static extractPropertyKey(
-    prop: t.ObjectProperty | t.ObjectMethod
-  ): string | null {
+  private static extractPropertyKey(prop: t.ObjectProperty | t.ObjectMethod): string | null {
     if (t.isIdentifier(prop.key)) {
       return prop.key.name;
     }
@@ -118,13 +109,11 @@ export class DrizzleZodProcessor {
     // Handle call expressions (chained methods like schema.field.min(1).max(100))
     if (t.isCallExpression(node)) {
       const baseSchema = this.extractFieldSchema(
-        t.isMemberExpression(node.callee) ? node.callee.object : node
+        t.isMemberExpression(node.callee) ? node.callee.object : node,
       );
 
       if (baseSchema && t.isMemberExpression(node.callee)) {
-        const methodName = t.isIdentifier(node.callee.property)
-          ? node.callee.property.name
-          : null;
+        const methodName = t.isIdentifier(node.callee.property) ? node.callee.property.name : null;
 
         if (methodName) {
           return this.applyZodMethod(baseSchema, methodName, node.arguments);
@@ -142,14 +131,9 @@ export class DrizzleZodProcessor {
    */
   private static isFieldOptional(node: t.Node): boolean {
     if (t.isCallExpression(node) && t.isMemberExpression(node.callee)) {
-      const methodName = t.isIdentifier(node.callee.property)
-        ? node.callee.property.name
-        : null;
+      const methodName = t.isIdentifier(node.callee.property) ? node.callee.property.name : null;
 
-      if (
-        methodName === "optional" ||
-        methodName === "nullish"
-      ) {
+      if (methodName === "optional" || methodName === "nullish") {
         return true;
       }
 
@@ -187,10 +171,7 @@ export class DrizzleZodProcessor {
       // Add format hints
       if (lowercaseField.includes("email")) {
         schema.format = "email";
-      } else if (
-        lowercaseField.includes("url") ||
-        lowercaseField.includes("uri")
-      ) {
+      } else if (lowercaseField.includes("url") || lowercaseField.includes("uri")) {
         schema.format = "uri";
       } else if (lowercaseField.includes("uuid")) {
         schema.format = "uuid";
@@ -258,7 +239,7 @@ export class DrizzleZodProcessor {
   private static applyZodMethod(
     schema: OpenApiSchema,
     methodName: string,
-    args: (t.ArgumentPlaceholder | t.SpreadElement | t.Expression)[]
+    args: (t.ArgumentPlaceholder | t.SpreadElement | t.Expression)[],
   ): OpenApiSchema {
     const result = { ...schema };
 

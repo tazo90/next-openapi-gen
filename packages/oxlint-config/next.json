@@ -1,0 +1,17 @@
+{
+  "$schema": "../../node_modules/oxlint/configuration_schema.json",
+  "overrides": [
+    {
+      "files": [
+        "**/src/app/**/*.{js,jsx,ts,tsx,mjs,cjs,mts,cts}",
+        "**/pages/**/*.{js,jsx,ts,tsx,mjs,cjs,mts,cts}",
+        "**/src/schemas/**/*.{js,jsx,ts,tsx,mjs,cjs,mts,cts}",
+        "**/src/types/**/*.{js,jsx,ts,tsx,mjs,cjs,mts,cts}"
+      ],
+      "plugins": ["nextjs"],
+      "rules": {
+        "no-unused-vars": "off"
+      }
+    }
+  ]
+}

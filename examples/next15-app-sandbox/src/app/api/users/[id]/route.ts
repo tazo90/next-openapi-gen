@@ -33,10 +33,7 @@ export async function GET() {
  * @responseDescription User deleted successfully
  * @openapi
  */
-export async function DELETE(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
 
   // Validate path params

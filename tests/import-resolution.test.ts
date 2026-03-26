@@ -25,7 +25,7 @@ export interface User {
 export async function getUser(id: number): Promise<User> {
   return { name: "John", email: "john@example.com" };
 }
-      `.trim()
+      `.trim(),
     );
 
     // Create types.ts that imports from helper.ts
@@ -35,7 +35,7 @@ export async function getUser(id: number): Promise<User> {
 import { getUser } from "./helper";
 
 export type UserResponse = Awaited<ReturnType<typeof getUser>>;
-      `.trim()
+      `.trim(),
     );
 
     processor = new SchemaProcessor(fixturesDir, "typescript");

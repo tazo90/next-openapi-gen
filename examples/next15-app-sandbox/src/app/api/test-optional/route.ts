@@ -11,7 +11,7 @@ export const GET = async () =>
     await User.parseAsync({
       name: "John Doe",
       profileImage: { url: "https://placehold.co/100x100" },
-    })
+    }),
   );
 
 export const Image = z.object({

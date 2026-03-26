@@ -2,20 +2,47 @@
   "name": "next-openapi-gen",
   "version": "0.10.5",
   "description": "Automatically generate OpenAPI 3.0 documentation from Next.js projects, with support for Zod schemas and TypeScript types.",
-  "packageManager": "pnpm@10.27.0",
-  "type": "module",
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
-  "typings": "dist/index.d.ts",
+  "keywords": [
+    "api",
+    "api-docs",
+    "docs",
+    "drizzle",
+    "nextjs",
+    "openapi",
+    "react",
+    "redoc",
+    "scalar",
+    "swagger",
+    "typescript",
+    "zod"
+  ],
+  "license": "MIT",
+  "author": "Mariusz Winnik",
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/tazo90/next-openapi-gen.git"
+  },
   "bin": {
     "next-openapi-gen": "./dist/index.js"
   },
   "files": [
     "dist"
   ],
+  "type": "module",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "typings": "dist/index.d.ts",
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
+    "check": "pnpm format:check && pnpm lint",
     "clean": "rm -rf dist",
     "build": "pnpm clean && tsc",
+    "format": "oxfmt --config ./packages/oxfmt-config/oxfmt.json --ignore-path .gitignore .",
+    "format:check": "oxfmt --config ./packages/oxfmt-config/oxfmt.json --ignore-path .gitignore --check .",
+    "lint": "oxlint --config ./packages/oxlint-config/base.json . --ignore-path .gitignore --deny-warnings",
+    "lint:fix": "oxlint --config ./packages/oxlint-config/base.json . --ignore-path .gitignore --fix --deny-warnings",
     "prepare": "pnpm build",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -23,32 +50,6 @@
     "test:coverage": "vitest run --coverage",
     "release": "np --no-cleanup --no-tests",
     "version": "conventional-changelog -p angular -i CHANGELOG.md -s -n .changelogrc.cjs && git add CHANGELOG.md"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+ssh://git@github.com/tazo90/next-openapi-gen.git"
-  },
-  "keywords": [
-    "nextjs",
-    "openapi",
-    "swagger",
-    "typescript",
-    "zod",
-    "api-docs",
-    "api",
-    "docs",
-    "react",
-    "scalar",
-    "redoc",
-    "drizzle"
-  ],
-  "publishConfig": {
-    "access": "public"
-  },
-  "author": "Mariusz Winnik",
-  "license": "MIT",
-  "engines": {
-    "node": ">=18.0.0"
   },
   "dependencies": {
     "@babel/parser": "^7.28.3",
@@ -65,9 +66,15 @@
     "@vitest/ui": "^3.2.4",
     "conventional-changelog-cli": "^5.0.0",
     "np": "^10.2.0",
+    "oxfmt": "^0.42.0",
+    "oxlint": "^1.57.0",
     "typescript": "^5.9.2",
     "vitest": "^3.2.4"
   },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "packageManager": "pnpm@10.27.0",
   "np": {
     "packageManager": "pnpm",
     "anyBranch": false,

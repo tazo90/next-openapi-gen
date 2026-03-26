@@ -53,11 +53,11 @@ export async function POST(request: NextRequest) {
       status: "pending",
       totalAmount: body.items.reduce(
         (sum: number, item: any) => sum + item.quantity * item.pricePerUnit,
-        0
+        0,
       ),
       createdAt: new Date(),
       updatedAt: new Date(),
     },
-    { status: 201 }
+    { status: 201 },
   );
 }

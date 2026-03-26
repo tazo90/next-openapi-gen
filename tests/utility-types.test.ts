@@ -143,14 +143,14 @@ describe("SchemaProcessor - Utility Types", () => {
   });
 
   describe("Indexed Access Types", () => {
-    it.skip("should handle string property access User[\"name\"]", () => {
+    it.skip('should handle string property access User["name"]', () => {
       const schema = processor.findSchemaDefinition("UserNameProperty", "");
 
       expect(schema).toBeDefined();
       expect(schema.type).toBe("string");
     });
 
-    it.skip("should handle string property access User[\"email\"]", () => {
+    it.skip('should handle string property access User["email"]', () => {
       const schema = processor.findSchemaDefinition("UserEmailProperty", "");
 
       expect(schema).toBeDefined();

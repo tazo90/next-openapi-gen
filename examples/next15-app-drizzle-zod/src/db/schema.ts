@@ -1,12 +1,4 @@
-import {
-  pgTable,
-  serial,
-  varchar,
-  text,
-  boolean,
-  timestamp,
-  integer,
-} from "drizzle-orm/pg-core";
+import { pgTable, serial, varchar, text, boolean, timestamp, integer } from "drizzle-orm/pg-core";
 
 /**
  * Posts table - represents blog posts

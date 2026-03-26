@@ -1,0 +1,20 @@
+{
+  "$schema": "../../node_modules/oxfmt/configuration_schema.json",
+  "ignorePatterns": [
+    "**/node_modules/**",
+    "**/dist/**",
+    "**/coverage/**",
+    "**/.next/**",
+    "**/out/**",
+    "**/.turbo/**",
+    "**/.vercel/**",
+    "**/.vscode/**",
+    "**/.cursor/**",
+    "**/.agents/**",
+    "**/.claude/**",
+    "**/.pnpm-store/**",
+    "**/pnpm-lock.yaml",
+    "**/next-env.d.ts",
+    "**/public/openapi.json"
+  ]
+}
