@@ -30,16 +30,20 @@ export type OpenApiTemplate = {
     version: string;
     description: string;
   };
-  servers?: Array<{
-    url: string;
-    description: string;
-  }> | undefined;
+  servers?:
+    | Array<{
+        url: string;
+        description: string;
+      }>
+    | undefined;
   basePath?: string | undefined;
-  components?: {
-    securitySchemes?: Record<string, any> | undefined;
-    schemas?: Record<string, any> | undefined;
-    responses?: Record<string, any> | undefined;
-  } | undefined;
+  components?:
+    | {
+        securitySchemes?: Record<string, any> | undefined;
+        schemas?: Record<string, any> | undefined;
+        responses?: Record<string, any> | undefined;
+      }
+    | undefined;
   paths?: Record<string, any> | undefined;
   apiDir?: string | undefined;
   routerType?: RouterType | undefined;
@@ -115,9 +119,11 @@ export type OpenApiSchema = {
   oneOf?: OpenApiSchema[] | undefined;
   allOf?: OpenApiSchema[] | undefined;
   additionalProperties?: OpenApiSchema | boolean | undefined;
-  discriminator?: {
-    propertyName: string;
-  } | undefined;
+  discriminator?:
+    | {
+        propertyName: string;
+      }
+    | undefined;
   $ref?: string | undefined;
 };
 

@@ -159,7 +159,10 @@ export function extractJSDocComments(path: NodePath): DataTypes {
       if (commentValue.includes("@add")) {
         const matches = [...commentValue.matchAll(/@add\s+([^\n\r@]*)/g)];
         if (matches.length > 0) {
-          addResponses = matches.map((m) => m[1]?.trim() || "").filter(Boolean).join(",");
+          addResponses = matches
+            .map((m) => m[1]?.trim() || "")
+            .filter(Boolean)
+            .join(",");
         }
       }
 

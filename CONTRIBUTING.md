@@ -44,6 +44,11 @@ pnpm install
 
 This repository uses a pnpm workspace, so running `pnpm install` at the repository root installs dependencies for the root package and all example apps.
 
+Git hooks are installed automatically during `pnpm install` with `simple-git-hooks`.
+
+- `pre-commit` runs `lint-staged`, which formats staged files with Oxfmt and lints staged JS/TS files with Oxlint
+- `commit-msg` runs `commitlint`, which enforces Conventional Commits
+
 ### 3. Create a Branch
 
 ```bash
@@ -60,7 +65,7 @@ We use **[Conventional Commits](https://www.conventionalcommits.org/)** format f
 
 ### Format
 
-```
+```text
 <type>: <description>
 
 [optional body]
@@ -87,7 +92,7 @@ We use **[Conventional Commits](https://www.conventionalcommits.org/)** format f
 
 For breaking changes, add `!` after the type or include `BREAKING CHANGE:` in the footer:
 
-```
+```text
 feat!: migrate to ESM modules
 
 BREAKING CHANGE: CommonJS is no longer supported.
@@ -98,9 +103,9 @@ Node.js 16 is no longer supported, minimum version is now 18.0.0.
 
 ### Examples
 
-✅ **Good commit messages:**
+✅ **Good commit messages**
 
-```
+```text
 feat: add support for Drizzle ORM schemas
 fix: resolve crash on dynamic routes
 perf: improve OpenAPI generation speed by 40%
@@ -109,9 +114,9 @@ refactor: simplify schema processor logic
 test: add integration tests for route processor
 ```
 
-❌ **Bad commit messages:**
+❌ **Bad commit messages**
 
-```
+```text
 added feature
 fix
 update
@@ -123,7 +128,7 @@ Fixed stuff
 
 You can add a scope for more context:
 
-```
+```text
 feat(drizzle): add support for Drizzle schemas
 fix(types): resolve TypeScript errors in route processor
 docs(readme): add installation instructions
@@ -138,14 +143,20 @@ docs(readme): add installation instructions
 Before submitting a PR:
 
 ```bash
+# Run the repo-wide format + lint checks
+pnpm check
+
 # Run tests
 pnpm test
 
 # Build the project
 pnpm build
+```
 
-# Ensure no TypeScript errors
-pnpm exec tsc --noEmit
+If you want to preview what the pre-commit hook will do before committing, run:
+
+```bash
+pnpm lint:staged
 ```
 
 ### 2. Update Documentation
@@ -158,17 +169,17 @@ pnpm exec tsc --noEmit
 
 **Important:** Your PR title must follow the Conventional Commits format!
 
-#### ✅ Good PR Titles:
+#### ✅ Good PR Titles
 
-```
+```text
 feat: add support for Drizzle ORM schemas
 fix: resolve TypeScript type errors in route processor
 docs: update README with new examples
 ```
 
-#### ❌ Bad PR Titles:
+#### ❌ Bad PR Titles
 
-```
+```text
 Added drizzle support
 Fixed bugs
 Update
@@ -196,7 +207,7 @@ When you create a PR, a template will guide you through:
 
 ### Project Structure
 
-```
+```text
 next-openapi-gen/
 ├── src/
 │   ├── commands/       # CLI commands (init, generate)
@@ -224,6 +235,14 @@ pnpm build
 # Watch mode (auto-rebuild on changes)
 pnpm exec tsc --watch
 ```
+
+### Editor Setup
+
+This repository commits workspace defaults in `.vscode/` so contributors and agents use the same TypeScript SDK, Oxc formatter, and common tasks in VS Code or Cursor.
+
+- Install the recommended `oxc.oxc-vscode` extension
+- Use the workspace TypeScript version when prompted
+- Use the committed `check`, `test`, and `build` tasks if you prefer running scripts from the editor
 
 ### Testing
 

@@ -124,10 +124,7 @@ export class OpenApiGenerator {
       // Use manual definitions (existing logic - if exists)
       const responses = this.template.components.responses;
       Object.entries(this.config.errorDefinitions).forEach(([code, errorDef]) => {
-        responses[code] = this.createErrorResponseComponent(
-          code,
-          errorDef,
-        );
+        responses[code] = this.createErrorResponseComponent(code, errorDef);
       });
     }
 

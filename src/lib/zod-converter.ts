@@ -226,11 +226,13 @@ export class ZodSchemaConverter {
 
             // Track drizzle-zod imports
             if (source === "drizzle-zod") {
-              path.node.specifiers.forEach((specifier: t.ImportDeclaration["specifiers"][number]) => {
-                if (t.isImportSpecifier(specifier) || t.isImportDefaultSpecifier(specifier)) {
-                  this.drizzleZodImports.add(specifier.local.name);
-                }
-              });
+              path.node.specifiers.forEach(
+                (specifier: t.ImportDeclaration["specifiers"][number]) => {
+                  if (t.isImportSpecifier(specifier) || t.isImportDefaultSpecifier(specifier)) {
+                    this.drizzleZodImports.add(specifier.local.name);
+                  }
+                },
+              );
             }
 
             // Process each import specifier
@@ -1100,7 +1102,8 @@ export class ZodSchemaConverter {
     // This is common for string literals like: z.union([z.literal("a"), z.literal("b")])
     const firstUnionItem = unionItems[0];
     const allSameType =
-      !!firstUnionItem && unionItems.every((item) => item.type === firstUnionItem.type && item.enum);
+      !!firstUnionItem &&
+      unionItems.every((item) => item.type === firstUnionItem.type && item.enum);
 
     if (allSameType) {
       // Combine all enum values
@@ -2202,11 +2205,13 @@ export class ZodSchemaConverter {
 
             // Track drizzle-zod imports
             if (source === "drizzle-zod") {
-              path.node.specifiers.forEach((specifier: t.ImportDeclaration["specifiers"][number]) => {
-                if (t.isImportSpecifier(specifier) || t.isImportDefaultSpecifier(specifier)) {
-                  this.drizzleZodImports.add(specifier.local.name);
-                }
-              });
+              path.node.specifiers.forEach(
+                (specifier: t.ImportDeclaration["specifiers"][number]) => {
+                  if (t.isImportSpecifier(specifier) || t.isImportDefaultSpecifier(specifier)) {
+                    this.drizzleZodImports.add(specifier.local.name);
+                  }
+                },
+              );
             }
 
             // Process each import specifier

@@ -8,7 +8,6 @@
     "**/out/**",
     "**/.turbo/**",
     "**/.vercel/**",
-    "**/.vscode/**",
     "**/.cursor/**",
     "**/.agents/**",
     "**/.claude/**",

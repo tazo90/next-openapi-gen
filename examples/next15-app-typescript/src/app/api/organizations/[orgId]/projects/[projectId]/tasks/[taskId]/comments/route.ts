@@ -23,10 +23,7 @@ type CommentRouteContext = {
  * @auth bearer
  * @openapi
  */
-export async function GET(
-  request: NextRequest,
-  { params }: CommentRouteContext,
-) {
+export async function GET(request: NextRequest, { params }: CommentRouteContext) {
   const { orgId, projectId, taskId } = await params;
 
   // Extract query parameters
@@ -120,10 +117,7 @@ export async function GET(
  * @auth bearer
  * @openapi
  */
-export async function POST(
-  request: NextRequest,
-  { params }: CommentRouteContext,
-) {
+export async function POST(request: NextRequest, { params }: CommentRouteContext) {
   try {
     await params;
     // Parse request body
@@ -185,10 +179,7 @@ export async function POST(
  * @auth bearer
  * @openapi
  */
-export async function PATCH(
-  request: NextRequest,
-  { params }: CommentRouteContext,
-) {
+export async function PATCH(request: NextRequest, { params }: CommentRouteContext) {
   await params;
   // Get the comment ID from the query parameter
   const url = new URL(request.url);
@@ -267,10 +258,7 @@ export async function PATCH(
  * @auth bearer
  * @openapi
  */
-export async function DELETE(
-  request: NextRequest,
-  { params }: CommentRouteContext,
-) {
+export async function DELETE(request: NextRequest, { params }: CommentRouteContext) {
   await params;
   // Get the comment ID from the query parameter
   const url = new URL(request.url);

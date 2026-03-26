@@ -43,7 +43,8 @@
     "format:check": "oxfmt --config ./packages/oxfmt-config/oxfmt.json --ignore-path .gitignore --check .",
     "lint": "oxlint --config ./packages/oxlint-config/base.json . --ignore-path .gitignore --deny-warnings",
     "lint:fix": "oxlint --config ./packages/oxlint-config/base.json . --ignore-path .gitignore --fix --deny-warnings",
-    "prepare": "pnpm build",
+    "lint:staged": "lint-staged",
+    "prepare": "pnpm build && simple-git-hooks",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
@@ -61,17 +62,33 @@
     "ora": "^8.2.0"
   },
   "devDependencies": {
+    "@commitlint/cli": "^20.5.0",
+    "@commitlint/config-conventional": "^20.5.0",
+    "@commitlint/types": "^20.5.0",
     "@types/babel__traverse": "^7.28.0",
     "@types/fs-extra": "^11.0.4",
     "@types/js-yaml": "^4.0.9",
     "@types/node": "^24.3.0",
     "@vitest/ui": "^3.2.4",
     "conventional-changelog-cli": "^5.0.0",
+    "lint-staged": "^16.4.0",
     "np": "^10.2.0",
     "oxfmt": "^0.42.0",
     "oxlint": "^1.57.0",
+    "simple-git-hooks": "^2.13.1",
     "typescript": "^5.9.2",
     "vitest": "^3.2.4"
+  },
+  "simple-git-hooks": {
+    "pre-commit": "pnpm lint:staged",
+    "commit-msg": "pnpm exec commitlint --edit \"$1\""
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx,mjs,cjs,mts,cts}": [
+      "oxfmt --config ./packages/oxfmt-config/oxfmt.json --ignore-path .gitignore",
+      "oxlint --config ./packages/oxlint-config/base.json --ignore-path .gitignore --deny-warnings"
+    ],
+    "*.{json,jsonc,md,mdx,yml,yaml,css,scss,html,toml}": "oxfmt --config ./packages/oxfmt-config/oxfmt.json --ignore-path .gitignore"
   },
   "engines": {
     "node": ">=18.0.0"
