@@ -36,7 +36,7 @@
     "access": "public"
   },
   "scripts": {
-    "check": "pnpm format:check && pnpm lint && pnpm test",
+    "check": "pnpm format:check && pnpm lint",
     "clean": "rm -rf dist coverage tsconfig.tsbuildinfo",
     "build": "pnpm clean && tsc",
     "format": "oxfmt --config ../oxfmt-config/oxfmt.json --ignore-path ../../.gitignore .",

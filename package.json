@@ -9,7 +9,7 @@
   },
   "scripts": {
     "build": "turbo run build",
-    "check": "turbo run check build",
+    "check": "turbo run check",
     "dev": "turbo run dev",
     "format": "turbo run format",
     "format:check": "turbo run format:check",
