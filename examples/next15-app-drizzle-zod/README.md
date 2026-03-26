@@ -21,16 +21,18 @@ This example demonstrates how to use **next-openapi-gen** with **Drizzle ORM** a
 
 ## Getting Started
 
+This example is part of the repository pnpm workspace. Run `pnpm install` from the repository root before starting the example.
+
 ### 1. Install Dependencies
 
 ```bash
-npm install
+pnpm install
 ```
 
 ### 2. Generate OpenAPI Specification
 
 ```bash
-npm run openapi:generate
+pnpm openapi:generate
 ```
 
 This will scan your API routes and generate `public/openapi.json` based on:
@@ -42,7 +44,7 @@ This will scan your API routes and generate `public/openapi.json` based on:
 ### 3. Start Development Server
 
 ```bash
-npm run dev
+pnpm dev
 ```
 
 ### 4. View API Documentation
@@ -128,7 +130,7 @@ export async function POST(request: NextRequest) {
 ### 4. Generate OpenAPI Documentation
 
 ```bash
-npm run openapi:generate
+pnpm openapi:generate
 ```
 
 The tool will:
@@ -157,13 +159,13 @@ The `next.openapi.json` file in the root directory controls the documentation ge
 
 ## Available Scripts
 
-- `npm run dev` - Start development server
-- `npm run build` - Build for production
-- `npm run start` - Start production server
-- `npm run openapi:generate` - Generate OpenAPI specification
-- `npm run db:generate` - Generate Drizzle migrations
-- `npm run db:migrate` - Run Drizzle migrations
-- `npm run db:studio` - Open Drizzle Studio
+- `pnpm dev` - Start development server
+- `pnpm build` - Build for production
+- `pnpm start` - Start production server
+- `pnpm openapi:generate` - Generate OpenAPI specification
+- `pnpm db:generate` - Generate Drizzle migrations
+- `pnpm db:migrate` - Run Drizzle migrations
+- `pnpm db:studio` - Open Drizzle Studio
 
 ## API Endpoints
 

@@ -22,7 +22,7 @@
     "@types/react-dom": "^19.2.2",
     "eslint": "^9.38.0",
     "eslint-config-next": "^16.0.1",
-    "next-openapi-gen": "file:../..",
+    "next-openapi-gen": "workspace:*",
     "typescript": "^5.9.3"
   }
 }

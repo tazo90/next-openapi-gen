@@ -70,15 +70,17 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
 
 ## Running the Example
 
+This example is part of the repository pnpm workspace. Run `pnpm install` from the repository root before starting the example.
+
 ```bash
 # Install dependencies
-npm install
+pnpm install
 
 # Generate OpenAPI documentation
-npx next-openapi-gen generate
+pnpm exec next-openapi-gen generate
 
 # Start the development server
-npm run dev
+pnpm dev
 ```
 
 Then open http://localhost:3000/api-docs to view the generated documentation.

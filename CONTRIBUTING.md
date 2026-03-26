@@ -39,8 +39,10 @@ cd next-openapi-gen
 ### 2. Install Dependencies
 
 ```bash
-npm install
+pnpm install
 ```
+
+This repository uses a pnpm workspace, so running `pnpm install` at the repository root installs dependencies for the root package and all example apps.
 
 ### 3. Create a Branch
 
@@ -137,13 +139,13 @@ Before submitting a PR:
 
 ```bash
 # Run tests
-npm test
+pnpm test
 
 # Build the project
-npm run build
+pnpm build
 
 # Ensure no TypeScript errors
-npx tsc --noEmit
+pnpm exec tsc --noEmit
 ```
 
 ### 2. Update Documentation
@@ -214,49 +216,61 @@ next-openapi-gen/
 
 ```bash
 # Clean build artifacts
-npm run clean
+pnpm clean
 
 # Build TypeScript
-npm run build
+pnpm build
 
 # Watch mode (auto-rebuild on changes)
-npx tsc --watch
+pnpm exec tsc --watch
 ```
 
 ### Testing
 
 ```bash
 # Run all tests
-npm test
+pnpm test
 
 # Watch mode
-npm run test:watch
+pnpm test:watch
 
 # UI mode
-npm run test:ui
+pnpm test:ui
 
 # Coverage report
-npm run test:coverage
+pnpm test:coverage
 ```
 
 ### Local Testing
 
-To test the CLI locally:
+To test the CLI locally inside this workspace:
 
 ```bash
-# Build first
-npm run build
+# Install dependencies and build the CLI
+pnpm install
+pnpm build
 
-# Link globally
-npm link
+# Run an example app against the workspace package
+cd examples/next15-app-zod
+pnpm exec next-openapi-gen generate
+pnpm dev
+```
 
-# Now you can use it in any Next.js project
+To test the CLI in another local project:
+
+```bash
+# From the repository root
+pnpm build
+pnpm link --global
+
+# In another Next.js project
 cd /path/to/your/nextjs/app
+pnpm link --global next-openapi-gen
 next-openapi-gen init
 next-openapi-gen generate
 
 # Unlink when done
-npm unlink -g next-openapi-gen
+pnpm unlink --global next-openapi-gen
 ```
 
 ---
@@ -272,7 +286,7 @@ We use [`np`](https://github.com/sindresorhus/np) for interactive releases with 
 #### Creating a Release
 
 ```bash
-npm run release
+pnpm run release
 ```
 
 This will:
@@ -291,13 +305,13 @@ This will:
 
 ```bash
 # Specific version
-npx np 1.0.0
+pnpm exec np 1.0.0
 
 # Beta release
-npx np 1.0.0-beta.1
+pnpm exec np 1.0.0-beta.1
 
 # Only tag, skip npm publish
-npx np --no-publish
+pnpm exec np --no-publish
 ```
 
 #### Version Bump Guidelines

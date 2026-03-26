@@ -48,15 +48,17 @@ Schemas are resolved with automatic priority:
 
 ## Getting Started
 
+This example is part of the repository pnpm workspace. Run `pnpm install` from the repository root before starting the example.
+
 ```bash
 # Install dependencies
-npm install
+pnpm install
 
 # Generate OpenAPI documentation
-npm run openapi:generate
+pnpm openapi:generate
 
 # Start development server
-npm run dev
+pnpm dev
 ```
 
 Then visit:

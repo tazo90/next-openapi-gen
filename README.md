@@ -23,17 +23,17 @@ Automatically generate OpenAPI 3.0 documentation from Next.js projects, with sup
 ## Installation
 
 ```bash
-npm install next-openapi-gen --save-dev
+pnpm add -D next-openapi-gen
 ```
 
 ## Quick Start
 
 ```bash
 # Initialize OpenAPI configuration
-npx next-openapi-gen init
+pnpm exec next-openapi-gen init
 
 # Generate OpenAPI documentation
-npx next-openapi-gen generate
+pnpm exec next-openapi-gen generate
 ```
 
 > [!TIP]
@@ -54,7 +54,7 @@ npx next-openapi-gen generate
 
 ## Configuration
 
-During initialization (`npx next-openapi-gen init`), a configuration file `next.openapi.json` will be created in the project's root directory:
+During initialization (`pnpm exec next-openapi-gen init`), a configuration file `next.openapi.json` will be created in the project's root directory:
 
 ```json
 {
@@ -244,7 +244,7 @@ See **[next15-pages-router](./examples/next15-pages-router)** for a complete wor
 ### 1. Initialization
 
 ```bash
-npx next-openapi-gen init
+pnpm exec next-openapi-gen init
 ```
 
 This command will generate following elements:
@@ -257,7 +257,7 @@ This command will generate following elements:
 ### 2. Generate Documentation
 
 ```bash
-npx next-openapi-gen generate
+pnpm exec next-openapi-gen generate
 ```
 
 This command will generate OpenAPI documentation based on your API code:
@@ -991,11 +991,13 @@ Explore complete demo projects in the **[examples](./examples/)** directory, cov
 ### 🚀 Run an Example
 
 ```bash
+pnpm install
 cd examples/next15-app-zod
-npm install
-npx next-openapi-gen generate
-npm run dev
+pnpm exec next-openapi-gen generate
+pnpm dev
 ```
+
+The repository uses a pnpm workspace, so install dependencies once from the repository root before running any example app.
 
 Then open `http://localhost:3000/api-docs` to view the generated docs.
 
