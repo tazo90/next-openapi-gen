@@ -12,19 +12,20 @@
     "check": "pnpm format:check && pnpm lint"
   },
   "dependencies": {
-    "@scalar/api-reference-react": "^0.6.30",
-    "next": "15.3.2",
-    "react": "19.1.0",
-    "react-dom": "19.1.0"
+    "@scalar/api-reference-react": "catalog:",
+    "next": "catalog:app-next15",
+    "react": "catalog:app-next15",
+    "react-dom": "catalog:app-next15"
   },
   "devDependencies": {
-    "@types/node": "^22.15.18",
-    "@types/react": "^19.1.4",
-    "@types/react-dom": "^19.1.5",
-    "ajv": "^8.17.1",
-    "autoprefixer": "^10.4.21",
+    "@types/node": "catalog:app-next15",
+    "@types/react": "catalog:app-next15",
+    "@types/react-dom": "catalog:app-next15",
+    "ajv": "catalog:",
+    "autoprefixer": "catalog:",
     "next-openapi-gen": "workspace:*",
-    "postcss": "^8.5.3",
-    "typescript": "^5.8.3"
+    "postcss": "catalog:",
+    "tailwindcss": "catalog:",
+    "typescript": "catalog:"
   }
 }

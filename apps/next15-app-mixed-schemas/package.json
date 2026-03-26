@@ -13,17 +13,18 @@
     "check": "pnpm format:check && pnpm lint"
   },
   "dependencies": {
-    "@scalar/api-reference-react": "^0.8.1",
-    "next": "^16.0.1",
-    "react": "^19.2.0",
-    "react-dom": "^19.2.0",
-    "zod": "^4.1.12"
+    "@scalar/api-reference-react": "catalog:",
+    "next": "catalog:app-next16",
+    "react": "catalog:app-next16",
+    "react-dom": "catalog:app-next16",
+    "zod": "catalog:zod4"
   },
   "devDependencies": {
-    "@types/node": "^24.9.2",
-    "@types/react": "^19.2.2",
-    "@types/react-dom": "^19.2.2",
+    "@types/node": "catalog:app-next16",
+    "@types/react": "catalog:app-next16",
+    "@types/react-dom": "catalog:app-next16",
     "next-openapi-gen": "workspace:*",
-    "typescript": "^5.9.3"
+    "tailwindcss": "catalog:",
+    "typescript": "catalog:"
   }
 }

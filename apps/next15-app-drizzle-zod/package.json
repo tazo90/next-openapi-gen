@@ -16,24 +16,24 @@
     "check": "pnpm format:check && pnpm lint"
   },
   "dependencies": {
-    "@scalar/api-reference-react": "^0.6.30",
-    "drizzle-orm": "^0.36.4",
-    "drizzle-zod": "^0.5.1",
-    "next": "15.3.2",
-    "postgres": "^3.4.5",
-    "react": "19.1.0",
-    "react-dom": "19.1.0",
-    "zod": "^3.24.1"
+    "@scalar/api-reference-react": "catalog:",
+    "drizzle-orm": "catalog:",
+    "drizzle-zod": "catalog:",
+    "next": "catalog:app-next15",
+    "postgres": "catalog:",
+    "react": "catalog:app-next15",
+    "react-dom": "catalog:app-next15",
+    "zod": "catalog:zod3"
   },
   "devDependencies": {
-    "@types/node": "^22.15.18",
-    "@types/react": "^19.1.4",
-    "@types/react-dom": "^19.1.5",
-    "autoprefixer": "^10.4.21",
-    "drizzle-kit": "^0.29.1",
+    "@types/node": "catalog:app-next15",
+    "@types/react": "catalog:app-next15",
+    "@types/react-dom": "catalog:app-next15",
+    "autoprefixer": "catalog:",
+    "drizzle-kit": "catalog:",
     "next-openapi-gen": "workspace:*",
-    "postcss": "^8.5.3",
-    "tailwindcss": "^3.4.1",
-    "typescript": "^5.8.3"
+    "postcss": "catalog:",
+    "tailwindcss": "catalog:",
+    "typescript": "catalog:"
   }
 }

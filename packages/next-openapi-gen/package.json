@@ -51,26 +51,26 @@
     "version": "conventional-changelog -p angular -i ../../CHANGELOG.md -s -n ../../.changelogrc.cjs && git add ../../CHANGELOG.md"
   },
   "dependencies": {
-    "@babel/parser": "^7.28.3",
-    "@babel/traverse": "^7.28.3",
-    "@babel/types": "^7.28.2",
-    "commander": "^14.0.0",
-    "fs-extra": "^11.3.1",
-    "js-yaml": "^4.1.0",
-    "ora": "^8.2.0"
+    "@babel/parser": "catalog:",
+    "@babel/traverse": "catalog:",
+    "@babel/types": "catalog:",
+    "commander": "catalog:",
+    "fs-extra": "catalog:",
+    "js-yaml": "catalog:",
+    "ora": "catalog:"
   },
   "devDependencies": {
-    "@types/babel__traverse": "^7.28.0",
-    "@types/fs-extra": "^11.0.4",
-    "@types/js-yaml": "^4.0.9",
-    "@types/node": "^24.3.0",
-    "@vitest/ui": "^3.2.4",
-    "conventional-changelog-cli": "^5.0.0",
-    "np": "^10.2.0",
-    "oxfmt": "^0.42.0",
-    "oxlint": "^1.57.0",
-    "typescript": "^5.9.2",
-    "vitest": "^3.2.4"
+    "@types/babel__traverse": "catalog:",
+    "@types/fs-extra": "catalog:",
+    "@types/js-yaml": "catalog:",
+    "@types/node": "catalog:package-types",
+    "@vitest/ui": "catalog:",
+    "conventional-changelog-cli": "catalog:",
+    "np": "catalog:",
+    "oxfmt": "catalog:",
+    "oxlint": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   },
   "engines": {
     "node": ">=18.0.0"

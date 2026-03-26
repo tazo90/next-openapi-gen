@@ -21,14 +21,14 @@
     "version": "pnpm --filter next-openapi-gen version"
   },
   "devDependencies": {
-    "@commitlint/cli": "^20.5.0",
-    "@commitlint/config-conventional": "^20.5.0",
-    "@commitlint/types": "^20.5.0",
-    "lint-staged": "^16.4.0",
-    "oxfmt": "^0.42.0",
-    "oxlint": "^1.57.0",
-    "simple-git-hooks": "^2.13.1",
-    "turbo": "latest"
+    "@commitlint/cli": "catalog:",
+    "@commitlint/config-conventional": "catalog:",
+    "@commitlint/types": "catalog:",
+    "lint-staged": "catalog:",
+    "oxfmt": "catalog:",
+    "oxlint": "catalog:",
+    "simple-git-hooks": "catalog:",
+    "turbo": "catalog:"
   },
   "simple-git-hooks": {
     "pre-commit": "pnpm lint:staged",

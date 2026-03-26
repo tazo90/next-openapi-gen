@@ -12,18 +12,18 @@
     "check": "pnpm format:check && pnpm lint"
   },
   "dependencies": {
-    "next": "15.3.2",
-    "react": "19.1.0",
-    "react-dom": "19.1.0",
-    "swagger-ui": "^5.21.0",
-    "swagger-ui-react": "^5.21.0"
+    "next": "catalog:app-next15",
+    "react": "catalog:app-next15",
+    "react-dom": "catalog:app-next15",
+    "swagger-ui": "catalog:",
+    "swagger-ui-react": "catalog:"
   },
   "devDependencies": {
-    "@types/node": "^22.15.18",
-    "@types/react": "^19.1.4",
-    "@types/react-dom": "^19.1.5",
+    "@types/node": "catalog:app-next15",
+    "@types/react": "catalog:app-next15",
+    "@types/react-dom": "catalog:app-next15",
     "next-openapi-gen": "workspace:*",
-    "typescript": "^5.8.3"
+    "typescript": "catalog:"
   },
   "overrides": {
     "swagger-ui-react": {
