@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { extractTypeFromComment } from "@next-openapi-gen/lib/utils";
+import { extractTypeFromComment } from "@next-openapi-gen/shared/utils.js";
 
 describe("Array Response Annotation Parsing", () => {
   describe("extractTypeFromComment with array notation", () => {

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { SchemaProcessor } from "@next-openapi-gen/lib/schema-processor.js";
+import { SchemaProcessor } from "@next-openapi-gen/schema/typescript/schema-processor.js";
 import path from "path";
 
 describe("Product Example - Real Test", () => {

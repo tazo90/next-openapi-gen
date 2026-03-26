@@ -7,10 +7,10 @@ import * as t from "@babel/types";
 // Handle both ES modules and CommonJS
 const traverse = (traverseModule as any).default || traverseModule;
 
-import { parseTypeScriptFile } from "./utils.js";
-import { logger } from "./logger.js";
+import { parseTypeScriptFile } from "../../shared/utils.js";
+import { logger } from "../../shared/logger.js";
 import { DrizzleZodProcessor } from "./drizzle-zod-processor.js";
-import type { OpenApiSchema } from "../types.js";
+import type { OpenApiSchema } from "../../shared/types.js";
 
 /**
  * Class for converting Zod schemas to OpenAPI specifications

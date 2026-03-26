@@ -1,6 +1,6 @@
 import * as t from "@babel/types";
-import { logger } from "./logger.js";
-import type { OpenApiSchema } from "../types.js";
+import { logger } from "../../shared/logger.js";
+import type { OpenApiSchema } from "../../shared/types.js";
 
 /**
  * Processor for drizzle-zod schemas

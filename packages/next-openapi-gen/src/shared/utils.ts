@@ -3,7 +3,7 @@ import { parse } from "@babel/parser";
 import type { ParserOptions } from "@babel/parser";
 import * as t from "@babel/types";
 
-import type { DataTypes } from "../types.js";
+import type { DataTypes } from "./types.js";
 
 export function capitalize(string: string) {
   return string.charAt(0).toUpperCase() + string.slice(1);

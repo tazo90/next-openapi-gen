@@ -7,16 +7,16 @@ import yaml from "js-yaml";
 // Handle both ES modules and CommonJS
 const traverse = (traverseModule as any).default || traverseModule;
 
-import { parseTypeScriptFile } from "./utils.js";
-import { ZodSchemaConverter } from "./zod-converter.js";
+import { parseTypeScriptFile } from "../../shared/utils.js";
+import { ZodSchemaConverter } from "../zod/zod-converter.js";
 import type {
   ContentType,
   OpenAPIDefinition,
   ParamSchema,
   PropertyOptions,
   SchemaType,
-} from "../types.js";
-import { logger } from "./logger.js";
+} from "../../shared/types.js";
+import { logger } from "../../shared/logger.js";
 
 /**
  * Normalize schemaType to array

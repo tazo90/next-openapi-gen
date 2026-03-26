@@ -7,8 +7,8 @@ const traverse = (traverseModule as any).default || traverseModule;
 
 import { HTTP_METHODS } from "./router-strategy.js";
 import type { RouterStrategy } from "./router-strategy.js";
-import { parseTypeScriptFile, performAuthPresetReplacements } from "./utils.js";
-import type { DataTypes, OpenApiConfig } from "../types.js";
+import { parseTypeScriptFile, performAuthPresetReplacements } from "../shared/utils.js";
+import type { DataTypes, OpenApiConfig } from "../shared/types.js";
 
 export class PagesRouterStrategy implements RouterStrategy {
   private config: OpenApiConfig;

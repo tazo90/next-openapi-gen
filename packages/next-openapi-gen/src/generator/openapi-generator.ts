@@ -1,15 +1,15 @@
 import path from "path";
 import fs from "fs";
 
-import { RouteProcessor } from "./route-processor.js";
-import { cleanSpec } from "./utils.js";
-import { logger } from "./logger.js";
+import { RouteProcessor } from "../routes/route-processor.js";
+import { cleanSpec } from "../shared/utils.js";
+import { logger } from "../shared/logger.js";
 import type {
   ErrorDefinition,
   ErrorTemplateConfig,
   OpenApiConfig,
   OpenApiTemplate,
-} from "../types.js";
+} from "../shared/types.js";
 
 export type OpenApiGeneratorOptions = {
   templatePath?: string;

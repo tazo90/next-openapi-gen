@@ -43,6 +43,8 @@
     "format:check": "oxfmt --config ../oxfmt-config/oxfmt.json --ignore-path ../../.gitignore --check .",
     "lint": "oxlint --config ../oxlint-config/base.json . --ignore-path ../../.gitignore --deny-warnings",
     "lint:fix": "oxlint --config ../oxlint-config/base.json . --ignore-path ../../.gitignore --fix --deny-warnings",
+    "test": "pnpm --dir ../.. exec vitest run --config vitest.config.ts tests/unit/cli tests/unit/commands tests/unit/generator tests/unit/init",
+    "test:coverage": "pnpm --dir ../.. exec vitest run --config vitest.config.ts --coverage",
     "release": "np --no-cleanup --no-tests",
     "version": "conventional-changelog -p angular -i ../../CHANGELOG.md -s -n ../../.changelogrc.cjs && git add ../../CHANGELOG.md"
   },

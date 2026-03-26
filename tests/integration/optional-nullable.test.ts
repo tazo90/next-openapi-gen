@@ -1,27 +1,24 @@
 import { describe, it, expect } from "vitest";
-import { ZodSchemaConverter } from "@next-openapi-gen/lib/zod-converter.js";
+import { ZodSchemaConverter } from "@next-openapi-gen/schema/zod/zod-converter.js";
 import path from "path";
 import fs from "fs";
+import os from "os";
 
 describe("Optional vs Nullable vs Nullish handling (GitHub #84)", () => {
-  const testDir = path.join(process.cwd(), "tests", "fixtures");
-  const testFile = path.join(testDir, "optional-nullable-test.ts");
-
   function setup(schema: string) {
-    if (!fs.existsSync(testDir)) {
-      fs.mkdirSync(testDir, { recursive: true });
-    }
+    const testDir = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-optional-nullable-"));
+    const testFile = path.join(testDir, "optional-nullable-test.ts");
     fs.writeFileSync(testFile, schema.trim());
+
+    return { testDir, testFile };
   }
 
-  function cleanup() {
-    if (fs.existsSync(testFile)) {
-      fs.unlinkSync(testFile);
-    }
+  function cleanup(testDir: string) {
+    fs.rmSync(testDir, { recursive: true, force: true });
   }
 
   it("should distinguish optional, nullable, and nullish", () => {
-    setup(`
+    const { testDir } = setup(`
 import { z } from "zod";
 
 export const UserSchema = z.object({
@@ -59,12 +56,12 @@ export const UserSchema = z.object({
       expect(schema!.properties!.middleName.nullable).toBe(true);
       expect(schema!.required).not.toContain("middleName");
     } finally {
-      cleanup();
+      cleanup(testDir);
     }
   });
 
   it("should handle optional with validation chains", () => {
-    setup(`
+    const { testDir } = setup(`
 import { z } from "zod";
 
 export const ProfileSchema = z.object({
@@ -94,12 +91,12 @@ export const ProfileSchema = z.object({
       expect(schema!.properties!.bio.nullable).toBe(true);
       expect(schema!.properties!.bio.maxLength).toBe(500);
     } finally {
-      cleanup();
+      cleanup(testDir);
     }
   });
 
   it("should handle nested object with optional at object level", () => {
-    setup(`
+    const { testDir } = setup(`
 import { z } from "zod";
 
 export const WrapperSchema = z.object({
@@ -120,12 +117,12 @@ export const WrapperSchema = z.object({
       // optional object should NOT have nullable
       expect(schema!.properties!.user.nullable).toBeUndefined();
     } finally {
-      cleanup();
+      cleanup(testDir);
     }
   });
 
   it("should handle nullable combined with optional (nullish-like)", () => {
-    setup(`
+    const { testDir } = setup(`
 import { z } from "zod";
 
 export const MixedSchema = z.object({
@@ -146,7 +143,7 @@ export const MixedSchema = z.object({
       expect(schema!.properties!.a.nullable).toBe(true);
       expect(schema!.properties!.b.nullable).toBe(true);
     } finally {
-      cleanup();
+      cleanup(testDir);
     }
   });
 });

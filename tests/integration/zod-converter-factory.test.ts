@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { ZodSchemaConverter } from "@next-openapi-gen/lib/zod-converter.js";
+import { ZodSchemaConverter } from "@next-openapi-gen/schema/zod/zod-converter.js";
 import path from "path";
 import { fileURLToPath } from "url";
 

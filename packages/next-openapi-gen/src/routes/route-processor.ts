@@ -1,12 +1,12 @@
 import fs from "fs";
 import path from "path";
 
-import { SchemaProcessor } from "./schema-processor.js";
-import { capitalize, extractPathParameters, getOperationId } from "./utils.js";
-import { logger } from "./logger.js";
+import { SchemaProcessor } from "../schema/typescript/schema-processor.js";
+import { capitalize, extractPathParameters, getOperationId } from "../shared/utils.js";
+import { logger } from "../shared/logger.js";
 import { AppRouterStrategy } from "./app-router-strategy.js";
 import { PagesRouterStrategy } from "./pages-router-strategy.js";
-import type { DataTypes, OpenApiConfig, RouteDefinition } from "../types.js";
+import type { DataTypes, OpenApiConfig, RouteDefinition } from "../shared/types.js";
 import type { RouterStrategy } from "./router-strategy.js";
 
 const MUTATION_HTTP_METHODS = ["PATCH", "POST", "PUT"];

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { AppRouterStrategy } from "@next-openapi-gen/lib/app-router-strategy.js";
+import { AppRouterStrategy } from "@next-openapi-gen/routes/app-router-strategy.js";
 import { OpenApiConfig } from "@next-openapi-gen/types.js";
 
 describe("AppRouterStrategy - getRoutePath", () => {

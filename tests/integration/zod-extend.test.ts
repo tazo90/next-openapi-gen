@@ -1,15 +1,16 @@
 import { describe, it, expect } from "vitest";
-import { ZodSchemaConverter } from "@next-openapi-gen/lib/zod-converter.js";
+import { ZodSchemaConverter } from "@next-openapi-gen/schema/zod/zod-converter.js";
 import path from "path";
 import fs from "fs";
+import os from "os";
 
 describe("Zod .extend() Method Support", () => {
-  it("should properly handle .extend() with schema references", () => {
-    const testDir = path.join(process.cwd(), "tests", "fixtures");
-    if (!fs.existsSync(testDir)) {
-      fs.mkdirSync(testDir, { recursive: true });
-    }
+  function createTestDir() {
+    return fs.mkdtempSync(path.join(os.tmpdir(), "nxog-zod-extend-"));
+  }
 
+  it("should properly handle .extend() with schema references", () => {
+    const testDir = createTestDir();
     const testFile = path.join(testDir, "extend-test.ts");
     fs.writeFileSync(
       testFile,
@@ -62,18 +63,12 @@ export const ExtendedSchema = BaseSchema.extend({
       expect(extendedSchema.required).toContain("id");
       expect(extendedSchema.required).toContain("name");
     } finally {
-      if (fs.existsSync(testFile)) {
-        fs.unlinkSync(testFile);
-      }
+      fs.rmSync(testDir, { recursive: true, force: true });
     }
   });
 
   it("should handle nested schema references in objects", () => {
-    const testDir = path.join(process.cwd(), "tests", "fixtures");
-    if (!fs.existsSync(testDir)) {
-      fs.mkdirSync(testDir, { recursive: true });
-    }
-
+    const testDir = createTestDir();
     const testFile = path.join(testDir, "nested-ref-test.ts");
     fs.writeFileSync(
       testFile,
@@ -119,18 +114,12 @@ export const NestedSchema = z.object({
       const schemas = converter.getProcessedSchemas();
       expect(schemas.BaseSchema).toBeDefined();
     } finally {
-      if (fs.existsSync(testFile)) {
-        fs.unlinkSync(testFile);
-      }
+      fs.rmSync(testDir, { recursive: true, force: true });
     }
   });
 
   it("should handle multiple levels of .extend()", () => {
-    const testDir = path.join(process.cwd(), "tests", "fixtures");
-    if (!fs.existsSync(testDir)) {
-      fs.mkdirSync(testDir, { recursive: true });
-    }
-
+    const testDir = createTestDir();
     const testFile = path.join(testDir, "multi-extend-test.ts");
     fs.writeFileSync(
       testFile,
@@ -188,18 +177,12 @@ export const DoubleExtendedSchema = ExtendedSchema.extend({
       const uniqueRequired = [...new Set(doubleExtendedSchema.required)];
       expect(doubleExtendedSchema.required.length).toBe(uniqueRequired.length);
     } finally {
-      if (fs.existsSync(testFile)) {
-        fs.unlinkSync(testFile);
-      }
+      fs.rmSync(testDir, { recursive: true, force: true });
     }
   });
 
   it("should not create duplicate required fields", () => {
-    const testDir = path.join(process.cwd(), "tests", "fixtures");
-    if (!fs.existsSync(testDir)) {
-      fs.mkdirSync(testDir, { recursive: true });
-    }
-
+    const testDir = createTestDir();
     const testFile = path.join(testDir, "no-duplicates-test.ts");
     fs.writeFileSync(
       testFile,
@@ -236,9 +219,7 @@ export const ExtendedSchema = BaseSchema.extend({
       expect(extendedSchema.required).toContain("name");
       expect(extendedSchema.required).toContain("updatedAt");
     } finally {
-      if (fs.existsSync(testFile)) {
-        fs.unlinkSync(testFile);
-      }
+      fs.rmSync(testDir, { recursive: true, force: true });
     }
   });
 });

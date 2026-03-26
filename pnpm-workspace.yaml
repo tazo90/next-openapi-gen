@@ -11,12 +11,14 @@ catalog:
   "@commitlint/types": ^20.5.0
   "@playwright/test": ^1.58.2
   "@scalar/api-reference-react": ^0.9.15
+  "@tailwindcss/postcss": ^4.1.16
   "@types/babel__traverse": ^7.28.0
   "@types/fs-extra": ^11.0.4
   "@types/js-yaml": ^4.0.9
   "@types/node": ^25.5.0
   "@types/react": ^19.2.14
   "@types/react-dom": ^19.2.3
+  "@vitest/coverage-v8": ^4.1.2
   "@vitest/ui": ^4.1.2
   ajv: ^8.18.0
   autoprefixer: ^10.4.27
@@ -39,7 +41,6 @@ catalog:
   react: 19.2.4
   react-dom: 19.2.4
   simple-git-hooks: ^2.13.1
-  "@tailwindcss/postcss": ^4.1.16
   swagger-ui-dist: ^5.32.1
   tailwindcss: ^4.2.2
   turbo: ^2.8.20

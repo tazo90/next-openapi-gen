@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { ZodSchemaConverter } from "@next-openapi-gen/lib/zod-converter.js";
-import { extractJSDocComments, parseTypeScriptFile } from "@next-openapi-gen/lib/utils.js";
+import { ZodSchemaConverter } from "@next-openapi-gen/schema/zod/zod-converter.js";
+import { extractJSDocComments, parseTypeScriptFile } from "@next-openapi-gen/shared/utils.js";
 import traverseModule from "@babel/traverse";
 import path from "path";
 import fs from "fs";

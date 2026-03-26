@@ -1,4 +1,4 @@
-import type { OpenApiConfig } from "../types.js";
+import type { OpenApiConfig } from "./types.js";
 
 class Logger {
   private config: OpenApiConfig | null = null;

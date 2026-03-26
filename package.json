@@ -9,11 +9,14 @@
   },
   "scripts": {
     "build": "turbo run build",
-    "check": "turbo run check",
+    "check": "pnpm format:check && pnpm lint",
     "dev": "turbo run dev",
-    "format": "turbo run format",
-    "format:check": "turbo run format:check",
-    "lint": "turbo run lint",
+    "format": "pnpm format:root && turbo run format",
+    "format:check": "pnpm format:check:root && turbo run format:check",
+    "format:check:root": "oxfmt --config ./.oxfmtrc.json --ignore-path .gitignore --check tests .vscode package.json pnpm-workspace.yaml turbo.json vitest.config.ts playwright.config.ts commitlint.config.ts README.md CONTRIBUTING.md CHANGELOG.md .oxlintrc.json .oxfmtrc.json",
+    "format:root": "oxfmt --config ./.oxfmtrc.json --ignore-path .gitignore tests .vscode package.json pnpm-workspace.yaml turbo.json vitest.config.ts playwright.config.ts commitlint.config.ts README.md CONTRIBUTING.md CHANGELOG.md .oxlintrc.json .oxfmtrc.json",
+    "lint": "pnpm lint:root && turbo run lint",
+    "lint:root": "oxlint --config ./.oxlintrc.json tests vitest.config.ts playwright.config.ts commitlint.config.ts --ignore-path .gitignore --deny-warnings",
     "lint:staged": "lint-staged",
     "prepare": "simple-git-hooks",
     "test": "turbo run test:unit && turbo run test:integration && turbo run test:e2e",
@@ -33,6 +36,7 @@
     "@commitlint/config-conventional": "catalog:",
     "@commitlint/types": "catalog:",
     "@playwright/test": "catalog:",
+    "@vitest/coverage-v8": "catalog:",
     "@vitest/ui": "catalog:",
     "babel-plugin-react-compiler": "catalog:",
     "fs-extra": "catalog:",
@@ -49,10 +53,10 @@
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx,mjs,cjs,mts,cts}": [
-      "oxfmt --config ./packages/oxfmt-config/oxfmt.json --ignore-path .gitignore",
-      "oxlint --config ./packages/oxlint-config/base.json --ignore-path .gitignore --deny-warnings"
+      "oxfmt --config ./.oxfmtrc.json --ignore-path .gitignore",
+      "oxlint --config ./.oxlintrc.json --ignore-path .gitignore --deny-warnings"
     ],
-    "*.{json,jsonc,md,mdx,yml,yaml,css,scss,html,toml}": "oxfmt --config ./packages/oxfmt-config/oxfmt.json --ignore-path .gitignore"
+    "*.{json,jsonc,md,mdx,yml,yaml,css,scss,html,toml}": "oxfmt --config ./.oxfmtrc.json --ignore-path .gitignore"
   },
   "engines": {
     "node": ">=24.0.0"
