@@ -15,7 +15,7 @@
     "/posts": {
       "get": {
         "operationId": "get-posts",
-        "summary": "Get all posts\r",
+        "summary": "Get all posts",
         "description": "Retrieve a paginated list of blog posts with optional filters",
         "tags": [
           "Posts"
@@ -93,7 +93,7 @@
       },
       "post": {
         "operationId": "post-posts",
-        "summary": "Create a new post\r",
+        "summary": "Create a new post",
         "description": "Create a new blog post with Drizzle-Zod validation",
         "tags": [
           "Posts"
@@ -135,7 +135,7 @@
     "/posts/{id}": {
       "get": {
         "operationId": "get-posts-{id}",
-        "summary": "Get post by ID\r",
+        "summary": "Get post by ID",
         "description": "Retrieve a single blog post by its ID",
         "tags": [
           "Posts"
@@ -177,7 +177,7 @@
       },
       "patch": {
         "operationId": "patch-posts-{id}",
-        "summary": "Update post\r",
+        "summary": "Update post",
         "description": "Update an existing blog post",
         "tags": [
           "Posts"
@@ -229,7 +229,7 @@
       },
       "delete": {
         "operationId": "delete-posts-{id}",
-        "summary": "Delete post\r",
+        "summary": "Delete post",
         "description": "Delete a blog post by ID",
         "tags": [
           "Posts"
@@ -266,33 +266,18 @@
   },
   "components": {
     "schemas": {
-      "PostsQueryParams": {
+      "PostIdParams": {
         "type": "object",
         "properties": {
-          "page": {
+          "id": {
             "type": "string",
             "pattern": "^\\d+$",
-            "description": "Page number"
-          },
-          "limit": {
-            "type": "string",
-            "pattern": "^\\d+$",
-            "description": "Items per page"
-          },
-          "published": {
-            "type": "string",
-            "enum": [
-              "true",
-              "false"
-            ],
-            "description": "Filter by publication status"
-          },
-          "authorId": {
-            "type": "string",
-            "pattern": "^\\d+$",
-            "description": "Filter by author ID"
+            "description": "Post ID"
           }
-        }
+        },
+        "required": [
+          "id"
+        ]
       },
       "PostResponseSchema": {
         "type": "object",
@@ -343,6 +328,65 @@
           "updatedAt"
         ]
       },
+      "UpdatePostSchema": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 5,
+            "maxLength": 255,
+            "description": "Post title"
+          },
+          "slug": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+            "description": "URL-friendly slug"
+          },
+          "excerpt": {
+            "type": "string",
+            "maxLength": 500,
+            "description": "Short excerpt"
+          },
+          "content": {
+            "type": "string",
+            "minLength": 10,
+            "description": "Post content"
+          },
+          "published": {
+            "type": "boolean",
+            "description": "Publication status"
+          }
+        },
+        "required": []
+      },
+      "PostsQueryParams": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "string",
+            "pattern": "^\\d+$",
+            "description": "Page number"
+          },
+          "limit": {
+            "type": "string",
+            "pattern": "^\\d+$",
+            "description": "Items per page"
+          },
+          "published": {
+            "type": "string",
+            "enum": [
+              "true",
+              "false"
+            ],
+            "description": "Filter by publication status"
+          },
+          "authorId": {
+            "type": "string",
+            "pattern": "^\\d+$",
+            "description": "Filter by author ID"
+          }
+        }
+      },
       "CreatePostSchema": {
         "type": "object",
         "properties": {
@@ -386,50 +430,6 @@
           "content",
           "authorId"
         ]
-      },
-      "PostIdParams": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "pattern": "^\\d+$",
-            "description": "Post ID"
-          }
-        },
-        "required": [
-          "id"
-        ]
-      },
-      "UpdatePostSchema": {
-        "type": "object",
-        "properties": {
-          "title": {
-            "type": "string",
-            "minLength": 5,
-            "maxLength": 255,
-            "description": "Post title"
-          },
-          "slug": {
-            "type": "string",
-            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
-            "description": "URL-friendly slug"
-          },
-          "excerpt": {
-            "type": "string",
-            "maxLength": 500,
-            "description": "Short excerpt"
-          },
-          "content": {
-            "type": "string",
-            "minLength": 10,
-            "description": "Post content"
-          },
-          "published": {
-            "type": "boolean",
-            "description": "Publication status"
-          }
-        },
-        "required": []
       }
     },
     "responses": {

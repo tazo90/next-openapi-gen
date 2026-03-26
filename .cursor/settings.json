@@ -1,0 +1,19 @@
+{
+  "plugins": {
+    "context7-plugin": {
+      "enabled": true
+    },
+    "cursor-team-kit": {
+      "enabled": true
+    },
+    "parallel": {
+      "enabled": true
+    },
+    "continual-learning": {
+      "enabled": true
+    },
+    "vercel": {
+      "enabled": true
+    }
+  }
+}
