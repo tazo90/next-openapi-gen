@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "format": "oxfmt --config ./oxfmt.json --ignore-path ../../.gitignore .",
-    "format:check": "oxfmt --config ./oxfmt.json --ignore-path ../../.gitignore --check ."
+    "format:check": "oxfmt --config ./oxfmt.json --ignore-path ../../.gitignore --check .",
+    "check": "pnpm format:check"
   }
 }

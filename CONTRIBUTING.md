@@ -209,31 +209,31 @@ When you create a PR, a template will guide you through:
 
 ```text
 next-openapi-gen/
-├── src/
-│   ├── commands/       # CLI commands (init, generate)
-│   ├── components/     # UI components (Swagger, Scalar, etc.)
-│   ├── lib/           # Core logic
-│   │   ├── openapi-generator.ts
-│   │   ├── route-processor.ts
-│   │   ├── schema-processor.ts
-│   │   └── zod-converter.ts
-│   └── index.ts       # Entry point
-├── tests/             # Test files
-├── examples/          # Example Next.js apps
-└── dist/             # Build output (ignored)
+├── apps/                     # Example Next.js apps
+│   ├── next15-app-zod/
+│   └── types/                # Shared ambient typings for examples
+├── packages/
+│   ├── next-openapi-gen/
+│   │   ├── src/              # CLI source
+│   │   ├── tests/            # CLI test suite
+│   │   └── dist/             # CLI build output (ignored)
+│   ├── oxfmt-config/
+│   ├── oxlint-config/
+│   └── typescript-config/
+└── turbo.json
 ```
 
 ### Build System
 
 ```bash
-# Clean build artifacts
-pnpm clean
-
-# Build TypeScript
+# Build the workspace with Turborepo
 pnpm build
 
-# Watch mode (auto-rebuild on changes)
-pnpm exec tsc --watch
+# Build just the published CLI package
+pnpm --filter next-openapi-gen build
+
+# Rebuild the CLI package in watch mode
+pnpm --filter next-openapi-gen exec tsc --watch
 ```
 
 ### Editor Setup
@@ -247,17 +247,17 @@ This repository commits workspace defaults in `.vscode/` so contributors and age
 ### Testing
 
 ```bash
-# Run all tests
+# Run all workspace tests
 pnpm test
 
-# Watch mode
-pnpm test:watch
+# Watch mode for the CLI package tests
+pnpm --filter next-openapi-gen test:watch
 
-# UI mode
-pnpm test:ui
+# UI mode for the CLI package tests
+pnpm --filter next-openapi-gen test:ui
 
-# Coverage report
-pnpm test:coverage
+# Coverage report for the CLI package
+pnpm --filter next-openapi-gen test:coverage
 ```
 
 ### Local Testing
@@ -265,12 +265,12 @@ pnpm test:coverage
 To test the CLI locally inside this workspace:
 
 ```bash
-# Install dependencies and build the CLI
+# Install dependencies and build the workspace
 pnpm install
 pnpm build
 
 # Run an example app against the workspace package
-cd examples/next15-app-zod
+cd apps/next15-app-zod
 pnpm exec next-openapi-gen generate
 pnpm dev
 ```

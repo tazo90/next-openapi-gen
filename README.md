@@ -230,7 +230,7 @@ The library now supports the legacy Next.js Pages Router. To use it:
 1. Set `routerType` to `"pages"` in your configuration
 2. Use the `@method` JSDoc tag to specify HTTP methods
 
-See **[next15-pages-router](./examples/next15-pages-router)** for a complete working example.
+See **[next15-pages-router](./apps/next15-pages-router)** for a complete working example.
 
 ## CLI Usage
 
@@ -928,7 +928,7 @@ export const CreatePostSchema = createInsertSchema(posts, {
 });
 ```
 
-See the [complete Drizzle-Zod example](./examples/next15-app-drizzle-zod) for a full working implementation with a blog API.
+See the [complete Drizzle-Zod example](./apps/next15-app-drizzle-zod) for a full working implementation with a blog API.
 
 ## Multiple Schema Types Support 🆕
 
@@ -969,17 +969,17 @@ Use **multiple schema types simultaneously** in a single project - perfect for g
 }
 ```
 
-Custom schema files support YAML/JSON in OpenAPI 3.0 format. See **[next15-app-mixed-schemas](./examples/next15-app-mixed-schemas)** for a complete working example.
+Custom schema files support YAML/JSON in OpenAPI 3.0 format. See **[next15-app-mixed-schemas](./apps/next15-app-mixed-schemas)** for a complete working example.
 
 ## Examples
 
-Explore complete demo projects in the **[examples](./examples/)** directory, covering integrations with Zod, TypeScript, Drizzle and documentation tools like Scalar and Swagger.
+Explore complete demo projects in the **[apps](./apps/)** directory, covering integrations with Zod, TypeScript, Drizzle and documentation tools like Scalar and Swagger.
 
 ### 🚀 Run an Example
 
 ```bash
 pnpm install
-cd examples/next15-app-zod
+cd apps/next15-app-zod
 pnpm exec next-openapi-gen generate
 pnpm dev
 ```

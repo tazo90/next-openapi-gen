@@ -1,0 +1,88 @@
+{
+  "name": "next-openapi-gen",
+  "version": "0.10.5",
+  "description": "Automatically generate OpenAPI 3.0 documentation from Next.js projects, with support for Zod schemas and TypeScript types.",
+  "keywords": [
+    "api",
+    "api-docs",
+    "docs",
+    "drizzle",
+    "nextjs",
+    "openapi",
+    "react",
+    "redoc",
+    "scalar",
+    "swagger",
+    "typescript",
+    "zod"
+  ],
+  "license": "MIT",
+  "author": "Mariusz Winnik",
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/tazo90/next-openapi-gen.git"
+  },
+  "bin": {
+    "next-openapi-gen": "./dist/index.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "typings": "dist/index.d.ts",
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "check": "pnpm format:check && pnpm lint && pnpm test",
+    "clean": "rm -rf dist coverage tsconfig.tsbuildinfo",
+    "build": "pnpm clean && tsc",
+    "format": "oxfmt --config ../oxfmt-config/oxfmt.json --ignore-path ../../.gitignore .",
+    "format:check": "oxfmt --config ../oxfmt-config/oxfmt.json --ignore-path ../../.gitignore --check .",
+    "lint": "oxlint --config ../oxlint-config/base.json . --ignore-path ../../.gitignore --deny-warnings",
+    "lint:fix": "oxlint --config ../oxlint-config/base.json . --ignore-path ../../.gitignore --fix --deny-warnings",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest run --coverage",
+    "release": "np --no-cleanup --no-tests",
+    "version": "conventional-changelog -p angular -i ../../CHANGELOG.md -s -n ../../.changelogrc.cjs && git add ../../CHANGELOG.md"
+  },
+  "dependencies": {
+    "@babel/parser": "^7.28.3",
+    "@babel/traverse": "^7.28.3",
+    "@babel/types": "^7.28.2",
+    "commander": "^14.0.0",
+    "fs-extra": "^11.3.1",
+    "js-yaml": "^4.1.0",
+    "ora": "^8.2.0"
+  },
+  "devDependencies": {
+    "@types/babel__traverse": "^7.28.0",
+    "@types/fs-extra": "^11.0.4",
+    "@types/js-yaml": "^4.0.9",
+    "@types/node": "^24.3.0",
+    "@vitest/ui": "^3.2.4",
+    "conventional-changelog-cli": "^5.0.0",
+    "np": "^10.2.0",
+    "oxfmt": "^0.42.0",
+    "oxlint": "^1.57.0",
+    "typescript": "^5.9.2",
+    "vitest": "^3.2.4"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "packageManager": "pnpm@10.27.0",
+  "np": {
+    "packageManager": "pnpm",
+    "anyBranch": false,
+    "branch": "main",
+    "cleanup": false,
+    "tests": false,
+    "2fa": false,
+    "releaseDraft": false
+  }
+}

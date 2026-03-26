@@ -1,0 +1,34 @@
+{
+  "name": "next-15-swagger",
+  "version": "0.1.1",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "oxlint --config ../../packages/oxlint-config/base.json . --ignore-path ../../.gitignore --deny-warnings",
+    "format": "oxfmt --config ../../packages/oxfmt-config/oxfmt.json --ignore-path ../../.gitignore .",
+    "format:check": "oxfmt --config ../../packages/oxfmt-config/oxfmt.json --ignore-path ../../.gitignore --check .",
+    "check": "pnpm format:check && pnpm lint"
+  },
+  "dependencies": {
+    "next": "15.3.2",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "swagger-ui": "^5.21.0",
+    "swagger-ui-react": "^5.21.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.18",
+    "@types/react": "^19.1.4",
+    "@types/react-dom": "^19.1.5",
+    "next-openapi-gen": "workspace:*",
+    "typescript": "^5.8.3"
+  },
+  "overrides": {
+    "swagger-ui-react": {
+      "react": "$react",
+      "react-dom": "$react-dom"
+    }
+  }
+}
