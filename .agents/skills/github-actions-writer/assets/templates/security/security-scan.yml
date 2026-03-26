@@ -1,0 +1,411 @@
+# Comprehensive Security Scanning Workflow
+# Scans code, dependencies, containers, and infrastructure for security vulnerabilities
+# Integrates Snyk, Trivy, CodeQL, and custom security checks
+
+name: Security Scanning
+
+# Trigger configuration
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+  schedule:
+    # Run weekly security scan every Sunday at 2 AM
+    - cron: '0 2 * * 0'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write  # For uploading SARIF results
+  pull-requests: write
+
+concurrency:
+  group: security-scan-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Job 1: CodeQL analysis (SAST)
+  codeql-analysis:
+    name: CodeQL Security Analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    strategy:
+      matrix:
+        language: ['javascript', 'python']  # Adjust based on your languages
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Initialize CodeQL
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          # Custom queries (optional)
+          queries: security-extended,security-and-quality
+
+      # Autobuild for compiled languages
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v3
+        if: matrix.language == 'java' || matrix.language == 'cpp'
+
+      # Perform CodeQL analysis
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{ matrix.language }}"
+
+  # Job 2: Dependency vulnerability scanning
+  dependency-scan:
+    name: Dependency Vulnerability Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Node.js dependency scanning
+      - name: Setup Node.js
+        if: hashFiles('package.json') != ''
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Run npm audit
+        if: hashFiles('package.json') != ''
+        run: |
+          npm audit --audit-level=moderate --json > npm-audit.json || true
+
+      - name: Upload npm audit results
+        if: hashFiles('package.json') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: npm-audit-results
+          path: npm-audit.json
+
+      # Python dependency scanning
+      - name: Setup Python
+        if: hashFiles('requirements.txt') != '' || hashFiles('pyproject.toml') != ''
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Safety
+        if: hashFiles('requirements.txt') != '' || hashFiles('pyproject.toml') != ''
+        run: pip install safety
+
+      - name: Run Safety check
+        if: hashFiles('requirements.txt') != '' || hashFiles('pyproject.toml') != ''
+        run: |
+          safety check --json > safety-report.json || true
+
+      - name: Upload Safety results
+        if: hashFiles('requirements.txt') != '' || hashFiles('pyproject.toml') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: safety-results
+          path: safety-report.json
+
+  # Job 3: Secret scanning
+  secret-scan:
+    name: Secret Scanning
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for secret scanning
+
+      # Scan for secrets with Gitleaks
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
+
+      # Alternative: TruffleHog
+      - name: Run TruffleHog
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: ${{ github.event.repository.default_branch }}
+          head: HEAD
+
+  # Job 4: SAST with Semgrep
+  semgrep-scan:
+    name: Semgrep SAST Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    container:
+      image: returntocorp/semgrep
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Semgrep
+        run: |
+          semgrep scan --config auto \
+            --sarif --output semgrep.sarif \
+            --error
+
+      - name: Upload Semgrep results to GitHub
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: semgrep.sarif
+
+  # Job 5: Container image scanning
+  container-scan:
+    name: Container Security Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    if: hashFiles('Dockerfile') != ''
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build Docker image for scanning
+        run: docker build -t scan-target:latest .
+
+      # Scan with Trivy
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'scan-target:latest'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH,MEDIUM'
+
+      - name: Upload Trivy results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+      # Scan with Snyk
+      - name: Run Snyk to check Docker image
+        uses: snyk/actions/docker@master
+        continue-on-error: true
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          image: scan-target:latest
+          args: --severity-threshold=high --sarif-file-output=snyk-docker.sarif
+
+      - name: Upload Snyk results to GitHub
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'snyk-docker.sarif'
+
+      # Docker Bench Security
+      - name: Run Docker Bench Security
+        run: |
+          docker run --rm \
+            --net host \
+            --pid host \
+            --userns host \
+            --cap-add audit_control \
+            -v /var/lib:/var/lib \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            -v /etc:/etc:ro \
+            docker/docker-bench-security
+
+  # Job 6: Infrastructure as Code (IaC) scanning
+  iac-scan:
+    name: IaC Security Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: |
+      hashFiles('**/*.tf') != '' ||
+      hashFiles('**/*.yml', '**/*.yaml') != ''
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Scan Terraform with Checkov
+      - name: Run Checkov for Terraform
+        if: hashFiles('**/*.tf') != ''
+        uses: bridgecrewio/checkov-action@master
+        with:
+          directory: .
+          framework: terraform
+          output_format: sarif
+          output_file_path: checkov-tf.sarif
+
+      # Scan Kubernetes manifests with Checkov
+      - name: Run Checkov for Kubernetes
+        if: hashFiles('**/*.yml', '**/*.yaml') != ''
+        uses: bridgecrewio/checkov-action@master
+        with:
+          directory: .
+          framework: kubernetes
+          output_format: sarif
+          output_file_path: checkov-k8s.sarif
+
+      # Scan with Trivy for IaC
+      - name: Run Trivy IaC scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'config'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-iac.sarif'
+
+      - name: Upload IaC scan results
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-iac.sarif'
+
+  # Job 7: License compliance check
+  license-scan:
+    name: License Compliance
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Check Node.js licenses
+      - name: Check Node.js licenses
+        if: hashFiles('package.json') != ''
+        run: |
+          npx license-checker --summary --production > licenses.txt
+          npx license-checker --production --failOn 'GPL;AGPL'
+
+      # Check Python licenses
+      - name: Check Python licenses
+        if: hashFiles('requirements.txt') != ''
+        run: |
+          pip install pip-licenses
+          pip-licenses --format=markdown > python-licenses.md
+          pip-licenses --fail-on 'GPL;AGPL'
+
+      - name: Upload license reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: license-reports
+          path: |
+            licenses.txt
+            python-licenses.md
+
+  # Job 8: OWASP Dependency Check
+  owasp-check:
+    name: OWASP Dependency Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run OWASP Dependency-Check
+        uses: dependency-check/Dependency-Check_Action@main
+        with:
+          project: ${{ github.repository }}
+          path: '.'
+          format: 'ALL'
+          args: >
+            --enableRetired
+            --enableExperimental
+
+      - name: Upload OWASP results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: owasp-dependency-check
+          path: reports/
+
+  # Job 9: Security summary and reporting
+  security-summary:
+    name: Security Summary
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs:
+      - codeql-analysis
+      - dependency-scan
+      - secret-scan
+      - semgrep-scan
+    if: always()
+
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+
+      - name: Generate security summary
+        run: |
+          echo "# Security Scan Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Scan Results" >> $GITHUB_STEP_SUMMARY
+          echo "- CodeQL: ${{ needs.codeql-analysis.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Dependencies: ${{ needs.dependency-scan.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Secrets: ${{ needs.secret-scan.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- SAST (Semgrep): ${{ needs.semgrep-scan.result }}" >> $GITHUB_STEP_SUMMARY
+
+      # Comment on PR with summary
+      - name: Comment PR with security summary
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const message = `## 🔒 Security Scan Results
+
+            | Scan Type | Status |
+            |-----------|--------|
+            | CodeQL | ${{ needs.codeql-analysis.result }} |
+            | Dependencies | ${{ needs.dependency-scan.result }} |
+            | Secrets | ${{ needs.secret-scan.result }} |
+            | SAST | ${{ needs.semgrep-scan.result }} |
+
+            View detailed results in the [Actions tab](${context.payload.repository.html_url}/actions/runs/${context.runId})
+            `;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: message
+            });
+
+# Configuration notes:
+#
+# Required secrets:
+# - GITHUB_TOKEN: Automatically provided
+# - SNYK_TOKEN: Snyk API token (optional, for Snyk scanning)
+# - GITLEAKS_LICENSE: Gitleaks Pro license (optional, for advanced features)
+#
+# Security tools included:
+# 1. CodeQL - Static analysis for code vulnerabilities
+# 2. npm audit / Safety - Dependency vulnerability scanning
+# 3. Gitleaks / TruffleHog - Secret detection
+# 4. Semgrep - Pattern-based SAST
+# 5. Trivy - Container and IaC scanning
+# 6. Snyk - Container vulnerability scanning
+# 7. Checkov - IaC security scanning
+# 8. OWASP Dependency Check - Comprehensive dependency analysis
+# 9. License checker - Open source license compliance
+#
+# GitHub Security tab:
+# - Results are automatically uploaded to Security → Code scanning alerts
+# - SARIF format enables native GitHub integration
+# - Alerts appear on pull requests
+#
+# Customization tips:
+# 1. Adjust language matrix for CodeQL based on your stack
+# 2. Enable/disable specific scanners based on needs
+# 3. Configure severity thresholds
+# 4. Add custom security rules (Semgrep, CodeQL)
+# 5. Set up security notifications (Slack, email)
+# 6. Integrate with security dashboards

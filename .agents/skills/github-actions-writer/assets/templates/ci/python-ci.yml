@@ -1,0 +1,246 @@
+# Python CI Workflow
+# This workflow tests, lints, type-checks, and optionally publishes a Python package
+# Best practices included: caching, concurrency control, minimal permissions, matrix testing
+
+name: Python CI
+
+# Trigger configuration
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'src/**'
+      - 'tests/**'
+      - 'pyproject.toml'
+      - 'setup.py'
+      - 'requirements*.txt'
+      - '.github/workflows/python-ci.yml'
+
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+  workflow_dispatch:
+
+# Minimal permissions (security best practice)
+permissions:
+  contents: read
+  pull-requests: write
+
+# Prevent concurrent runs for the same branch/PR
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Job 1: Lint and code quality
+  lint:
+    name: Lint & Code Quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'  # Cache pip dependencies
+
+      - name: Install linting tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install ruff black isort mypy
+
+      - name: Run Ruff (fast Python linter)
+        run: ruff check .
+
+      - name: Check code formatting with Black
+        run: black --check .
+
+      - name: Check import sorting with isort
+        run: isort --check-only .
+
+      - name: Run type checking with mypy
+        run: mypy src/
+        continue-on-error: true  # Don't fail build on mypy errors initially
+
+  # Job 2: Test across multiple Python versions
+  test:
+    name: Test (Python ${{ matrix.python-version }}, ${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: ['3.9', '3.10', '3.11', '3.12']
+        # Exclude some combinations to reduce CI time/cost
+        exclude:
+          - os: macos-latest
+            python-version: '3.9'
+          - os: windows-latest
+            python-version: '3.9'
+      fail-fast: false
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev,test]"
+
+      - name: Run tests with pytest
+        run: |
+          pytest tests/ \
+            --cov=src \
+            --cov-report=xml \
+            --cov-report=term-missing \
+            --junitxml=junit.xml \
+            -v
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.11'
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./coverage.xml
+          fail_ci_if_error: false
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results-${{ matrix.os }}-${{ matrix.python-version }}
+          path: junit.xml
+          retention-days: 7
+
+  # Job 3: Security scanning
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install safety bandit
+
+      - name: Check for known vulnerabilities with Safety
+        run: safety check --json
+        continue-on-error: true
+
+      - name: Run security linter with Bandit
+        run: bandit -r src/ -f json -o bandit-report.json
+        continue-on-error: true
+
+      - name: Upload security reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: security-reports
+          path: '*-report.json'
+          retention-days: 30
+
+  # Job 4: Build package
+  build:
+    name: Build Package
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: [lint, test, security]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install build tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install build twine
+
+      - name: Build package
+        run: python -m build
+
+      - name: Check package with twine
+        run: twine check dist/*
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-package
+          path: dist/
+          retention-days: 7
+
+  # Job 5: Publish to PyPI (only on main branch tags)
+  publish:
+    name: Publish to PyPI
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: [lint, test, security, build]
+    # Only run on version tags (e.g., v1.0.0)
+    if: startsWith(github.ref, 'refs/tags/v')
+
+    permissions:
+      contents: read
+      id-token: write  # Required for trusted publishing
+
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: python-package
+          path: dist/
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          # Uses trusted publishing (no token needed if configured in PyPI)
+          # Alternatively, use: password: ${{ secrets.PYPI_TOKEN }}
+          skip-existing: true
+
+# Configuration notes:
+#
+# Required secrets (if not using trusted publishing):
+# - PYPI_TOKEN: PyPI API token for publishing
+# - CODECOV_TOKEN: Codecov token for coverage uploads (optional)
+#
+# Required setup for trusted publishing:
+# 1. Configure trusted publisher in PyPI project settings
+# 2. Add workflow name, repository, and environment name
+#
+# Required project setup:
+# - pyproject.toml or setup.py with package configuration
+# - tests/ directory with pytest tests
+# - src/ directory with source code
+#
+# Customization tips:
+# 1. Adjust Python versions based on your support policy
+# 2. Modify OS matrix based on your platform requirements
+# 3. Update linting tools based on your preferences
+# 4. Remove security job if not needed
+# 5. Configure trusted publishing for secure PyPI publishing

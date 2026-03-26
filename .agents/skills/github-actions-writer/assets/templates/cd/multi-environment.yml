@@ -1,0 +1,379 @@
+# Multi-Environment Deployment Pipeline
+# Deploys through multiple environments with approval gates
+# Pattern: dev → staging → production with automated and manual gates
+
+name: Multi-Environment Deployment
+
+# Trigger configuration
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      skip-staging:
+        description: 'Skip staging deployment'
+        required: false
+        type: boolean
+        default: false
+      deploy-production:
+        description: 'Deploy to production'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  packages: write
+  id-token: write
+  deployments: write
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false  # Never cancel deployments
+
+jobs:
+  # Job 1: Build and test
+  build:
+    name: Build & Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      artifact-id: ${{ steps.upload.outputs.artifact-id }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for versioning
+
+      # Generate version number
+      - name: Generate version
+        id: version
+        run: |
+          if [ "${{ github.ref_type }}" = "tag" ]; then
+            VERSION=${GITHUB_REF#refs/tags/}
+          else
+            VERSION=$(git describe --tags --always --dirty)
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Version: $VERSION"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run linting
+        run: npm run lint
+
+      - name: Run unit tests
+        run: npm run test:unit
+
+      - name: Run integration tests
+        run: npm run test:integration
+
+      - name: Build application
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: npm run build
+
+      - name: Upload build artifacts
+        id: upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-${{ steps.version.outputs.version }}
+          path: |
+            dist/
+            package.json
+            package-lock.json
+          retention-days: 30
+
+  # Job 2: Deploy to development (automatic)
+  deploy-dev:
+    name: Deploy to Development
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: build
+    # Only deploy to dev from develop branch
+    if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
+
+    environment:
+      name: development
+      url: https://dev.example.com
+
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-${{ needs.build.outputs.version }}
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN_DEV }}
+          aws-region: us-east-1
+
+      - name: Deploy to development
+        run: |
+          echo "Deploying version ${{ needs.build.outputs.version }} to development"
+          # Add your deployment commands here
+          # aws s3 sync dist/ s3://dev-bucket/
+          # aws ecs update-service ...
+
+      - name: Run smoke tests
+        run: |
+          echo "Running smoke tests against development"
+          # Add smoke test commands
+          # npm run test:smoke -- --url=https://dev.example.com
+
+      - name: Create deployment notification
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.repos.createDeploymentStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              deployment_id: context.payload.deployment.id,
+              state: 'success',
+              environment_url: 'https://dev.example.com',
+              description: 'Deployed version ${{ needs.build.outputs.version }}'
+            });
+
+  # Job 3: Deploy to staging (automatic from main, requires approval for manual)
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: build
+    # Deploy to staging from main branch or manual trigger
+    if: |
+      (github.ref == 'refs/heads/main' && github.event_name == 'push') ||
+      (github.event_name == 'workflow_dispatch' && !inputs.skip-staging)
+
+    environment:
+      name: staging
+      url: https://staging.example.com
+
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-${{ needs.build.outputs.version }}
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN_STAGING }}
+          aws-region: us-east-1
+
+      - name: Deploy to staging
+        run: |
+          echo "Deploying version ${{ needs.build.outputs.version }} to staging"
+          # Add your deployment commands here
+
+      - name: Run smoke tests
+        run: |
+          echo "Running smoke tests against staging"
+          # Add smoke test commands
+
+      - name: Run E2E tests
+        run: |
+          echo "Running E2E tests against staging"
+          # npm run test:e2e -- --url=https://staging.example.com
+
+      - name: Create deployment notification
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.repos.createDeploymentStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              deployment_id: context.payload.deployment.id,
+              state: 'success',
+              environment_url: 'https://staging.example.com',
+              description: 'Deployed version ${{ needs.build.outputs.version }}'
+            });
+
+  # Job 4: Performance testing on staging
+  performance-test:
+    name: Performance Testing
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: deploy-staging
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run load tests
+        run: |
+          echo "Running load tests against staging"
+          # k6 run --out json=results.json tests/load/script.js
+
+      - name: Analyze performance results
+        run: |
+          echo "Analyzing performance results"
+          # Check for performance regressions
+          # Upload results to performance monitoring service
+
+      - name: Upload performance results
+        uses: actions/upload-artifact@v4
+        with:
+          name: performance-results
+          path: results.json
+          retention-days: 30
+
+  # Job 5: Security scanning
+  security-scan:
+    name: Security Scanning
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: deploy-staging
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run OWASP ZAP scan
+        run: |
+          echo "Running security scan against staging"
+          # docker run -t owasp/zap2docker-stable zap-baseline.py \
+          #   -t https://staging.example.com
+
+      - name: Run dependency scan
+        run: |
+          npm audit --audit-level=high
+
+  # Job 6: Deploy to production (requires approval)
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: [build, deploy-staging, performance-test, security-scan]
+    # Deploy to production from main branch tags or manual trigger with approval
+    if: |
+      (startsWith(github.ref, 'refs/tags/v') && github.event_name == 'push') ||
+      (github.event_name == 'workflow_dispatch' && inputs.deploy-production)
+
+    # Production environment with required reviewers
+    environment:
+      name: production
+      url: https://example.com
+
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-${{ needs.build.outputs.version }}
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN_PROD }}
+          aws-region: us-east-1
+
+      # Create backup before deployment
+      - name: Create pre-deployment backup
+        run: |
+          echo "Creating backup before production deployment"
+          # aws rds create-db-snapshot ...
+          # aws s3 sync s3://prod-bucket/ s3://prod-backup-$(date +%Y%m%d)/
+
+      # Blue-green deployment strategy
+      - name: Deploy to production (blue-green)
+        id: deploy
+        run: |
+          echo "Deploying version ${{ needs.build.outputs.version }} to production"
+          # Deploy to green environment
+          # Switch traffic gradually
+          # Monitor health metrics
+
+      - name: Run smoke tests
+        run: |
+          echo "Running smoke tests against production"
+          # Critical path smoke tests only
+
+      - name: Monitor deployment health
+        timeout-minutes: 10
+        run: |
+          echo "Monitoring deployment health for 5 minutes"
+          # Check error rates, latency, etc.
+          # for i in {1..30}; do
+          #   # Check health metrics
+          #   sleep 10
+          # done
+
+      - name: Create release notes
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const release = await github.rest.repos.createRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              tag_name: '${{ needs.build.outputs.version }}',
+              name: 'Release ${{ needs.build.outputs.version }}',
+              body: 'Deployed to production',
+              draft: false,
+              prerelease: false
+            });
+
+      - name: Send deployment notification
+        run: |
+          echo "Sending deployment notifications"
+          # Send to Slack, PagerDuty, etc.
+          # curl -X POST ${{ secrets.SLACK_WEBHOOK }} \
+          #   -d "{'text': 'Production deployment complete: ${{ needs.build.outputs.version }}'}"
+
+      # Rollback capability
+      - name: Rollback on failure
+        if: failure()
+        run: |
+          echo "Deployment failed, initiating rollback"
+          # Revert to previous version
+          # Restore from backup if needed
+
+# Configuration notes:
+#
+# Environment setup in GitHub:
+# 1. Go to Settings → Environments
+# 2. Create environments: development, staging, production
+# 3. For production:
+#    - Add required reviewers
+#    - Set wait timer (optional)
+#    - Restrict to protected branches
+#
+# Required secrets:
+# - AWS_ROLE_ARN_DEV: IAM role for development
+# - AWS_ROLE_ARN_STAGING: IAM role for staging
+# - AWS_ROLE_ARN_PROD: IAM role for production
+# - SLACK_WEBHOOK: Slack webhook URL for notifications
+#
+# Deployment strategy:
+# - Development: Automatic from develop branch
+# - Staging: Automatic from main branch
+# - Production: Requires approval + tests pass
+#
+# Features:
+# 1. Automated testing at each stage
+# 2. Manual approval gates for production
+# 3. Smoke tests after deployment
+# 4. Performance and security testing
+# 5. Rollback capability
+# 6. Deployment notifications
+# 7. Blue-green deployment support
+#
+# Customization tips:
+# 1. Adjust environment triggers based on your branching strategy
+# 2. Add/remove test stages based on requirements
+# 3. Implement canary or blue-green deployment
+# 4. Add database migration steps
+# 5. Configure monitoring and alerting
+# 6. Set up automatic rollback on errors

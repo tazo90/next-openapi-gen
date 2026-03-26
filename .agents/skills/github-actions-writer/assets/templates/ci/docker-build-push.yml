@@ -1,0 +1,232 @@
+# Docker Build and Push Workflow
+# Builds Docker images and pushes to multiple container registries
+# Best practices: multi-platform builds, caching, security scanning, multiple registries
+
+name: Docker Build & Push
+
+# Trigger configuration
+on:
+  push:
+    branches: [main, develop]
+    tags:
+      - 'v*.*.*'  # Semantic version tags
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+# Permissions for pushing to GitHub Container Registry
+permissions:
+  contents: read
+  packages: write
+  id-token: write  # For OIDC with AWS/other cloud providers
+
+# Prevent concurrent builds
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Registry configuration
+  GHCR_REGISTRY: ghcr.io
+  DOCKERHUB_REGISTRY: docker.io
+  # Image name (adjust to your repository)
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  # Job 1: Build and push to multiple registries
+  build-push:
+    name: Build & Push Docker Image
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Set up QEMU for multi-platform builds
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      # Set up Docker Buildx for advanced build features
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Extract metadata (tags, labels) for Docker
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            ${{ env.GHCR_REGISTRY }}/${{ env.IMAGE_NAME }}
+            ${{ env.DOCKERHUB_REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            # Tag with branch name for branch pushes
+            type=ref,event=branch
+            # Tag with PR number for pull requests
+            type=ref,event=pr
+            # Tag with git tag for tag pushes
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            # Tag with 'latest' for main branch
+            type=raw,value=latest,enable={{is_default_branch}}
+            # Tag with commit SHA
+            type=sha,prefix={{branch}}-
+
+      # Login to GitHub Container Registry
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        if: github.event_name != 'pull_request'
+        with:
+          registry: ${{ env.GHCR_REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Login to Docker Hub
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        if: github.event_name != 'pull_request' && vars.PUSH_TO_DOCKERHUB == 'true'
+        with:
+          registry: ${{ env.DOCKERHUB_REGISTRY }}
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # Build and push Docker image
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          # Build for multiple platforms
+          platforms: linux/amd64,linux/arm64
+          # Push only if not a pull request
+          push: ${{ github.event_name != 'pull_request' }}
+          # Use tags from metadata step
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          # Enable build caching for faster builds
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          # Build arguments (customize as needed)
+          build-args: |
+            BUILD_DATE=${{ github.event.head_commit.timestamp }}
+            VCS_REF=${{ github.sha }}
+            VERSION=${{ steps.meta.outputs.version }}
+
+  # Job 2: Security scanning with Trivy
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: build-push
+    if: github.event_name != 'pull_request'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Login to GitHub Container Registry to pull the image
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.GHCR_REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Get the image tag that was just built
+      - name: Get image tag
+        id: tag
+        run: |
+          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          else
+            echo "tag=${{ github.ref_name }}-${{ github.sha }}" >> $GITHUB_OUTPUT
+          fi
+
+      # Run Trivy vulnerability scanner
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.GHCR_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.tag.outputs.tag }}
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH'
+
+      # Upload Trivy results to GitHub Security tab
+      - name: Upload Trivy results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+      # Fail the workflow if critical vulnerabilities are found
+      - name: Check for critical vulnerabilities
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.GHCR_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.tag.outputs.tag }}
+          format: 'table'
+          exit-code: '1'
+          severity: 'CRITICAL'
+
+  # Job 3: Image signing with Cosign (optional, for production)
+  sign-image:
+    name: Sign Image with Cosign
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: [build-push, security-scan]
+    if: github.event_name != 'pull_request' && startsWith(github.ref, 'refs/tags/')
+
+    permissions:
+      contents: read
+      packages: write
+      id-token: write  # Required for keyless signing
+
+    steps:
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@v3
+
+      # Login to GitHub Container Registry
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.GHCR_REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Get the image tag
+      - name: Get image tag
+        id: tag
+        run: echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+      # Sign the image with keyless signing
+      - name: Sign the image with Cosign
+        run: |
+          cosign sign --yes \
+            ${{ env.GHCR_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.tag.outputs.tag }}
+
+# Configuration notes:
+#
+# Required secrets:
+# - GITHUB_TOKEN: Automatically provided by GitHub Actions
+# - DOCKERHUB_USERNAME: Docker Hub username (only if pushing to Docker Hub)
+# - DOCKERHUB_TOKEN: Docker Hub access token (only if pushing to Docker Hub)
+#
+# Required repository variables (optional):
+# - PUSH_TO_DOCKERHUB: Set to 'true' to enable Docker Hub pushes
+#
+# Required Dockerfile:
+# - Dockerfile in repository root (or adjust context path)
+#
+# Security best practices:
+# 1. Images are scanned for vulnerabilities before deployment
+# 2. Multi-platform builds ensure compatibility
+# 3. Build cache speeds up repeated builds
+# 4. Image signing provides supply chain security (optional)
+# 5. Minimal permissions set for each job
+#
+# Customization tips:
+# 1. Adjust platforms based on your deployment targets
+# 2. Modify tag strategy based on your versioning scheme
+# 3. Add additional registries (AWS ECR, GCP GCR, etc.)
+# 4. Customize build-args for your application
+# 5. Enable/disable image signing based on security requirements
+# 6. Adjust vulnerability severity thresholds

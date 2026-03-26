@@ -1,0 +1,283 @@
+# Multi-Language Matrix Testing Workflow
+# Tests code across multiple languages, versions, and operating systems
+# Demonstrates advanced matrix strategies with includes/excludes
+
+name: Matrix Testing
+
+# Trigger configuration
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Example 1: Node.js matrix with conditional execution
+  node-matrix:
+    name: Node ${{ matrix.node-version }} on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        node-version: [18, 20, 22]
+        # Add specific configurations for certain combinations
+        include:
+          # Add experimental Node.js version only on Ubuntu
+          - os: ubuntu-latest
+            node-version: 22
+            experimental: true
+          # Add specific flags for Windows
+          - os: windows-latest
+            node-version: 20
+            npm-flags: '--legacy-peer-deps'
+        # Exclude specific combinations to reduce CI time
+        exclude:
+          # Don't test Node 18 on macOS (save CI minutes)
+          - os: macos-latest
+            node-version: 18
+      # Don't cancel other matrix jobs if one fails
+      fail-fast: false
+
+    # Mark experimental jobs as allowed to fail
+    continue-on-error: ${{ matrix.experimental == true }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci ${{ matrix.npm-flags }}
+
+      - name: Run tests
+        run: npm test
+
+  # Example 2: Python matrix with dynamic matrix generation
+  python-matrix:
+    name: Python ${{ matrix.python-version }} (${{ matrix.django-version }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    strategy:
+      matrix:
+        python-version: ['3.9', '3.10', '3.11', '3.12']
+        django-version: ['3.2', '4.2', '5.0']
+        # Exclude incompatible combinations
+        exclude:
+          # Django 5.0 requires Python 3.10+
+          - python-version: '3.9'
+            django-version: '5.0'
+          # Django 3.2 deprecated for Python 3.12
+          - python-version: '3.12'
+            django-version: '3.2'
+      fail-fast: false
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          pip install django~=${{ matrix.django-version }}
+          pip install -r requirements.txt
+
+      - name: Run tests
+        run: python manage.py test
+
+  # Example 3: Database matrix testing
+  database-matrix:
+    name: Test with ${{ matrix.database }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    strategy:
+      matrix:
+        database:
+          - postgres
+          - mysql
+          - mariadb
+        include:
+          # PostgreSQL versions
+          - database: postgres
+            db-version: '16'
+            db-port: 5432
+            db-image: postgres:16
+          # MySQL versions
+          - database: mysql
+            db-version: '8.0'
+            db-port: 3306
+            db-image: mysql:8.0
+          # MariaDB versions
+          - database: mariadb
+            db-version: '11.2'
+            db-port: 3306
+            db-image: mariadb:11.2
+
+    # Start database service
+    services:
+      database:
+        image: ${{ matrix.db-image }}
+        env:
+          POSTGRES_PASSWORD: postgres
+          MYSQL_ROOT_PASSWORD: mysql
+          MYSQL_DATABASE: testdb
+        ports:
+          - ${{ matrix.db-port }}:${{ matrix.db-port }}
+        options: >-
+          --health-cmd "${{ matrix.database == 'postgres' && 'pg_isready' || 'mysqladmin ping' }}"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run database tests
+        env:
+          DATABASE_TYPE: ${{ matrix.database }}
+          DATABASE_HOST: localhost
+          DATABASE_PORT: ${{ matrix.db-port }}
+          DATABASE_PASSWORD: ${{ matrix.database == 'postgres' && 'postgres' || 'mysql' }}
+        run: pytest tests/integration/
+
+  # Example 4: Browser testing matrix
+  browser-matrix:
+    name: E2E Tests (${{ matrix.browser }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    strategy:
+      matrix:
+        browser: [chromium, firefox, webkit]
+        shard: [1, 2, 3, 4]  # Parallel test execution
+      fail-fast: false
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps ${{ matrix.browser }}
+
+      - name: Run E2E tests
+        run: |
+          npx playwright test \
+            --project=${{ matrix.browser }} \
+            --shard=${{ matrix.shard }}/${{ strategy.job-total }}
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-results-${{ matrix.browser }}-${{ matrix.shard }}
+          path: test-results/
+          retention-days: 7
+
+  # Example 5: Cross-compilation matrix
+  build-matrix:
+    name: Build for ${{ matrix.goos }}/${{ matrix.goarch }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+
+    strategy:
+      matrix:
+        include:
+          # Linux builds
+          - goos: linux
+            goarch: amd64
+            os: ubuntu-latest
+          - goos: linux
+            goarch: arm64
+            os: ubuntu-latest
+          # macOS builds
+          - goos: darwin
+            goarch: amd64
+            os: macos-latest
+          - goos: darwin
+            goarch: arm64
+            os: macos-latest
+          # Windows builds
+          - goos: windows
+            goarch: amd64
+            os: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+          cache: true
+
+      - name: Build binary
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+          CGO_ENABLED: 0
+        run: |
+          go build -o dist/app-${{ matrix.goos }}-${{ matrix.goarch }} .
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: binary-${{ matrix.goos }}-${{ matrix.goarch }}
+          path: dist/
+          retention-days: 7
+
+# Configuration notes:
+#
+# Matrix strategies best practices:
+# 1. Use fail-fast: false for comprehensive testing across all combinations
+# 2. Use include to add specific configurations
+# 3. Use exclude to remove incompatible or unnecessary combinations
+# 4. Use continue-on-error for experimental versions
+# 5. Consider CI minute costs when designing large matrices
+#
+# Performance optimization:
+# 1. Shard large test suites across multiple jobs
+# 2. Cache dependencies appropriately for each language
+# 3. Use exclude to skip redundant combinations
+# 4. Run expensive tests only on specific OS/version combinations
+#
+# Customization tips:
+# 1. Adjust matrix dimensions based on your support matrix
+# 2. Add database/service containers as needed
+# 3. Parallelize with sharding for faster E2E tests
+# 4. Use dynamic matrix generation for complex scenarios
+# 5. Consider cost vs coverage trade-offs

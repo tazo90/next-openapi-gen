@@ -1,0 +1,325 @@
+# Kubernetes GitOps Deployment
+# Deploys to Kubernetes using GitOps principles with ArgoCD/Flux
+# Updates manifest repository to trigger automated deployments
+
+name: Kubernetes GitOps Deployment
+
+# Trigger configuration
+on:
+  push:
+    branches: [main]
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: true
+        type: choice
+        options:
+          - staging
+          - production
+      version:
+        description: 'Version/tag to deploy'
+        required: false
+        type: string
+
+permissions:
+  contents: read
+  packages: write
+  id-token: write
+
+concurrency:
+  group: k8s-deploy-${{ github.event.inputs.environment || 'production' }}
+  cancel-in-progress: false
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+  MANIFESTS_REPO: ${{ github.repository }}-manifests
+
+jobs:
+  # Job 1: Build and push container image
+  build-image:
+    name: Build & Push Container Image
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    outputs:
+      image-tag: ${{ steps.meta.outputs.version }}
+      image-full: ${{ steps.meta.outputs.tags }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # Sign the image with Cosign
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@v3
+
+      - name: Sign container image
+        run: |
+          echo "${{ steps.meta.outputs.tags }}" | xargs -I {} \
+            cosign sign --yes {}@${{ steps.build.outputs.digest }}
+
+  # Job 2: Scan image for vulnerabilities
+  scan-image:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: build-image
+
+    steps:
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ needs.build-image.outputs.image-full }}
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+
+      - name: Upload Trivy results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+      - name: Fail on critical vulnerabilities
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ needs.build-image.outputs.image-full }}
+          format: 'table'
+          exit-code: '1'
+          severity: 'CRITICAL'
+
+  # Job 3: Update Kubernetes manifests (GitOps)
+  update-manifests:
+    name: Update K8s Manifests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: [build-image, scan-image]
+    environment:
+      name: ${{ github.event.inputs.environment || 'production' }}
+
+    steps:
+      - name: Checkout manifests repository
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository_owner }}/${{ env.MANIFESTS_REPO }}
+          token: ${{ secrets.GITOPS_TOKEN }}
+          ref: main
+
+      # Determine environment and image tag
+      - name: Set deployment parameters
+        id: params
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "environment=${{ github.event.inputs.environment }}" >> $GITHUB_OUTPUT
+            echo "version=${{ github.event.inputs.version || needs.build-image.outputs.image-tag }}" >> $GITHUB_OUTPUT
+          elif [ "${{ github.ref_type }}" = "tag" ]; then
+            echo "environment=production" >> $GITHUB_OUTPUT
+            echo "version=${{ needs.build-image.outputs.image-tag }}" >> $GITHUB_OUTPUT
+          else
+            echo "environment=staging" >> $GITHUB_OUTPUT
+            echo "version=${{ needs.build-image.outputs.image-tag }}" >> $GITHUB_OUTPUT
+          fi
+
+      # Method 1: Update using kustomize
+      - name: Update image with kustomize
+        if: hashFiles('overlays/${{ steps.params.outputs.environment }}/kustomization.yaml') != ''
+        working-directory: overlays/${{ steps.params.outputs.environment }}
+        run: |
+          kustomize edit set image \
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.params.outputs.version }}
+
+      # Method 2: Update using yq (for raw manifests)
+      - name: Update image with yq
+        if: hashFiles('overlays/${{ steps.params.outputs.environment }}/kustomization.yaml') == ''
+        run: |
+          yq eval -i \
+            '.spec.template.spec.containers[0].image = "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.params.outputs.version }}"' \
+            manifests/${{ steps.params.outputs.environment }}/deployment.yaml
+
+      # Method 3: Update using Helm values
+      - name: Update Helm values
+        if: hashFiles('helm/${{ steps.params.outputs.environment }}/values.yaml') != ''
+        run: |
+          yq eval -i \
+            '.image.tag = "${{ steps.params.outputs.version }}"' \
+            helm/${{ steps.params.outputs.environment }}/values.yaml
+
+      # Commit and push changes
+      - name: Commit and push manifest changes
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add .
+          git commit -m "Deploy ${{ steps.params.outputs.version }} to ${{ steps.params.outputs.environment }}
+
+          Automated deployment from ${{ github.repository }}@${{ github.sha }}
+
+          Image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.params.outputs.version }}
+          Environment: ${{ steps.params.outputs.environment }}
+          Triggered by: ${{ github.actor }}
+          "
+
+          git push
+
+  # Job 4: Wait for deployment (ArgoCD)
+  wait-for-deployment:
+    name: Wait for ArgoCD Sync
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: update-manifests
+    if: vars.USE_ARGOCD == 'true'
+
+    steps:
+      - name: Install ArgoCD CLI
+        run: |
+          curl -sSL -o argocd https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
+          chmod +x argocd
+          sudo mv argocd /usr/local/bin/
+
+      - name: Login to ArgoCD
+        env:
+          ARGOCD_SERVER: ${{ secrets.ARGOCD_SERVER }}
+          ARGOCD_AUTH_TOKEN: ${{ secrets.ARGOCD_TOKEN }}
+        run: |
+          argocd login $ARGOCD_SERVER \
+            --auth-token $ARGOCD_AUTH_TOKEN \
+            --grpc-web
+
+      - name: Sync application
+        run: |
+          argocd app sync ${{ github.event.repository.name }}-${{ steps.params.outputs.environment }} \
+            --grpc-web
+
+      - name: Wait for sync completion
+        run: |
+          argocd app wait ${{ github.event.repository.name }}-${{ steps.params.outputs.environment }} \
+            --health \
+            --timeout 600 \
+            --grpc-web
+
+  # Alternative Job: Direct kubectl deployment (not GitOps)
+  direct-deploy:
+    name: Direct kubectl Deployment
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: [build-image, scan-image]
+    if: false  # Enable if not using GitOps
+    environment:
+      name: ${{ github.event.inputs.environment || 'production' }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Configure kubectl (example for GKE)
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Get GKE credentials
+        uses: google-github-actions/get-gke-credentials@v2
+        with:
+          cluster_name: ${{ secrets.GKE_CLUSTER }}
+          location: ${{ secrets.GKE_ZONE }}
+
+      # Apply Kubernetes manifests
+      - name: Deploy to Kubernetes
+        run: |
+          kubectl set image deployment/${{ github.event.repository.name }} \
+            app=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.build-image.outputs.image-tag }} \
+            -n ${{ vars.K8S_NAMESPACE }}
+
+          kubectl rollout status deployment/${{ github.event.repository.name }} \
+            -n ${{ vars.K8S_NAMESPACE }} \
+            --timeout=5m
+
+      # Verify deployment
+      - name: Verify deployment
+        run: |
+          kubectl get pods -n ${{ vars.K8S_NAMESPACE }} -l app=${{ github.event.repository.name }}
+          kubectl get svc -n ${{ vars.K8S_NAMESPACE }} -l app=${{ github.event.repository.name }}
+
+# Configuration notes:
+#
+# GitOps repository structure:
+# manifests-repo/
+#   ├── base/                     # Base Kubernetes manifests
+#   │   ├── deployment.yaml
+#   │   ├── service.yaml
+#   │   └── kustomization.yaml
+#   ├── overlays/
+#   │   ├── staging/
+#   │   │   ├── kustomization.yaml
+#   │   │   └── patches.yaml
+#   │   └── production/
+#   │       ├── kustomization.yaml
+#   │       └── patches.yaml
+#   └── helm/                     # Alternative: Helm charts
+#       ├── staging/
+#       │   └── values.yaml
+#       └── production/
+#           └── values.yaml
+#
+# Required secrets:
+# - GITHUB_TOKEN: Automatically provided
+# - GITOPS_TOKEN: Personal access token with write access to manifests repo
+# - ARGOCD_SERVER: ArgoCD server URL (if using ArgoCD)
+# - ARGOCD_TOKEN: ArgoCD authentication token (if using ArgoCD)
+#
+# Required repository variables:
+# - USE_ARGOCD: Set to 'true' if using ArgoCD
+# - K8S_NAMESPACE: Kubernetes namespace for deployments
+#
+# Setup steps:
+# 1. Create separate GitOps repository for Kubernetes manifests
+# 2. Set up ArgoCD or Flux to watch the manifests repository
+# 3. Configure ArgoCD applications for each environment
+# 4. Create GitHub PAT for manifest updates
+#
+# Customization tips:
+# 1. Choose kustomize, raw YAML, or Helm based on your preference
+# 2. Add health checks and smoke tests after deployment
+# 3. Implement blue-green or canary deployment strategies
+# 4. Add notification steps (Slack, PagerDuty, etc.)
+# 5. Configure RBAC and network policies

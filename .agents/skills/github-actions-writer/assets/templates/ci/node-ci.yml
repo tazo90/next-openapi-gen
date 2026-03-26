@@ -1,0 +1,187 @@
+# Node.js CI Workflow
+# This workflow tests, builds, and optionally publishes a Node.js application
+# Best practices included: caching, concurrency control, minimal permissions, matrix testing
+
+name: Node.js CI
+
+# Trigger configuration
+on:
+  # Run on pushes to main/develop branches
+  push:
+    branches: [main, develop]
+    # Only run when relevant files change (optimization)
+    paths:
+      - 'src/**'
+      - 'tests/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/node-ci.yml'
+
+  # Run on all pull requests
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+  # Allow manual trigger from GitHub UI
+  workflow_dispatch:
+
+# Minimal permissions (security best practice)
+permissions:
+  contents: read
+  pull-requests: write  # For commenting on PRs if needed
+
+# Prevent multiple runs for the same branch/PR
+# Cancel in-progress runs when new commits are pushed
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# Global environment variables
+env:
+  NODE_ENV: test
+
+jobs:
+  # Job 1: Lint and type check
+  lint:
+    name: Lint & Type Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'  # Built-in caching for npm dependencies
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run ESLint
+        run: npm run lint
+
+      - name: Run TypeScript type check
+        run: npm run type-check
+        if: hashFiles('tsconfig.json') != ''  # Only if TypeScript is used
+
+  # Job 2: Test across multiple Node.js versions
+  test:
+    name: Test (Node ${{ matrix.node-version }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    # Matrix strategy: test on multiple Node.js versions
+    strategy:
+      matrix:
+        node-version: [18, 20, 22]
+      fail-fast: false  # Continue testing other versions even if one fails
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests with coverage
+        run: npm run test:coverage
+
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v4
+        if: matrix.node-version == 20  # Only upload from one version to avoid duplicates
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: false
+
+  # Job 3: Build
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: [lint, test]  # Only run if lint and test pass
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build application
+        run: npm run build
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-output
+          path: dist/
+          retention-days: 7
+
+  # Job 4: Publish to npm (only on main branch)
+  publish:
+    name: Publish to npm
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: [lint, test, build]
+    # Only run on main branch and when it's not a PR
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    # Enhanced permissions for publishing
+    permissions:
+      contents: read
+      id-token: write  # Required for npm provenance
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build application
+        run: npm run build
+
+      - name: Publish to npm
+        run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+# Configuration notes:
+#
+# Required secrets:
+# - NPM_TOKEN: npm access token for publishing (optional, only if publishing)
+# - CODECOV_TOKEN: Codecov token for coverage uploads (optional)
+#
+# Required package.json scripts:
+# - lint: Run ESLint
+# - type-check: Run TypeScript compiler check (if using TypeScript)
+# - test:coverage: Run tests with coverage
+# - build: Build the application
+#
+# Customization tips:
+# 1. Adjust Node.js versions in matrix based on your support policy
+# 2. Modify paths filter to match your project structure
+# 3. Update branch names if you use different branch naming
+# 4. Remove publish job if not publishing to npm
+# 5. Add additional jobs for E2E tests, security scanning, etc.

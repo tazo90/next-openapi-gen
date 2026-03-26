@@ -1,0 +1,321 @@
+# AWS Deployment with OIDC Authentication
+# Deploys to AWS using OpenID Connect (OIDC) for secure, credential-less authentication
+# Supports ECS, EKS, Lambda, S3, and other AWS services
+
+name: AWS Deployment (OIDC)
+
+# Trigger configuration
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        type: choice
+        options:
+          - staging
+          - production
+
+permissions:
+  id-token: write  # Required for OIDC authentication
+  contents: read
+
+concurrency:
+  group: deploy-${{ github.event.inputs.environment || 'production' }}
+  cancel-in-progress: false  # Don't cancel deployments
+
+env:
+  AWS_REGION: us-east-1
+  ECR_REPOSITORY: my-app
+  ECS_SERVICE: my-service
+  ECS_CLUSTER: my-cluster
+  ECS_TASK_DEFINITION: my-task
+
+jobs:
+  # Job 1: Build and push Docker image to ECR
+  build-and-push:
+    name: Build & Push to ECR
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    outputs:
+      image-tag: ${{ steps.meta.outputs.tags }}
+      image-digest: ${{ steps.build.outputs.digest }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Configure AWS credentials using OIDC
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          role-session-name: GitHubActions-${{ github.run_id }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      # Login to Amazon ECR
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      # Extract metadata for Docker
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        with:
+          images: ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}
+          tags: |
+            type=sha,prefix={{branch}}-
+            type=ref,event=branch
+            type=semver,pattern={{version}}
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      # Set up Docker Buildx
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Build and push Docker image to ECR
+      - name: Build and push Docker image
+        id: build
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            BUILD_DATE=${{ github.event.head_commit.timestamp }}
+            VCS_REF=${{ github.sha }}
+            VERSION=${{ steps.meta.outputs.version }}
+
+      # Scan image for vulnerabilities
+      - name: Scan image with Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}
+          format: 'table'
+          exit-code: '1'
+          severity: 'CRITICAL,HIGH'
+
+  # Job 2: Deploy to ECS
+  deploy-ecs:
+    name: Deploy to ECS
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: build-and-push
+    environment:
+      name: ${{ github.event.inputs.environment || 'production' }}
+      url: https://${{ steps.deploy.outputs.url }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Configure AWS credentials using OIDC
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          role-session-name: GitHubActions-Deploy-${{ github.run_id }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      # Login to Amazon ECR
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      # Download task definition
+      - name: Download task definition
+        run: |
+          aws ecs describe-task-definition \
+            --task-definition ${{ env.ECS_TASK_DEFINITION }} \
+            --query taskDefinition > task-definition.json
+
+      # Update task definition with new image
+      - name: Fill in the new image ID in the task definition
+        id: task-def
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: task-definition.json
+          container-name: ${{ env.ECR_REPOSITORY }}
+          image: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}
+
+      # Deploy to Amazon ECS
+      - name: Deploy to Amazon ECS
+        id: deploy
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        with:
+          task-definition: ${{ steps.task-def.outputs.task-definition }}
+          service: ${{ env.ECS_SERVICE }}
+          cluster: ${{ env.ECS_CLUSTER }}
+          wait-for-service-stability: true
+
+      # Get service URL (if using load balancer)
+      - name: Get service URL
+        id: get-url
+        run: |
+          URL=$(aws elbv2 describe-load-balancers \
+            --query "LoadBalancers[0].DNSName" \
+            --output text)
+          echo "url=$URL" >> $GITHUB_OUTPUT
+
+  # Alternative Job: Deploy to Lambda
+  deploy-lambda:
+    name: Deploy to Lambda
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: build-and-push
+    if: false  # Enable by setting to true
+    environment:
+      name: ${{ github.event.inputs.environment || 'production' }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          role-session-name: GitHubActions-Lambda-${{ github.run_id }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm ci --production
+
+      - name: Create deployment package
+        run: |
+          zip -r deployment.zip . \
+            -x "*.git*" \
+            -x "*node_modules/aws-sdk/*" \
+            -x "*.github/*"
+
+      - name: Deploy to Lambda
+        run: |
+          aws lambda update-function-code \
+            --function-name my-function \
+            --zip-file fileb://deployment.zip
+
+      - name: Wait for Lambda update to complete
+        run: |
+          aws lambda wait function-updated \
+            --function-name my-function
+
+      - name: Publish Lambda version
+        run: |
+          aws lambda publish-version \
+            --function-name my-function
+
+  # Alternative Job: Deploy static site to S3 + CloudFront
+  deploy-s3:
+    name: Deploy to S3 + CloudFront
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: false  # Enable by setting to true
+    environment:
+      name: ${{ github.event.inputs.environment || 'production' }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          role-session-name: GitHubActions-S3-${{ github.run_id }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build static site
+        run: npm run build
+
+      - name: Sync to S3
+        run: |
+          aws s3 sync dist/ s3://${{ secrets.S3_BUCKET }} \
+            --delete \
+            --cache-control "public,max-age=31536000,immutable" \
+            --exclude "*.html" \
+            --exclude "service-worker.js"
+
+      - name: Sync HTML files (no cache)
+        run: |
+          aws s3 sync dist/ s3://${{ secrets.S3_BUCKET }} \
+            --cache-control "no-cache" \
+            --exclude "*" \
+            --include "*.html" \
+            --include "service-worker.js"
+
+      - name: Invalidate CloudFront cache
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} \
+            --paths "/*"
+
+# Configuration notes:
+#
+# OIDC Setup (one-time configuration):
+# 1. Create an IAM OIDC identity provider in AWS:
+#    - Provider URL: https://token.actions.githubusercontent.com
+#    - Audience: sts.amazonaws.com
+#
+# 2. Create an IAM role with trust policy:
+#    {
+#      "Version": "2012-10-17",
+#      "Statement": [{
+#        "Effect": "Allow",
+#        "Principal": {
+#          "Federated": "arn:aws:iam::ACCOUNT-ID:oidc-provider/token.actions.githubusercontent.com"
+#        },
+#        "Action": "sts:AssumeRoleWithWebIdentity",
+#        "Condition": {
+#          "StringEquals": {
+#            "token.actions.githubusercontent.com:aud": "sts.amazonaws.com"
+#          },
+#          "StringLike": {
+#            "token.actions.githubusercontent.com:sub": "repo:OWNER/REPO:*"
+#          }
+#        }
+#      }]
+#    }
+#
+# 3. Attach necessary policies to the role (e.g., AmazonEC2ContainerRegistryPowerUser, AmazonECS_FullAccess)
+#
+# Required secrets:
+# - AWS_ROLE_ARN: ARN of the IAM role created above
+# - S3_BUCKET: S3 bucket name (for S3 deployment)
+# - CLOUDFRONT_DISTRIBUTION_ID: CloudFront distribution ID (for S3 deployment)
+#
+# Security benefits of OIDC:
+# - No long-lived AWS credentials stored in GitHub
+# - Automatic token rotation
+# - Tokens valid for minutes, not years
+# - Better audit trail in AWS CloudTrail
+# - Reduced risk of credential leakage
+#
+# Customization tips:
+# 1. Enable only the deployment job you need (ECS, Lambda, or S3)
+# 2. Adjust environment variables for your AWS resources
+# 3. Modify task definition and service names
+# 4. Add health checks and rollback mechanisms
+# 5. Use GitHub environments for approval gates
