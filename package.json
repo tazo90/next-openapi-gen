@@ -24,6 +24,7 @@
     "@commitlint/cli": "catalog:",
     "@commitlint/config-conventional": "catalog:",
     "@commitlint/types": "catalog:",
+    "babel-plugin-react-compiler": "catalog:",
     "lint-staged": "catalog:",
     "oxfmt": "catalog:",
     "oxlint": "catalog:",
@@ -42,7 +43,7 @@
     "*.{json,jsonc,md,mdx,yml,yaml,css,scss,html,toml}": "oxfmt --config ./packages/oxfmt-config/oxfmt.json --ignore-path .gitignore"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=24.0.0"
   },
   "packageManager": "pnpm@10.27.0"
 }

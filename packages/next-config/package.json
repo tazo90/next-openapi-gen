@@ -1,0 +1,20 @@
+{
+  "name": "@workspace/next-config",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./index.mts"
+    }
+  },
+  "scripts": {
+    "format": "oxfmt --config ../oxfmt-config/oxfmt.json --ignore-path ../../.gitignore .",
+    "format:check": "oxfmt --config ../oxfmt-config/oxfmt.json --ignore-path ../../.gitignore --check .",
+    "check": "pnpm format:check"
+  },
+  "peerDependencies": {
+    "next": "catalog:"
+  }
+}

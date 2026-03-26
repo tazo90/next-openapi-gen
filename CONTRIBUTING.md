@@ -210,13 +210,14 @@ When you create a PR, a template will guide you through:
 ```text
 next-openapi-gen/
 ├── apps/                     # Example Next.js apps
-│   ├── next15-app-zod/
+│   ├── next-app-zod/
 │   └── types/                # Shared ambient typings for examples
 ├── packages/
 │   ├── next-openapi-gen/
 │   │   ├── src/              # CLI source
 │   │   ├── tests/            # CLI test suite
 │   │   └── dist/             # CLI build output (ignored)
+│   ├── next-config/          # Shared Next.js config for example apps
 │   ├── oxfmt-config/
 │   ├── oxlint-config/
 │   └── typescript-config/
@@ -270,7 +271,7 @@ pnpm install
 pnpm build
 
 # Run an example app against the workspace package
-cd apps/next15-app-zod
+cd apps/next-app-zod
 pnpm exec next-openapi-gen generate
 pnpm dev
 ```

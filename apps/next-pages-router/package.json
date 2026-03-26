@@ -1,0 +1,31 @@
+{
+  "name": "next-pages-router",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "oxlint --config ../../packages/oxlint-config/base.json . --ignore-path ../../.gitignore --deny-warnings",
+    "generate": "next-openapi-gen generate",
+    "format": "oxfmt --config ../../packages/oxfmt-config/oxfmt.json --ignore-path ../../.gitignore .",
+    "format:check": "oxfmt --config ../../packages/oxfmt-config/oxfmt.json --ignore-path ../../.gitignore --check .",
+    "check": "pnpm format:check && pnpm lint"
+  },
+  "dependencies": {
+    "@scalar/api-reference-react": "catalog:",
+    "next": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "zod": "catalog:zod3"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "@workspace/next-config": "workspace:*",
+    "next-openapi-gen": "workspace:*",
+    "tailwindcss": "catalog:",
+    "typescript": "catalog:"
+  }
+}

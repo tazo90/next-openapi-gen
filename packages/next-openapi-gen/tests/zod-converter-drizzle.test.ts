@@ -185,7 +185,7 @@ describe("Drizzle-Zod Integration", () => {
   });
 
   describe("Real-world blog example", () => {
-    it("should convert post schema from next15-app-drizzle-zod example", () => {
+    it("should convert post schema from next-app-drizzle-zod example", () => {
       const code = `
         import { createInsertSchema } from 'drizzle-zod';
         import { posts } from '../db/schema';

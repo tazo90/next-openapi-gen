@@ -1,6 +1,6 @@
 packages:
-  - "packages/*"
-  - "apps/*"
+  - packages/*
+  - apps/*
 
 catalog:
   "@babel/parser": ^7.28.3
@@ -9,12 +9,17 @@ catalog:
   "@commitlint/cli": ^20.5.0
   "@commitlint/config-conventional": ^20.5.0
   "@commitlint/types": ^20.5.0
+  "@scalar/api-reference-react": ^0.9.15
   "@types/babel__traverse": ^7.28.0
   "@types/fs-extra": ^11.0.4
   "@types/js-yaml": ^4.0.9
+  "@types/node": ^24.9.2
+  "@types/react": ^19.2.2
+  "@types/react-dom": ^19.2.2
   "@vitest/ui": ^3.2.4
   ajv: ^8.17.1
   autoprefixer: ^10.4.21
+  babel-plugin-react-compiler: ^1.0.0
   commander: ^14.0.0
   conventional-changelog-cli: ^5.0.0
   drizzle-kit: ^0.29.1
@@ -23,44 +28,32 @@ catalog:
   fs-extra: ^11.3.1
   js-yaml: ^4.1.0
   lint-staged: ^16.4.0
+  next: 16.2.1
   np: ^10.2.0
   ora: ^8.2.0
   oxfmt: ^0.42.0
   oxlint: ^1.57.0
   postcss: ^8.5.3
   postgres: ^3.4.5
+  react: 19.2.0
+  react-dom: 19.2.0
   simple-git-hooks: ^2.13.1
-  "@scalar/api-reference-react": ^0.9.15
-  swagger-ui: ^5.21.0
-  swagger-ui-react: ^5.21.0
+  swagger-ui-dist: ^5.32.1
   tailwindcss: ^3.4.1
   turbo: ^2.8.20
   typescript: ^5.9.3
   vitest: ^3.2.4
 
+catalogMode: strict
+
 catalogs:
-  app-next15:
-    "@types/node": ^22.15.18
-    "@types/react": ^19.1.4
-    "@types/react-dom": ^19.1.5
-    next: 15.3.2
-    react: 19.1.0
-    react-dom: 19.1.0
-  app-next16:
-    "@types/node": ^24.9.2
-    "@types/react": ^19.2.2
-    "@types/react-dom": ^19.2.2
-    next: ^16.0.1
-    react: ^19.2.0
-    react-dom: ^19.2.0
-  package-types:
-    "@types/node": ^24.3.0
   zod3:
     zod: ^3.24.1
   zod4:
     zod: ^4.3.6
 
-catalogMode: strict
 managePackageManagerVersions: true
-saveWorkspaceProtocol: "rolling"
+
+saveWorkspaceProtocol: rolling
+
 strictPeerDependencies: true
