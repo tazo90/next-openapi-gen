@@ -1,11 +1,14 @@
 import fs from "fs";
 import traverseModule from "@babel/traverse";
+import type { NodePath } from "@babel/traverse";
+import type * as t from "@babel/types";
 
 const traverse = (traverseModule as any).default || traverseModule;
 
-import { RouterStrategy, HTTP_METHODS } from "./router-strategy.js";
+import { HTTP_METHODS } from "./router-strategy.js";
+import type { RouterStrategy } from "./router-strategy.js";
 import { parseTypeScriptFile, performAuthPresetReplacements } from "./utils.js";
-import { DataTypes, OpenApiConfig } from "../types.js";
+import type { DataTypes, OpenApiConfig } from "../types.js";
 
 export class PagesRouterStrategy implements RouterStrategy {
   private config: OpenApiConfig;
@@ -28,7 +31,7 @@ export class PagesRouterStrategy implements RouterStrategy {
     const methodComments: { method: string; dataTypes: DataTypes }[] = [];
 
     traverse(ast, {
-      ExportDefaultDeclaration: (nodePath) => {
+      ExportDefaultDeclaration: (nodePath: NodePath<t.ExportDefaultDeclaration>) => {
         const allComments = ast.comments || [];
         const exportStart = nodePath.node.start || 0;
 
@@ -118,49 +121,49 @@ export class PagesRouterStrategy implements RouterStrategy {
     let method = "";
 
     const methodMatch = cleanedComment.match(/@method\s+(\S+)/);
-    if (methodMatch) {
+    if (methodMatch?.[1]) {
       method = methodMatch[1].trim().toUpperCase();
     }
 
-    const firstLine = cleanedComment.split("\n")[0];
+    const firstLine = cleanedComment.split("\n")[0] ?? "";
     if (!firstLine.trim().startsWith("@")) {
       summary = firstLine.trim();
     }
 
     const descMatch = cleanedComment.match(/@description\s+(.*)/);
-    if (descMatch) {
+    if (descMatch?.[1]) {
       description = descMatch[1].trim();
     }
 
     const tagMatch = cleanedComment.match(/@tag\s+(.*)/);
-    if (tagMatch) {
+    if (tagMatch?.[1]) {
       tag = tagMatch[1].trim();
     }
 
     const paramsMatch =
       cleanedComment.match(/@queryParams\s+([\w<>,\s[\]]+)/) ||
       cleanedComment.match(/@params\s+([\w<>,\s[\]]+)/);
-    if (paramsMatch) {
+    if (paramsMatch?.[1]) {
       paramsType = paramsMatch[1].trim();
     }
 
     const pathParamsMatch = cleanedComment.match(/@pathParams\s+([\w<>,\s[\]]+)/);
-    if (pathParamsMatch) {
+    if (pathParamsMatch?.[1]) {
       pathParamsType = pathParamsMatch[1].trim();
     }
 
     const bodyMatch = cleanedComment.match(/@body\s+([\w<>,\s[\]]+)/);
-    if (bodyMatch) {
+    if (bodyMatch?.[1]) {
       bodyType = bodyMatch[1].trim();
     }
 
     const bodyDescMatch = cleanedComment.match(/@bodyDescription\s+(.*)/);
-    if (bodyDescMatch) {
+    if (bodyDescMatch?.[1]) {
       bodyDescription = bodyDescMatch[1].trim();
     }
 
     const contentTypeMatch = cleanedComment.match(/@contentType\s+(.*)/);
-    if (contentTypeMatch) {
+    if (contentTypeMatch?.[1]) {
       contentType = contentTypeMatch[1].trim();
     }
 
@@ -171,35 +174,35 @@ export class PagesRouterStrategy implements RouterStrategy {
 
       if (!code && trimmedType && /^\d{3}$/.test(trimmedType)) {
         successCode = trimmedType;
-        responseType = undefined;
+        responseType = "";
       } else {
         successCode = code || "";
-        responseType = trimmedType;
+        responseType = trimmedType || "";
       }
     }
 
     const respDescMatch = cleanedComment.match(/@responseDescription\s+(.*)/);
-    if (respDescMatch) {
+    if (respDescMatch?.[1]) {
       responseDescription = respDescMatch[1].trim();
     }
 
     const respSetMatch = cleanedComment.match(/@responseSet\s+(.*)/);
-    if (respSetMatch) {
+    if (respSetMatch?.[1]) {
       responseSet = respSetMatch[1].trim();
     }
 
     const addMatches = [...cleanedComment.matchAll(/@add\s+([^\n\r@]*)/g)];
     if (addMatches.length > 0) {
-      addResponses = addMatches.map((m) => m[1].trim()).join(",");
+      addResponses = addMatches.map((m) => m[1]?.trim() || "").filter(Boolean).join(",");
     }
 
     const opIdMatch = cleanedComment.match(/@operationId\s+(\S+)/);
-    if (opIdMatch) {
+    if (opIdMatch?.[1]) {
       operationId = opIdMatch[1].trim();
     }
 
     const authMatch = cleanedComment.match(/@auth\s+(.*)/);
-    if (authMatch) {
+    if (authMatch?.[1]) {
       const authValue = authMatch[1].trim();
       switch (authValue) {
         case "bearer":

@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 
+type RouteContext = {
+  params: Promise<{ id: string }>;
+};
+
 /**
  * Get users
  * @description Retrieve users
@@ -9,7 +13,8 @@ import { NextRequest, NextResponse } from "next/server";
  * @responseSet common,auth
  * @openapi
  */
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, { params }: RouteContext) {
+  await params;
   // Implementation here...
 
   return NextResponse.json({});

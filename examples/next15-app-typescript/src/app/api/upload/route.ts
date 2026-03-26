@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { UploadResponse } from "@/types/upload";
+import type { UploadResponse } from "@/types/upload";
 
 /**
  * Upload image file
@@ -50,8 +50,8 @@ export async function POST(request: NextRequest) {
       type: file.type,
       url: `/uploads/${file.name}`, // Example URL
       category,
-      description: description || undefined,
       uploadedAt: new Date().toISOString(),
+      ...(description ? { description } : {}),
     };
 
     return NextResponse.json(response);

@@ -1,4 +1,4 @@
-import {
+import type {
   Attachment,
   CommentsResponse,
   CreateCommentBody,
@@ -9,6 +9,10 @@ import {
   User,
 } from "@/types/organization";
 import { NextRequest, NextResponse } from "next/server";
+
+type CommentRouteContext = {
+  params: Promise<{ orgId: string; projectId: string; taskId: string }>;
+};
 
 /**
  * Get Task Comments
@@ -21,9 +25,9 @@ import { NextRequest, NextResponse } from "next/server";
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { orgId: string; projectId: string; taskId: string } },
+  { params }: CommentRouteContext,
 ) {
-  const { orgId, projectId, taskId } = params;
+  const { orgId, projectId, taskId } = await params;
 
   // Extract query parameters
   const url = new URL(request.url);
@@ -118,9 +122,10 @@ export async function GET(
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { orgId: string; projectId: string; taskId: string } },
+  { params }: CommentRouteContext,
 ) {
   try {
+    await params;
     // Parse request body
     const body: CreateCommentBody = await request.json();
 
@@ -148,8 +153,8 @@ export async function POST(
       mentions: [],
       likes: 0,
       likedBy: [],
-      replyTo: body.replyTo,
       createdAt: new Date(),
+      ...(body.replyTo ? { replyTo: body.replyTo } : {}),
     };
 
     const response: CreateCommentResponse = {
@@ -182,8 +187,9 @@ export async function POST(
  */
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { orgId: string; projectId: string; taskId: string } },
+  { params }: CommentRouteContext,
 ) {
+  await params;
   // Get the comment ID from the query parameter
   const url = new URL(request.url);
   const commentId = url.searchParams.get("commentId");
@@ -263,8 +269,9 @@ export async function PATCH(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { orgId: string; projectId: string; taskId: string } },
+  { params }: CommentRouteContext,
 ) {
+  await params;
   // Get the comment ID from the query parameter
   const url = new URL(request.url);
   const commentId = url.searchParams.get("commentId");

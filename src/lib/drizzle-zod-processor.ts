@@ -1,6 +1,6 @@
 import * as t from "@babel/types";
-import { OpenApiSchema } from "../types.js";
 import { logger } from "./logger.js";
+import type { OpenApiSchema } from "../types.js";
 
 /**
  * Processor for drizzle-zod schemas
@@ -42,6 +42,11 @@ export class DrizzleZodProcessor {
     // Check if there's a refinements object (second argument)
     if (node.arguments.length > 1 && t.isObjectExpression(node.arguments[1])) {
       const refinements = node.arguments[1];
+      const properties = schema.properties;
+      const required = schema.required;
+      if (!properties || !required) {
+        return { type: "object" };
+      }
 
       // Process each property in the refinements object
       refinements.properties.forEach((prop) => {
@@ -55,11 +60,11 @@ export class DrizzleZodProcessor {
             const fieldSchema = this.extractFieldSchema(arrowFunc.body);
 
             if (fieldSchema) {
-              schema.properties[key] = fieldSchema;
+              properties[key] = fieldSchema;
 
               // Determine if field is required based on schema modifiers
               if (!this.isFieldOptional(arrowFunc.body)) {
-                schema.required.push(key);
+                required.push(key);
               }
             }
           }
@@ -68,7 +73,7 @@ export class DrizzleZodProcessor {
     }
 
     // If no properties were extracted, return a generic object schema
-    if (Object.keys(schema.properties).length === 0) {
+    if (!schema.properties || Object.keys(schema.properties).length === 0) {
       logger.debug("No properties extracted from drizzle-zod schema, returning generic object");
       return { type: "object" };
     }

@@ -3,11 +3,11 @@ import path from "path";
 
 import { SchemaProcessor } from "./schema-processor.js";
 import { capitalize, extractPathParameters, getOperationId } from "./utils.js";
-import { DataTypes, OpenApiConfig, RouteDefinition } from "../types.js";
 import { logger } from "./logger.js";
-import { RouterStrategy } from "./router-strategy.js";
 import { AppRouterStrategy } from "./app-router-strategy.js";
 import { PagesRouterStrategy } from "./pages-router-strategy.js";
+import type { DataTypes, OpenApiConfig, RouteDefinition } from "../types.js";
+import type { RouterStrategy } from "./router-strategy.js";
 
 const MUTATION_HTTP_METHODS = ["PATCH", "POST", "PUT"];
 
@@ -121,6 +121,9 @@ export class RouteProcessor {
 
       customResponses.forEach((responseRef) => {
         const [code, ref] = responseRef.split(":");
+        if (!code) {
+          return;
+        }
         if (ref) {
           // Ensure the referenced schema is resolved (triggers Zod converter)
           this.schemaProcessor.getSchemaContent({ responseType: ref });
@@ -165,7 +168,7 @@ export class RouteProcessor {
   }
 
   private getDefaultErrorDescription(code: string): string {
-    const defaults = {
+    const defaults: Record<string, string> = {
       400: "Bad Request",
       401: "Unauthorized",
       403: "Forbidden",
@@ -268,7 +271,8 @@ export class RouteProcessor {
   private addRouteToPaths(varName: string, filePath: string, dataTypes: DataTypes): void {
     const method = varName.toLowerCase();
     const routePath = this.strategy.getRoutePath(filePath);
-    const rootPath = capitalize(routePath.split("/")[1]);
+    const rootSegment = routePath.split("/")[1] || "";
+    const rootPath = capitalize(rootSegment);
     const operationId = dataTypes.operationId || getOperationId(routePath, method);
     const {
       tag,
@@ -295,8 +299,8 @@ export class RouteProcessor {
 
     const definition: RouteDefinition = {
       operationId: operationId,
-      summary: summary,
-      description: description,
+      summary,
+      description,
       tags: [tag || rootPath],
       parameters: [],
     };
@@ -381,11 +385,11 @@ export class RouteProcessor {
         : {};
     }
 
-    this.swaggerPaths[routePath][method] = definition;
+    this.swaggerPaths[routePath]![method] = definition;
   }
 
   private getSortedPaths(paths: Record<string, any>): Record<string, any> {
-    function comparePaths(a, b) {
+    function comparePaths(this: RouteProcessor, a: string, b: string): number {
       const aMethods = this.swaggerPaths[a] || {};
       const bMethods = this.swaggerPaths[b] || {};
 
@@ -413,7 +417,7 @@ export class RouteProcessor {
 
     return Object.keys(paths)
       .sort(comparePaths.bind(this))
-      .reduce((sorted, key) => {
+      .reduce<Record<string, any>>((sorted, key) => {
         sorted[key] = paths[key];
 
         return sorted;

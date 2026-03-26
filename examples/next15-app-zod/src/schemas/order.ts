@@ -1,8 +1,8 @@
 import { z } from "zod";
 import { AddressSchema } from "./user";
 import { PaymentMethodSchema } from "./payment";
-import { PaginatedResponse } from "./base";
 import { CartItemSchema } from "./cart";
+import type { PaginatedResponse } from "./base";
 
 export const OrderIdParams = z.object({
   id: z.string().uuid().describe("Order ID"),

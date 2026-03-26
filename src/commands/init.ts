@@ -11,10 +11,20 @@ import { swaggerDeps, swaggerDevDeps, SwaggerUI } from "../components/swagger.js
 import { redocDeps, redocDevDeps, RedocUI } from "../components/redoc.js";
 import { stoplightDeps, stoplightDevDeps, StoplightUI } from "../components/stoplight.js";
 import { rapidocDeps, rapidocDevDeps, RapidocUI } from "../components/rapidoc.js";
+import type { OpenApiTemplate } from "../types.js";
 
 const execPromise = util.promisify(exec);
 
 const spinner = ora("Initializing project with OpenAPI template...\n");
+
+type UiType = "scalar" | "swagger" | "redoc" | "stoplight" | "rapidoc" | "none";
+
+type InitOptions = {
+  ui?: UiType;
+  docsUrl?: string;
+  schema?: "zod" | "typescript";
+  output?: string;
+};
 
 async function hasDependency(packageName: string): Promise<boolean> {
   try {
@@ -52,7 +62,7 @@ const getPackageManager = async () => {
   return "npm";
 };
 
-function getDocsPage(ui: string, outputFile: string) {
+function getDocsPage(ui: string, outputFile: string): string {
   let DocsComponent = ScalarUI;
 
   if (ui === "swagger") {
@@ -68,7 +78,7 @@ function getDocsPage(ui: string, outputFile: string) {
   return DocsComponent(outputFile);
 }
 
-function getDocsPageInstallFlags(ui: string, packageManager: string) {
+function getDocsPageInstallFlags(ui: string, packageManager: string): string {
   let installFlags = "";
   if (ui === "swagger") {
     // @temp: swagger-ui-react does not support React 19 now.
@@ -84,8 +94,8 @@ function getDocsPageInstallFlags(ui: string, packageManager: string) {
   return installFlags;
 }
 
-function getDocsPageDependencies(ui: string) {
-  let deps = [];
+function getDocsPageDependencies(ui: string): string {
+  let deps: string[] = [];
 
   if (ui === "scalar") {
     deps = scalarDeps;
@@ -102,8 +112,8 @@ function getDocsPageDependencies(ui: string) {
   return deps.join(" ");
 }
 
-function getDocsPageDevDependencies(ui: string) {
-  let devDeps = [];
+function getDocsPageDevDependencies(ui: string): string {
+  let devDeps: string[] = [];
 
   if (ui === "scalar") {
     devDeps = scalarDevDeps;
@@ -120,7 +130,7 @@ function getDocsPageDevDependencies(ui: string) {
   return devDeps.join(" ");
 }
 
-async function createDocsPage(ui: string, outputFile: string) {
+async function createDocsPage(ui: string, outputFile: string): Promise<void> {
   if (ui === "none") {
     return;
   }
@@ -142,7 +152,7 @@ async function createDocsPage(ui: string, outputFile: string) {
   spinner.succeed(`Created ${paths.join("/")}/page.tsx for ${ui}.`);
 }
 
-async function installDependencies(ui: string, schema: string | string[]) {
+async function installDependencies(ui: string, schema: string | string[]): Promise<void> {
   const packageManager = await getPackageManager();
   const installCmd = `${packageManager} ${packageManager === "npm" ? "install" : "add"}`;
 
@@ -183,7 +193,7 @@ async function installDependencies(ui: string, schema: string | string[]) {
   }
 }
 
-function extendOpenApiTemplate(spec, options) {
+function extendOpenApiTemplate(spec: OpenApiTemplate, options: InitOptions): void {
   spec.ui = options.ui ?? spec.ui;
   spec.docsUrl = options.docsUrl ?? spec.docsUrl;
   spec.schemaType = options.schema ?? spec.schemaType;
@@ -197,23 +207,27 @@ function getOutputPath(output?: string) {
   return path.join(process.cwd(), "next.openapi.json");
 }
 
-export async function init(options) {
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
+export async function init(options: InitOptions): Promise<void> {
   const { ui, output, schema } = options;
 
   spinner.start();
 
   try {
     const outputPath = getOutputPath(output);
-    const template = { ...openapiTemplate };
+    const template = { ...openapiTemplate } as OpenApiTemplate;
 
     extendOpenApiTemplate(template, options);
 
     await fse.writeJson(outputPath, template, { spaces: 2 });
     spinner.succeed(`Created OpenAPI template in ${outputPath}`);
 
-    createDocsPage(ui, template.outputFile);
-    installDependencies(ui, schema);
+    await createDocsPage(ui ?? "scalar", template.outputFile ?? "openapi.json");
+    await installDependencies(ui ?? "scalar", schema ?? "zod");
   } catch (error) {
-    spinner.fail(`Failed to initialize project: ${error.message}`);
+    spinner.fail(`Failed to initialize project: ${getErrorMessage(error)}`);
   }
 }

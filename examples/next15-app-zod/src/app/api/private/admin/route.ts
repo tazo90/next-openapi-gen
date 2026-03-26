@@ -12,7 +12,7 @@ import { NextResponse } from "next/server";
  * With apiDir set that way, findRouteFiles() only scans the public subtree,
  * so AdminStatsSchema is never registered in the output.
  */
-export const AdminStatsSchema = z.object({
+const AdminStatsSchema = z.object({
   totalUsers: z.number().int(),
   revenue: z.number(),
   secretKey: z.string(),

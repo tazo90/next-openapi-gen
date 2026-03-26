@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 
+type RouteContext = {
+  params: Promise<{ id: string }>;
+};
+
 /**
  * Get product
  * @description Retrieves detailed product information by ID
@@ -11,7 +15,8 @@ import { NextRequest, NextResponse } from "next/server";
  * @auth bearer
  * @openapi
  */
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, { params }: RouteContext) {
+  await params;
   // Implementation here...
 
   return NextResponse.json({});
@@ -26,7 +31,8 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
  * @auth bearer
  * @openapi
  */
-export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(request: NextRequest, { params }: RouteContext) {
+  await params;
   // Implementation here...
 
   return NextResponse.json({});
@@ -39,7 +45,8 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
  * @auth bearer
  * @openapi
  */
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, { params }: RouteContext) {
+  await params;
   // Implementation here...
 
   return new NextResponse(null, { status: 204 });

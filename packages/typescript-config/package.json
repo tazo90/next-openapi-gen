@@ -1,0 +1,9 @@
+{
+  "name": "@workspace/typescript-config",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "format": "oxfmt --ignore-path ../../.gitignore .",
+    "format:check": "oxfmt --ignore-path ../../.gitignore --check ."
+  }
+}

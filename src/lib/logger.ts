@@ -1,4 +1,4 @@
-import { OpenApiConfig } from "../types.js";
+import type { OpenApiConfig } from "../types.js";
 
 class Logger {
   private config: OpenApiConfig | null = null;
@@ -13,7 +13,10 @@ class Logger {
 
     const lines = stack.split("\n");
     // Skip: Error, getCallerInfo, log/warn/error
-    const callerLine = lines[3] || lines[2];
+    const callerLine = lines[3] ?? lines[2];
+    if (!callerLine) {
+      return "Unknown";
+    }
 
     // Extract class/function name
     const match = callerLine.match(/at (\w+)\.(\w+)|at (\w+)/);

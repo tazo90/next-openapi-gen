@@ -76,7 +76,7 @@ export async function POST(request: NextRequest) {
     if (error instanceof z.ZodError) {
       const errorResponse = {
         status: "error" as const,
-        error: `Validation failed: ${error.errors.map((e) => e.message).join(", ")}`,
+        error: `Validation failed: ${error.issues.map((issue) => issue.message).join(", ")}`,
         code: 400,
       };
 

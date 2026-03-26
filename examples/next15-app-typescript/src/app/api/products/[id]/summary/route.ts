@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getProductSummary } from "../../route.utils";
 
+type ProductRouteContext = {
+  params: Promise<{ id: string }>;
+};
+
 /**
  * Get Product Summary
  *
@@ -13,9 +17,10 @@ import { getProductSummary } from "../../route.utils";
  * @response ProductSummaryResponse
  * @openapi
  */
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, { params }: ProductRouteContext) {
   try {
-    const summary = await getProductSummary(params.id);
+    const { id } = await params;
+    const summary = await getProductSummary(id);
 
     return NextResponse.json({
       success: true,

@@ -12,7 +12,8 @@
     "@scalar/api-reference-react": "^0.6.30",
     "next": "15.3.2",
     "react": "19.1.0",
-    "react-dom": "19.1.0"
+    "react-dom": "19.1.0",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@types/node": "^22.15.18",

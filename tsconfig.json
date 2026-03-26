@@ -1,16 +1,11 @@
 {
+  "extends": "./packages/typescript-config/base.json",
   "compilerOptions": {
-    "target": "esnext",
-    "lib": ["es2021"],
-    "module": "esnext",
+    "lib": ["ES2024"],
     "outDir": "./dist",
     "rootDir": "./src",
     "newLine": "lf",
-    "esModuleInterop": true,
-    "moduleResolution": "node",
-    "strict": false,
-    "types": ["node"],
-    "skipLibCheck": true
+    "types": ["node"]
   },
   "include": ["src"],
   "exclude": ["dist", "build", "node_modules", "tests", "**/*.test.ts", "**/*.spec.ts"]

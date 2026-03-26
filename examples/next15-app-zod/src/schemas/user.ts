@@ -1,7 +1,8 @@
 import { z } from "zod";
 import { PaymentMethodSchema } from "./payment";
-import { PaginatedResponse, PaginationSchema } from "./base";
 import { createPaginatedSchema, makePaginatedResponse, wrapInEnvelope } from "./pagination";
+import { PaginationSchema } from "./base";
+import type { PaginatedResponse } from "./base";
 
 export const UserListParamsSchema = z.object({
   pagination: PaginationSchema,

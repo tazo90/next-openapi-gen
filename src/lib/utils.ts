@@ -1,8 +1,9 @@
-import { NodePath } from "@babel/traverse";
-import { parse, ParserOptions } from "@babel/parser";
+import type { NodePath } from "@babel/traverse";
+import { parse } from "@babel/parser";
+import type { ParserOptions } from "@babel/parser";
 import * as t from "@babel/types";
 
-import { DataTypes } from "../types.js";
+import type { DataTypes } from "../types.js";
 
 export function capitalize(string: string) {
   return string.charAt(0).toUpperCase() + string.slice(1);
@@ -15,10 +16,12 @@ export function capitalize(string: string) {
 export function extractPathParameters(routePath: string): string[] {
   const paramRegex = /{([^}]+)}/g;
   const params: string[] = [];
-  let match;
+  let match: RegExpExecArray | null;
 
   while ((match = paramRegex.exec(routePath)) !== null) {
-    params.push(match[1]);
+    if (match[1]) {
+      params.push(match[1]);
+    }
   }
 
   return params;
@@ -47,7 +50,7 @@ export function extractJSDocComments(path: NodePath): DataTypes {
   let method = "";
 
   if (comments) {
-    comments.forEach((comment) => {
+    comments.forEach((comment: t.Comment) => {
       const commentValue = cleanComment(comment.value);
 
       isOpenApi = commentValue.includes("@openapi");
@@ -69,7 +72,7 @@ export function extractJSDocComments(path: NodePath): DataTypes {
       }
 
       if (!summary) {
-        const firstLine = commentValue.split("\n")[0];
+        const firstLine = commentValue.split("\n")[0] ?? "";
         // Don't use tags as summary - only use actual descriptions
         if (!firstLine.trim().startsWith("@")) {
           summary = firstLine;
@@ -78,7 +81,10 @@ export function extractJSDocComments(path: NodePath): DataTypes {
 
       if (commentValue.includes("@auth")) {
         const regex = /@auth\s*(.*)/;
-        const value = commentValue.match(regex)[1].trim();
+        const value = commentValue.match(regex)?.[1]?.trim();
+        if (!value) {
+          return;
+        }
 
         switch (value) {
           case "bearer":
@@ -97,7 +103,7 @@ export function extractJSDocComments(path: NodePath): DataTypes {
 
       if (commentValue.includes("@description")) {
         const regex = /@description\s*(.*)/;
-        description = commentValue.match(regex)[1].trim();
+        description = commentValue.match(regex)?.[1]?.trim() || "";
       }
 
       if (commentValue.includes("@tag")) {
@@ -153,7 +159,7 @@ export function extractJSDocComments(path: NodePath): DataTypes {
       if (commentValue.includes("@add")) {
         const matches = [...commentValue.matchAll(/@add\s+([^\n\r@]*)/g)];
         if (matches.length > 0) {
-          addResponses = matches.map((m) => m[1].trim()).join(",");
+          addResponses = matches.map((m) => m[1]?.trim() || "").filter(Boolean).join(",");
         }
       }
 
@@ -184,10 +190,10 @@ export function extractJSDocComments(path: NodePath): DataTypes {
           if (!code && trimmedType && /^\d{3}$/.test(trimmedType)) {
             // Type is actually a status code without a schema
             successCode = trimmedType;
-            responseType = undefined;
+            responseType = "";
           } else {
             successCode = code || "";
-            responseType = trimmedType;
+            responseType = trimmedType || "";
           }
         } else {
           responseType = extractTypeFromComment(commentValue, "@response");
@@ -265,7 +271,7 @@ export function cleanSpec(spec: any) {
 
           // Set example properties for each path parameter
           if (operation.parameters) {
-            operation.parameters.forEach((param) => {
+            operation.parameters.forEach((param: Record<string, any>) => {
               if (param.in === "path" && !param.example) {
                 // Generate an example based on parameter name
                 if (param.name === "id" || param.name.endsWith("Id")) {

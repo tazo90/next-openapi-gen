@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import {
+import type {
   ApiResponse,
   Notification,
   NotificationType,

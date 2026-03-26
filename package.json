@@ -61,6 +61,8 @@
     "ora": "^8.2.0"
   },
   "devDependencies": {
+    "@types/babel__traverse": "^7.28.0",
+    "@types/fs-extra": "^11.0.4",
     "@types/js-yaml": "^4.0.9",
     "@types/node": "^24.3.0",
     "@vitest/ui": "^3.2.4",

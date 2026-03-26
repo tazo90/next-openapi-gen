@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
-import { UploadFormDataSchema, UploadResponse } from "@/schemas/upload";
+import { UploadFormDataSchema } from "@/schemas/upload";
+import type { UploadResponse } from "@/schemas/upload";
 
 /**
  * Upload image file
@@ -33,19 +34,22 @@ export async function POST(request: NextRequest) {
       type: validatedData.file.type,
       url: `/uploads/${validatedData.file.name}`,
       category: validatedData.category,
-      description: validatedData.description,
       uploadedAt: new Date().toISOString(),
+      ...(validatedData.description ? { description: validatedData.description } : {}),
     };
 
     return NextResponse.json(response);
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: "Validation failed", details: error.errors },
+        { error: "Validation failed", details: error.issues },
         { status: 400 },
       );
     }
 
-    return NextResponse.json({ error: "Upload failed" }, { status: 500 });
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Upload failed" },
+      { status: 500 },
+    );
   }
 }

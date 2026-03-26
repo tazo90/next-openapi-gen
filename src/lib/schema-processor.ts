@@ -9,7 +9,7 @@ const traverse = (traverseModule as any).default || traverseModule;
 
 import { parseTypeScriptFile } from "./utils.js";
 import { ZodSchemaConverter } from "./zod-converter.js";
-import {
+import type {
   ContentType,
   OpenAPIDefinition,
   ParamSchema,
@@ -30,6 +30,10 @@ function normalizeSchemaTypes(schemaType: SchemaType | SchemaType[]): SchemaType
  */
 function normalizeSchemaDirs(schemaDir: string | string[]): string[] {
   return Array.isArray(schemaDir) ? schemaDir : [schemaDir];
+}
+
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
 }
 
 export class SchemaProcessor {
@@ -110,7 +114,7 @@ export class SchemaProcessor {
           );
         }
       } catch (error) {
-        logger.warn(`Failed to load schema file ${filePath}: ${error.message}`);
+        logger.warn(`Failed to load schema file ${filePath}: ${getErrorMessage(error)}`);
       }
     }
   }
@@ -126,7 +130,7 @@ export class SchemaProcessor {
     const merged: Record<string, OpenAPIDefinition> = {};
 
     // Layer 1: TypeScript types (base layer)
-    const filteredSchemas = {};
+    const filteredSchemas: Record<string, OpenAPIDefinition> = {};
     Object.entries(this.openapiDefinitions).forEach(([key, value]) => {
       if (
         !this.isGenericTypeParameter(key) &&
@@ -231,6 +235,7 @@ export class SchemaProcessor {
     if (!this.importMap[normalizedPath]) {
       this.importMap[normalizedPath] = {};
     }
+    const importEntries = this.importMap[normalizedPath]!;
 
     traverse(ast, {
       ImportDeclaration: (path: any) => {
@@ -242,17 +247,17 @@ export class SchemaProcessor {
             const importedName = t.isIdentifier(specifier.imported)
               ? specifier.imported.name
               : specifier.imported.value;
-            this.importMap[normalizedPath][importedName] = importPath;
+            importEntries[importedName] = importPath;
           }
           // Handle default imports: import foo from './file'
           else if (t.isImportDefaultSpecifier(specifier)) {
             const importedName = specifier.local.name;
-            this.importMap[normalizedPath][importedName] = importPath;
+            importEntries[importedName] = importPath;
           }
           // Handle namespace imports: import * as foo from './file'
           else if (t.isImportNamespaceSpecifier(specifier)) {
             const importedName = specifier.local.name;
-            this.importMap[normalizedPath][importedName] = importPath;
+            importEntries[importedName] = importPath;
           }
         });
       },
@@ -440,7 +445,11 @@ export class SchemaProcessor {
 
     try {
       // If we are using Zod and the given type is not found yet, try using Zod converter first
-      if (this.schemaTypes.includes("zod") && !this.openapiDefinitions[typeName]) {
+      if (
+        this.schemaTypes.includes("zod") &&
+        this.zodSchemaConverter &&
+        !this.openapiDefinitions[typeName]
+      ) {
         const zodSchema = this.zodSchemaConverter.convertZodSchemaToOpenApi(typeName);
         if (zodSchema) {
           this.openapiDefinitions[typeName] = zodSchema;
@@ -467,7 +476,7 @@ export class SchemaProcessor {
         t.isIdentifier(typeNode.callee.object) &&
         typeNode.callee.object.name === "z"
       ) {
-        if (this.schemaTypes.includes("zod")) {
+        if (this.schemaTypes.includes("zod") && this.zodSchemaConverter) {
           const zodSchema = this.zodSchemaConverter.processZodNode(typeNode);
           if (zodSchema) {
             this.openapiDefinitions[typeName] = zodSchema;
@@ -886,18 +895,19 @@ export class SchemaProcessor {
           this.isResolvingPickOmitBase = false;
 
           if (baseType.properties) {
+            const baseProperties = baseType.properties;
             const properties: Record<string, any> = {};
             const keyNames = this.extractKeysFromLiteralType(keysParam);
 
             if (typeName === "Pick") {
               keyNames.forEach((key) => {
-                if (baseType.properties[key]) {
-                  properties[key] = baseType.properties[key];
+                if (baseProperties[key]) {
+                  properties[key] = baseProperties[key];
                 }
               });
             } else {
               // Omit
-              Object.entries(baseType.properties).forEach(([key, value]) => {
+              Object.entries(baseProperties).forEach(([key, value]) => {
                 if (!keyNames.includes(key)) {
                   properties[key] = value;
                 }
@@ -1042,11 +1052,16 @@ export class SchemaProcessor {
         }
       });
 
-      return {
-        type: "object",
-        properties: allProperties,
-        required: requiredProperties.length > 0 ? requiredProperties : undefined,
-      };
+      return requiredProperties.length > 0
+        ? {
+            type: "object",
+            properties: allProperties,
+            required: requiredProperties,
+          }
+        : {
+            type: "object",
+            properties: allProperties,
+          };
     }
 
     // Case where a type is a reference to another defined type
@@ -1086,7 +1101,9 @@ export class SchemaProcessor {
       this.processSchemaTracker[`${filePath}-${schemaName}`] = true;
       return definition;
     } catch (error) {
-      logger.error(`Error processing schema file ${filePath} for schema ${schemaName}: ${error}`);
+      logger.error(
+        `Error processing schema file ${filePath} for schema ${schemaName}: ${getErrorMessage(error)}`,
+      );
       return { type: "object" }; // By default we return an empty object on error
     }
   }
@@ -1587,8 +1604,8 @@ export class SchemaProcessor {
       return null;
     }
 
-    const baseTypeName = match[1].trim();
-    const typeArgsString = match[2].trim();
+    const baseTypeName = match[1]?.trim() || "";
+    const typeArgsString = match[2]?.trim() || "";
 
     // Split type arguments by comma, handling nested generics
     const typeArguments = this.splitTypeArguments(typeArgsString);
@@ -1810,11 +1827,16 @@ export class SchemaProcessor {
         }
       });
 
-      return {
-        type: "object",
-        properties: allProperties,
-        required: requiredProperties.length > 0 ? requiredProperties : undefined,
-      };
+      return requiredProperties.length > 0
+        ? {
+            type: "object",
+            properties: allProperties,
+            required: requiredProperties,
+          }
+        : {
+            type: "object",
+            properties: allProperties,
+          };
     }
 
     // For other types, use the standard resolution but with parameter substitution

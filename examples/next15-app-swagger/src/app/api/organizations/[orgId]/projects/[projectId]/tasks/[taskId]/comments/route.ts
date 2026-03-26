@@ -250,8 +250,8 @@ export async function POST(
       mentions: [],
       likes: 0,
       likedBy: [],
-      replyTo: body.replyTo,
       createdAt: new Date(),
+      ...(body.replyTo ? { replyTo: body.replyTo } : {}),
     };
 
     const response: CreateCommentResponse = {

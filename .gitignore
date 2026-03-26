@@ -25,6 +25,7 @@ blob-report/
 # Caches
 .turbo/
 .cache/
+.pnpm-store/
 .cursor/hooks/state/
 
 # Vercel

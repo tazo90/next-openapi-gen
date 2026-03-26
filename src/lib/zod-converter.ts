@@ -1,26 +1,27 @@
 import fs from "fs";
 import path from "path";
 import traverseModule from "@babel/traverse";
+import type { NodePath } from "@babel/traverse";
 import * as t from "@babel/types";
 
 // Handle both ES modules and CommonJS
 const traverse = (traverseModule as any).default || traverseModule;
 
 import { parseTypeScriptFile } from "./utils.js";
-import { OpenApiSchema } from "../types.js";
 import { logger } from "./logger.js";
 import { DrizzleZodProcessor } from "./drizzle-zod-processor.js";
+import type { OpenApiSchema } from "../types.js";
 
 /**
  * Class for converting Zod schemas to OpenAPI specifications
  */
 export class ZodSchemaConverter {
   schemaDirs: string[];
-  apiDir?: string;
+  apiDir: string | undefined;
   zodSchemas: Record<string, OpenApiSchema> = {};
   processingSchemas: Set<string> = new Set();
   processedModules: Set<string> = new Set();
-  typeToSchemaMapping = {};
+  typeToSchemaMapping: Record<string, string> = {};
   drizzleZodImports: Set<string> = new Set();
   factoryCache: Map<string, t.Node> = new Map(); // Cache for analyzed factory functions
   factoryCheckCache: Map<string, boolean> = new Map(); // Cache for non-factory functions
@@ -66,8 +67,9 @@ export class ZodSchemaConverter {
 
     try {
       // Return cached schema if it exists
-      if (this.zodSchemas[schemaName]) {
-        return this.zodSchemas[schemaName];
+      const cachedSchema = this.zodSchemas[schemaName];
+      if (cachedSchema) {
+        return cachedSchema;
       }
 
       // Find all route files and process them first
@@ -76,9 +78,10 @@ export class ZodSchemaConverter {
       for (const routeFile of routeFiles) {
         this.processFileForZodSchema(routeFile, schemaName);
 
-        if (this.zodSchemas[schemaName]) {
+        const routeSchema = this.zodSchemas[schemaName];
+        if (routeSchema) {
           logger.debug(`Found Zod schema '${schemaName}' in route file: ${routeFile}`);
-          return this.zodSchemas[schemaName];
+          return routeSchema;
         }
       }
 
@@ -89,9 +92,10 @@ export class ZodSchemaConverter {
       }
 
       // Return the schema if found, or null if not
-      if (this.zodSchemas[schemaName]) {
+      const resolvedSchema = this.zodSchemas[schemaName];
+      if (resolvedSchema) {
         logger.debug(`Found and processed Zod schema: ${schemaName}`);
-        return this.zodSchemas[schemaName];
+        return resolvedSchema;
       }
 
       logger.debug(`Could not find Zod schema: ${schemaName}`);
@@ -137,7 +141,7 @@ export class ZodSchemaConverter {
   /**
    * Recursively find route files in a directory
    */
-  findRouteFilesInDir(dir: string, routeFiles: string[]) {
+  findRouteFilesInDir(dir: string, routeFiles: string[]): void {
     try {
       const files = fs.readdirSync(dir);
 
@@ -163,7 +167,7 @@ export class ZodSchemaConverter {
   /**
    * Recursively scan directory for Zod schemas
    */
-  scanDirectoryForZodSchema(dir: string, schemaName: string) {
+  scanDirectoryForZodSchema(dir: string, schemaName: string): void {
     try {
       const files = fs.readdirSync(dir);
 
@@ -185,7 +189,7 @@ export class ZodSchemaConverter {
   /**
    * Process a file to find Zod schema definitions
    */
-  processFileForZodSchema(filePath: string, schemaName: string) {
+  processFileForZodSchema(filePath: string, schemaName: string): void {
     try {
       const content = fs.readFileSync(filePath, "utf-8");
 
@@ -217,12 +221,12 @@ export class ZodSchemaConverter {
       } else {
         // Build imports cache
         traverse(ast, {
-          ImportDeclaration: (path) => {
+          ImportDeclaration: (path: NodePath<t.ImportDeclaration>) => {
             const source = path.node.source.value;
 
             // Track drizzle-zod imports
             if (source === "drizzle-zod") {
-              path.node.specifiers.forEach((specifier) => {
+              path.node.specifiers.forEach((specifier: t.ImportDeclaration["specifiers"][number]) => {
                 if (t.isImportSpecifier(specifier) || t.isImportDefaultSpecifier(specifier)) {
                   this.drizzleZodImports.add(specifier.local.name);
                 }
@@ -230,7 +234,7 @@ export class ZodSchemaConverter {
             }
 
             // Process each import specifier
-            path.node.specifiers.forEach((specifier) => {
+            path.node.specifiers.forEach((specifier: t.ImportDeclaration["specifiers"][number]) => {
               if (t.isImportSpecifier(specifier) || t.isImportDefaultSpecifier(specifier)) {
                 const importedName = specifier.local.name;
                 importedModules[importedName] = source;
@@ -251,9 +255,9 @@ export class ZodSchemaConverter {
       // Look for all exported Zod schemas
       traverse(ast, {
         // For export const SchemaName = z.object({...})
-        ExportNamedDeclaration: (path) => {
+        ExportNamedDeclaration: (path: NodePath<t.ExportNamedDeclaration>) => {
           if (t.isVariableDeclaration(path.node.declaration)) {
-            path.node.declaration.declarations.forEach((declaration) => {
+            path.node.declaration.declarations.forEach((declaration: t.VariableDeclarator) => {
               if (
                 t.isIdentifier(declaration.id) &&
                 declaration.id.name === schemaName &&
@@ -373,7 +377,7 @@ export class ZodSchemaConverter {
         },
 
         // For const SchemaName = z.object({...})
-        VariableDeclarator: (path) => {
+        VariableDeclarator: (path: NodePath<t.VariableDeclarator>) => {
           if (t.isIdentifier(path.node.id) && path.node.id.name === schemaName && path.node.init) {
             // Check if this is any Zod schema (including chained calls)
             if (this.isZodSchema(path.node.init)) {
@@ -385,7 +389,10 @@ export class ZodSchemaConverter {
             }
 
             // Helper function for processing the call chain
-            const processChainedCall = (node, baseSchema) => {
+            const processChainedCall = (
+              node: t.CallExpression,
+              baseSchema: OpenApiSchema,
+            ): OpenApiSchema => {
               if (!t.isCallExpression(node) || !t.isMemberExpression(node.callee)) {
                 return baseSchema;
               }
@@ -436,7 +443,7 @@ export class ZodSchemaConverter {
 
                 case "pick":
                   if (node.arguments.length > 0 && t.isObjectExpression(node.arguments[0])) {
-                    const keysToPick = [];
+                    const keysToPick: string[] = [];
                     node.arguments[0].properties.forEach((prop) => {
                       if (
                         t.isObjectProperty(prop) &&
@@ -454,10 +461,11 @@ export class ZodSchemaConverter {
 
                     // Keep only selected properties
                     if (schema.properties) {
-                      const newProperties = {};
+                      const existingProperties = schema.properties;
+                      const newProperties: Record<string, OpenApiSchema> = {};
                       keysToPick.forEach((key) => {
-                        if (schema.properties[key]) {
-                          newProperties[key] = schema.properties[key];
+                        if (existingProperties[key]) {
+                          newProperties[key] = existingProperties[key];
                         }
                       });
                       schema.properties = newProperties;
@@ -480,8 +488,8 @@ export class ZodSchemaConverter {
                 case "extend":
                   // Extend the schema with new properties
                   if (node.arguments.length > 0 && t.isObjectExpression(node.arguments[0])) {
-                    const extensionProperties = {};
-                    const extensionRequired = [];
+                    const extensionProperties: Record<string, OpenApiSchema> = {};
+                    const extensionRequired: string[] = [];
 
                     node.arguments[0].properties.forEach((prop) => {
                       if (t.isObjectProperty(prop)) {
@@ -533,7 +541,7 @@ export class ZodSchemaConverter {
             };
 
             // Find the underlying schema (the most nested object in the chain)
-            const findBaseSchema = (node) => {
+            const findBaseSchema = (node: t.Node): string | null => {
               if (t.isIdentifier(node)) {
                 return node.name;
               } else if (t.isMemberExpression(node)) {
@@ -601,7 +609,7 @@ export class ZodSchemaConverter {
         },
 
         // For type aliases that reference Zod schemas
-        TSTypeAliasDeclaration: (path) => {
+        TSTypeAliasDeclaration: (path: NodePath<t.TSTypeAliasDeclaration>) => {
           if (t.isIdentifier(path.node.id)) {
             const typeName = path.node.id.name;
 
@@ -670,15 +678,15 @@ export class ZodSchemaConverter {
   /**
    * Process all exported schemas in a file, not just the one we're looking for
    */
-  processAllSchemasInFile(filePath) {
+  processAllSchemasInFile(filePath: string): void {
     try {
       const content = fs.readFileSync(filePath, "utf-8");
       const ast = parseTypeScriptFile(content);
 
       traverse(ast, {
-        ExportNamedDeclaration: (path) => {
+        ExportNamedDeclaration: (path: NodePath<t.ExportNamedDeclaration>) => {
           if (t.isVariableDeclaration(path.node.declaration)) {
-            path.node.declaration.declarations.forEach((declaration) => {
+            path.node.declaration.declarations.forEach((declaration: t.VariableDeclarator) => {
               if (
                 t.isIdentifier(declaration.id) &&
                 declaration.init &&
@@ -988,6 +996,7 @@ export class ZodSchemaConverter {
     }
 
     const schemas = schemasArray.elements
+      .filter((element): element is t.Expression | t.SpreadElement => element !== null)
       .map((element) => this.processZodNode(element))
       .filter((schema) => schema !== null);
 
@@ -996,15 +1005,18 @@ export class ZodSchemaConverter {
     }
 
     // Create a discriminated mapping for oneOf
-    return {
-      type: "object",
-      discriminator: discriminator
-        ? {
+    return discriminator
+      ? {
+          type: "object",
+          discriminator: {
             propertyName: discriminator,
-          }
-        : undefined,
-      oneOf: schemas,
-    };
+          },
+          oneOf: schemas,
+        }
+      : {
+          type: "object",
+          oneOf: schemas,
+        };
   }
 
   /**
@@ -1015,7 +1027,9 @@ export class ZodSchemaConverter {
       return { type: "array", items: { type: "string" } };
     }
 
-    const tupleItems = node.arguments[0].elements.map((element) => this.processZodNode(element));
+    const tupleItems = node.arguments[0].elements
+      .filter((element): element is t.Expression | t.SpreadElement => element !== null)
+      .map((element) => this.processZodNode(element));
 
     // In OpenAPI, we can represent this as an array with prefixItems (OpenAPI 3.1+)
     // For OpenAPI 3.0.x, we'll use items with type: array
@@ -1034,8 +1048,13 @@ export class ZodSchemaConverter {
       return { type: "object" };
     }
 
-    const schema1 = this.processZodNode(node.arguments[0]);
-    const schema2 = this.processZodNode(node.arguments[1]);
+    const [firstArgument, secondArgument] = node.arguments;
+    if (!firstArgument || !secondArgument) {
+      return { type: "object" };
+    }
+
+    const schema1 = this.processZodNode(firstArgument);
+    const schema2 = this.processZodNode(secondArgument);
 
     // In OpenAPI, we can use allOf to represent intersection
     return {
@@ -1051,7 +1070,9 @@ export class ZodSchemaConverter {
       return { type: "object" };
     }
 
-    const unionItems = node.arguments[0].elements.map((element) => this.processZodNode(element));
+    const unionItems = node.arguments[0].elements
+      .filter((element): element is t.Expression | t.SpreadElement => element !== null)
+      .map((element) => this.processZodNode(element));
 
     // Check for common pattern: z.union([z.string(), z.null()]) which should be nullable string
     if (unionItems.length === 2) {
@@ -1077,16 +1098,16 @@ export class ZodSchemaConverter {
 
     // Check if all union items are of the same type with different enum values
     // This is common for string literals like: z.union([z.literal("a"), z.literal("b")])
+    const firstUnionItem = unionItems[0];
     const allSameType =
-      unionItems.length > 0 &&
-      unionItems.every((item) => item.type === unionItems[0].type && item.enum);
+      !!firstUnionItem && unionItems.every((item) => item.type === firstUnionItem.type && item.enum);
 
     if (allSameType) {
       // Combine all enum values
       const combinedEnums = unionItems.flatMap((item) => item.enum || []);
 
       return {
-        type: unionItems[0].type,
+        type: firstUnionItem.type,
         enum: combinedEnums,
       };
     }
@@ -1336,7 +1357,10 @@ export class ZodSchemaConverter {
       case "record":
         let valueType: OpenApiSchema = { type: "string" };
         if (node.arguments.length > 0) {
-          valueType = this.processZodNode(node.arguments[0]);
+          const firstArgument = node.arguments[0];
+          if (firstArgument) {
+            valueType = this.processZodNode(firstArgument);
+          }
         }
 
         schema = {
@@ -1353,7 +1377,10 @@ export class ZodSchemaConverter {
       case "set":
         let setItemType: OpenApiSchema = { type: "string" };
         if (node.arguments.length > 0) {
-          setItemType = this.processZodNode(node.arguments[0]);
+          const firstArgument = node.arguments[0];
+          if (firstArgument) {
+            setItemType = this.processZodNode(firstArgument);
+          }
         }
         schema = {
           type: "array",
@@ -1579,7 +1606,7 @@ export class ZodSchemaConverter {
             schema.default = null;
           } else if (t.isObjectExpression(node.arguments[0])) {
             // Try to create a default object, but this might not be complete
-            const defaultObj = {};
+            const defaultObj: Record<string, string | number | boolean> = {};
             node.arguments[0].properties.forEach((prop) => {
               if (
                 t.isObjectProperty(prop) &&
@@ -1677,7 +1704,11 @@ export class ZodSchemaConverter {
         break;
       case "or":
         if (node.arguments.length > 0) {
-          const alternativeSchema = this.processZodNode(node.arguments[0]);
+          const firstArgument = node.arguments[0];
+          if (!firstArgument) {
+            break;
+          }
+          const alternativeSchema = this.processZodNode(firstArgument);
           if (alternativeSchema) {
             schema = {
               oneOf: [schema, alternativeSchema],
@@ -1687,7 +1718,11 @@ export class ZodSchemaConverter {
         break;
       case "and":
         if (node.arguments.length > 0) {
-          const additionalSchema = this.processZodNode(node.arguments[0]);
+          const firstArgument = node.arguments[0];
+          if (!firstArgument) {
+            break;
+          }
+          const additionalSchema = this.processZodNode(firstArgument);
           if (additionalSchema) {
             schema = {
               allOf: [schema, additionalSchema],
@@ -1736,7 +1771,7 @@ export class ZodSchemaConverter {
   /**
    * Check if a node has .optional() in its method chain
    */
-  hasOptionalMethod(node: t.CallExpression) {
+  hasOptionalMethod(node: t.CallExpression): boolean {
     if (!t.isCallExpression(node)) {
       return false;
     }
@@ -1759,14 +1794,14 @@ export class ZodSchemaConverter {
   /**
    * Get all processed Zod schemas
    */
-  getProcessedSchemas() {
+  getProcessedSchemas(): Record<string, OpenApiSchema> {
     return this.zodSchemas;
   }
 
   /**
    * Pre-scan all files to build type mappings
    */
-  preScanForTypeMappings() {
+  preScanForTypeMappings(): void {
     logger.debug("Pre-scanning for type mappings...");
 
     // Scan route files
@@ -1784,13 +1819,13 @@ export class ZodSchemaConverter {
   /**
    * Scan a single file for type mappings
    */
-  scanFileForTypeMappings(filePath) {
+  scanFileForTypeMappings(filePath: string): void {
     try {
       const content = fs.readFileSync(filePath, "utf-8");
       const ast = parseTypeScriptFile(content);
 
       traverse(ast, {
-        TSTypeAliasDeclaration: (path) => {
+        TSTypeAliasDeclaration: (path: NodePath<t.TSTypeAliasDeclaration>) => {
           if (t.isIdentifier(path.node.id)) {
             const typeName = path.node.id.name;
 
@@ -1839,7 +1874,7 @@ export class ZodSchemaConverter {
   /**
    * Recursively scan directory for type mappings
    */
-  scanDirectoryForTypeMappings(dir) {
+  scanDirectoryForTypeMappings(dir: string): void {
     try {
       const files = fs.readdirSync(dir);
       for (const file of files) {
@@ -1860,7 +1895,7 @@ export class ZodSchemaConverter {
   /**
    * Pre-process all Zod schemas in a file
    */
-  preprocessAllSchemasInFile(filePath) {
+  preprocessAllSchemasInFile(filePath: string): void {
     try {
       const content = fs.readFileSync(filePath, "utf-8");
       const ast = parseTypeScriptFile(content);
@@ -1873,10 +1908,10 @@ export class ZodSchemaConverter {
 
       // First, collect all drizzle-zod imports and regular imports
       traverse(ast, {
-        ImportDeclaration: (path) => {
+        ImportDeclaration: (path: NodePath<t.ImportDeclaration>) => {
           const source = path.node.source.value;
           if (source === "drizzle-zod") {
-            path.node.specifiers.forEach((specifier) => {
+            path.node.specifiers.forEach((specifier: t.ImportDeclaration["specifiers"][number]) => {
               if (t.isImportSpecifier(specifier) || t.isImportDefaultSpecifier(specifier)) {
                 this.drizzleZodImports.add(specifier.local.name);
               }
@@ -1884,7 +1919,7 @@ export class ZodSchemaConverter {
           }
 
           // Track all imports for factory function resolution
-          path.node.specifiers.forEach((specifier) => {
+          path.node.specifiers.forEach((specifier: t.ImportDeclaration["specifiers"][number]) => {
             if (t.isImportSpecifier(specifier) || t.isImportDefaultSpecifier(specifier)) {
               const importedName = specifier.local.name;
               importedModules[importedName] = source;
@@ -1903,9 +1938,9 @@ export class ZodSchemaConverter {
 
       // Collect all exported Zod schemas
       traverse(ast, {
-        ExportNamedDeclaration: (path) => {
+        ExportNamedDeclaration: (path: NodePath<t.ExportNamedDeclaration>) => {
           if (t.isVariableDeclaration(path.node.declaration)) {
-            path.node.declaration.declarations.forEach((declaration) => {
+            path.node.declaration.declarations.forEach((declaration: t.VariableDeclarator) => {
               if (t.isIdentifier(declaration.id) && declaration.init) {
                 const schemaName = declaration.id.name;
 
@@ -1924,8 +1959,8 @@ export class ZodSchemaConverter {
           }
         },
         // Also process non-exported const declarations
-        VariableDeclaration: (path) => {
-          path.node.declarations.forEach((declaration) => {
+        VariableDeclaration: (path: NodePath<t.VariableDeclaration>) => {
+          path.node.declarations.forEach((declaration: t.VariableDeclarator) => {
             if (t.isIdentifier(declaration.id) && declaration.init) {
               const schemaName = declaration.id.name;
               if (
@@ -1953,7 +1988,7 @@ export class ZodSchemaConverter {
   /**
    * Check if node is Zod schema
    */
-  isZodSchema(node) {
+  isZodSchema(node: t.Node): boolean {
     if (t.isCallExpression(node)) {
       // Check for drizzle-zod helper functions (e.g., createInsertSchema, createSelectSchema)
       if (t.isIdentifier(node.callee) && this.drizzleZodImports.has(node.callee.name)) {
@@ -2063,14 +2098,14 @@ export class ZodSchemaConverter {
 
     traverse(ast, {
       // Handle: export function createSchema() { ... }
-      FunctionDeclaration: (path) => {
+      FunctionDeclaration: (path: NodePath<t.FunctionDeclaration>) => {
         if (t.isIdentifier(path.node.id) && path.node.id.name === functionName) {
           foundFunction = path.node;
           path.stop();
         }
       },
       // Handle: export const createSchema = (...) => { ... }
-      VariableDeclarator: (path) => {
+      VariableDeclarator: (path: NodePath<t.VariableDeclarator>) => {
         if (
           t.isIdentifier(path.node.id) &&
           path.node.id.name === functionName &&
@@ -2162,12 +2197,12 @@ export class ZodSchemaConverter {
         const importedModules: Record<string, string> = {};
 
         traverse(ast, {
-          ImportDeclaration: (path) => {
+          ImportDeclaration: (path: NodePath<t.ImportDeclaration>) => {
             const source = path.node.source.value;
 
             // Track drizzle-zod imports
             if (source === "drizzle-zod") {
-              path.node.specifiers.forEach((specifier) => {
+              path.node.specifiers.forEach((specifier: t.ImportDeclaration["specifiers"][number]) => {
                 if (t.isImportSpecifier(specifier) || t.isImportDefaultSpecifier(specifier)) {
                   this.drizzleZodImports.add(specifier.local.name);
                 }
@@ -2175,7 +2210,7 @@ export class ZodSchemaConverter {
             }
 
             // Process each import specifier
-            path.node.specifiers.forEach((specifier) => {
+            path.node.specifiers.forEach((specifier: t.ImportDeclaration["specifiers"][number]) => {
               if (t.isImportSpecifier(specifier) || t.isImportDefaultSpecifier(specifier)) {
                 const importedName = specifier.local.name;
                 importedModules[importedName] = source;
@@ -2255,7 +2290,7 @@ export class ZodSchemaConverter {
       const param = params[i];
       const arg = callNode.arguments[i];
 
-      if (t.isIdentifier(param)) {
+      if (t.isIdentifier(param) && arg) {
         paramMap.set(param.name, arg);
         logger.debug(`[Factory] Mapped parameter '${param.name}' to argument`);
       } else if (t.isObjectPattern(param)) {

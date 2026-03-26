@@ -3,8 +3,13 @@ import fs from "fs";
 
 import { RouteProcessor } from "./route-processor.js";
 import { cleanSpec } from "./utils.js";
-import { ErrorDefinition, ErrorTemplateConfig, OpenApiConfig, OpenApiTemplate } from "../types.js";
 import { logger } from "./logger.js";
+import type {
+  ErrorDefinition,
+  ErrorTemplateConfig,
+  OpenApiConfig,
+  OpenApiTemplate,
+} from "../types.js";
 
 export type OpenApiGeneratorOptions = {
   templatePath?: string;
@@ -27,7 +32,7 @@ export class OpenApiGenerator {
     logger.init(this.config);
   }
 
-  public getConfig() {
+  public getConfig(): OpenApiConfig {
     const {
       apiDir,
       routerType,
@@ -117,8 +122,9 @@ export class OpenApiGenerator {
       this.generateErrorResponsesFromConfig(errorConfig);
     } else if (this.config.errorDefinitions) {
       // Use manual definitions (existing logic - if exists)
+      const responses = this.template.components.responses;
       Object.entries(this.config.errorDefinitions).forEach(([code, errorDef]) => {
-        this.template.components.responses[code] = this.createErrorResponseComponent(
+        responses[code] = this.createErrorResponseComponent(
           code,
           errorDef,
         );
@@ -143,6 +149,10 @@ export class OpenApiGenerator {
 
   private generateErrorResponsesFromConfig(errorConfig: ErrorTemplateConfig): void {
     const { template, codes, variables: globalVars = {} } = errorConfig;
+    const responses = this.template.components?.responses;
+    if (!responses) {
+      return;
+    }
 
     Object.entries(codes).forEach(([errorCode, config]) => {
       const httpStatus = (config.httpStatus || this.guessHttpStatus(errorCode)).toString();
@@ -158,7 +168,7 @@ export class OpenApiGenerator {
 
       const processedSchema = this.processTemplate(template, allVariables);
 
-      this.template.components.responses[httpStatus] = {
+      responses[httpStatus] = {
         description: config.description,
         content: {
           "application/json": {

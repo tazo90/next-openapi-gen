@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getProductById, getProductSummary, createProduct, updateStock } from "./route.utils";
 
+type ProductRouteContext = {
+  params: Promise<{ id: string }>;
+};
+
 /**
  * Get Product by ID
  *
@@ -13,9 +17,10 @@ import { getProductById, getProductSummary, createProduct, updateStock } from ".
  * @response ProductByIdResponse
  * @openapi
  */
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, { params }: ProductRouteContext) {
   try {
-    const result = await getProductById(params.id);
+    const { id } = await params;
+    const result = await getProductById(id);
 
     return NextResponse.json({
       success: true,
@@ -80,10 +85,11 @@ export async function POST(request: NextRequest) {
  * @response UpdateStockApiResponse
  * @openapi
  */
-export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(request: NextRequest, { params }: ProductRouteContext) {
   try {
+    const { id } = await params;
     const body = await request.json();
-    const result = await updateStock(params.id, body.inStock);
+    const result = await updateStock(id, body.inStock);
 
     return NextResponse.json({
       success: true,
