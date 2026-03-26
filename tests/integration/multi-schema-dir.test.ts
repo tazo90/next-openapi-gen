@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { SchemaProcessor } from "../src/lib/schema-processor.js";
+import { SchemaProcessor } from "@next-openapi-gen/lib/schema-processor.js";
 import path from "path";
 
 const fixtureBase = path.join(process.cwd(), "tests", "fixtures", "multi-schema-dir");

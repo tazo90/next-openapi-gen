@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { ZodSchemaConverter } from "../src/lib/zod-converter.js";
+import { ZodSchemaConverter } from "@next-openapi-gen/lib/zod-converter.js";
 import path from "path";
 import { fileURLToPath } from "url";
 
@@ -8,7 +8,7 @@ const __dirname = path.dirname(__filename);
 
 describe("Zod Factory Functions", () => {
   let converter: ZodSchemaConverter;
-  const schemaDir = path.join(__dirname, "../../../apps/next-app-zod/src/schemas");
+  const schemaDir = path.join(__dirname, "../../apps/next-app-zod/src/schemas");
 
   beforeEach(() => {
     converter = new ZodSchemaConverter(schemaDir);

@@ -2197,7 +2197,7 @@
     "/orders/{id}": {
       "get": {
         "operationId": "get-orders-{id}",
-        "summary": "Path parameters schema",
+        "summary": "Get order by ID",
         "description": "Retrieves detailed order information",
         "tags": ["Orders"],
         "parameters": [

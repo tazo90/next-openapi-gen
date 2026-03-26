@@ -552,7 +552,7 @@ export async function PUT() {}
 
 ### Error Schema Configuration
 
-#### Define consistent error schemas using templates:
+#### Define consistent error schemas using templates
 
 ```json
 {
@@ -934,7 +934,7 @@ See the [complete Drizzle-Zod example](./apps/next-app-drizzle-zod) for a full w
 
 Use **multiple schema types simultaneously** in a single project - perfect for gradual migrations, combining hand-written schemas with generated ones (protobuf, GraphQL), or using existing OpenAPI specs.
 
-### Configuration
+### Mixed Schema Configuration
 
 ```json
 {
@@ -971,7 +971,7 @@ Use **multiple schema types simultaneously** in a single project - perfect for g
 
 Custom schema files support YAML/JSON in OpenAPI 3.0 format. See **[next-app-mixed-schemas](./apps/next-app-mixed-schemas)** for a complete working example.
 
-## Examples
+## Example Apps
 
 Explore complete demo projects in the **[apps](./apps/)** directory, covering integrations with Zod, TypeScript, Drizzle and documentation tools like Scalar and Swagger.
 
@@ -1026,6 +1026,8 @@ Then open `http://localhost:3000/api-docs` to view the generated docs.
 We welcome contributions! 🎉
 
 Please read our [Contributing Guide](CONTRIBUTING.md) for details.
+The automated test suite now lives in the root `tests/` folder, split into `tests/unit`, `tests/integration`, and `tests/e2e`.
+Use `pnpm test`, `pnpm test:unit`, `pnpm test:integration`, and `pnpm test:e2e` from the workspace root.
 
 ## Changelog
 

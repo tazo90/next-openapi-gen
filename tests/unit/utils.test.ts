@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { extractJSDocComments, parseTypeScriptFile } from "../src/lib/utils.js";
+import { extractJSDocComments, parseTypeScriptFile } from "@next-openapi-gen/lib/utils.js";
 import traverseModule from "@babel/traverse";
 
 const traverse = traverseModule.default || traverseModule;

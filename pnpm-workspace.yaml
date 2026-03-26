@@ -3,54 +3,55 @@ packages:
   - apps/*
 
 catalog:
-  "@babel/parser": ^7.28.3
-  "@babel/traverse": ^7.28.3
-  "@babel/types": ^7.28.2
+  "@babel/parser": ^7.29.2
+  "@babel/traverse": ^7.29.0
+  "@babel/types": ^7.29.0
   "@commitlint/cli": ^20.5.0
   "@commitlint/config-conventional": ^20.5.0
   "@commitlint/types": ^20.5.0
+  "@playwright/test": ^1.58.2
   "@scalar/api-reference-react": ^0.9.15
   "@types/babel__traverse": ^7.28.0
   "@types/fs-extra": ^11.0.4
   "@types/js-yaml": ^4.0.9
-  "@types/node": ^24.9.2
-  "@types/react": ^19.2.2
-  "@types/react-dom": ^19.2.2
-  "@vitest/ui": ^3.2.4
-  ajv: ^8.17.1
-  autoprefixer: ^10.4.21
+  "@types/node": ^25.5.0
+  "@types/react": ^19.2.14
+  "@types/react-dom": ^19.2.3
+  "@vitest/ui": ^4.1.2
+  ajv: ^8.18.0
+  autoprefixer: ^10.4.27
   babel-plugin-react-compiler: ^1.0.0
-  commander: ^14.0.0
+  commander: ^14.0.3
   conventional-changelog-cli: ^5.0.0
-  drizzle-kit: ^0.29.1
-  drizzle-orm: ^0.36.4
-  drizzle-zod: ^0.5.1
-  fs-extra: ^11.3.1
-  js-yaml: ^4.1.0
+  drizzle-kit: ^0.31.10
+  drizzle-orm: ^0.45.1
+  drizzle-zod: ^0.8.3
+  fs-extra: ^11.3.4
+  js-yaml: ^4.1.1
   lint-staged: ^16.4.0
   next: 16.2.1
-  np: ^10.2.0
-  ora: ^8.2.0
+  np: ^11.0.2
+  ora: ^9.3.0
   oxfmt: ^0.42.0
   oxlint: ^1.57.0
-  postcss: ^8.5.3
-  postgres: ^3.4.5
-  react: 19.2.0
-  react-dom: 19.2.0
+  postcss: ^8.5.8
+  postgres: ^3.4.8
+  react: 19.2.4
+  react-dom: 19.2.4
   simple-git-hooks: ^2.13.1
+  "@tailwindcss/postcss": ^4.1.16
   swagger-ui-dist: ^5.32.1
-  tailwindcss: ^3.4.1
+  tailwindcss: ^4.2.2
   turbo: ^2.8.20
-  typescript: ^5.9.3
-  vitest: ^3.2.4
+  typescript: ^6.0.2
+  vitest: ^4.1.2
+  zod: ^4.3.6
 
 catalogMode: strict
 
 catalogs:
   zod3:
-    zod: ^3.24.1
-  zod4:
-    zod: ^4.3.6
+    zod: ^3.25.76
 
 managePackageManagerVersions: true
 

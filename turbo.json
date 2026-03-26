@@ -1,6 +1,16 @@
 {
   "$schema": "https://turbo.build/schema.json",
   "tasks": {
+    "//#test:e2e": {
+      "cache": false,
+      "outputs": []
+    },
+    "//#test:integration": {
+      "outputs": []
+    },
+    "//#test:unit": {
+      "outputs": []
+    },
     "build": {
       "dependsOn": ["^build"],
       "inputs": ["$TURBO_DEFAULT$"],

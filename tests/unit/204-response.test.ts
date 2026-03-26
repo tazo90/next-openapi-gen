@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { RouteProcessor } from "../src/lib/route-processor.js";
-import { OpenApiConfig, DataTypes } from "../src/types.js";
+import { RouteProcessor } from "@next-openapi-gen/lib/route-processor.js";
+import { OpenApiConfig, DataTypes } from "@next-openapi-gen/types.js";
 
 describe("RouteProcessor - 204 No Content Responses", () => {
   let routeProcessor: RouteProcessor;

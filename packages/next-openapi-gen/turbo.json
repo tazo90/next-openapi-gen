@@ -1,9 +1,0 @@
-{
-  "extends": ["//"],
-  "tasks": {
-    "test": {
-      "dependsOn": ["build"],
-      "outputs": []
-    }
-  }
-}

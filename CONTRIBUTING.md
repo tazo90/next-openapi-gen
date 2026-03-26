@@ -215,12 +215,16 @@ next-openapi-gen/
 ├── packages/
 │   ├── next-openapi-gen/
 │   │   ├── src/              # CLI source
-│   │   ├── tests/            # CLI test suite
 │   │   └── dist/             # CLI build output (ignored)
 │   ├── next-config/          # Shared Next.js config for example apps
 │   ├── oxfmt-config/
 │   ├── oxlint-config/
 │   └── typescript-config/
+├── tests/
+│   ├── unit/                 # Isolated Vitest coverage
+│   ├── integration/          # Filesystem and workspace Vitest coverage
+│   ├── e2e/                  # Playwright coverage against example apps
+│   └── fixtures/             # Shared test fixtures
 └── turbo.json
 ```
 
@@ -251,14 +255,21 @@ This repository commits workspace defaults in `.vscode/` so contributors and age
 # Run all workspace tests
 pnpm test
 
-# Watch mode for the CLI package tests
-pnpm --filter next-openapi-gen test:watch
+# Run only the unit suite
+pnpm test:unit
 
-# UI mode for the CLI package tests
-pnpm --filter next-openapi-gen test:ui
+# Run only the integration suite
+pnpm test:integration
 
-# Coverage report for the CLI package
-pnpm --filter next-openapi-gen test:coverage
+# Watch or inspect the Vitest suites
+pnpm test:watch
+pnpm test:ui
+
+# Coverage report for unit + integration tests
+pnpm test:coverage
+
+# Run the Playwright suite against next-app-zod
+pnpm test:e2e
 ```
 
 ### Local Testing

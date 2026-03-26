@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { SchemaProcessor } from "../src/lib/schema-processor.js";
+import { SchemaProcessor } from "@next-openapi-gen/lib/schema-processor.js";
 import path from "path";
 
 describe("SchemaProcessor - Utility Types", () => {

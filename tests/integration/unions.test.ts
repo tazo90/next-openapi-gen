@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { SchemaProcessor } from "../src/lib/schema-processor.js";
-import { ZodSchemaConverter } from "../src/lib/zod-converter.js";
+import { SchemaProcessor } from "@next-openapi-gen/lib/schema-processor.js";
+import { ZodSchemaConverter } from "@next-openapi-gen/lib/zod-converter.js";
 import path from "path";
 
 describe("Union Type Support", () => {

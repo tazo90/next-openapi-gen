@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { DrizzleZodProcessor } from "../src/lib/drizzle-zod-processor.js";
-import { parseTypeScriptFile } from "../src/lib/utils.js";
+import { DrizzleZodProcessor } from "@next-openapi-gen/lib/drizzle-zod-processor.js";
+import { parseTypeScriptFile } from "@next-openapi-gen/lib/utils.js";
 import traverse from "@babel/traverse";
 import * as t from "@babel/types";
 
