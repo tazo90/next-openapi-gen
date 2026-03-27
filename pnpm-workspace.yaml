@@ -18,6 +18,7 @@ catalog:
   "@types/node": ^25.5.0
   "@types/react": ^19.2.14
   "@types/react-dom": ^19.2.3
+  "@types/swagger-ui-react": ^5.18.0
   "@vitest/coverage-v8": ^4.1.2
   "@vitest/ui": ^4.1.2
   ajv: ^8.18.0
@@ -42,6 +43,7 @@ catalog:
   react-dom: 19.2.4
   simple-git-hooks: ^2.13.1
   swagger-ui-dist: ^5.32.1
+  swagger-ui-react: ^5.32.1
   tailwindcss: ^4.2.2
   turbo: ^2.8.20
   typescript: ^5.9.3

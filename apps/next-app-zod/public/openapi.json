@@ -2393,6 +2393,7 @@
             "in": "query",
             "name": "status",
             "schema": {
+              "type": "string",
               "description": "Filter by status"
             },
             "required": false,
@@ -2895,7 +2896,9 @@
           {
             "in": "query",
             "name": "pagination",
-            "schema": {},
+            "schema": {
+              "type": "string"
+            },
             "required": false
           },
           {
