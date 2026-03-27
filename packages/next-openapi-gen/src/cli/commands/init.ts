@@ -10,7 +10,7 @@ import type { OpenApiTemplate } from "../../shared/types.js";
 import type { InitOptions } from "../../init/types.js";
 
 export async function init(options: InitOptions): Promise<void> {
-  const { ui, output, schema } = options;
+  const { output, schema } = options;
   const spinner = ora("Initializing project with OpenAPI template...\n");
 
   spinner.start();
@@ -26,14 +26,14 @@ export async function init(options: InitOptions): Promise<void> {
 
     const docsPagePath = await createDocsPage(
       template.docsUrl ?? "api-docs",
-      ui ?? "scalar",
+      template.ui ?? "scalar",
       template.outputFile ?? "openapi.json",
     );
     if (docsPagePath) {
-      spinner.succeed(`Created ${docsPagePath} for ${ui ?? "scalar"}.`);
+      spinner.succeed(`Created ${docsPagePath} for ${template.ui ?? "scalar"}.`);
     }
 
-    await installDependencies(ui ?? "scalar", schema ?? "zod", spinner);
+    await installDependencies(template.ui ?? "scalar", schema ?? "zod", spinner);
   } catch (error) {
     spinner.fail(`Failed to initialize project: ${getErrorMessage(error)}`);
   }

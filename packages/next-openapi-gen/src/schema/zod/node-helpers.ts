@@ -2,12 +2,23 @@ import * as t from "@babel/types";
 
 import type { OpenApiSchema } from "../../shared/types.js";
 
-type ProcessZodNode = (node: t.Expression | t.SpreadElement) => OpenApiSchema;
+type ProcessableZodNode = t.Expression | t.SpreadElement;
+type ProcessZodNode = (node: ProcessableZodNode) => OpenApiSchema;
 type PrimitiveHelperContext = {
   processNode: ProcessZodNode;
   processObject: (node: t.CallExpression) => OpenApiSchema;
   ensureSchema: (schemaName: string) => void;
 };
+
+function isProcessableZodNode(
+  node:
+    | t.ArrayExpression["elements"][number]
+    | t.CallExpression["arguments"][number]
+    | null
+    | undefined,
+): node is ProcessableZodNode {
+  return !!node && !t.isArgumentPlaceholder(node);
+}
 
 export function processZodLiteral(node: t.CallExpression): OpenApiSchema {
   if (node.arguments.length === 0) {
@@ -57,7 +68,7 @@ export function processZodDiscriminatedUnion(
   }
 
   const schemas = schemasArray.elements
-    .filter((element): element is t.Expression | t.SpreadElement => element !== null)
+    .filter(isProcessableZodNode)
     .map((element) => processNode(element));
 
   if (schemas.length === 0) {
@@ -87,7 +98,7 @@ export function processZodTuple(
   }
 
   const tupleItems = node.arguments[0].elements
-    .filter((element): element is t.Expression | t.SpreadElement => element !== null)
+    .filter(isProcessableZodNode)
     .map((element) => processNode(element));
 
   return {
@@ -105,7 +116,7 @@ export function processZodIntersection(
   }
 
   const [firstArgument, secondArgument] = node.arguments;
-  if (!firstArgument || !secondArgument) {
+  if (!isProcessableZodNode(firstArgument) || !isProcessableZodNode(secondArgument)) {
     return { type: "object" };
   }
 
@@ -123,7 +134,7 @@ export function processZodUnion(
   }
 
   const unionItems = node.arguments[0].elements
-    .filter((element): element is t.Expression | t.SpreadElement => element !== null)
+    .filter(isProcessableZodNode)
     .map((element) => processNode(element));
 
   if (unionItems.length === 2) {
@@ -259,12 +270,13 @@ export function processZodPrimitiveNode(
     case "array": {
       let itemsType: OpenApiSchema = { type: "string" };
       if (node.arguments.length > 0) {
-        if (t.isIdentifier(node.arguments[0])) {
-          const schemaName = node.arguments[0].name;
+        const firstArgument = node.arguments[0];
+        if (t.isIdentifier(firstArgument)) {
+          const schemaName = firstArgument.name;
           context.ensureSchema(schemaName);
           itemsType = { $ref: `#/components/schemas/${schemaName}` };
-        } else {
-          itemsType = context.processNode(node.arguments[0]);
+        } else if (isProcessableZodNode(firstArgument)) {
+          itemsType = context.processNode(firstArgument);
         }
       }
       schema = { type: "array", items: itemsType };
@@ -305,7 +317,7 @@ export function processZodPrimitiveNode(
       let valueType: OpenApiSchema = { type: "string" };
       if (node.arguments.length > 0) {
         const firstArgument = node.arguments[0];
-        if (firstArgument) {
+        if (isProcessableZodNode(firstArgument)) {
           valueType = context.processNode(firstArgument);
         }
       }
@@ -325,7 +337,7 @@ export function processZodPrimitiveNode(
       let setItemType: OpenApiSchema = { type: "string" };
       if (node.arguments.length > 0) {
         const firstArgument = node.arguments[0];
-        if (firstArgument) {
+        if (isProcessableZodNode(firstArgument)) {
           setItemType = context.processNode(firstArgument);
         }
       }

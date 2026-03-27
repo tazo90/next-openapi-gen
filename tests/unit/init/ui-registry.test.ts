@@ -1,3 +1,5 @@
+import fs from "node:fs";
+
 import { describe, expect, it } from "vitest";
 
 import openapiTemplate from "@next-openapi-gen/init/openapi-template.js";
@@ -6,15 +8,11 @@ import {
   getDocsPageDependencies,
   getDocsPageDevDependencies,
   getDocsPageInstallFlags,
+  getDocsPageTemplatePath,
   UI_REGISTRY,
   UI_TYPES,
   UI_TYPES_WITH_NONE,
 } from "@next-openapi-gen/init/ui-registry.js";
-import { RapidocUI, rapidocDeps } from "@next-openapi-gen/init/ui/rapidoc.js";
-import { RedocUI, redocDeps } from "@next-openapi-gen/init/ui/redoc.js";
-import { ScalarUI, scalarDeps } from "@next-openapi-gen/init/ui/scalar.js";
-import { StoplightUI, stoplightDeps } from "@next-openapi-gen/init/ui/stoplight.js";
-import { SwaggerUI, swaggerDeps, swaggerDevDeps } from "@next-openapi-gen/init/ui/swagger.js";
 import openapiTemplateSource from "../../../packages/next-openapi-gen/src/init/openapi-template.ts";
 
 describe("OpenAPI init defaults", () => {
@@ -37,30 +35,25 @@ describe("OpenAPI init defaults", () => {
 });
 
 describe("UI templates", () => {
-  it("renders the scalar page and dependency list", () => {
-    expect(scalarDeps).toEqual(["@scalar/api-reference-react", "ajv"]);
-    expect(ScalarUI("openapi.json")).toContain('url: "/openapi.json"');
-  });
+  it("ships typed template assets for each built-in UI", () => {
+    expect(UI_REGISTRY.scalar.deps).toEqual(["@scalar/api-reference-react", "ajv"]);
+    expect(UI_REGISTRY.swagger.deps).toEqual(["swagger-ui", "swagger-ui-react"]);
+    expect(UI_REGISTRY.swagger.devDeps).toEqual(["@types/swagger-ui-react"]);
+    expect(UI_REGISTRY.redoc.deps).toEqual(["redoc"]);
+    expect(UI_REGISTRY.stoplight.deps).toEqual(["@stoplight/elements"]);
+    expect(UI_REGISTRY.rapidoc.deps).toEqual(["rapidoc"]);
 
-  it("renders the swagger page and dependency list", () => {
-    expect(swaggerDeps).toEqual(["swagger-ui", "swagger-ui-react"]);
-    expect(swaggerDevDeps).toEqual(["@types/swagger-ui-react"]);
-    expect(SwaggerUI("openapi.json")).toContain('<SwaggerUI url="/openapi.json" />');
-  });
+    expect(UI_REGISTRY.scalar.templateFile).toBe("scalar.tsx");
+    expect(UI_REGISTRY.swagger.templateFile).toBe("swagger.tsx");
+    expect(UI_REGISTRY.redoc.templateFile).toBe("redoc.tsx");
+    expect(UI_REGISTRY.stoplight.templateFile).toBe("stoplight.tsx");
+    expect(UI_REGISTRY.rapidoc.templateFile).toBe("rapidoc.tsx");
 
-  it("renders the redoc page and dependency list", () => {
-    expect(redocDeps).toEqual(["redoc"]);
-    expect(RedocUI("openapi.json")).toContain('<RedocStandalone specUrl="/openapi.json" />');
-  });
-
-  it("renders the stoplight page and dependency list", () => {
-    expect(stoplightDeps).toEqual(["@stoplight/elements"]);
-    expect(StoplightUI("openapi.json")).toContain('apiDescriptionUrl="openapi.json"');
-  });
-
-  it("renders the rapidoc page and dependency list", () => {
-    expect(rapidocDeps).toEqual(["rapidoc"]);
-    expect(RapidocUI("openapi.json")).toContain('spec-url="openapi.json"');
+    for (const uiType of UI_TYPES) {
+      const templatePath = getDocsPageTemplatePath(uiType);
+      expect(fs.existsSync(templatePath)).toBe(true);
+      expect(templatePath.endsWith(".tsx")).toBe(true);
+    }
   });
 });
 
@@ -100,7 +93,9 @@ describe("UI registry helpers", () => {
     expect(getDocsPage("", "openapi.json")).toContain("@scalar/api-reference-react");
   });
 
-  it("renders stoplight and rapidoc pages through the registry", () => {
+  it("renders the original built-in page code through the registry", () => {
+    expect(getDocsPage("scalar", "openapi.json")).toContain('url: "/openapi.json"');
+    expect(getDocsPage("swagger", "openapi.json")).toContain('<SwaggerUI url="/openapi.json" />');
     expect(getDocsPage("redoc", "openapi.json")).toContain(
       '<RedocStandalone specUrl="/openapi.json" />',
     );

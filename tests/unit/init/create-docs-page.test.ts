@@ -21,11 +21,19 @@ describe("createDocsPage", () => {
       process.chdir(project.root);
 
       const pagePath = await createDocsPage("developer/reference", "scalar", "openapi.json");
+      const componentPath = path.join(
+        project.root,
+        "src",
+        "app",
+        "developer",
+        "reference",
+        "page.tsx",
+      );
+      const pageSource = fs.readFileSync(componentPath, "utf8");
 
       expect(pagePath).toBe("src/app/developer/reference/page.tsx");
-      expect(
-        fs.existsSync(path.join(project.root, "src", "app", "developer", "reference", "page.tsx")),
-      ).toBe(true);
+      expect(fs.existsSync(componentPath)).toBe(true);
+      expect(pageSource).toContain('url: "/openapi.json"');
     } finally {
       project.cleanup();
     }

@@ -1,32 +1,34 @@
-import { rapidocDeps, rapidocDevDeps, RapidocUI } from "./ui/rapidoc.js";
-import { RedocUI, redocDeps, redocDevDeps } from "./ui/redoc.js";
-import { scalarDeps, scalarDevDeps, ScalarUI } from "./ui/scalar.js";
-import { StoplightUI, stoplightDeps, stoplightDevDeps } from "./ui/stoplight.js";
-import { swaggerDeps, swaggerDevDeps, SwaggerUI } from "./ui/swagger.js";
+import { renderUiTemplate, resolveUiTemplatePath } from "./ui-template.js";
 import type { UiType } from "./types.js";
 
 export const UI_TYPES = ["scalar", "swagger", "redoc", "stoplight", "rapidoc"] as const;
 export const UI_TYPES_WITH_NONE = [...UI_TYPES, "none"] as const;
+const SCALAR_DEPS = ["@scalar/api-reference-react", "ajv"];
+const SWAGGER_DEPS = ["swagger-ui", "swagger-ui-react"];
+const SWAGGER_DEV_DEPS = ["@types/swagger-ui-react"];
+const REDOC_DEPS = ["redoc"];
+const STOPLIGHT_DEPS = ["@stoplight/elements"];
+const RAPIDOC_DEPS = ["rapidoc"];
 
 export type RegisteredUiType = (typeof UI_TYPES)[number];
 export type UiRegistryEntry = {
   deps: string[];
   devDeps: string[];
-  render: (outputFile: string) => string;
+  templateFile: string;
   getInstallFlags: (packageManager: string) => string;
 };
 
 export const UI_REGISTRY: Record<RegisteredUiType, UiRegistryEntry> = {
   scalar: {
-    deps: scalarDeps,
-    devDeps: scalarDevDeps,
-    render: ScalarUI,
+    deps: SCALAR_DEPS,
+    devDeps: [],
+    templateFile: "scalar.tsx",
     getInstallFlags: () => "",
   },
   swagger: {
-    deps: swaggerDeps,
-    devDeps: swaggerDevDeps,
-    render: SwaggerUI,
+    deps: SWAGGER_DEPS,
+    devDeps: SWAGGER_DEV_DEPS,
+    templateFile: "swagger.tsx",
     getInstallFlags: (packageManager) => {
       if (packageManager === "pnpm") {
         return "--no-strict-peer-dependencies";
@@ -40,21 +42,21 @@ export const UI_REGISTRY: Record<RegisteredUiType, UiRegistryEntry> = {
     },
   },
   redoc: {
-    deps: redocDeps,
-    devDeps: redocDevDeps,
-    render: RedocUI,
+    deps: REDOC_DEPS,
+    devDeps: [],
+    templateFile: "redoc.tsx",
     getInstallFlags: () => "",
   },
   stoplight: {
-    deps: stoplightDeps,
-    devDeps: stoplightDevDeps,
-    render: StoplightUI,
+    deps: STOPLIGHT_DEPS,
+    devDeps: [],
+    templateFile: "stoplight.tsx",
     getInstallFlags: () => "",
   },
   rapidoc: {
-    deps: rapidocDeps,
-    devDeps: rapidocDevDeps,
-    render: RapidocUI,
+    deps: RAPIDOC_DEPS,
+    devDeps: [],
+    templateFile: "rapidoc.tsx",
     getInstallFlags: () => "",
   },
 };
@@ -64,7 +66,11 @@ function getUiRegistryEntry(ui: UiType | string): UiRegistryEntry {
 }
 
 export function getDocsPage(ui: UiType | string, outputFile: string): string {
-  return getUiRegistryEntry(ui).render(outputFile);
+  return renderUiTemplate(getUiRegistryEntry(ui).templateFile, { outputFile });
+}
+
+export function getDocsPageTemplatePath(ui: UiType | string): string {
+  return resolveUiTemplatePath(getUiRegistryEntry(ui).templateFile);
 }
 
 export function getDocsPageDependencies(ui: UiType | string): string {

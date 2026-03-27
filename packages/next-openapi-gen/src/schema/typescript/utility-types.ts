@@ -1,3 +1,4 @@
+import type fs from "fs";
 import path from "path";
 
 import { parseTypeScriptFile } from "../../shared/utils.js";
@@ -14,9 +15,7 @@ export type UtilityTypeResolverContext = {
   contentType: ContentType;
   importMap: Record<string, Record<string, string>>;
   typeDefinitions: Record<string, any>;
-  fileAccess: {
-    readFileSync: (path: string, encoding: string) => string;
-  };
+  fileAccess: Pick<typeof fs, "readFileSync">;
   resolveImportPath: (importPath: string, fromFilePath: string) => string | null;
   resolveTSNodeType: (node: any) => OpenAPIDefinition;
   findSchemaDefinition: (schemaName: string, contentType: ContentType) => OpenAPIDefinition;
