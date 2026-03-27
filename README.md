@@ -76,7 +76,7 @@ During initialization (`pnpm exec next-openapi-gen init`), a configuration file 
   "schemaFiles": [], // Optional: ["./schemas/models.yaml", "./schemas/api.json"]
   "outputFile": "openapi.json",
   "outputDir": "./public",
-  "docsUrl": "/api-docs",
+  "docsUrl": "api-docs",
   "includeOpenApiRoutes": false,
   "ignoreRoutes": [],
   "debug": false

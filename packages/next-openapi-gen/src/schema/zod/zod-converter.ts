@@ -1,12 +1,9 @@
 import fs from "fs";
 import path from "path";
-import traverseModule from "@babel/traverse";
 import type { NodePath } from "@babel/traverse";
 import * as t from "@babel/types";
 
-// Handle both ES modules and CommonJS
-const traverse = (traverseModule as any).default || traverseModule;
-
+import { traverse } from "../../shared/babel-traverse.js";
 import { parseTypeScriptFile } from "../../shared/utils.js";
 import { logger } from "../../shared/logger.js";
 import { DrizzleZodProcessor } from "./drizzle-zod-processor.js";

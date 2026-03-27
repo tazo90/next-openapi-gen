@@ -1,15 +1,13 @@
 import fs from "fs";
 import path from "path";
-import traverseModule from "@babel/traverse";
+import type { NodePath } from "@babel/traverse";
 import * as t from "@babel/types";
-
-// Handle both ES modules and CommonJS
-const traverse = (traverseModule as any).default || traverseModule;
 
 import { processCustomSchemaFiles } from "../core/custom-schema-file-processor.js";
 import { CustomSchemaProcessor } from "../core/custom-schema-processor.js";
 import { mergeSchemaDefinitionLayers } from "../core/schema-definition-processor.js";
 import { parseTypeScriptFile } from "../../shared/utils.js";
+import { traverse } from "../../shared/babel-traverse.js";
 import { ZodSchemaConverter } from "../zod/zod-converter.js";
 import { ZodSchemaProcessor } from "../zod/zod-schema-processor.js";
 import {
@@ -191,7 +189,7 @@ export class SchemaProcessor {
     });
   }
 
-  private collectImports(ast: any, filePath: string): void {
+  private collectImports(ast: t.File, filePath: string): void {
     // Normalize path to avoid Windows/Unix path separator issues
     const normalizedPath = path.normalize(filePath);
     if (!this.importMap[normalizedPath]) {
@@ -200,11 +198,11 @@ export class SchemaProcessor {
     const importEntries = this.importMap[normalizedPath]!;
 
     traverse(ast, {
-      ImportDeclaration: (path: any) => {
-        const importPath = path.node.source.value;
+      ImportDeclaration: (nodePath: NodePath<t.ImportDeclaration>) => {
+        const importPath = nodePath.node.source.value;
 
         // Handle named imports: import { foo, bar } from './file'
-        path.node.specifiers.forEach((specifier: any) => {
+        nodePath.node.specifiers.forEach((specifier) => {
           if (t.isImportSpecifier(specifier)) {
             const importedName = t.isIdentifier(specifier.imported)
               ? specifier.imported.name
@@ -592,16 +590,21 @@ export class SchemaProcessor {
 
         // If objectType is a tuple (has prefixItems), get the specific item
         if (objectType.prefixItems && Array.isArray(objectType.prefixItems)) {
-          if (index < objectType.prefixItems.length) {
-            return objectType.prefixItems[index];
-          } else {
-            logger.warn(`Index ${index} is out of bounds for tuple type.`);
-            return { type: "object" };
+          const tupleItem = objectType.prefixItems[index];
+          if (tupleItem) {
+            return tupleItem;
           }
+
+          logger.warn(`Index ${index} is out of bounds for tuple type.`);
+          return { type: "object" };
         }
 
         // If objectType is a regular array, return the items type
-        if (objectType.type === "array" && objectType.items) {
+        if (
+          objectType.type === "array" &&
+          objectType.items &&
+          typeof objectType.items === "object"
+        ) {
           return objectType.items;
         }
       }
@@ -975,7 +978,7 @@ export class SchemaProcessor {
           in: isPathParam ? "path" : "query",
           name,
           schema: {
-            type: value.type,
+            type: value.type ?? "string",
           },
           required: isPathParam ? true : !!value.required, // Path parameters are always required
         };

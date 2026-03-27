@@ -1,5 +1,10 @@
 import type { SchemaProcessor } from "../schema/typescript/schema-processor.js";
-import type { DataTypes, ResolvedOpenApiConfig } from "../shared/types.js";
+import type {
+  DataTypes,
+  OpenApiResponseDefinition,
+  OpenApiSchemaLike,
+  ResolvedOpenApiConfig,
+} from "../shared/types.js";
 
 const MUTATION_HTTP_METHODS = ["PATCH", "POST", "PUT"];
 
@@ -9,8 +14,11 @@ export class ResponseProcessor {
     private readonly schemaProcessor: SchemaProcessor,
   ) {}
 
-  public processResponses(dataTypes: DataTypes, method: string): Record<string, any> {
-    const responses: Record<string, any> = {};
+  public processResponses(
+    dataTypes: DataTypes,
+    method: string,
+  ): Record<string, OpenApiResponseDefinition> {
+    const responses: Record<string, OpenApiResponseDefinition> = {};
     const successCode = dataTypes.successCode || this.getDefaultSuccessCode(method);
 
     if (successCode === "204" && !dataTypes.responseType) {
@@ -23,7 +31,7 @@ export class ResponseProcessor {
           description: dataTypes.responseDescription || "No Content",
         };
       } else {
-        let schema: any;
+        let schema: OpenApiSchemaLike;
         let baseType = dataTypes.responseType;
         let arrayDepth = 0;
 

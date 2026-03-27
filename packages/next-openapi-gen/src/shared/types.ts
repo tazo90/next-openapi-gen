@@ -6,6 +6,8 @@ export type RouterType = "app" | "pages";
 export type OpenApiVersion = "3.0" | "3.1" | "3.2" | "4.0";
 export type FrameworkKind = "next" | "tanstack";
 export type DiagnosticSeverity = "info" | "warning" | "error";
+export type JsonPrimitive = string | number | boolean | null;
+export type JsonValue = JsonPrimitive | JsonValue[] | { [key: string]: JsonValue | undefined };
 
 export type DiagnosticsConfig = {
   enabled?: boolean | undefined;
@@ -89,13 +91,13 @@ export type OpenApiDocument = {
   basePath?: string | undefined;
   components?:
     | {
-        securitySchemes?: Record<string, any> | undefined;
-        schemas?: Record<string, any> | undefined;
-        responses?: Record<string, any> | undefined;
+        securitySchemes?: Record<string, JsonValue> | undefined;
+        schemas?: Record<string, OpenAPIDefinition> | undefined;
+        responses?: Record<string, OpenApiResponseDefinition> | undefined;
       }
     | undefined;
-  paths?: Record<string, any> | undefined;
-  webhooks?: Record<string, any> | undefined;
+  paths?: Record<string, OpenApiPathDefinition> | undefined;
+  webhooks?: Record<string, JsonValue> | undefined;
 };
 
 export type OpenApiTemplate = OpenApiDocument & {
@@ -128,10 +130,10 @@ export type RouteDefinition = {
   summary?: string | undefined;
   description?: string | undefined;
   tags: string[];
-  security?: Array<Record<string, any>>;
+  security?: OpenApiSecurityRequirement[];
   parameters: ParamSchema[];
-  requestBody?: any;
-  responses?: Record<string, any>;
+  requestBody?: OpenApiRequestBody | undefined;
+  responses?: Record<string, OpenApiResponseDefinition> | undefined;
   deprecated?: boolean;
 };
 
@@ -142,11 +144,11 @@ export type Property = {
   description?: string;
   required?: boolean;
   nullable?: boolean;
-  enum?: any;
-  example?: string;
+  enum?: Array<string | number | boolean | null>;
+  example?: JsonValue;
   schema?: {
     type: string;
-    enum?: any;
+    enum?: Array<string | number | boolean | null>;
     description?: string;
   };
 };
@@ -159,7 +161,8 @@ export type OpenApiSchema = {
   type?: string | undefined;
   properties?: Record<string, OpenApiSchema> | undefined;
   required?: string[] | undefined;
-  items?: OpenApiSchema | undefined;
+  items?: OpenApiSchemaLike | boolean | undefined;
+  prefixItems?: OpenApiSchemaLike[] | undefined;
   nullable?: boolean | undefined;
   description?: string | undefined;
   deprecated?: boolean | undefined;
@@ -175,10 +178,11 @@ export type OpenApiSchema = {
   maxItems?: number | undefined;
   uniqueItems?: boolean | undefined;
   enum?: Array<string | number | boolean | null> | undefined;
-  default?: any;
-  oneOf?: OpenApiSchema[] | undefined;
-  allOf?: OpenApiSchema[] | undefined;
-  additionalProperties?: OpenApiSchema | boolean | undefined;
+  default?: JsonValue | undefined;
+  example?: JsonValue | undefined;
+  oneOf?: OpenApiSchemaLike[] | undefined;
+  allOf?: OpenApiSchemaLike[] | undefined;
+  additionalProperties?: OpenApiSchemaLike | boolean | undefined;
   discriminator?:
     | {
         propertyName: string;
@@ -207,27 +211,31 @@ export type ParamSchema = {
   name: string;
   schema: {
     type: string;
-    enum?: (string | number | boolean)[];
+    enum?: Array<string | number | boolean | null>;
     description?: string;
   };
   required?: boolean;
-  example?: any;
+  example?: JsonValue;
   description?: string;
 };
 
-export type OpenAPIDefinition = {
-  type?: string | undefined;
-  properties?: Record<string, any> | undefined;
-  items?: any;
-  enum?: any[] | undefined;
-  format?: string | undefined;
-  nullable?: boolean | undefined;
-  required?: string[] | undefined;
-  oneOf?: any[] | undefined;
-  additionalProperties?: any;
-  $ref?: string | undefined;
-  [key: string]: any;
+export type OpenAPIDefinition = OpenApiSchema;
+export type OpenApiReference = OpenApiSchema;
+export type OpenApiSchemaLike = OpenApiSchema;
+export type OpenApiMediaTypeDefinition = {
+  schema: OpenApiSchemaLike;
 };
+export type OpenApiRequestBody = {
+  content: Record<string, OpenApiMediaTypeDefinition>;
+  description?: string | undefined;
+};
+export type OpenApiResponseObject = {
+  description: string;
+  content?: Record<string, OpenApiMediaTypeDefinition> | undefined;
+};
+export type OpenApiResponseDefinition = OpenApiReference | OpenApiResponseObject;
+export type OpenApiSecurityRequirement = Record<string, string[]>;
+export type OpenApiPathDefinition = Record<string, RouteDefinition>;
 
 export type DataTypes = {
   tag?: string | undefined;
@@ -258,19 +266,10 @@ export type RouteConfig = {
   ignoreRoutes?: string[];
 };
 
-export type PathDefinition = {
-  operationId: string;
-  summary?: string;
-  description?: string;
-  tags: string[];
-  security?: Array<Record<string, any[]>>;
-  parameters: any[];
-  requestBody?: any;
-  responses: Record<string, any>;
-};
+export type PathDefinition = RouteDefinition;
 
 export interface ErrorTemplateConfig {
-  template: any; // Any schema template with placeholders
+  template: JsonValue;
   codes: Record<string, ErrorCodeConfig>;
   variables?: Record<string, string>; // Global variables
 }
@@ -282,11 +281,11 @@ export interface ErrorCodeConfig {
 }
 
 export interface ErrorConfig {
-  globalTemplate?: any;
+  globalTemplate?: JsonValue;
   variables?: Record<string, string>;
 }
 
 export interface ErrorDefinition {
   description: string;
-  schema: any;
+  schema: OpenApiSchema;
 }

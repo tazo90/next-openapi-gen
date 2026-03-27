@@ -27,22 +27,22 @@ class Logger {
     return "Unknown";
   }
 
-  log(message: string, ...args: any[]) {
+  log(message: string, ...args: unknown[]) {
     const source = this.getCallerInfo();
     console.log(`[${source}] ${message}`, ...args);
   }
 
-  warn(message: string, ...args: any[]) {
+  warn(message: string, ...args: unknown[]) {
     const source = this.getCallerInfo();
     console.warn(`[${source}] ${message}`, ...args);
   }
 
-  error(message: string, ...args: any[]) {
+  error(message: string, ...args: unknown[]) {
     const source = this.getCallerInfo();
     console.error(`[${source}] ${message}`, ...args);
   }
 
-  debug(message: string, ...args: any[]) {
+  debug(message: string, ...args: unknown[]) {
     if (this.config?.debug) {
       const source = this.getCallerInfo();
       console.log(`[${source}] ${message}`, ...args);

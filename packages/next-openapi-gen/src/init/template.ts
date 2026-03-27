@@ -1,5 +1,7 @@
 import path from "node:path";
 
+import { DEFAULT_GENERATE_TEMPLATE_PATH } from "../config/defaults.js";
+export { getErrorMessage } from "../shared/error.js";
 import type { OpenApiTemplate } from "../shared/types.js";
 
 import type { InitOptions } from "./types.js";
@@ -15,9 +17,5 @@ export function getOutputPath(output?: string) {
     return path.isAbsolute(output) ? output : path.join(process.cwd(), output);
   }
 
-  return path.join(process.cwd(), "next.openapi.json");
-}
-
-export function getErrorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
+  return path.join(process.cwd(), DEFAULT_GENERATE_TEMPLATE_PATH);
 }

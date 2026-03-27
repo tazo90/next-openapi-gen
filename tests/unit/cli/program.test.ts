@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
 
+import {
+  CLI_NAME,
+  getCliVersion,
+  INIT_COMMAND_DESCRIPTION,
+} from "@next-openapi-gen/cli/constants.js";
 import { buildProgram } from "@next-openapi-gen/cli/program.js";
 
 describe("CLI program", () => {
@@ -19,5 +24,24 @@ describe("CLI program", () => {
     expect(generateCommand?.opts()).toEqual({
       template: "next.openapi.json",
     });
+  });
+
+  it("uses package metadata for the CLI version and includes stable help output", () => {
+    const program = buildProgram();
+    const helpText = program.helpInformation();
+    const initHelpText = program.commands
+      .find((command) => command.name() === "init")
+      ?.helpInformation();
+    const generateHelpText = program.commands
+      .find((command) => command.name() === "generate")
+      ?.helpInformation();
+
+    expect(program.name()).toBe(CLI_NAME);
+    expect(program.version()).toBe(getCliVersion());
+    expect(helpText).toContain("Commands:");
+    expect(helpText).toContain("init [options]");
+    expect(helpText).toContain(INIT_COMMAND_DESCRIPTION);
+    expect(initHelpText).toContain("--docs-url <url>");
+    expect(generateHelpText).toContain("--template <file>");
   });
 });

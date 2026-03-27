@@ -1,11 +1,9 @@
 import type { Stats } from "fs";
 
-import traverseModule from "@babel/traverse";
 import type { NodePath } from "@babel/traverse";
 import * as t from "@babel/types";
 import path from "path";
-
-const traverse = (traverseModule as any).default || traverseModule;
+import { traverse } from "../../shared/babel-traverse.js";
 
 type FileAccess = {
   existsSync: (filePath: string) => boolean;

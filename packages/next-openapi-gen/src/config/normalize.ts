@@ -7,13 +7,29 @@ import type {
   RouterType,
   SchemaType,
 } from "../shared/types.js";
+import {
+  DEFAULT_API_DIR,
+  DEFAULT_DEBUG,
+  DEFAULT_DIAGNOSTICS_ENABLED,
+  DEFAULT_DOCS_URL,
+  DEFAULT_GENERATED_OPENAPI_FILENAME,
+  DEFAULT_INCLUDE_OPENAPI_ROUTES,
+  DEFAULT_OPENAPI_VERSION,
+  DEFAULT_OUTPUT_DIR,
+  DEFAULT_ROUTER_TYPE,
+  DEFAULT_RUNTIME_SCHEMA_TYPE,
+  DEFAULT_SCHEMA_DIR,
+  DEFAULT_UI,
+} from "./defaults.js";
 
 function normalizeRouterType(routerType?: RouterType): RouterType {
-  return routerType || "app";
+  return routerType ?? DEFAULT_ROUTER_TYPE;
 }
 
 function normalizeSchemaTypes(schemaType?: SchemaType | SchemaType[]): SchemaType[] {
-  const schemaBackends = Array.isArray(schemaType) ? schemaType : [schemaType || "typescript"];
+  const schemaBackends = Array.isArray(schemaType)
+    ? schemaType
+    : [schemaType ?? DEFAULT_RUNTIME_SCHEMA_TYPE];
   return [...new Set(schemaBackends)];
 }
 
@@ -36,7 +52,7 @@ function normalizeOpenApiVersion(
     return "4.0";
   }
 
-  return "3.0";
+  return DEFAULT_OPENAPI_VERSION;
 }
 
 function normalizeFramework(
@@ -73,18 +89,18 @@ export function normalizeOpenApiConfig(
   });
 
   return {
-    apiDir: template.apiDir || "./src/app/api",
+    apiDir: template.apiDir ?? DEFAULT_API_DIR,
     routerType,
-    schemaDir: template.schemaDir || "./src",
-    docsUrl: template.docsUrl || "api-docs",
-    ui: template.ui || "scalar",
-    outputFile: template.outputFile || "openapi.json",
-    outputDir: template.outputDir || "./public",
-    includeOpenApiRoutes: template.includeOpenApiRoutes || false,
-    ignoreRoutes: template.ignoreRoutes || [],
-    schemaType: template.schemaType || "typescript",
+    schemaDir: template.schemaDir ?? DEFAULT_SCHEMA_DIR,
+    docsUrl: template.docsUrl ?? DEFAULT_DOCS_URL,
+    ui: template.ui ?? DEFAULT_UI,
+    outputFile: template.outputFile ?? DEFAULT_GENERATED_OPENAPI_FILENAME,
+    outputDir: template.outputDir ?? DEFAULT_OUTPUT_DIR,
+    includeOpenApiRoutes: template.includeOpenApiRoutes ?? DEFAULT_INCLUDE_OPENAPI_ROUTES,
+    ignoreRoutes: template.ignoreRoutes ?? [],
+    schemaType: template.schemaType ?? DEFAULT_RUNTIME_SCHEMA_TYPE,
     schemaBackends,
-    schemaFiles: template.schemaFiles || [],
+    schemaFiles: template.schemaFiles ?? [],
     defaultResponseSet: template.defaultResponseSet,
     responseSets: template.responseSets,
     errorConfig: template.errorConfig,
@@ -94,7 +110,7 @@ export function normalizeOpenApiConfig(
     next: {
       adapterPath: template.next?.adapterPath,
     },
-    diagnostics: template.diagnostics || { enabled: true },
-    debug: template.debug || false,
+    diagnostics: template.diagnostics ?? { enabled: DEFAULT_DIAGNOSTICS_ENABLED },
+    debug: template.debug ?? DEFAULT_DEBUG,
   };
 }

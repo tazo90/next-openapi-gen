@@ -4,17 +4,18 @@ import path from "node:path";
 import fse from "fs-extra";
 import ora from "ora";
 
+import { GENERATE_DEFAULTS } from "../constants.js";
 import { OpenApiGenerator } from "../../generator/openapi-generator.js";
 
-type GenerateOptions = {
+export type GenerateOptions = {
   template?: string;
 };
 
 export async function generate(options: GenerateOptions): Promise<void> {
-  const { template } = options;
+  const template = options.template ?? GENERATE_DEFAULTS.template;
   const spinner = ora("Generating OpenAPI specification...\n").start();
 
-  const generator = new OpenApiGenerator(template ? { templatePath: template } : {});
+  const generator = new OpenApiGenerator({ templatePath: template });
   const config = generator.getConfig();
 
   const apiDir = path.resolve(config.apiDir);

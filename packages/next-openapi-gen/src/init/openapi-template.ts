@@ -1,6 +1,22 @@
-export default {
+import {
+  DEFAULT_API_DIR,
+  DEFAULT_DEBUG,
+  DEFAULT_DIAGNOSTICS_ENABLED,
+  DEFAULT_DOCS_URL,
+  DEFAULT_GENERATED_OPENAPI_FILENAME,
+  DEFAULT_INCLUDE_OPENAPI_ROUTES,
+  DEFAULT_INIT_SCHEMA_TYPE,
+  DEFAULT_OPENAPI_VERSION,
+  DEFAULT_OUTPUT_DIR,
+  DEFAULT_ROUTER_TYPE,
+  DEFAULT_SCHEMA_DIR,
+  DEFAULT_UI,
+} from "../config/defaults.js";
+import type { OpenApiTemplate } from "../shared/types.js";
+
+const openapiTemplate = {
   openapi: "3.0.0",
-  openapiVersion: "3.0",
+  openapiVersion: DEFAULT_OPENAPI_VERSION,
   info: {
     title: "API Documentation",
     version: "1.0.0",
@@ -86,26 +102,28 @@ export default {
       },
     },
   },
-  apiDir: "./src/app/api",
-  routerType: "app",
-  schemaDir: "./src",
-  schemaType: "zod", // or "typescript" or ["zod", "typescript"]
+  apiDir: DEFAULT_API_DIR,
+  routerType: DEFAULT_ROUTER_TYPE,
+  schemaDir: DEFAULT_SCHEMA_DIR,
+  schemaType: DEFAULT_INIT_SCHEMA_TYPE, // or "typescript" or ["zod", "typescript"]
   schemaFiles: [], // Optional: ["./openapi-models.yaml", "./schemas.json"]
-  docsUrl: "api-docs",
-  ui: "scalar",
-  outputFile: "openapi.json",
-  outputDir: "./public",
+  docsUrl: DEFAULT_DOCS_URL,
+  ui: DEFAULT_UI,
+  outputFile: DEFAULT_GENERATED_OPENAPI_FILENAME,
+  outputDir: DEFAULT_OUTPUT_DIR,
   framework: {
     kind: "next",
-    router: "app",
+    router: DEFAULT_ROUTER_TYPE,
   },
   next: {
     adapterPath: undefined,
   },
   diagnostics: {
-    enabled: true,
+    enabled: DEFAULT_DIAGNOSTICS_ENABLED,
   },
-  includeOpenApiRoutes: false,
+  includeOpenApiRoutes: DEFAULT_INCLUDE_OPENAPI_ROUTES,
   ignoreRoutes: [],
-  debug: false,
-};
+  debug: DEFAULT_DEBUG,
+} satisfies OpenApiTemplate;
+
+export default openapiTemplate;

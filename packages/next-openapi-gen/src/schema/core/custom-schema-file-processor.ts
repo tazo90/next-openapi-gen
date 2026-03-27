@@ -3,12 +3,9 @@ import path from "path";
 
 import yaml from "js-yaml";
 
+import { getErrorMessage } from "../../shared/error.js";
 import { logger } from "../../shared/logger.js";
 import type { OpenAPIDefinition } from "../../shared/types.js";
-
-function getErrorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
-}
 
 export function processCustomSchemaFiles(schemaFiles: string[]): Record<string, OpenAPIDefinition> {
   const customSchemas: Record<string, OpenAPIDefinition> = {};
@@ -25,18 +22,18 @@ export function processCustomSchemaFiles(schemaFiles: string[]): Record<string, 
       const content = fs.readFileSync(resolvedPath, "utf-8");
       const ext = path.extname(filePath).toLowerCase();
 
-      let parsed: any;
+      let parsed: unknown;
       if (ext === ".yaml" || ext === ".yml") {
-        parsed = yaml.load(content) as any;
+        parsed = yaml.load(content);
       } else if (ext === ".json") {
-        parsed = JSON.parse(content);
+        parsed = JSON.parse(content) as unknown;
       } else {
         logger.warn(`Unsupported file type: ${filePath} (use .json, .yaml, or .yml)`);
         continue;
       }
 
-      const schemas = parsed?.components?.schemas || parsed?.schemas || parsed;
-      if (typeof schemas === "object" && schemas !== null) {
+      const schemas = getSchemaRecord(parsed);
+      if (schemas) {
         Object.assign(customSchemas, schemas);
         logger.log(`✓ Loaded custom schemas from: ${filePath}`);
       } else {
@@ -50,4 +47,35 @@ export function processCustomSchemaFiles(schemaFiles: string[]): Record<string, 
   }
 
   return customSchemas;
+}
+
+function getSchemaRecord(parsed: unknown): Record<string, OpenAPIDefinition> | null {
+  if (!isRecord(parsed)) {
+    return null;
+  }
+
+  const components = parsed.components;
+  if (isRecord(components) && isSchemaRecord(components.schemas)) {
+    return components.schemas;
+  }
+
+  if (isSchemaRecord(parsed.schemas)) {
+    return parsed.schemas;
+  }
+
+  return isSchemaRecord(parsed) ? parsed : null;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function isSchemaRecord(value: unknown): value is Record<string, OpenAPIDefinition> {
+  if (!isRecord(value)) {
+    return false;
+  }
+
+  return Object.values(value).every(
+    (item) => typeof item === "object" && item !== null && !Array.isArray(item),
+  );
 }

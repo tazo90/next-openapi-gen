@@ -1,5 +1,20 @@
 import { Command, Option } from "commander";
 
+import {
+  CLI_DESCRIPTION,
+  CLI_NAME,
+  CLI_SCHEMA_CHOICES,
+  GENERATE_COMMAND_DESCRIPTION,
+  GENERATE_DEFAULTS,
+  GENERATE_TEMPLATE_OPTION_DESCRIPTION,
+  getCliVersion,
+  INIT_COMMAND_DESCRIPTION,
+  INIT_DEFAULTS,
+  INIT_DOCS_URL_OPTION_DESCRIPTION,
+  INIT_OUTPUT_OPTION_DESCRIPTION,
+  INIT_SCHEMA_OPTION_DESCRIPTION,
+  INIT_UI_OPTION_DESCRIPTION,
+} from "./constants.js";
 import { generate } from "./commands/generate.js";
 import { init } from "./commands/init.js";
 import { UI_TYPES_WITH_NONE } from "../init/ui-registry.js";
@@ -7,36 +22,33 @@ import { UI_TYPES_WITH_NONE } from "../init/ui-registry.js";
 export function buildProgram() {
   const program = new Command();
 
-  program
-    .name("next-openapi-gen")
-    .version("0.6.7")
-    .description("Super fast and easy way to generate OpenAPI documentation for Next.js");
+  program.name(CLI_NAME).version(getCliVersion()).description(CLI_DESCRIPTION);
 
   program
     .command("init")
     .addOption(
-      new Option("-i, --ui <type>", 'Specify the UI type, e.g., scalar. Use "none" for no UI')
+      new Option("-i, --ui <type>", INIT_UI_OPTION_DESCRIPTION)
         .choices([...UI_TYPES_WITH_NONE])
-        .default("scalar"),
+        .default(INIT_DEFAULTS.ui),
     )
-    .option("-u, --docs-url <url>", "Specify the docs URL", "api-docs")
+    .option("-u, --docs-url <url>", INIT_DOCS_URL_OPTION_DESCRIPTION, INIT_DEFAULTS.docsUrl)
     .addOption(
-      new Option("-s, --schema <schemaType>", "Specify the schema tool")
-        .choices(["zod", "typescript"])
-        .default("zod"),
+      new Option("-s, --schema <schemaType>", INIT_SCHEMA_OPTION_DESCRIPTION)
+        .choices([...CLI_SCHEMA_CHOICES])
+        .default(INIT_DEFAULTS.schema),
     )
-    .option(
-      "-o, --output <file>",
-      "Specify the output path for the OpenAPI template.",
-      "next.openapi.json",
-    )
-    .description("Initialize a openapi specification")
+    .option("-o, --output <file>", INIT_OUTPUT_OPTION_DESCRIPTION, INIT_DEFAULTS.output)
+    .description(INIT_COMMAND_DESCRIPTION)
     .action(init);
 
   program
     .command("generate")
-    .description("Generate a specification based on api routes")
-    .option("-t, --template <file>", "Specify the OpenAPI template file", "next.openapi.json")
+    .description(GENERATE_COMMAND_DESCRIPTION)
+    .option(
+      "-t, --template <file>",
+      GENERATE_TEMPLATE_OPTION_DESCRIPTION,
+      GENERATE_DEFAULTS.template,
+    )
     .action(generate);
 
   return program;

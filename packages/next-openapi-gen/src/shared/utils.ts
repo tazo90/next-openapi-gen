@@ -3,7 +3,7 @@ import { parse } from "@babel/parser";
 import type { ParserOptions } from "@babel/parser";
 import * as t from "@babel/types";
 
-import type { DataTypes } from "./types.js";
+import type { DataTypes, OpenApiDocument, ParamSchema } from "./types.js";
 
 export function capitalize(string: string) {
   return string.charAt(0).toUpperCase() + string.slice(1);
@@ -241,21 +241,29 @@ export function cleanComment(commentValue: string): string {
   return commentValue.replace(/\*\s*/g, "").trim();
 }
 
-export function cleanSpec(spec: any) {
+export function cleanSpec(spec: OpenApiDocument): OpenApiDocument {
   const newSpec = { ...spec };
 
   // Process paths to ensure good examples for path parameters
   if (newSpec.paths) {
     Object.keys(newSpec.paths).forEach((path) => {
+      const pathDefinition = newSpec.paths?.[path];
+      if (!pathDefinition) {
+        return;
+      }
+
       // Check if path contains parameters
       if (path.includes("{") && path.includes("}")) {
         // For each HTTP method in this path
-        Object.keys(newSpec.paths[path]).forEach((method) => {
-          const operation = newSpec.paths[path][method];
+        Object.keys(pathDefinition).forEach((method) => {
+          const operation = pathDefinition[method];
+          if (!operation) {
+            return;
+          }
 
           // Set example properties for each path parameter
           if (operation.parameters) {
-            operation.parameters.forEach((param: Record<string, any>) => {
+            operation.parameters.forEach((param: ParamSchema) => {
               if (param.in === "path" && !param.example) {
                 // Generate an example based on parameter name
                 if (param.name === "id" || param.name.endsWith("Id")) {

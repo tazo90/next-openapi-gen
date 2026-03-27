@@ -1,8 +1,6 @@
-import traverseModule from "@babel/traverse";
 import type { NodePath } from "@babel/traverse";
 import * as t from "@babel/types";
-
-const traverse = (traverseModule as any).default || traverseModule;
+import { traverse } from "../../shared/babel-traverse.js";
 
 export type ZodImportProcessingResult = {
   importedModules: Record<string, string>;

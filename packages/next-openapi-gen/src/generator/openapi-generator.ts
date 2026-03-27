@@ -1,16 +1,21 @@
 import path from "path";
 import fs from "fs";
 
+import { DEFAULT_GENERATE_TEMPLATE_PATH } from "../config/defaults.js";
 import { normalizeOpenApiConfig } from "../config/normalize.js";
 import { DiagnosticsCollector } from "../diagnostics/collector.js";
 import { createDocumentFromTemplate } from "../openapi/document.js";
 import { getOpenApiVersionProcessor } from "../openapi/version-processor.js";
 import { RouteProcessor } from "../routes/route-processor.js";
+import { getErrorMessage } from "../shared/error.js";
 import { logger } from "../shared/logger.js";
 import type {
   ErrorDefinition,
   ErrorTemplateConfig,
+  JsonValue,
   OpenApiDocument,
+  OpenApiResponseDefinition,
+  OpenApiSchemaLike,
   OpenApiTemplate,
   ResolvedOpenApiConfig,
 } from "../shared/types.js";
@@ -26,9 +31,9 @@ export class OpenApiGenerator {
   private routeProcessor: RouteProcessor;
 
   constructor(opts: OpenApiGeneratorOptions = {}) {
-    const templatePath = opts.templatePath || path.resolve("./next.openapi.json");
+    const templatePath = path.resolve(opts.templatePath ?? DEFAULT_GENERATE_TEMPLATE_PATH);
 
-    this.template = JSON.parse(fs.readFileSync(templatePath, "utf-8"));
+    this.template = readOpenApiTemplate(templatePath);
     this.config = this.getConfig();
 
     this.routeProcessor = new RouteProcessor(this.config, this.diagnostics);
@@ -50,7 +55,7 @@ export class OpenApiGenerator {
 
     const document = createDocumentFromTemplate(this.template);
     this.routeProcessor.scanRoutes();
-    document.paths = this.routeProcessor.getSwaggerPaths();
+    document.paths = this.routeProcessor.getPaths();
 
     // Add server URL for examples if not already defined
     if (!document.servers || document.servers.length === 0) {
@@ -139,7 +144,10 @@ export class OpenApiGenerator {
     });
   }
 
-  private processTemplate(template: any, variables: Record<string, string>): any {
+  private processTemplate(
+    template: JsonValue,
+    variables: Record<string, string>,
+  ): OpenApiSchemaLike {
     const jsonStr = JSON.stringify(template);
     let result = jsonStr;
 
@@ -147,7 +155,7 @@ export class OpenApiGenerator {
       result = result.replace(new RegExp(`{{${key}}}`, "g"), value);
     });
 
-    return JSON.parse(result);
+    return JSON.parse(result) as OpenApiSchemaLike;
   }
 
   private guessHttpStatus(errorCode: string): number {
@@ -182,7 +190,10 @@ export class OpenApiGenerator {
     return 500;
   }
 
-  private createErrorResponseComponent(code: string, errorDef: ErrorDefinition): any {
+  private createErrorResponseComponent(
+    code: string,
+    errorDef: ErrorDefinition,
+  ): OpenApiResponseDefinition {
     return {
       description: errorDef.description,
       content: {
@@ -191,5 +202,15 @@ export class OpenApiGenerator {
         },
       },
     };
+  }
+}
+
+function readOpenApiTemplate(templatePath: string): OpenApiTemplate {
+  try {
+    return JSON.parse(fs.readFileSync(templatePath, "utf-8")) as OpenApiTemplate;
+  } catch (error) {
+    throw new Error(
+      `Failed to read OpenAPI template at ${templatePath}: ${getErrorMessage(error)}`,
+    );
   }
 }

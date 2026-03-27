@@ -1,12 +1,10 @@
 import fs from "fs";
-import traverseModule from "@babel/traverse";
 import type { NodePath } from "@babel/traverse";
 import type * as t from "@babel/types";
 
-const traverse = (traverseModule as any).default || traverseModule;
-
 import { HTTP_METHODS } from "./router-strategy.js";
 import type { RouterStrategy } from "./router-strategy.js";
+import { traverse } from "../shared/babel-traverse.js";
 import { parseTypeScriptFile, performAuthPresetReplacements } from "../shared/utils.js";
 import type { DataTypes, OpenApiConfig } from "../shared/types.js";
 

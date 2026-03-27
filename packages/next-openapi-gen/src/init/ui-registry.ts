@@ -1,3 +1,5 @@
+import { DEFAULT_UI } from "../config/defaults.js";
+import type { PackageManager } from "./package-manager.js";
 import { renderUiTemplate, resolveUiTemplatePath } from "./ui-template.js";
 import type { UiType } from "./types.js";
 
@@ -15,7 +17,7 @@ export type UiRegistryEntry = {
   deps: string[];
   devDeps: string[];
   templateFile: string;
-  getInstallFlags: (packageManager: string) => string;
+  getInstallFlags: (packageManager: PackageManager) => string;
 };
 
 export const UI_REGISTRY: Record<RegisteredUiType, UiRegistryEntry> = {
@@ -62,7 +64,7 @@ export const UI_REGISTRY: Record<RegisteredUiType, UiRegistryEntry> = {
 };
 
 function getUiRegistryEntry(ui: UiType | string): UiRegistryEntry {
-  return UI_REGISTRY[(ui as RegisteredUiType) || "scalar"] || UI_REGISTRY.scalar;
+  return UI_REGISTRY[(ui as RegisteredUiType) || DEFAULT_UI] || UI_REGISTRY[DEFAULT_UI];
 }
 
 export function getDocsPage(ui: UiType | string, outputFile: string): string {
@@ -81,7 +83,10 @@ export function getDocsPageDevDependencies(ui: UiType | string): string {
   return getUiRegistryEntry(ui).devDeps.join(" ");
 }
 
-export function getDocsPageInstallFlags(ui: UiType | string, packageManager: string): string {
+export function getDocsPageInstallFlags(
+  ui: UiType | string,
+  packageManager: PackageManager,
+): string {
   if (ui === "none") {
     return "";
   }

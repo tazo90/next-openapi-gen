@@ -7,6 +7,8 @@ import {
   getDocsPageInstallFlags,
 } from "./ui-registry.js";
 import { getPackageManager, hasDependency } from "./package-manager.js";
+import type { SchemaType } from "../shared/types.js";
+import type { UiType } from "./types.js";
 
 const execPromise = util.promisify(exec);
 
@@ -15,8 +17,8 @@ type SpinnerLike = {
 };
 
 export async function installDependencies(
-  ui: string,
-  schema: string | string[],
+  ui: UiType,
+  schema: SchemaType | SchemaType[],
   spinner: SpinnerLike,
 ): Promise<void> {
   const packageManager = await getPackageManager();

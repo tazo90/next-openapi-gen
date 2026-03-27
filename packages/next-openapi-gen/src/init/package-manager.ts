@@ -3,6 +3,8 @@ import fs from "node:fs";
 
 import fse from "fs-extra";
 
+export type PackageManager = "npm" | "pnpm" | "yarn";
+
 export async function hasDependency(packageName: string): Promise<boolean> {
   try {
     const packageJsonPath = path.join(process.cwd(), "package.json");
@@ -15,7 +17,7 @@ export async function hasDependency(packageName: string): Promise<boolean> {
   }
 }
 
-export async function getPackageManager() {
+export async function getPackageManager(): Promise<PackageManager> {
   let currentDir = process.cwd();
 
   while (true) {

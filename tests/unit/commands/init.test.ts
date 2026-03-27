@@ -63,13 +63,14 @@ describe("init command", () => {
 
       const template = JSON.parse(
         fs.readFileSync(path.join(project.root, "next.openapi.json"), "utf8"),
-      ) as { ui: string; schemaType: string; outputFile: string };
+      ) as { docsUrl: string; ui: string; schemaType: string; outputFile: string };
       const docsPage = fs.readFileSync(
         path.join(project.root, "src", "app", "api-docs", "page.tsx"),
         "utf8",
       );
 
       expect(template).toMatchObject({
+        docsUrl: "api-docs",
         ui: "scalar",
         schemaType: "zod",
         outputFile: "openapi.json",

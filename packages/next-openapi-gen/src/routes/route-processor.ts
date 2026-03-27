@@ -7,13 +7,19 @@ import type { FrameworkAdapter } from "../frameworks/types.js";
 import { SchemaProcessor } from "../schema/typescript/schema-processor.js";
 import { extractPathParameters } from "../shared/utils.js";
 import { logger } from "../shared/logger.js";
-import type { DataTypes, OpenApiConfig, ResolvedOpenApiConfig } from "../shared/types.js";
+import type {
+  DataTypes,
+  OpenApiConfig,
+  OpenApiPathDefinition,
+  ResolvedOpenApiConfig,
+  RouteDefinition,
+} from "../shared/types.js";
 import { OperationProcessor } from "./operation-processor.js";
 import { ResponseProcessor } from "./response-processor.js";
 import { scanRouteFiles } from "./route-scanner.js";
 
 export class RouteProcessor {
-  private swaggerPaths: Record<string, any> = {};
+  private pathDefinitions: Record<string, OpenApiPathDefinition> = {};
   private schemaProcessor: SchemaProcessor;
   private config: ResolvedOpenApiConfig;
   private adapter: FrameworkAdapter;
@@ -43,7 +49,10 @@ export class RouteProcessor {
     );
   }
 
-  private processResponsesFromConfig(dataTypes: DataTypes, method: string): Record<string, any> {
+  private processResponsesFromConfig(
+    dataTypes: DataTypes,
+    method: string,
+  ): RouteDefinition["responses"] {
     return this.responseProcessor.processResponses(dataTypes, method);
   }
 
@@ -151,22 +160,24 @@ export class RouteProcessor {
       return;
     }
 
-    if (!this.swaggerPaths[routePath]) {
-      this.swaggerPaths[routePath] = {};
+    if (!this.pathDefinitions[routePath]) {
+      this.pathDefinitions[routePath] = {};
     }
 
-    this.swaggerPaths[routePath]![method] = definition;
+    this.pathDefinitions[routePath]![method] = definition;
   }
 
-  private getSortedPaths(paths: Record<string, any>): Record<string, any> {
+  private getSortedPaths(
+    paths: Record<string, OpenApiPathDefinition>,
+  ): Record<string, OpenApiPathDefinition> {
     function comparePaths(this: RouteProcessor, a: string, b: string): number {
-      const aMethods = this.swaggerPaths[a] || {};
-      const bMethods = this.swaggerPaths[b] || {};
+      const aMethods = this.pathDefinitions[a] || {};
+      const bMethods = this.pathDefinitions[b] || {};
 
       // Extract tags for all methods in path a
-      const aTags = Object.values(aMethods).flatMap((method: any) => method.tags || []);
+      const aTags = Object.values(aMethods).flatMap((method) => method.tags || []);
       // Extract tags for all methods in path b
-      const bTags = Object.values(bMethods).flatMap((method: any) => method.tags || []);
+      const bTags = Object.values(bMethods).flatMap((method) => method.tags || []);
 
       // Let's user only the first tags
       const aPrimaryTag = aTags[0] || "";
@@ -187,15 +198,18 @@ export class RouteProcessor {
 
     return Object.keys(paths)
       .sort(comparePaths.bind(this))
-      .reduce<Record<string, any>>((sorted, key) => {
-        sorted[key] = paths[key];
+      .reduce<Record<string, OpenApiPathDefinition>>((sorted, key) => {
+        const pathDefinition = paths[key];
+        if (pathDefinition) {
+          sorted[key] = pathDefinition;
+        }
 
         return sorted;
       }, {});
   }
 
-  public getSwaggerPaths(): Record<string, any> {
-    const paths = this.getSortedPaths(this.swaggerPaths);
+  public getPaths(): Record<string, OpenApiPathDefinition> {
+    const paths = this.getSortedPaths(this.pathDefinitions);
 
     return this.getSortedPaths(paths);
   }
