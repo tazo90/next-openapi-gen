@@ -30,7 +30,10 @@
             "type": "string"
           }
         },
-        "required": ["foo", "bar"]
+        "required": [
+          "foo",
+          "bar"
+        ]
       },
       "ExtendedSchema": {
         "type": "object",
@@ -45,7 +48,10 @@
             "description": "Name"
           }
         },
-        "required": ["id", "name"]
+        "required": [
+          "id",
+          "name"
+        ]
       },
       "DoubleExtendedSchema": {
         "type": "object",
@@ -71,7 +77,11 @@
             "description": "Age in years"
           }
         },
-        "required": ["id", "name", "email"]
+        "required": [
+          "id",
+          "name",
+          "email"
+        ]
       },
       "ApiResponseSchema": {
         "type": "object",
@@ -113,7 +123,9 @@
             "description": "Order ID"
           }
         },
-        "required": ["id"]
+        "required": [
+          "id"
+        ]
       },
       "OrderSchema": {
         "type": "object",
@@ -262,7 +274,9 @@
             "description": "Additional notes about the status change"
           }
         },
-        "required": ["status"]
+        "required": [
+          "status"
+        ]
       },
       "OrdersQueryParams": {
         "type": "object",
@@ -302,7 +316,12 @@
           },
           "sort": {
             "type": "string",
-            "enum": ["date_asc", "date_desc", "total_asc", "total_desc"],
+            "enum": [
+              "date_asc",
+              "date_desc",
+              "total_asc",
+              "total_desc"
+            ],
             "default": "date_desc",
             "description": "Sort results"
           }
@@ -345,11 +364,19 @@
                 "description": "Results per page"
               }
             },
-            "required": ["total", "pages", "page", "limit"],
+            "required": [
+              "total",
+              "pages",
+              "page",
+              "limit"
+            ],
             "description": "Pagination information"
           }
         },
-        "required": ["orders", "pagination"]
+        "required": [
+          "orders",
+          "pagination"
+        ]
       },
       "CreateOrderBody": {
         "type": "object",
@@ -397,7 +424,9 @@
             "description": "Additional order notes"
           }
         },
-        "required": ["cartId"]
+        "required": [
+          "cartId"
+        ]
       },
       "AdminStatsSchema": {
         "type": "object",
@@ -412,7 +441,11 @@
             "type": "string"
           }
         },
-        "required": ["totalUsers", "revenue", "secretKey"]
+        "required": [
+          "totalUsers",
+          "revenue",
+          "secretKey"
+        ]
       },
       "ProductQueryParams": {
         "type": "object",
@@ -423,12 +456,18 @@
           },
           "currency": {
             "type": "string",
-            "enum": ["USD", "EUR", "PLN"],
+            "enum": [
+              "USD",
+              "EUR",
+              "PLN"
+            ],
             "default": "USD",
             "description": "Currency for prices"
           }
         },
-        "required": ["currency"]
+        "required": [
+          "currency"
+        ]
       },
       "ProductIdParams": {
         "type": "object",
@@ -438,7 +477,9 @@
             "description": "Unique product identifier"
           }
         },
-        "required": ["id"]
+        "required": [
+          "id"
+        ]
       },
       "ProductResponseSchema": {
         "type": "object",
@@ -502,7 +543,11 @@
           },
           "status": {
             "type": "string",
-            "enum": ["draft", "published", "archived"],
+            "enum": [
+              "draft",
+              "published",
+              "archived"
+            ],
             "description": "Product status"
           },
           "average_rating": {
@@ -528,7 +573,9 @@
         "properties": {
           "success": {
             "type": "boolean",
-            "enum": [false],
+            "enum": [
+              false
+            ],
             "description": "Always false for errors"
           },
           "message": {
@@ -536,7 +583,10 @@
             "description": "Error message"
           }
         },
-        "required": ["success", "message"]
+        "required": [
+          "success",
+          "message"
+        ]
       },
       "UpdateProductSchema": {
         "type": "object",
@@ -578,7 +628,11 @@
           },
           "status": {
             "type": "string",
-            "enum": ["draft", "published", "archived"],
+            "enum": [
+              "draft",
+              "published",
+              "archived"
+            ],
             "description": "Product status"
           }
         }
@@ -601,7 +655,10 @@
             "description": "File category (required)"
           }
         },
-        "required": ["file", "category"]
+        "required": [
+          "file",
+          "category"
+        ]
       },
       "UploadResponseSchema": {
         "type": "object",
@@ -640,7 +697,15 @@
             "description": "Upload timestamp"
           }
         },
-        "required": ["id", "filename", "size", "type", "url", "category", "uploadedAt"]
+        "required": [
+          "id",
+          "filename",
+          "size",
+          "type",
+          "url",
+          "category",
+          "uploadedAt"
+        ]
       },
       "UserFieldsQuery": {
         "type": "object",
@@ -660,7 +725,9 @@
             "description": "User ID"
           }
         },
-        "required": ["id"]
+        "required": [
+          "id"
+        ]
       },
       "UserDetailedSchema": {
         "type": "object",
@@ -683,7 +750,11 @@
           },
           "role": {
             "type": "string",
-            "enum": ["user", "admin", "moderator"],
+            "enum": [
+              "user",
+              "admin",
+              "moderator"
+            ],
             "description": "User's role in the system"
           },
           "phone": {
@@ -713,13 +784,21 @@
             "properties": {
               "language": {
                 "type": "string",
-                "enum": ["pl", "en", "de"],
+                "enum": [
+                  "pl",
+                  "en",
+                  "de"
+                ],
                 "default": "en",
                 "description": "Preferred language"
               },
               "theme": {
                 "type": "string",
-                "enum": ["light", "dark", "system"],
+                "enum": [
+                  "light",
+                  "dark",
+                  "system"
+                ],
                 "default": "system",
                 "description": "Preferred theme"
               },
@@ -729,7 +808,11 @@
                 "description": "Whether notifications are enabled"
               }
             },
-            "required": ["language", "theme", "notifications"],
+            "required": [
+              "language",
+              "theme",
+              "notifications"
+            ],
             "description": "User preferences"
           },
           "paymentMethods": {
@@ -750,7 +833,14 @@
             "description": "Last update date"
           }
         },
-        "required": ["id", "email", "name", "role", "createdAt", "updatedAt"]
+        "required": [
+          "id",
+          "email",
+          "name",
+          "role",
+          "createdAt",
+          "updatedAt"
+        ]
       },
       "UpdateUserBody": {
         "type": "object",
@@ -776,12 +866,20 @@
             "properties": {
               "language": {
                 "type": "string",
-                "enum": ["pl", "en", "de"],
+                "enum": [
+                  "pl",
+                  "en",
+                  "de"
+                ],
                 "description": "Preferred language"
               },
               "theme": {
                 "type": "string",
-                "enum": ["light", "dark", "system"],
+                "enum": [
+                  "light",
+                  "dark",
+                  "system"
+                ],
                 "description": "Preferred theme"
               },
               "notifications": {
@@ -806,10 +904,14 @@
                 "type": "string"
               }
             },
-            "required": ["name"]
+            "required": [
+              "name"
+            ]
           }
         },
-        "required": ["pagination"]
+        "required": [
+          "pagination"
+        ]
       },
       "PaginationMeta": {
         "type": "object",
@@ -835,7 +937,11 @@
             "description": "Total count of items"
           }
         },
-        "required": ["nextCursor", "hasMore", "limit"]
+        "required": [
+          "nextCursor",
+          "hasMore",
+          "limit"
+        ]
       },
       "PaginatedUsersSchema": {
         "type": "object",
@@ -856,7 +962,10 @@
             "description": "Pagination metadata"
           }
         },
-        "required": ["data", "pagination"]
+        "required": [
+          "data",
+          "pagination"
+        ]
       },
       "BaseSchema": {
         "type": "object",
@@ -867,7 +976,9 @@
             "description": "Identifier"
           }
         },
-        "required": ["id"]
+        "required": [
+          "id"
+        ]
       },
       "PaginationSchema": {
         "type": "object",
@@ -881,7 +992,10 @@
             "minimum": 1
           }
         },
-        "required": ["page", "limit"]
+        "required": [
+          "page",
+          "limit"
+        ]
       },
       "CartItemSchema": {
         "type": "object",
@@ -930,14 +1044,23 @@
             "description": "Product variant (e.g., size, color)"
           }
         },
-        "required": ["id", "productId", "name", "price", "quantity", "total"]
+        "required": [
+          "id",
+          "productId",
+          "name",
+          "price",
+          "quantity",
+          "total"
+        ]
       },
       "EmailNotificationSchema": {
         "type": "object",
         "properties": {
           "type": {
             "type": "string",
-            "enum": ["email"]
+            "enum": [
+              "email"
+            ]
           },
           "to": {
             "type": "string",
@@ -954,14 +1077,21 @@
             "description": "Email body content"
           }
         },
-        "required": ["type", "to", "subject", "body"]
+        "required": [
+          "type",
+          "to",
+          "subject",
+          "body"
+        ]
       },
       "SmsNotificationSchema": {
         "type": "object",
         "properties": {
           "type": {
             "type": "string",
-            "enum": ["sms"]
+            "enum": [
+              "sms"
+            ]
           },
           "phoneNumber": {
             "type": "string",
@@ -973,14 +1103,20 @@
             "description": "SMS message (max 160 characters)"
           }
         },
-        "required": ["type", "phoneNumber", "message"]
+        "required": [
+          "type",
+          "phoneNumber",
+          "message"
+        ]
       },
       "PushNotificationSchema": {
         "type": "object",
         "properties": {
           "type": {
             "type": "string",
-            "enum": ["push"]
+            "enum": [
+              "push"
+            ]
           },
           "deviceId": {
             "type": "string",
@@ -995,22 +1131,37 @@
             "description": "Notification body"
           }
         },
-        "required": ["type", "deviceId", "title", "body"]
+        "required": [
+          "type",
+          "deviceId",
+          "title",
+          "body"
+        ]
       },
       "NotificationTypeSchema": {
         "type": "string",
-        "enum": ["email", "sms", "push"]
+        "enum": [
+          "email",
+          "sms",
+          "push"
+        ]
       },
       "NotificationTypeEnumSchema": {
         "type": "string",
-        "enum": ["email", "sms", "push"]
+        "enum": [
+          "email",
+          "sms",
+          "push"
+        ]
       },
       "SuccessResponseSchema": {
         "type": "object",
         "properties": {
           "status": {
             "type": "string",
-            "enum": ["success"]
+            "enum": [
+              "success"
+            ]
           },
           "data": {
             "type": "object",
@@ -1024,17 +1175,25 @@
                 "description": "Success message"
               }
             },
-            "required": ["id", "message"]
+            "required": [
+              "id",
+              "message"
+            ]
           }
         },
-        "required": ["status", "data"]
+        "required": [
+          "status",
+          "data"
+        ]
       },
       "ErrorResponseSchema": {
         "type": "object",
         "properties": {
           "status": {
             "type": "string",
-            "enum": ["error"]
+            "enum": [
+              "error"
+            ]
           },
           "error": {
             "type": "string",
@@ -1045,7 +1204,11 @@
             "description": "Error code"
           }
         },
-        "required": ["status", "error", "code"]
+        "required": [
+          "status",
+          "error",
+          "code"
+        ]
       },
       "OptionalMessageSchema": {
         "type": "string",
@@ -1057,11 +1220,20 @@
       },
       "ProcessingStatusSchema": {
         "type": "string",
-        "enum": ["pending", "processing", "completed", "failed"]
+        "enum": [
+          "pending",
+          "processing",
+          "completed",
+          "failed"
+        ]
       },
       "PermissionSchema": {
         "type": "string",
-        "enum": ["read", "write", "admin"]
+        "enum": [
+          "read",
+          "write",
+          "admin"
+        ]
       },
       "StringOrNumberSchema": {
         "oneOf": [
@@ -1106,17 +1278,25 @@
             "description": "User email"
           }
         },
-        "required": ["id", "name", "email"]
+        "required": [
+          "id",
+          "name",
+          "email"
+        ]
       },
       "LoadingStateSchema": {
         "oneOf": [
           {
             "type": "string",
-            "enum": ["loading"]
+            "enum": [
+              "loading"
+            ]
           },
           {
             "type": "string",
-            "enum": ["error"]
+            "enum": [
+              "error"
+            ]
           },
           {
             "$ref": "#/components/schemas/UserDataSchema"
@@ -1128,7 +1308,9 @@
         "properties": {
           "type": {
             "type": "string",
-            "enum": ["credit_card"]
+            "enum": [
+              "credit_card"
+            ]
           },
           "cardNumber": {
             "type": "string",
@@ -1146,14 +1328,21 @@
             "description": "CVV code"
           }
         },
-        "required": ["type", "cardNumber", "expiryDate", "cvv"]
+        "required": [
+          "type",
+          "cardNumber",
+          "expiryDate",
+          "cvv"
+        ]
       },
       "PayPalPaymentSchema": {
         "type": "object",
         "properties": {
           "type": {
             "type": "string",
-            "enum": ["paypal"]
+            "enum": [
+              "paypal"
+            ]
           },
           "email": {
             "type": "string",
@@ -1161,14 +1350,19 @@
             "description": "PayPal account email"
           }
         },
-        "required": ["type", "email"]
+        "required": [
+          "type",
+          "email"
+        ]
       },
       "BankTransferPaymentSchema": {
         "type": "object",
         "properties": {
           "type": {
             "type": "string",
-            "enum": ["bank_transfer"]
+            "enum": [
+              "bank_transfer"
+            ]
           },
           "accountNumber": {
             "type": "string",
@@ -1179,7 +1373,11 @@
             "description": "Bank routing number"
           }
         },
-        "required": ["type", "accountNumber", "routingNumber"]
+        "required": [
+          "type",
+          "accountNumber",
+          "routingNumber"
+        ]
       },
       "PaymentMethodSchema": {
         "type": "object",
@@ -1395,7 +1593,12 @@
           },
           "sort": {
             "type": "string",
-            "enum": ["date_asc", "date_desc", "total_asc", "total_desc"],
+            "enum": [
+              "date_asc",
+              "date_desc",
+              "total_asc",
+              "total_desc"
+            ],
             "default": "date_desc",
             "description": "Sort results"
           }
@@ -1447,7 +1650,9 @@
             "description": "Additional order notes"
           }
         },
-        "required": ["cartId"]
+        "required": [
+          "cartId"
+        ]
       },
       "UserBaseSchema": {
         "type": "object",
@@ -1470,11 +1675,20 @@
           },
           "role": {
             "type": "string",
-            "enum": ["user", "admin", "moderator"],
+            "enum": [
+              "user",
+              "admin",
+              "moderator"
+            ],
             "description": "User's role in the system"
           }
         },
-        "required": ["id", "email", "name", "role"]
+        "required": [
+          "id",
+          "email",
+          "name",
+          "role"
+        ]
       },
       "AddressSchema": {
         "type": "object",
@@ -1502,7 +1716,13 @@
             "description": "Country"
           }
         },
-        "required": ["street", "houseNumber", "city", "postalCode", "country"]
+        "required": [
+          "street",
+          "houseNumber",
+          "city",
+          "postalCode",
+          "country"
+        ]
       },
       "UserProfileSchema": {
         "type": "object",
@@ -1526,7 +1746,10 @@
             "description": "Middle name"
           }
         },
-        "required": ["id", "firstName"]
+        "required": [
+          "id",
+          "firstName"
+        ]
       },
       "PaymentMethod": {
         "type": "object",
@@ -1563,7 +1786,11 @@
             "description": "Category slug used in URLs"
           }
         },
-        "required": ["id", "name", "slug"]
+        "required": [
+          "id",
+          "name",
+          "slug"
+        ]
       },
       "ProductVariantSchema": {
         "type": "object",
@@ -1601,14 +1828,23 @@
             "description": "Variant attributes (color, size, etc.)"
           }
         },
-        "required": ["id", "name", "sku", "price", "stock", "attributes"]
+        "required": [
+          "id",
+          "name",
+          "sku",
+          "price",
+          "stock",
+          "attributes"
+        ]
       },
       "ProductErrorSchema": {
         "type": "object",
         "properties": {
           "success": {
             "type": "boolean",
-            "enum": [false],
+            "enum": [
+              false
+            ],
             "description": "Always false for errors"
           },
           "message": {
@@ -1616,7 +1852,10 @@
             "description": "Error message"
           }
         },
-        "required": ["success", "message"]
+        "required": [
+          "success",
+          "message"
+        ]
       },
       "UploadFormData": {
         "type": "object",
@@ -1636,7 +1875,10 @@
             "description": "File category (required)"
           }
         },
-        "required": ["file", "category"]
+        "required": [
+          "file",
+          "category"
+        ]
       },
       "UploadResponse": {
         "type": "object",
@@ -1675,7 +1917,15 @@
             "description": "Upload timestamp"
           }
         },
-        "required": ["id", "filename", "size", "type", "url", "category", "uploadedAt"]
+        "required": [
+          "id",
+          "filename",
+          "size",
+          "type",
+          "url",
+          "category",
+          "uploadedAt"
+        ]
       },
       "User": {
         "type": "object",
@@ -1698,11 +1948,20 @@
           },
           "role": {
             "type": "string",
-            "enum": ["user", "admin", "moderator"],
+            "enum": [
+              "user",
+              "admin",
+              "moderator"
+            ],
             "description": "User's role in the system"
           }
         },
-        "required": ["id", "email", "name", "role"]
+        "required": [
+          "id",
+          "email",
+          "name",
+          "role"
+        ]
       },
       "UserDetailed": {
         "type": "object",
@@ -1725,7 +1984,11 @@
           },
           "role": {
             "type": "string",
-            "enum": ["user", "admin", "moderator"],
+            "enum": [
+              "user",
+              "admin",
+              "moderator"
+            ],
             "description": "User's role in the system"
           },
           "phone": {
@@ -1755,13 +2018,21 @@
             "properties": {
               "language": {
                 "type": "string",
-                "enum": ["pl", "en", "de"],
+                "enum": [
+                  "pl",
+                  "en",
+                  "de"
+                ],
                 "default": "en",
                 "description": "Preferred language"
               },
               "theme": {
                 "type": "string",
-                "enum": ["light", "dark", "system"],
+                "enum": [
+                  "light",
+                  "dark",
+                  "system"
+                ],
                 "default": "system",
                 "description": "Preferred theme"
               },
@@ -1771,7 +2042,11 @@
                 "description": "Whether notifications are enabled"
               }
             },
-            "required": ["language", "theme", "notifications"],
+            "required": [
+              "language",
+              "theme",
+              "notifications"
+            ],
             "description": "User preferences"
           },
           "paymentMethods": {
@@ -1792,7 +2067,14 @@
             "description": "Last update date"
           }
         },
-        "required": ["id", "email", "name", "role", "createdAt", "updatedAt"]
+        "required": [
+          "id",
+          "email",
+          "name",
+          "role",
+          "createdAt",
+          "updatedAt"
+        ]
       },
       "Address": {
         "type": "object",
@@ -1820,7 +2102,13 @@
             "description": "Country"
           }
         },
-        "required": ["street", "houseNumber", "city", "postalCode", "country"]
+        "required": [
+          "street",
+          "houseNumber",
+          "city",
+          "postalCode",
+          "country"
+        ]
       }
     },
     "responses": {
@@ -1892,7 +2180,9 @@
         "operationId": "get-extended",
         "summary": "Get nested schema example",
         "description": "Retrieve nested schema data to test $ref generation",
-        "tags": ["Extended"],
+        "tags": [
+          "Extended"
+        ],
         "parameters": [],
         "responses": {
           "200": {
@@ -1917,7 +2207,9 @@
         "operationId": "post-extended",
         "summary": "Create extended schema",
         "description": "Create a new item with extended schema to test .extend() functionality",
-        "tags": ["Extended"],
+        "tags": [
+          "Extended"
+        ],
         "parameters": [],
         "requestBody": {
           "content": {
@@ -1952,7 +2244,9 @@
         "operationId": "put-extended",
         "summary": "Update double extended schema",
         "description": "Update with double extended schema to test deep inheritance",
-        "tags": ["Extended"],
+        "tags": [
+          "Extended"
+        ],
         "parameters": [],
         "requestBody": {
           "content": {
@@ -1989,7 +2283,9 @@
         "operationId": "get-notifications",
         "summary": "Get notification status",
         "description": "Returns success or error response (demonstrates Zod discriminated union)",
-        "tags": ["Notifications"],
+        "tags": [
+          "Notifications"
+        ],
         "parameters": [],
         "responses": {
           "200": {
@@ -2014,7 +2310,9 @@
         "operationId": "post-notifications",
         "summary": "Send a notification",
         "description": "Send notification via email, SMS, or push (demonstrates Zod discriminated unions with validation)",
-        "tags": ["Notifications"],
+        "tags": [
+          "Notifications"
+        ],
         "parameters": [],
         "requestBody": {
           "content": {
@@ -2067,7 +2365,9 @@
         "operationId": "getOrdersList",
         "summary": "Get orders list",
         "description": "Retrieves a paginated list of orders with filtering and sorting options",
-        "tags": ["Orders"],
+        "tags": [
+          "Orders"
+        ],
         "parameters": [
           {
             "in": "query",
@@ -2123,7 +2423,12 @@
             "name": "sort",
             "schema": {
               "type": "string",
-              "enum": ["date_asc", "date_desc", "total_asc", "total_desc"],
+              "enum": [
+                "date_asc",
+                "date_desc",
+                "total_asc",
+                "total_desc"
+              ],
               "description": "Sort results"
             },
             "required": false,
@@ -2158,7 +2463,9 @@
         "operationId": "createOrder",
         "summary": "Create order",
         "description": "Creates a new order from cart",
-        "tags": ["Orders"],
+        "tags": [
+          "Orders"
+        ],
         "parameters": [],
         "security": [
           {
@@ -2199,7 +2506,9 @@
         "operationId": "get-orders-{id}",
         "summary": "Get order by ID",
         "description": "Retrieves detailed order information",
-        "tags": ["Orders"],
+        "tags": [
+          "Orders"
+        ],
         "parameters": [
           {
             "in": "path",
@@ -2241,7 +2550,9 @@
         "operationId": "patch-orders-{id}",
         "summary": "Update order status",
         "description": "Updates the status of an order",
-        "tags": ["Orders"],
+        "tags": [
+          "Orders"
+        ],
         "parameters": [
           {
             "in": "path",
@@ -2292,7 +2603,9 @@
         "operationId": "delete-orders-{id}",
         "summary": "Cancel order",
         "description": "Cancels an order if it's not already delivered",
-        "tags": ["Orders"],
+        "tags": [
+          "Orders"
+        ],
         "parameters": [
           {
             "in": "path",
@@ -2329,7 +2642,9 @@
         "operationId": "get-private-admin",
         "summary": "Admin stats – private, not documented in the public API",
         "description": "",
-        "tags": ["Private"],
+        "tags": [
+          "Private"
+        ],
         "parameters": [],
         "responses": {
           "200": {
@@ -2356,7 +2671,9 @@
         "operationId": "get-products-{id}",
         "summary": "Get product",
         "description": "Retrieves detailed product information by ID",
-        "tags": ["Products"],
+        "tags": [
+          "Products"
+        ],
         "parameters": [
           {
             "in": "query",
@@ -2373,7 +2690,11 @@
             "name": "currency",
             "schema": {
               "type": "string",
-              "enum": ["USD", "EUR", "PLN"],
+              "enum": [
+                "USD",
+                "EUR",
+                "PLN"
+              ],
               "description": "Currency for prices"
             },
             "required": false,
@@ -2436,7 +2757,9 @@
         "operationId": "patch-products-{id}",
         "summary": "Update product",
         "description": "Updates an existing product",
-        "tags": ["Products"],
+        "tags": [
+          "Products"
+        ],
         "parameters": [
           {
             "in": "path",
@@ -2487,7 +2810,9 @@
         "operationId": "delete-products-{id}",
         "summary": "Delete product",
         "description": "Removes a product from the system",
-        "tags": ["Products"],
+        "tags": [
+          "Products"
+        ],
         "parameters": [
           {
             "in": "path",
@@ -2524,7 +2849,9 @@
         "operationId": "post-upload",
         "summary": "Upload image file",
         "description": "Uploads PNG or JPG image files with validation and metadata",
-        "tags": ["Uploads"],
+        "tags": [
+          "Uploads"
+        ],
         "parameters": [],
         "requestBody": {
           "content": {
@@ -2561,7 +2888,9 @@
         "operationId": "get-users",
         "summary": "Get users",
         "description": "Retrieve users",
-        "tags": ["Users"],
+        "tags": [
+          "Users"
+        ],
         "parameters": [
           {
             "in": "query",
@@ -2606,7 +2935,9 @@
         "operationId": "get-users-{id}",
         "summary": "Get user by ID",
         "description": "Retrieves detailed user information",
-        "tags": ["Users"],
+        "tags": [
+          "Users"
+        ],
         "parameters": [
           {
             "in": "query",
@@ -2653,7 +2984,9 @@
         "operationId": "patch-users-{id}",
         "summary": "Update user",
         "description": "Updates user information",
-        "tags": ["Users"],
+        "tags": [
+          "Users"
+        ],
         "parameters": [
           {
             "in": "path",
@@ -2704,7 +3037,9 @@
         "operationId": "delete-users-{id}",
         "summary": "Delete user",
         "description": "Deletes a user account",
-        "tags": ["Users"],
+        "tags": [
+          "Users"
+        ],
         "parameters": [
           {
             "in": "path",
@@ -2741,7 +3076,9 @@
         "operationId": "get-users-paginated",
         "summary": "Get paginated users",
         "description": "Retrieve users with cursor-based pagination using factory-generated schema",
-        "tags": ["Users-paginated"],
+        "tags": [
+          "Users-paginated"
+        ],
         "parameters": [
           {
             "in": "query",

@@ -28,7 +28,9 @@
             "description": "Product ID"
           }
         },
-        "required": ["id"]
+        "required": [
+          "id"
+        ]
       },
       "ProductSchema": {
         "type": "object",
@@ -61,7 +63,13 @@
             "description": "Product category"
           }
         },
-        "required": ["id", "name", "price", "stock", "category"]
+        "required": [
+          "id",
+          "name",
+          "price",
+          "stock",
+          "category"
+        ]
       },
       "CreateProductSchema": {
         "type": "object",
@@ -92,7 +100,12 @@
             "description": "Product category"
           }
         },
-        "required": ["name", "price", "stock", "category"]
+        "required": [
+          "name",
+          "price",
+          "stock",
+          "category"
+        ]
       },
       "ProductListParamsSchema": {
         "type": "object",
@@ -127,7 +140,9 @@
             "description": "User ID"
           }
         },
-        "required": ["id"]
+        "required": [
+          "id"
+        ]
       },
       "UserSchema": {
         "type": "object",
@@ -150,7 +165,12 @@
             "description": "Creation date"
           }
         },
-        "required": ["id", "name", "email", "createdAt"]
+        "required": [
+          "id",
+          "name",
+          "email",
+          "createdAt"
+        ]
       },
       "UpdateUserSchema": {
         "type": "object",
@@ -203,7 +223,11 @@
             "description": "Password (min 8 characters)"
           }
         },
-        "required": ["name", "email", "password"]
+        "required": [
+          "name",
+          "email",
+          "password"
+        ]
       }
     },
     "responses": {}
@@ -214,7 +238,9 @@
         "operationId": "get-products",
         "summary": "Get all products",
         "description": "Retrieve a list of products with optional filtering",
-        "tags": ["Products"],
+        "tags": [
+          "Products"
+        ],
         "parameters": [
           {
             "in": "query",
@@ -287,7 +313,9 @@
         "operationId": "post-products",
         "summary": "Create a new product",
         "description": "Add a new product to the catalog",
-        "tags": ["Products"],
+        "tags": [
+          "Products"
+        ],
         "parameters": [],
         "requestBody": {
           "content": {
@@ -317,7 +345,9 @@
         "operationId": "get-products-{id}",
         "summary": "Get product by ID",
         "description": "Retrieve a specific product by its ID",
-        "tags": ["Products"],
+        "tags": [
+          "Products"
+        ],
         "parameters": [
           {
             "in": "path",
@@ -348,7 +378,9 @@
         "operationId": "put-products-{id}",
         "summary": "Update product",
         "description": "Update an existing product's information",
-        "tags": ["Products"],
+        "tags": [
+          "Products"
+        ],
         "parameters": [
           {
             "in": "path",
@@ -388,7 +420,9 @@
         "operationId": "delete-products-{id}",
         "summary": "Delete product",
         "description": "Remove a product from the catalog",
-        "tags": ["Products"],
+        "tags": [
+          "Products"
+        ],
         "parameters": [
           {
             "in": "path",
@@ -414,7 +448,9 @@
         "operationId": "get-users",
         "summary": "Get all users",
         "description": "Retrieve a list of all users with optional filtering",
-        "tags": ["Users"],
+        "tags": [
+          "Users"
+        ],
         "parameters": [
           {
             "in": "query",
@@ -467,7 +503,9 @@
         "operationId": "post-users",
         "summary": "Create a new user",
         "description": "Create a new user account",
-        "tags": ["Users"],
+        "tags": [
+          "Users"
+        ],
         "parameters": [],
         "requestBody": {
           "content": {
@@ -497,7 +535,9 @@
         "operationId": "get-users-{id}",
         "summary": "Get user by ID",
         "description": "Retrieve a specific user by their ID",
-        "tags": ["Users"],
+        "tags": [
+          "Users"
+        ],
         "parameters": [
           {
             "in": "path",
@@ -528,7 +568,9 @@
         "operationId": "put-users-{id}",
         "summary": "Update user",
         "description": "Update an existing user's information",
-        "tags": ["Users"],
+        "tags": [
+          "Users"
+        ],
         "parameters": [
           {
             "in": "path",
@@ -568,7 +610,9 @@
         "operationId": "delete-users-{id}",
         "summary": "Delete user",
         "description": "Remove a user from the system",
-        "tags": ["Users"],
+        "tags": [
+          "Users"
+        ],
         "parameters": [
           {
             "in": "path",

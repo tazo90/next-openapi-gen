@@ -61,7 +61,11 @@
           },
           "sort": {
             "type": "string",
-            "enum": ["newest", "oldest", "likes"],
+            "enum": [
+              "newest",
+              "oldest",
+              "likes"
+            ],
             "description": "Sort order"
           },
           "includeDeleted": {
@@ -161,7 +165,11 @@
                     },
                     "role": {
                       "type": "string",
-                      "enum": ["admin", "member", "guest"],
+                      "enum": [
+                        "admin",
+                        "member",
+                        "guest"
+                      ],
                       "description": "User's role in the organization"
                     }
                   },
@@ -224,7 +232,11 @@
                       },
                       "role": {
                         "type": "string",
-                        "enum": ["admin", "member", "guest"],
+                        "enum": [
+                          "admin",
+                          "member",
+                          "guest"
+                        ],
                         "description": "User's role in the organization"
                       }
                     }
@@ -336,7 +348,11 @@
               },
               "role": {
                 "type": "string",
-                "enum": ["admin", "member", "guest"],
+                "enum": [
+                  "admin",
+                  "member",
+                  "guest"
+                ],
                 "description": "User's role in the organization"
               }
             },
@@ -399,7 +415,11 @@
                 },
                 "role": {
                   "type": "string",
-                  "enum": ["admin", "member", "guest"],
+                  "enum": [
+                    "admin",
+                    "member",
+                    "guest"
+                  ],
                   "description": "User's role in the organization"
                 }
               }
@@ -451,7 +471,11 @@
                     },
                     "role": {
                       "type": "string",
-                      "enum": ["admin", "member", "guest"],
+                      "enum": [
+                        "admin",
+                        "member",
+                        "guest"
+                      ],
                       "description": "User's role in the organization"
                     }
                   },
@@ -514,7 +538,11 @@
                       },
                       "role": {
                         "type": "string",
-                        "enum": ["admin", "member", "guest"],
+                        "enum": [
+                          "admin",
+                          "member",
+                          "guest"
+                        ],
                         "description": "User's role in the organization"
                       }
                     }
@@ -596,7 +624,11 @@
           },
           "role": {
             "type": "string",
-            "enum": ["admin", "member", "guest"],
+            "enum": [
+              "admin",
+              "member",
+              "guest"
+            ],
             "description": "User's role in the organization"
           }
         }
@@ -697,7 +729,11 @@
                   },
                   "role": {
                     "type": "string",
-                    "enum": ["admin", "member", "guest"],
+                    "enum": [
+                      "admin",
+                      "member",
+                      "guest"
+                    ],
                     "description": "User's role in the organization"
                   }
                 },
@@ -760,7 +796,11 @@
                     },
                     "role": {
                       "type": "string",
-                      "enum": ["admin", "member", "guest"],
+                      "enum": [
+                        "admin",
+                        "member",
+                        "guest"
+                      ],
                       "description": "User's role in the organization"
                     }
                   }
@@ -890,7 +930,11 @@
                   },
                   "role": {
                     "type": "string",
-                    "enum": ["admin", "member", "guest"],
+                    "enum": [
+                      "admin",
+                      "member",
+                      "guest"
+                    ],
                     "description": "User's role in the organization"
                   }
                 },
@@ -953,7 +997,11 @@
                     },
                     "role": {
                       "type": "string",
-                      "enum": ["admin", "member", "guest"],
+                      "enum": [
+                        "admin",
+                        "member",
+                        "guest"
+                      ],
                       "description": "User's role in the organization"
                     }
                   }
@@ -1142,9 +1190,11 @@
     "/auth/login": {
       "post": {
         "operationId": "post-auth-login",
-        "summary": "Authenticate as a user.\r",
+        "summary": "Authenticate as a user.",
         "description": "Login a user",
-        "tags": ["Auth"],
+        "tags": [
+          "Auth"
+        ],
         "parameters": [],
         "requestBody": {
           "content": {
@@ -1178,9 +1228,11 @@
     "/organizations/{orgId}/projects/{projectId}/tasks/{taskId}/comments": {
       "get": {
         "operationId": "get-organizations-{orgId}-projects-{projectId}-tasks-{taskId}-comments",
-        "summary": "Get Task Comments\r",
+        "summary": "Get Task Comments",
         "description": "Retrieve comments for a specific task within a project and organization",
-        "tags": ["Organizations"],
+        "tags": [
+          "Organizations"
+        ],
         "parameters": [
           {
             "in": "query",
@@ -1207,7 +1259,11 @@
             "name": "sort",
             "schema": {
               "type": "string",
-              "enum": ["newest", "oldest", "likes"],
+              "enum": [
+                "newest",
+                "oldest",
+                "likes"
+              ],
               "description": "Sort order"
             },
             "required": false,
@@ -1303,9 +1359,11 @@
       },
       "post": {
         "operationId": "post-organizations-{orgId}-projects-{projectId}-tasks-{taskId}-comments",
-        "summary": "Create Task Comment\r",
+        "summary": "Create Task Comment",
         "description": "Add a new comment to a specific task",
-        "tags": ["Organizations"],
+        "tags": [
+          "Organizations"
+        ],
         "parameters": [
           {
             "in": "path",
@@ -1376,9 +1434,11 @@
       },
       "patch": {
         "operationId": "patch-organizations-{orgId}-projects-{projectId}-tasks-{taskId}-comments",
-        "summary": "Update Task Comment\r",
+        "summary": "Update Task Comment",
         "description": "Modify an existing comment on a task",
-        "tags": ["Organizations"],
+        "tags": [
+          "Organizations"
+        ],
         "parameters": [
           {
             "in": "path",
@@ -1449,9 +1509,11 @@
       },
       "delete": {
         "operationId": "delete-organizations-{orgId}-projects-{projectId}-tasks-{taskId}-comments",
-        "summary": "Delete Task Comment\r",
+        "summary": "Delete Task Comment",
         "description": "Remove a comment from a task (soft delete)",
-        "tags": ["Organizations"],
+        "tags": [
+          "Organizations"
+        ],
         "parameters": [
           {
             "in": "path",
@@ -1508,9 +1570,11 @@
     "/users/{id}": {
       "get": {
         "operationId": "get-users-{id}",
-        "summary": "Get User by ID\r",
+        "summary": "Get User by ID",
         "description": "Retrieves a user's profile information",
-        "tags": ["Users"],
+        "tags": [
+          "Users"
+        ],
         "parameters": [
           {
             "in": "path",
