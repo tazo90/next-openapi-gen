@@ -471,26 +471,27 @@
           {
             "in": "query",
             "name": "page",
+            "required": false,
             "schema": {
               "type": "number",
               "description": "Page number"
             },
-            "required": false,
             "description": "Page number"
           },
           {
             "in": "query",
             "name": "limit",
+            "required": false,
             "schema": {
               "type": "number",
               "description": "Items per page"
             },
-            "required": false,
             "description": "Items per page"
           },
           {
             "in": "query",
             "name": "role",
+            "required": false,
             "schema": {
               "type": "string",
               "enum": [
@@ -499,12 +500,12 @@
               ],
               "description": "Filter by role"
             },
-            "required": false,
             "description": "Filter by role"
           },
           {
             "in": "query",
             "name": "status",
+            "required": false,
             "schema": {
               "type": "string",
               "enum": [
@@ -514,7 +515,6 @@
               ],
               "description": "Filter by status"
             },
-            "required": false,
             "description": "Filter by status"
           }
         ],
@@ -772,36 +772,37 @@
           {
             "in": "query",
             "name": "q",
+            "required": true,
             "schema": {
               "type": "string",
               "description": "Search query"
             },
-            "required": false,
             "description": "Search query"
           },
           {
             "in": "query",
             "name": "page",
+            "required": false,
             "schema": {
               "type": "number",
               "description": "Page number"
             },
-            "required": false,
             "description": "Page number"
           },
           {
             "in": "query",
             "name": "limit",
+            "required": false,
             "schema": {
               "type": "number",
               "description": "Items per page"
             },
-            "required": false,
             "description": "Items per page"
           },
           {
             "in": "query",
             "name": "sort",
+            "required": false,
             "schema": {
               "type": "string",
               "enum": [
@@ -810,7 +811,6 @@
               ],
               "description": "Sort order"
             },
-            "required": false,
             "description": "Sort order"
           }
         ],
@@ -846,11 +846,11 @@
           {
             "in": "path",
             "name": "id",
+            "required": true,
             "schema": {
               "type": "string",
               "description": "User ID"
             },
-            "required": true,
             "description": "User ID",
             "example": "123"
           }
@@ -896,11 +896,11 @@
           {
             "in": "path",
             "name": "id",
+            "required": true,
             "schema": {
               "type": "string",
               "description": "User ID"
             },
-            "required": true,
             "description": "User ID",
             "example": "123"
           }
@@ -918,5 +918,28 @@
         }
       }
     }
-  }
+  },
+  "tags": [
+    {
+      "name": "Admin"
+    },
+    {
+      "name": "Dashboard"
+    },
+    {
+      "name": "Settings"
+    },
+    {
+      "name": "Authentication"
+    },
+    {
+      "name": "Test-optional"
+    },
+    {
+      "name": "Test-query-params"
+    },
+    {
+      "name": "Users"
+    }
+  ]
 }

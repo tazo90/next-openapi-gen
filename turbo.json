@@ -12,7 +12,7 @@
       "outputs": []
     },
     "build": {
-      "dependsOn": ["^build"],
+      "dependsOn": ["generate", "^build"],
       "inputs": ["$TURBO_DEFAULT$"],
       "outputs": ["dist/**", ".next/**", "!.next/cache/**", "tsconfig.tsbuildinfo"]
     },
@@ -27,6 +27,10 @@
       "outputs": []
     },
     "format:check": {
+      "outputs": []
+    },
+    "generate": {
+      "dependsOn": ["^build"],
       "outputs": []
     },
     "lint": {

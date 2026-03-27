@@ -11,6 +11,270 @@
       "description": "Local development server"
     }
   ],
+  "paths": {
+    "/posts": {
+      "get": {
+        "operationId": "get-posts",
+        "summary": "Get all posts",
+        "description": "Retrieve a paginated list of blog posts with optional filters",
+        "tags": [
+          "Posts"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d+$",
+              "description": "Page number"
+            },
+            "description": "Page number"
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d+$",
+              "description": "Items per page"
+            },
+            "description": "Items per page"
+          },
+          {
+            "in": "query",
+            "name": "published",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "true",
+                "false"
+              ],
+              "description": "Filter by publication status"
+            },
+            "description": "Filter by publication status"
+          },
+          {
+            "in": "query",
+            "name": "authorId",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d+$",
+              "description": "Filter by author ID"
+            },
+            "description": "Filter by author ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of blog posts",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PostResponseSchema"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      },
+      "post": {
+        "operationId": "post-posts",
+        "summary": "Create a new post",
+        "description": "Create a new blog post with Drizzle-Zod validation",
+        "tags": [
+          "Posts"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePostSchema"
+              }
+            }
+          },
+          "description": "Post data including title, content, and author"
+        },
+        "responses": {
+          "201": {
+            "description": "Post created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PostResponseSchema"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    },
+    "/posts/{id}": {
+      "get": {
+        "operationId": "get-posts-{id}",
+        "summary": "Get post by ID",
+        "description": "Retrieve a single blog post by its ID",
+        "tags": [
+          "Posts"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d+$",
+              "description": "Post ID"
+            },
+            "description": "Post ID",
+            "example": "123"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Single blog post",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PostResponseSchema"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      },
+      "patch": {
+        "operationId": "patch-posts-{id}",
+        "summary": "Update post",
+        "description": "Update an existing blog post",
+        "tags": [
+          "Posts"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d+$",
+              "description": "Post ID"
+            },
+            "description": "Post ID",
+            "example": "123"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePostSchema"
+              }
+            }
+          },
+          "description": "Fields to update"
+        },
+        "responses": {
+          "200": {
+            "description": "Updated post",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PostResponseSchema"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "delete-posts-{id}",
+        "summary": "Delete post",
+        "description": "Delete a blog post by ID",
+        "tags": [
+          "Posts"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d+$",
+              "description": "Post ID"
+            },
+            "description": "Post ID",
+            "example": "123"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Post deleted successfully"
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Posts"
+    }
+  ],
   "components": {
     "schemas": {
       "PostIdParams": {
@@ -142,259 +406,6 @@
                 }
               }
             }
-          }
-        }
-      }
-    }
-  },
-  "paths": {
-    "/posts": {
-      "get": {
-        "operationId": "get-posts",
-        "summary": "Get all posts",
-        "description": "Retrieve a paginated list of blog posts with optional filters",
-        "tags": [
-          "Posts"
-        ],
-        "parameters": [
-          {
-            "in": "query",
-            "name": "page",
-            "schema": {
-              "type": "string",
-              "description": "Page number"
-            },
-            "required": false,
-            "description": "Page number"
-          },
-          {
-            "in": "query",
-            "name": "limit",
-            "schema": {
-              "type": "string",
-              "description": "Items per page"
-            },
-            "required": false,
-            "description": "Items per page"
-          },
-          {
-            "in": "query",
-            "name": "published",
-            "schema": {
-              "type": "string",
-              "enum": [
-                "true",
-                "false"
-              ],
-              "description": "Filter by publication status"
-            },
-            "required": false,
-            "description": "Filter by publication status"
-          },
-          {
-            "in": "query",
-            "name": "authorId",
-            "schema": {
-              "type": "string",
-              "description": "Filter by author ID"
-            },
-            "required": false,
-            "description": "Filter by author ID"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "List of blog posts",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/PostResponseSchema"
-                  }
-                }
-              }
-            }
-          },
-          "400": {
-            "$ref": "#/components/responses/400"
-          },
-          "401": {
-            "$ref": "#/components/responses/401"
-          },
-          "500": {
-            "$ref": "#/components/responses/500"
-          }
-        }
-      },
-      "post": {
-        "operationId": "post-posts",
-        "summary": "Create a new post",
-        "description": "Create a new blog post with Drizzle-Zod validation",
-        "tags": [
-          "Posts"
-        ],
-        "parameters": [],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreatePostSchema"
-              }
-            }
-          },
-          "description": "Post data including title, content, and author"
-        },
-        "responses": {
-          "201": {
-            "description": "Successful response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PostResponseSchema:Post created successfully"
-                }
-              }
-            }
-          },
-          "400": {
-            "$ref": "#/components/responses/400"
-          },
-          "401": {
-            "$ref": "#/components/responses/401"
-          },
-          "500": {
-            "$ref": "#/components/responses/500"
-          }
-        }
-      }
-    },
-    "/posts/{id}": {
-      "get": {
-        "operationId": "get-posts-{id}",
-        "summary": "Get post by ID",
-        "description": "Retrieve a single blog post by its ID",
-        "tags": [
-          "Posts"
-        ],
-        "parameters": [
-          {
-            "in": "path",
-            "name": "id",
-            "schema": {
-              "type": "string",
-              "description": "Post ID"
-            },
-            "required": true,
-            "description": "Post ID",
-            "example": "123"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Single blog post",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PostResponseSchema"
-                }
-              }
-            }
-          },
-          "400": {
-            "$ref": "#/components/responses/400"
-          },
-          "401": {
-            "$ref": "#/components/responses/401"
-          },
-          "500": {
-            "$ref": "#/components/responses/500"
-          }
-        }
-      },
-      "patch": {
-        "operationId": "patch-posts-{id}",
-        "summary": "Update post",
-        "description": "Update an existing blog post",
-        "tags": [
-          "Posts"
-        ],
-        "parameters": [
-          {
-            "in": "path",
-            "name": "id",
-            "schema": {
-              "type": "string",
-              "description": "Post ID"
-            },
-            "required": true,
-            "description": "Post ID",
-            "example": "123"
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdatePostSchema"
-              }
-            }
-          },
-          "description": "Fields to update"
-        },
-        "responses": {
-          "200": {
-            "description": "Updated post",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PostResponseSchema"
-                }
-              }
-            }
-          },
-          "400": {
-            "$ref": "#/components/responses/400"
-          },
-          "401": {
-            "$ref": "#/components/responses/401"
-          },
-          "500": {
-            "$ref": "#/components/responses/500"
-          }
-        }
-      },
-      "delete": {
-        "operationId": "delete-posts-{id}",
-        "summary": "Delete post",
-        "description": "Delete a blog post by ID",
-        "tags": [
-          "Posts"
-        ],
-        "parameters": [
-          {
-            "in": "path",
-            "name": "id",
-            "schema": {
-              "type": "string",
-              "description": "Post ID"
-            },
-            "required": true,
-            "description": "Post ID",
-            "example": "123"
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "Post deleted successfully"
-          },
-          "400": {
-            "$ref": "#/components/responses/400"
-          },
-          "401": {
-            "$ref": "#/components/responses/401"
-          },
-          "500": {
-            "$ref": "#/components/responses/500"
           }
         }
       }

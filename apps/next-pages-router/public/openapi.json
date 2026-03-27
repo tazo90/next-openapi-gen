@@ -245,51 +245,51 @@
           {
             "in": "query",
             "name": "category",
+            "required": false,
             "schema": {
               "type": "string",
               "description": "Filter by category"
             },
-            "required": false,
             "description": "Filter by category"
           },
           {
             "in": "query",
             "name": "minPrice",
+            "required": false,
             "schema": {
               "type": "number",
               "description": "Minimum price"
             },
-            "required": false,
             "description": "Minimum price"
           },
           {
             "in": "query",
             "name": "maxPrice",
+            "required": false,
             "schema": {
               "type": "number",
               "description": "Maximum price"
             },
-            "required": false,
             "description": "Maximum price"
           },
           {
             "in": "query",
             "name": "page",
+            "required": false,
             "schema": {
               "type": "number",
               "description": "Page number"
             },
-            "required": false,
             "description": "Page number"
           },
           {
             "in": "query",
             "name": "limit",
+            "required": false,
             "schema": {
               "type": "number",
               "description": "Results per page"
             },
-            "required": false,
             "description": "Results per page"
           }
         ],
@@ -352,11 +352,11 @@
           {
             "in": "path",
             "name": "id",
+            "required": true,
             "schema": {
               "type": "string",
               "description": "Product ID"
             },
-            "required": true,
             "description": "Product ID",
             "example": "123"
           }
@@ -385,11 +385,11 @@
           {
             "in": "path",
             "name": "id",
+            "required": true,
             "schema": {
               "type": "string",
               "description": "Product ID"
             },
-            "required": true,
             "description": "Product ID",
             "example": "123"
           }
@@ -427,11 +427,11 @@
           {
             "in": "path",
             "name": "id",
+            "required": true,
             "schema": {
               "type": "string",
               "description": "Product ID"
             },
-            "required": true,
             "description": "Product ID",
             "example": "123"
           }
@@ -455,31 +455,31 @@
           {
             "in": "query",
             "name": "page",
+            "required": false,
             "schema": {
               "type": "number",
               "description": "Page number"
             },
-            "required": false,
             "description": "Page number"
           },
           {
             "in": "query",
             "name": "limit",
+            "required": false,
             "schema": {
               "type": "number",
               "description": "Results per page"
             },
-            "required": false,
             "description": "Results per page"
           },
           {
             "in": "query",
             "name": "search",
+            "required": false,
             "schema": {
               "type": "string",
               "description": "Search query"
             },
-            "required": false,
             "description": "Search query"
           }
         ],
@@ -542,11 +542,11 @@
           {
             "in": "path",
             "name": "id",
+            "required": true,
             "schema": {
               "type": "string",
               "description": "User ID"
             },
-            "required": true,
             "description": "User ID",
             "example": "123"
           }
@@ -575,11 +575,11 @@
           {
             "in": "path",
             "name": "id",
+            "required": true,
             "schema": {
               "type": "string",
               "description": "User ID"
             },
-            "required": true,
             "description": "User ID",
             "example": "123"
           }
@@ -617,11 +617,11 @@
           {
             "in": "path",
             "name": "id",
+            "required": true,
             "schema": {
               "type": "string",
               "description": "User ID"
             },
-            "required": true,
             "description": "User ID",
             "example": "123"
           }
@@ -633,5 +633,13 @@
         }
       }
     }
-  }
+  },
+  "tags": [
+    {
+      "name": "Products"
+    },
+    {
+      "name": "Users"
+    }
+  ]
 }

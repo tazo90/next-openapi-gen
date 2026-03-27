@@ -5,9 +5,10 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "generate": "node ../../packages/next-openapi-gen/dist/index.js generate",
     "start": "next start",
     "lint": "oxlint --config ../../packages/oxlint-config/base.json . --ignore-path ../../.gitignore --deny-warnings",
-    "openapi:generate": "next-openapi-gen generate",
+    "openapi:generate": "pnpm generate",
     "format": "oxfmt --config ../../packages/oxfmt-config/oxfmt.json --ignore-path ../../.gitignore .",
     "format:check": "oxfmt --config ../../packages/oxfmt-config/oxfmt.json --ignore-path ../../.gitignore --check .",
     "check": "pnpm format:check && pnpm lint"
