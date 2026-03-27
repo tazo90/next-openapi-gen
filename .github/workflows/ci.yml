@@ -1,0 +1,347 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  CI: true
+  FORCE_COLOR: "1"
+
+jobs:
+  quality:
+    name: Quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.27.0
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Check formatting
+        run: pnpm format:check
+
+      - name: Run lint
+        run: pnpm lint
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.27.0
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build workspace
+        run: pnpm build
+
+  unit:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.27.0
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run unit tests
+        run: pnpm test:unit
+
+  integration:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.27.0
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run integration tests
+        run: pnpm test:integration
+
+  coverage:
+    name: Coverage
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.27.0
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run coverage
+        env:
+          FORCE_COLOR: "0"
+        run: |
+          set -o pipefail
+          pnpm test:coverage 2>&1 | tee coverage-output.txt
+
+      - name: Write coverage summary
+        if: always()
+        run: |
+          node <<'NODE'
+          const fs = require("node:fs");
+          const summaryPath = process.env.GITHUB_STEP_SUMMARY;
+          const coverageOutputPath = "coverage-output.txt";
+
+          let markdown = "## Coverage\n\n";
+
+          if (!fs.existsSync(coverageOutputPath)) {
+            markdown += "Coverage output was not generated.\n";
+            fs.appendFileSync(summaryPath, markdown);
+            process.exit(0);
+          }
+
+          const output = fs.readFileSync(coverageOutputPath, "utf8");
+          const row = output
+            .split(/\r?\n/)
+            .map((line) => line.replace(/\u001b\[[0-9;]*m/g, "").trim())
+            .reverse()
+            .find((line) => /^All files\s*\|/.test(line));
+
+          if (!row) {
+            markdown += "Coverage command completed, but the aggregate coverage row could not be parsed from `coverage-output.txt`.\n";
+            fs.appendFileSync(summaryPath, markdown);
+            process.exit(0);
+          }
+
+          const columns = row.split("|").map((value) => value.trim()).filter(Boolean);
+          const [, statements = "n/a", branches = "n/a", functions = "n/a", lines = "n/a"] = columns;
+
+          markdown += "| Statements | Branches | Functions | Lines |\n";
+          markdown += "| --- | --- | --- | --- |\n";
+          markdown += `| ${statements} | ${branches} | ${functions} | ${lines} |\n`;
+
+          fs.appendFileSync(summaryPath, markdown);
+          NODE
+
+      - name: Upload coverage artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: |
+            coverage/**
+            coverage-output.txt
+          if-no-files-found: warn
+          retention-days: 7
+
+  e2e:
+    name: E2E (${{ matrix.app }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        app:
+          - next-app-zod
+          - next-app-typescript
+          - next-app-scalar
+          - next-app-swagger
+          - next-app-sandbox
+          - next-app-drizzle-zod
+          - next-pages-router
+          - next-app-mixed-schemas
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.27.0
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Restore Playwright browser cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-chromium-${{ hashFiles('pnpm-lock.yaml', 'playwright.config.ts') }}
+          restore-keys: |
+            ${{ runner.os }}-playwright-chromium-
+
+      - name: Install Playwright Chromium
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Run E2E tests
+        env:
+          E2E_APP: ${{ matrix.app }}
+        run: pnpm test:e2e:app
+
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-${{ matrix.app }}
+          path: |
+            playwright-report/**
+            test-results/**
+          if-no-files-found: ignore
+          retention-days: 7
+
+  report:
+    name: CI Summary
+    if: always()
+    runs-on: ubuntu-latest
+    needs:
+      - quality
+      - build
+      - unit
+      - integration
+      - coverage
+      - e2e
+    steps:
+      - name: Write workflow summary
+        env:
+          QUALITY_RESULT: ${{ needs.quality.result }}
+          BUILD_RESULT: ${{ needs.build.result }}
+          UNIT_RESULT: ${{ needs.unit.result }}
+          INTEGRATION_RESULT: ${{ needs.integration.result }}
+          COVERAGE_RESULT: ${{ needs.coverage.result }}
+          E2E_RESULT: ${{ needs.e2e.result }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          node <<'NODE'
+          const fs = require("node:fs");
+
+          const jobs = [
+            ["Quality", process.env.QUALITY_RESULT],
+            ["Build", process.env.BUILD_RESULT],
+            ["Unit Tests", process.env.UNIT_RESULT],
+            ["Integration Tests", process.env.INTEGRATION_RESULT],
+            ["Coverage", process.env.COVERAGE_RESULT],
+            ["E2E Matrix", process.env.E2E_RESULT],
+          ];
+
+          const iconByResult = {
+            success: "SUCCESS",
+            failure: "FAILURE",
+            cancelled: "CANCELLED",
+            skipped: "SKIPPED",
+          };
+
+          const failed = jobs.filter(([, result]) => result !== "success");
+          let markdown = "## CI Summary\n\n";
+          markdown += "| Check | Result |\n";
+          markdown += "| --- | --- |\n";
+
+          for (const [name, result] of jobs) {
+            const label = iconByResult[result] ?? result ?? "unknown";
+            markdown += `| ${name} | ${label} |\n`;
+          }
+
+          markdown += "\n";
+
+          if (failed.length === 0) {
+            markdown += "All CI jobs passed.\n";
+          } else {
+            markdown += "Failed or incomplete checks:\n";
+            for (const [name, result] of failed) {
+              markdown += `- ${name}: ${result}\n`;
+            }
+          }
+
+          markdown += "\nArtifacts for coverage and failed Playwright runs are available from this workflow run.\n";
+          markdown += `Run details: ${process.env.RUN_URL}\n`;
+
+          fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, markdown);
+          NODE
