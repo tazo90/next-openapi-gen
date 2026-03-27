@@ -58,6 +58,9 @@ describe("Zod node helpers", () => {
   };
 
   it("handles literal, tuple, intersection, and union helpers", () => {
+    expect(processZodLiteral(getFirstInitializer("z.literal()") as t.CallExpression)).toEqual({
+      type: "string",
+    });
     expect(processZodLiteral(getFirstInitializer("z.literal('x')") as t.CallExpression)).toEqual({
       type: "string",
       enum: ["x"],
@@ -101,6 +104,11 @@ describe("Zod node helpers", () => {
       type: "string",
       nullable: true,
     });
+    expect(
+      processZodUnion(getFirstInitializer("z.union(z.string())") as t.CallExpression, processNode),
+    ).toEqual({
+      type: "object",
+    });
   });
 
   it("handles discriminated union fallbacks and enum-style unions", () => {
@@ -113,6 +121,12 @@ describe("Zod node helpers", () => {
     expect(
       processZodDiscriminatedUnion(
         getFirstInitializer('z.discriminatedUnion("kind", [])') as t.CallExpression,
+        processNode,
+      ),
+    ).toEqual({ type: "object" });
+    expect(
+      processZodDiscriminatedUnion(
+        getFirstInitializer('z.discriminatedUnion("kind", z.string())') as t.CallExpression,
         processNode,
       ),
     ).toEqual({ type: "object" });
@@ -169,6 +183,9 @@ describe("Zod node helpers", () => {
     expect(
       hasOptionalMethod(getFirstInitializer("z.string().nullable()") as t.CallExpression),
     ).toBe(false);
+    expect(isOptionalCall(getFirstInitializer("z.string().nullable()") as t.CallExpression)).toBe(
+      false,
+    );
   });
 
   it("processes primitive zod nodes through the extracted helper", () => {
@@ -188,6 +205,9 @@ describe("Zod node helpers", () => {
       format: "int64",
     });
     expect(
+      processZodPrimitiveNode(getFirstInitializer("z.any()") as t.CallExpression, context),
+    ).toEqual({});
+    expect(
       processZodPrimitiveNode(
         getFirstInitializer("z.array(UserSchema)") as t.CallExpression,
         context,
@@ -203,6 +223,32 @@ describe("Zod node helpers", () => {
       format: "binary",
     });
     expect(
+      processZodPrimitiveNode(getFirstInitializer("z.enum({})") as t.CallExpression, context),
+    ).toEqual({
+      type: "string",
+    });
+    expect(
+      processZodPrimitiveNode(getFirstInitializer("z.record()") as t.CallExpression, context),
+    ).toEqual({
+      type: "object",
+      additionalProperties: { type: "string" },
+    });
+    expect(
+      processZodPrimitiveNode(getFirstInitializer("z.object()") as t.CallExpression, context),
+    ).toEqual({
+      type: "object",
+    });
+    expect(
+      processZodPrimitiveNode(getFirstInitializer("z.custom<User>()") as t.CallExpression, context),
+    ).toEqual({
+      type: "string",
+    });
+    expect(
+      processZodPrimitiveNode(getFirstInitializer("z.custom()") as t.CallExpression, context),
+    ).toEqual({
+      type: "string",
+    });
+    expect(
       processZodPrimitiveNode(
         getFirstInitializer("z.custom(() => true)") as t.CallExpression,
         context,
@@ -210,6 +256,11 @@ describe("Zod node helpers", () => {
     ).toEqual({
       type: "object",
       additionalProperties: true,
+    });
+    expect(
+      processZodPrimitiveNode(getFirstInitializer("z.never()") as t.CallExpression, context),
+    ).toEqual({
+      type: "string",
     });
     expect(ensuredSchemas).toEqual(["UserSchema"]);
   });

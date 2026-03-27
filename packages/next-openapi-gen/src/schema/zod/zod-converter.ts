@@ -7,6 +7,13 @@ import { traverse } from "../../shared/babel-traverse.js";
 import { parseTypeScriptFile } from "../../shared/utils.js";
 import { logger } from "../../shared/logger.js";
 import { DrizzleZodProcessor } from "./drizzle-zod-processor.js";
+import {
+  expandFactoryCall,
+  extractReturnNode,
+  parseFileWithCache,
+  resolveImportPath,
+  substituteParameters,
+} from "./converter-runtime.js";
 import { collectZodRouteFiles, processZodSchemaFilesInDirectory } from "./file-processor.js";
 import { processImports } from "./import-processor.js";
 import {
@@ -1598,64 +1605,20 @@ export class ZodSchemaConverter {
    * Parse a file with caching (also caches imports)
    */
   parseFileWithCache(filePath: string): t.File | null {
-    if (this.fileASTCache.has(filePath)) {
-      return this.fileASTCache.get(filePath)!;
-    }
-
-    try {
-      const content = this.fileAccess.readFileSync(filePath, "utf-8");
-      const ast = parseTypeScriptFile(content);
-      this.fileASTCache.set(filePath, ast);
-
-      // Also build and cache imports for this file
-      if (!this.fileImportsCache.has(filePath)) {
-        const { importedModules, drizzleZodImports } = collectImportMetadata(ast);
-        drizzleZodImports.forEach((importName) => {
-          this.drizzleZodImports.add(importName);
-        });
-        this.fileImportsCache.set(filePath, importedModules);
-      }
-
-      return ast;
-    } catch (error) {
-      logger.error(`[Factory] Error parsing file '${filePath}': ${error}`);
-      return null;
-    }
+    return parseFileWithCache(
+      filePath,
+      this.fileAccess,
+      this.fileASTCache,
+      this.fileImportsCache,
+      this.drizzleZodImports,
+    );
   }
 
   /**
    * Resolve import path relative to current file
    */
   resolveImportPath(currentFilePath: string, importSource: string): string | null {
-    // Handle relative imports
-    if (importSource.startsWith(".")) {
-      const currentDir = path.dirname(currentFilePath);
-      let resolvedPath = path.resolve(currentDir, importSource);
-
-      // Try adding extensions if not present
-      const extensions = [".ts", ".tsx", ".js", ".jsx"];
-      if (!path.extname(resolvedPath)) {
-        for (const ext of extensions) {
-          const withExt = resolvedPath + ext;
-          if (this.fileAccess.existsSync(withExt)) {
-            return withExt;
-          }
-        }
-        // Try index files
-        for (const ext of extensions) {
-          const indexPath = path.join(resolvedPath, `index${ext}`);
-          if (this.fileAccess.existsSync(indexPath)) {
-            return indexPath;
-          }
-        }
-      } else if (this.fileAccess.existsSync(resolvedPath)) {
-        return resolvedPath;
-      }
-    }
-
-    // Handle absolute imports from schemaDir
-    // This is a simplified approach - you might need to enhance this based on tsconfig paths
-    return null;
+    return resolveImportPath(currentFilePath, importSource, this.fileAccess);
   }
 
   /**
@@ -1664,191 +1627,22 @@ export class ZodSchemaConverter {
   expandFactoryCall(
     factoryNode: t.Node,
     callNode: t.CallExpression,
-    filePath: string,
+    _filePath: string,
   ): OpenApiSchema | null {
-    if (
-      !t.isFunctionDeclaration(factoryNode) &&
-      !t.isArrowFunctionExpression(factoryNode) &&
-      !t.isFunctionExpression(factoryNode)
-    ) {
-      return null;
-    }
-
-    logger.debug(`[Factory] Expanding factory call with ${callNode.arguments.length} arguments`);
-
-    // Build parameter -> argument mapping
-    const paramMap = new Map<string, t.Node>();
-    const params = factoryNode.params;
-
-    for (let i = 0; i < params.length && i < callNode.arguments.length; i++) {
-      const param = params[i];
-      const arg = callNode.arguments[i];
-
-      if (t.isIdentifier(param) && arg) {
-        paramMap.set(param.name, arg);
-        logger.debug(`[Factory] Mapped parameter '${param.name}' to argument`);
-      } else if (t.isObjectPattern(param)) {
-        // Handle destructured parameters - simplified for now
-        logger.debug(`[Factory] Skipping destructured parameter (not yet supported)`);
-      }
-    }
-
-    // Extract return statement
-    const returnNode = this.extractReturnNode(factoryNode);
-    if (!returnNode) {
-      logger.debug(`[Factory] No return statement found in factory`);
-      return null;
-    }
-
-    logger.debug(`[Factory] Return node type: ${returnNode.type}`);
-
-    // Clone and substitute parameters in return node
-    const substitutedNode = this.substituteParameters(returnNode, paramMap, filePath);
-
-    logger.debug(`[Factory] Substituted node type: ${substitutedNode.type}`);
-
-    // Process the substituted node as a normal Zod schema
-    const result = this.processZodNode(substitutedNode);
-
-    if (result) {
-      logger.debug(
-        `[Factory] Successfully processed substituted node, result has ${Object.keys(result).length} keys`,
-      );
-    } else {
-      logger.debug(`[Factory] Failed to process substituted node`);
-    }
-
-    return result;
+    return expandFactoryCall(factoryNode, callNode, (node) => this.processZodNode(node));
   }
 
   /**
    * Extract the return node from a function
    */
   extractReturnNode(functionNode: t.Node): t.Node | null {
-    // For arrow functions with direct return (no block)
-    if (t.isArrowFunctionExpression(functionNode) && !t.isBlockStatement(functionNode.body)) {
-      return functionNode.body;
-    }
-
-    // For functions with block statements
-    const body =
-      t.isFunctionDeclaration(functionNode) ||
-      t.isArrowFunctionExpression(functionNode) ||
-      t.isFunctionExpression(functionNode)
-        ? functionNode.body
-        : null;
-
-    if (!body || !t.isBlockStatement(body)) {
-      return null;
-    }
-
-    // Find first return statement manually
-    const findReturn = (statements: t.Statement[]): t.Node | null => {
-      for (const stmt of statements) {
-        if (t.isReturnStatement(stmt) && stmt.argument) {
-          return stmt.argument;
-        }
-        // Check nested blocks
-        if (t.isIfStatement(stmt)) {
-          if (t.isBlockStatement(stmt.consequent)) {
-            const found = findReturn(stmt.consequent.body);
-            if (found) return found;
-          } else if (t.isReturnStatement(stmt.consequent) && stmt.consequent.argument) {
-            return stmt.consequent.argument;
-          }
-          if (stmt.alternate) {
-            if (t.isBlockStatement(stmt.alternate)) {
-              const found = findReturn(stmt.alternate.body);
-              if (found) return found;
-            } else if (t.isReturnStatement(stmt.alternate) && stmt.alternate.argument) {
-              return stmt.alternate.argument;
-            }
-          }
-        }
-      }
-      return null;
-    };
-
-    return findReturn(body.body);
+    return extractReturnNode(functionNode);
   }
 
   /**
    * Substitute parameters with actual arguments in an AST node (deep clone and replace)
    */
   substituteParameters(node: t.Node, paramMap: Map<string, t.Node>, _filePath: string): t.Node {
-    // Deep clone the node to avoid modifying the original
-    const cloned = t.cloneNode(node, /* deep */ true, /* withoutLoc */ false);
-
-    // Manual recursive substitution without traverse
-    const substitute = (n: t.Node): t.Node => {
-      if (t.isIdentifier(n)) {
-        // Replace if this is a parameter
-        if (paramMap.has(n.name)) {
-          const replacement = paramMap.get(n.name)!;
-          return t.cloneNode(replacement, true, false);
-        }
-        return n;
-      }
-
-      // Handle CallExpression
-      if (t.isCallExpression(n)) {
-        return t.callExpression(
-          substitute(n.callee) as t.Expression,
-          n.arguments.map((arg) => {
-            if (t.isSpreadElement(arg)) {
-              return t.spreadElement(substitute(arg.argument) as t.Expression);
-            }
-            return substitute(arg) as t.Expression;
-          }),
-        );
-      }
-
-      // Handle MemberExpression
-      if (t.isMemberExpression(n)) {
-        return t.memberExpression(
-          substitute(n.object) as t.Expression,
-          n.computed ? (substitute(n.property) as t.Expression) : n.property,
-          n.computed,
-        );
-      }
-
-      // Handle ObjectExpression
-      if (t.isObjectExpression(n)) {
-        return t.objectExpression(
-          n.properties.map((prop) => {
-            if (t.isObjectProperty(prop)) {
-              return t.objectProperty(
-                prop.computed ? (substitute(prop.key) as t.Expression) : prop.key,
-                substitute(prop.value) as t.Expression,
-                prop.computed,
-                prop.shorthand,
-              );
-            }
-            if (t.isSpreadElement(prop)) {
-              return t.spreadElement(substitute(prop.argument) as t.Expression);
-            }
-            return prop;
-          }),
-        );
-      }
-
-      // Handle ArrayExpression
-      if (t.isArrayExpression(n)) {
-        return t.arrayExpression(
-          n.elements.map((elem) => {
-            if (!elem) return null;
-            if (t.isSpreadElement(elem)) {
-              return t.spreadElement(substitute(elem.argument) as t.Expression);
-            }
-            return substitute(elem) as t.Expression;
-          }),
-        );
-      }
-
-      // Return as-is for other node types
-      return n;
-    };
-
-    return substitute(cloned);
+    return substituteParameters(node, paramMap);
   }
 }

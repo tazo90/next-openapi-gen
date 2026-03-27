@@ -15,6 +15,7 @@ import type {
   RouteDefinition,
 } from "../shared/types.js";
 import { OperationProcessor } from "./operation-processor.js";
+import { sortPathDefinitions } from "./path-sort.js";
 import { ResponseProcessor } from "./response-processor.js";
 import { scanRouteFiles } from "./route-scanner.js";
 
@@ -167,50 +168,13 @@ export class RouteProcessor {
     this.pathDefinitions[routePath]![method] = definition;
   }
 
-  private getSortedPaths(
-    paths: Record<string, OpenApiPathDefinition>,
-  ): Record<string, OpenApiPathDefinition> {
-    function comparePaths(this: RouteProcessor, a: string, b: string): number {
-      const aMethods = this.pathDefinitions[a] || {};
-      const bMethods = this.pathDefinitions[b] || {};
+  public getPaths(): Record<string, OpenApiPathDefinition> {
+    const paths = sortPathDefinitions(this.pathDefinitions);
 
-      // Extract tags for all methods in path a
-      const aTags = Object.values(aMethods).flatMap((method) => method.tags || []);
-      // Extract tags for all methods in path b
-      const bTags = Object.values(bMethods).flatMap((method) => method.tags || []);
-
-      // Let's user only the first tags
-      const aPrimaryTag = aTags[0] || "";
-      const bPrimaryTag = bTags[0] || "";
-
-      // Sort alphabetically based on the first tag
-      const tagComparison = aPrimaryTag.localeCompare(bPrimaryTag);
-      if (tagComparison !== 0) {
-        return tagComparison; // Return the result of tag comparison
-      }
-
-      // Compare lengths of the paths
-      const aLength = a.split("/").length;
-      const bLength = b.split("/").length;
-
-      return aLength - bLength; // Shorter paths come before longer ones
-    }
-
-    return Object.keys(paths)
-      .sort(comparePaths.bind(this))
-      .reduce<Record<string, OpenApiPathDefinition>>((sorted, key) => {
-        const pathDefinition = paths[key];
-        if (pathDefinition) {
-          sorted[key] = pathDefinition;
-        }
-
-        return sorted;
-      }, {});
+    return sortPathDefinitions(paths);
   }
 
-  public getPaths(): Record<string, OpenApiPathDefinition> {
-    const paths = this.getSortedPaths(this.pathDefinitions);
-
-    return this.getSortedPaths(paths);
+  public getSwaggerPaths(): Record<string, OpenApiPathDefinition> {
+    return this.getPaths();
   }
 }

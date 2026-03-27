@@ -130,4 +130,26 @@ describe("installDependencies", () => {
     expect(execMock).toHaveBeenNthCalledWith(3, "pnpm add -D typescript", expect.any(Function));
     expect(execMock).toHaveBeenCalledTimes(3);
   });
+
+  it("skips all install work when ui is none and schema dependencies already exist", async () => {
+    const spinner: SpinnerMock = {
+      succeed: vi.fn(),
+    };
+    const execMock = vi.fn((command: string, callback: (...args: unknown[]) => void) => {
+      callback(null, "", "");
+      return {} as never;
+    });
+    const hasDependencyMock = vi.fn(async () => true);
+
+    const { installDependencies } = await loadInstallDependenciesModule(
+      execMock,
+      "npm",
+      hasDependencyMock,
+    );
+
+    await installDependencies("none", ["zod", "typescript"], spinner);
+
+    expect(execMock).not.toHaveBeenCalled();
+    expect(spinner.succeed).not.toHaveBeenCalled();
+  });
 });

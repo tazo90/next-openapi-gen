@@ -57,6 +57,33 @@ describe("SchemaProcessor helper seams", () => {
     });
   });
 
+  it("covers zod-first resolution and missing fallbacks", () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-schema-zod-fallback-"));
+    roots.push(root);
+    const processor = new SchemaProcessor(root, ["typescript", "zod"]);
+    (processor as any).zodSchemaConverter = {
+      typeToSchemaMapping: {
+        UserFromZod: "UserSchema",
+      },
+      convertZodSchemaToOpenApi: () => null,
+      processZodNode: () => ({ type: "object" }),
+    };
+    (processor as any).zodSchemaProcessor = {
+      resolveSchema: (schemaName: string) =>
+        schemaName === "UserFromZod"
+          ? { type: "object", properties: { id: { type: "string" } } }
+          : null,
+    };
+
+    expect(processor.findSchemaDefinition("UserFromZod", "response")).toEqual({
+      type: "object",
+      properties: {
+        id: { type: "string" },
+      },
+    });
+    expect(processor.findSchemaDefinition("DefinitelyMissing", "response")).toEqual({});
+  });
+
   it("resolves imported utility and generic interface types", () => {
     const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-schema-processor-seams-"));
     roots.push(root);
@@ -358,6 +385,35 @@ describe("SchemaProcessor helper seams", () => {
         ),
       ),
     ).toEqual({});
+    expect((processor as any).resolveTSNodeType(t.tsArrayType(t.tsBooleanKeyword()))).toEqual({
+      type: "array",
+      items: { type: "boolean" },
+    });
+    expect(
+      (processor as any).resolveTSNodeType(
+        t.tsTypeLiteral([
+          t.tsPropertySignature(t.identifier("enabled"), t.tsTypeAnnotation(t.tsBooleanKeyword())),
+        ]),
+      ),
+    ).toEqual({
+      type: "object",
+      properties: {
+        enabled: { type: "boolean" },
+      },
+    });
+    expect(
+      (processor as any).resolveTSNodeType(
+        t.tsUnionType([
+          t.tsLiteralType(t.stringLiteral("a")),
+          t.tsLiteralType(t.numericLiteral(1)),
+        ]),
+      ),
+    ).toEqual({
+      oneOf: [
+        { type: "string", enum: ["a"] },
+        { type: "number", enum: [1] },
+      ],
+    });
   });
 
   it("covers enum, property option, and schema file fallback branches", () => {
@@ -563,6 +619,9 @@ describe("SchemaProcessor helper seams", () => {
     ).toEqual({
       type: "object",
     });
+    expect((processor as any).resolveTSNodeType(t.identifier("mystery"))).toEqual({
+      type: "object",
+    });
     expect((processor as any).detectContentType("MultipartFormData")).toBe("multipart/form-data");
     expect((processor as any).detectContentType("UserBody")).toBe("application/json");
     expect((processor as any).getExampleForParam("enabled", "boolean")).toBe(true);
@@ -591,5 +650,25 @@ describe("SchemaProcessor helper seams", () => {
         },
       },
     });
+  });
+
+  it("covers generic helper name checks and parse fallbacks", () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-schema-generic-fallback-"));
+    roots.push(root);
+    const processor = new SchemaProcessor(root, "typescript");
+
+    expect((processor as any).resolveGenericTypeFromString("NotGeneric")).toEqual({});
+    expect((processor as any).resolveGenericTypeFromString("Missing<Base>")).toEqual({});
+    expect((processor as any).isGenericTypeParameter("T")).toBe(true);
+    expect((processor as any).isGenericTypeParameter("User")).toBe(false);
+    expect((processor as any).isInvalidSchemaName("Bad Name")).toBe(true);
+    expect((processor as any).isInvalidSchemaName("GoodName")).toBe(false);
+    expect((processor as any).isBuiltInUtilityType("Awaited")).toBe(true);
+    expect((processor as any).isBuiltInUtilityType("CustomType")).toBe(false);
+    (processor as any).typeDefinitions.Handler = {
+      node: t.arrowFunctionExpression([], t.blockStatement([])),
+    };
+    expect((processor as any).isFunctionSchema("Handler")).toBe(true);
+    expect((processor as any).isFunctionSchema("User")).toBe(false);
   });
 });

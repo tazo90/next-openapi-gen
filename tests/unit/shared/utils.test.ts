@@ -6,6 +6,7 @@ import {
   cleanComment,
   cleanSpec,
   extractJSDocComments,
+  extractTypeFromComment,
   extractPathParameters,
   getOperationId,
   parseTypeScriptFile,
@@ -146,6 +147,29 @@ describe("shared utils", () => {
     expect(emptyAuthData?.auth).toBe("");
   });
 
+  it("extracts multiline type references and preserves empty summaries", () => {
+    expect(
+      extractTypeFromComment(
+        `
+        * @queryParams Result<
+        *   User[]
+        * >
+        `,
+        "@queryParams",
+      ),
+    ).toBe("Result<");
+
+    const data = getExportCommentData(`
+      /**
+       * @description Only metadata
+       */
+      export async function GET() {}
+    `);
+
+    expect(data?.summary).toBe("");
+    expect(data?.description).toBe("Only metadata");
+  });
+
   it("adds path parameter examples without clobbering existing values", () => {
     const spec = cleanSpec({
       paths: {
@@ -172,6 +196,20 @@ describe("shared utils", () => {
     ]);
   });
 
+  it("skips missing path definitions and operations while cleaning specs", () => {
+    const spec = cleanSpec({
+      paths: {
+        "/users/{id}": {
+          get: undefined,
+        },
+        "/projects/{slug}": undefined,
+      },
+    });
+
+    expect(spec.paths["/users/{id}"].get).toBeUndefined();
+    expect(spec.paths["/projects/{slug}"]).toBeUndefined();
+  });
+
   it("parses TSX with caller-provided parser options", () => {
     const ast = parseTypeScriptFile("const view = <div />;", {
       sourceFilename: "component.tsx",
@@ -179,5 +217,11 @@ describe("shared utils", () => {
 
     expect(ast.program.body).toHaveLength(1);
     expect(ast.loc?.filename).toBe("component.tsx");
+  });
+
+  it("normalizes auth preset casing while keeping unknown entries", () => {
+    expect(performAuthPresetReplacements("BEARER, apiKey, custom-scheme")).toBe(
+      "BearerAuth,ApiKeyAuth,custom-scheme",
+    );
   });
 });

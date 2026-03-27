@@ -12,6 +12,7 @@ import {
 async function loadGenerateModule(spinner: {
   start: ReturnType<typeof vi.fn>;
   succeed: ReturnType<typeof vi.fn>;
+  fail?: ReturnType<typeof vi.fn>;
 }) {
   vi.resetModules();
   vi.doMock("ora", () => ({
@@ -94,6 +95,28 @@ export async function GET() {}
       await generate({});
 
       expect(fs.existsSync(path.join(project.root, "public", "openapi.json"))).toBe(true);
+    } finally {
+      project.cleanup();
+    }
+  });
+
+  it("propagates generation errors before reporting success", async () => {
+    const project = createTempProject("nxog-generate-missing-template-");
+    const spinner = {
+      start: vi.fn().mockReturnThis(),
+      succeed: vi.fn(),
+      fail: vi.fn(),
+    };
+
+    try {
+      process.chdir(project.root);
+
+      const { generate } = await loadGenerateModule(spinner);
+
+      await expect(generate({ template: "missing.openapi.json" })).rejects.toThrow(
+        "Failed to read OpenAPI template",
+      );
+      expect(spinner.succeed).not.toHaveBeenCalled();
     } finally {
       project.cleanup();
     }

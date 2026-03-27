@@ -28,11 +28,30 @@ describe("Zod prescan helpers", () => {
       import { z } from "zod";
       import { createInsertSchema } from "drizzle-zod";
       import factory from "./factory";
+      import * as namespaceFactory from "./namespace";
       export type User = z.infer<typeof UserSchema>;
     `);
 
+    const localInferAst = t.file(
+      t.program([
+        t.exportNamedDeclaration(
+          t.tsTypeAliasDeclaration(
+            t.identifier("LocalInfer"),
+            undefined,
+            t.tsTypeReference(
+              t.identifier("infer"),
+              t.tsTypeParameterInstantiation([t.tsTypeQuery(t.identifier("LocalSchema"))]),
+            ),
+          ),
+        ),
+      ]),
+    );
+
     expect(extractTypeMappingsFromAST(ast)).toEqual({
       User: "UserSchema",
+    });
+    expect(extractTypeMappingsFromAST(localInferAst)).toEqual({
+      LocalInfer: "LocalSchema",
     });
 
     const metadata = collectImportMetadata(ast);
@@ -75,6 +94,7 @@ describe("Zod prescan helpers", () => {
         new Set(["createInsertSchema"]),
       ),
     ).toBe(true);
+    expect(isZodSchemaNode(t.identifier("plainValue"), new Set())).toBe(false);
   });
 
   it("finds functions and factory functions through local and imported ASTs", () => {
@@ -102,8 +122,53 @@ describe("Zod prescan helpers", () => {
     expect(returnsZodSchemaNode(findFunctionInAST(currentAST, "makeLocal")!, isZodSchema)).toBe(
       true,
     );
+    expect(returnsZodSchemaNode(t.identifier("value"), isZodSchema)).toBe(false);
+    expect(
+      returnsZodSchemaNode(
+        parseTypeScriptFile(`
+          function maybeFactory(flag: boolean) {
+            if (flag) return value;
+            return anotherValue;
+          }
+        `).program.body[0] as t.Node,
+        isZodSchema,
+      ),
+    ).toBe(false);
 
     const importedFile = "/virtual/imported.ts";
+    const cachedFactory = new Map<string, t.Node>([["fromCache", t.identifier("cachedFactory")]]);
+    expect(
+      findFactoryFunctionNode({
+        functionName: "fromCache",
+        currentFilePath: "/virtual/current.ts",
+        currentAST,
+        importedModules: {},
+        factoryCache: cachedFactory,
+        factoryCheckCache: new Map(),
+        fileAccess: {
+          existsSync: () => true,
+        },
+        resolveImportPath: () => importedFile,
+        parseFileWithCache: () => importedAST,
+        isZodSchema,
+      }),
+    ).toEqual(t.identifier("cachedFactory"));
+    expect(
+      findFactoryFunctionNode({
+        functionName: "alreadyChecked",
+        currentFilePath: "/virtual/current.ts",
+        currentAST,
+        importedModules: {},
+        factoryCache: new Map(),
+        factoryCheckCache: new Map([["alreadyChecked", false]]),
+        fileAccess: {
+          existsSync: () => true,
+        },
+        resolveImportPath: () => importedFile,
+        parseFileWithCache: () => importedAST,
+        isZodSchema,
+      }),
+    ).toBeNull();
     expect(
       findFactoryFunctionNode({
         functionName: "makeLocal",
@@ -137,5 +202,49 @@ describe("Zod prescan helpers", () => {
         isZodSchema,
       }),
     ).toBeTruthy();
+
+    const noReturnFactory = parseTypeScriptFile(`
+      export function makeNoSchema() {
+        return value;
+      }
+    `);
+    const importedNonSchemaAst = parseTypeScriptFile(`
+      export function makeImportedValue() {
+        return value;
+      }
+    `);
+
+    expect(
+      findFactoryFunctionNode({
+        functionName: "makeNoSchema",
+        currentFilePath: "/virtual/current.ts",
+        currentAST: noReturnFactory,
+        importedModules: {},
+        factoryCache: new Map(),
+        factoryCheckCache: new Map(),
+        fileAccess: {
+          existsSync: () => false,
+        },
+        resolveImportPath: () => null,
+        parseFileWithCache: () => null,
+        isZodSchema,
+      }),
+    ).toBeNull();
+    expect(
+      findFactoryFunctionNode({
+        functionName: "makeImportedValue",
+        currentFilePath: "/virtual/current.ts",
+        currentAST,
+        importedModules: { makeImportedValue: "./imported-value" },
+        factoryCache: new Map(),
+        factoryCheckCache: new Map(),
+        fileAccess: {
+          existsSync: (filePath: string) => filePath === importedFile,
+        },
+        resolveImportPath: () => importedFile,
+        parseFileWithCache: () => importedNonSchemaAst,
+        isZodSchema,
+      }),
+    ).toBeNull();
   });
 });

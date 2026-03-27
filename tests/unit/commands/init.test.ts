@@ -17,6 +17,9 @@ async function loadInitModule(
   setupMocks?: () => void,
 ) {
   vi.resetModules();
+  vi.doUnmock("fs-extra");
+  vi.doUnmock("child_process");
+  vi.doUnmock("ora");
   vi.doMock("child_process", () => ({
     exec: execMock,
   }));
@@ -160,6 +163,57 @@ describe("init command", () => {
       await init({});
 
       expect(fs.existsSync(path.join(project.root, "next.openapi.json"))).toBe(false);
+      expect(execMock).not.toHaveBeenCalled();
+    } finally {
+      project.cleanup();
+    }
+  });
+
+  it("honors an explicit docs route and ui choice", async () => {
+    const project = createTempProject("nxog-init-redoc-");
+    const spinner = {
+      start: vi.fn(),
+      succeed: vi.fn(),
+      fail: vi.fn(),
+    };
+    const execMock = vi.fn((command: string, callback: (...args: unknown[]) => void) => {
+      callback(null, "", "");
+      return {} as never;
+    });
+
+    try {
+      process.chdir(project.root);
+      fs.mkdirSync(path.join(project.root, "config"), { recursive: true });
+      writeJsonFile(path.join(project.root, "package.json"), {
+        name: "fixture-app",
+        version: "1.0.0",
+      });
+
+      const { init } = await loadInitModule(execMock, spinner);
+
+      await init({
+        docsUrl: "internal/reference",
+        output: "config/template.json",
+        schema: "zod",
+        ui: "redoc",
+      });
+
+      const template = JSON.parse(
+        fs.readFileSync(path.join(project.root, "config", "template.json"), "utf8"),
+      ) as { docsUrl: string; ui: string; outputFile: string };
+      const docsPage = fs.readFileSync(
+        path.join(project.root, "src", "app", "internal", "reference", "page.tsx"),
+        "utf8",
+      );
+
+      expect(template).toMatchObject({
+        docsUrl: "internal/reference",
+        ui: "redoc",
+      });
+      expect(docsPage).toContain("RedocStandalone");
+      expect(execMock).toHaveBeenNthCalledWith(1, "npm install redoc ", expect.any(Function));
+      expect(execMock).toHaveBeenNthCalledWith(2, "npm install zod", expect.any(Function));
+      expect(spinner.fail).not.toHaveBeenCalled();
     } finally {
       project.cleanup();
     }

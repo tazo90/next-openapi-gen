@@ -238,6 +238,9 @@ describe("ZodSchemaConverter helper seams", () => {
     expect(
       converter.processZodLazy(getFirstInitializer("z.lazy(() => z.string())") as t.CallExpression),
     ).toEqual({ type: "string" });
+    expect(
+      converter.processZodLazy(getFirstInitializer("z.lazy(() => UserSchema)") as t.CallExpression),
+    ).toEqual({ $ref: "#/components/schemas/UserSchema" });
     expect(converter.processZodLazy(getFirstInitializer("z.lazy()") as t.CallExpression)).toEqual({
       type: "object",
     });
@@ -301,7 +304,10 @@ describe("ZodSchemaConverter helper seams", () => {
   });
 
   it("covers object and primitive helper fallbacks", () => {
-    const converter = new ZodSchemaConverter(process.cwd());
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-zod-converter-primitives-"));
+    roots.push(root);
+    const converter = new ZodSchemaConverter(root);
+    converter.drizzleZodImports.add("createInsertSchema");
 
     expect(
       converter.processZodObject(getFirstInitializer("z.object()") as t.CallExpression),
@@ -347,12 +353,51 @@ describe("ZodSchemaConverter helper seams", () => {
       additionalProperties: { type: "number" },
     });
     expect(
+      (converter as any).processZodPrimitive(getFirstInitializer("z.any()") as t.CallExpression),
+    ).toEqual({});
+    expect(
+      (converter as any).processZodPrimitive(getFirstInitializer("z.enum({})") as t.CallExpression),
+    ).toEqual({
+      type: "string",
+    });
+    expect(
       (converter as any).processZodPrimitive(
         getFirstInitializer("z.custom<File>()") as t.CallExpression,
       ),
     ).toEqual({
       type: "string",
       format: "binary",
+    });
+    expect(
+      converter.processZodNode(
+        getFirstInitializer(
+          `createInsertSchema(table, {
+            email: (schema) => schema.email.min(3),
+            isActive: (schema) => schema.isActive.optional(),
+          })`,
+        ),
+      ),
+    ).toEqual({
+      type: "object",
+      properties: {
+        email: {
+          type: "string",
+          format: "email",
+          minLength: 3,
+        },
+        isActive: {
+          type: "boolean",
+        },
+      },
+      required: ["email"],
+    });
+    expect(
+      converter.processZodTuple(
+        getFirstInitializer("z.tuple([z.string(), z.number()])") as t.CallExpression,
+      ),
+    ).toEqual({
+      type: "array",
+      items: { type: "string" },
     });
     expect(converter.processZodTuple(getFirstInitializer("z.tuple()") as t.CallExpression)).toEqual(
       {
@@ -361,9 +406,134 @@ describe("ZodSchemaConverter helper seams", () => {
       },
     );
     expect(
+      converter.processZodIntersection(
+        getFirstInitializer(
+          "z.intersection(z.object({ a: z.string() }), z.object({ b: z.number() }))",
+        ) as t.CallExpression,
+      ),
+    ).toEqual({
+      allOf: [
+        {
+          type: "object",
+          properties: {
+            a: { type: "string" },
+          },
+          required: ["a"],
+        },
+        {
+          type: "object",
+          properties: {
+            b: { type: "number" },
+          },
+          required: ["b"],
+        },
+      ],
+    });
+    expect(
       converter.processZodIntersection(getFirstInitializer("z.intersection()") as t.CallExpression),
     ).toEqual({
       type: "object",
+    });
+  });
+
+  it("covers processZodNode references and object-property variants", () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-zod-converter-refs-"));
+    roots.push(root);
+    const converter = new ZodSchemaConverter(root);
+    converter.zodSchemas.BaseSchema = {
+      type: "object",
+      properties: {
+        id: { type: "string" },
+      },
+      required: ["id"],
+    };
+    converter.zodSchemas.UserSchema = {
+      type: "object",
+      properties: {
+        id: { type: "string" },
+      },
+      required: ["id"],
+    };
+    converter.zodSchemas.PaymentMethodSchema = {
+      type: "object",
+      properties: {
+        label: { type: "string" },
+      },
+      required: ["label"],
+    };
+    converter.zodSchemas.ArraySchema = {
+      type: "array",
+      items: { type: "string" },
+    };
+    converter.zodSchemas.NumberSchema = {
+      type: "number",
+    };
+
+    expect(converter.processZodNode(getFirstInitializer("BaseSchema.describe('Base')"))).toEqual({
+      allOf: [{ $ref: "#/components/schemas/BaseSchema" }],
+      description: "Base",
+    });
+    expect(converter.processZodNode(getFirstInitializer("BaseSchema.optional()"))).toEqual({
+      allOf: [{ $ref: "#/components/schemas/BaseSchema" }],
+    });
+    expect(converter.processZodNode(getFirstInitializer("z.coerce.number()"))).toEqual({
+      type: "number",
+    });
+    expect(converter.processZodNode(t.identifier("UnknownSchema"))).toEqual({
+      $ref: "#/components/schemas/UnknownSchema",
+    });
+    expect(
+      converter.processZodObject(
+        getFirstInitializer(
+          `z.object({
+            user: UserSchema.describe("User ref"),
+            alias: UserSchema,
+            methods: z.array(PaymentMethodSchema),
+          })`,
+        ) as t.CallExpression,
+      ),
+    ).toEqual({
+      type: "object",
+      properties: {
+        user: {
+          allOf: [{ $ref: "#/components/schemas/UserSchema" }],
+          description: "User ref",
+        },
+        alias: {
+          $ref: "#/components/schemas/UserSchema",
+        },
+        methods: {
+          type: "array",
+          items: { $ref: "#/components/schemas/PaymentMethodSchema" },
+        },
+      },
+      required: ["user", "alias", "methods"],
+    });
+    expect(
+      converter.processZodObject(
+        getFirstInitializer(
+          `z.object({
+            described: UserSchema.describe(),
+            optionalMethods: z.array(PaymentMethodSchema).optional(),
+            plain: z.string(),
+          })`,
+        ) as t.CallExpression,
+      ),
+    ).toEqual({
+      type: "object",
+      properties: {
+        described: {
+          $ref: "#/components/schemas/UserSchema",
+        },
+        optionalMethods: {
+          type: "array",
+          items: { $ref: "#/components/schemas/PaymentMethodSchema" },
+        },
+        plain: {
+          type: "string",
+        },
+      },
+      required: ["described", "plain"],
     });
   });
 
@@ -383,6 +553,93 @@ describe("ZodSchemaConverter helper seams", () => {
         getFirstInitializer('z.string().describe("Documented")') as t.CallExpression,
       ),
     ).toBe("Documented");
+  });
+
+  it("covers chained method transforms", () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-zod-converter-chain-"));
+    roots.push(root);
+    const converter = new ZodSchemaConverter(root);
+    converter.zodSchemas.BaseSchema = {
+      type: "object",
+      properties: {
+        id: { type: "string" },
+      },
+      required: ["id"],
+      description: "Base schema",
+    };
+    converter.zodSchemas.NumberSchema = { type: "number" };
+    converter.zodSchemas.ArraySchema = { type: "array", items: { type: "string" } };
+
+    expect(
+      converter.processZodChain(getFirstInitializer("z.string().describe('@deprecated Old')")),
+    ).toEqual({
+      type: "string",
+      deprecated: true,
+      description: "Old",
+    });
+    expect(converter.processZodChain(getFirstInitializer("z.string().deprecated()"))).toEqual({
+      type: "string",
+      deprecated: true,
+    });
+    expect(
+      converter.processZodChain(getFirstInitializer("z.string().min(2).max(4).length(3)")),
+    ).toEqual({
+      type: "string",
+      minLength: 3,
+      maxLength: 3,
+    });
+    expect(converter.processZodChain(getFirstInitializer("z.number().min(2).max(4)"))).toEqual({
+      type: "number",
+      minimum: 2,
+      maximum: 4,
+    });
+    expect(
+      converter.processZodChain(getFirstInitializer("z.array(z.string()).min(1).max(2).length(2)")),
+    ).toEqual({
+      type: "array",
+      items: { type: "string" },
+      minItems: 2,
+      maxItems: 2,
+    });
+    expect(
+      converter.processZodChain(
+        getFirstInitializer("z.string().regex(/abc/).startsWith('a').endsWith('z').includes('b')"),
+      ),
+    ).toEqual({
+      type: "string",
+      pattern: "b",
+    });
+    expect(
+      converter.processZodChain(
+        getFirstInitializer("z.object({ enabled: z.boolean() }).default({ enabled: true })"),
+      ),
+    ).toEqual({
+      type: "object",
+      properties: {
+        enabled: { type: "boolean" },
+      },
+      required: ["enabled"],
+      default: {
+        enabled: true,
+      },
+    });
+    expect(
+      converter.processZodChain(getFirstInitializer("BaseSchema.extend({ name: z.string() })")),
+    ).toEqual({
+      type: "object",
+      properties: {
+        id: { type: "string" },
+        name: { type: "string" },
+      },
+      required: ["id", "name"],
+      description: "Base schema",
+    });
+    expect(converter.processZodChain(getFirstInitializer("z.string().or(z.number())"))).toEqual({
+      oneOf: [{ type: "string" }, { type: "number" }],
+    });
+    expect(converter.processZodChain(getFirstInitializer("z.string().and(z.number())"))).toEqual({
+      allOf: [{ type: "string" }, { type: "number" }],
+    });
   });
 
   it("covers import resolution and factory expansion fallback branches", () => {

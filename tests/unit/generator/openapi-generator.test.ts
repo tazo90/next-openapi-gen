@@ -170,58 +170,35 @@ describe("OpenApiGenerator", () => {
     }
   });
 
-  it("covers private error helper branches", () => {
-    const project = createTempProject("nxog-generator-private-");
+  it("preserves explicit servers when they already exist", () => {
+    const project = createTempProject("nxog-generator-explicit-servers-");
 
     try {
-      const templatePath = writeOpenApiTemplate(project.root);
-      const generator = new OpenApiGenerator({ templatePath });
-
-      expect((generator as any).guessHttpStatus("418")).toBe(418);
-      expect((generator as any).guessHttpStatus("permission_denied")).toBe(403);
-      expect((generator as any).guessHttpStatus("mystery_error")).toBe(500);
-
-      expect(
-        (generator as any).processTemplate(
+      const templatePath = writeOpenApiTemplate(project.root, {
+        basePath: "/api",
+        servers: [
           {
-            message: "{{MESSAGE}}",
-            code: "{{CODE}}",
+            url: "https://example.com",
+            description: "Primary",
           },
-          {
-            MESSAGE: "Created",
-            CODE: "USER_CREATED",
-          },
-        ),
-      ).toEqual({
-        message: "Created",
-        code: "USER_CREATED",
+        ],
       });
+      const previousCwd = process.cwd();
+      process.chdir(project.root);
 
-      expect(
-        (generator as any).createErrorResponseComponent("401", {
-          description: "Unauthorized",
-          schema: { type: "object" },
-        }),
-      ).toEqual({
-        description: "Unauthorized",
-        content: {
-          "application/json": {
-            schema: { type: "object" },
-          },
-        },
-      });
+      try {
+        const generator = new OpenApiGenerator({ templatePath });
+        const spec = generator.generate();
 
-      expect(() =>
-        (generator as any).generateErrorResponsesFromConfig(
+        expect(spec.servers).toEqual([
           {
-            components: {},
+            url: "https://example.com",
+            description: "Primary",
           },
-          {
-            template: {},
-            codes: {},
-          },
-        ),
-      ).not.toThrow();
+        ]);
+      } finally {
+        process.chdir(previousCwd);
+      }
     } finally {
       project.cleanup();
     }

@@ -44,6 +44,14 @@ describe("PagesRouterStrategy", () => {
       expect(strategy.getRoutePath(".\\pages\\api\\users\\[id].ts")).toBe("/users/{id}");
       expect(strategy.getRoutePath("./pages/api/index.ts")).toBe("/");
     });
+
+    it("throws when the file path does not belong to the configured apiDir", () => {
+      strategy = new PagesRouterStrategy(pagesConfig);
+
+      expect(() => strategy.getRoutePath("./src/app/api/users/route.ts")).toThrow(
+        'Could not find apiDir "./pages/api"',
+      );
+    });
   });
 
   describe("extractJSDocFromComment", () => {
@@ -136,6 +144,22 @@ describe("PagesRouterStrategy", () => {
       expect(result.responseDescription).toBe("Deleted");
       expect(result.auth).toBe("BasicAuth");
     });
+
+    it("falls back to auth preset replacement and leaves summary empty for tag-only comments", () => {
+      strategy = new PagesRouterStrategy(pagesConfig);
+
+      const result = strategy.extractJSDocFromComment(`
+        * @tag Reports
+        * @auth bearer,ApiKeyAuth,CustomScheme
+        * @response
+      `);
+
+      expect(result.summary).toBe("");
+      expect(result.tag).toBe("Reports");
+      expect(result.auth).toBe("BearerAuth,ApiKeyAuth,CustomScheme");
+      expect(result.responseType).toBe("");
+      expect(result.successCode).toBe("");
+    });
   });
 
   describe("RouteProcessor interop", () => {
@@ -148,7 +172,7 @@ describe("PagesRouterStrategy", () => {
         description: "Get all users",
       });
 
-      const paths = routeProcessor.getSwaggerPaths();
+      const paths = routeProcessor.getPaths();
       expect(paths["/users"]).toBeDefined();
       expect(paths["/users"]?.get).toBeDefined();
     });
@@ -188,5 +212,31 @@ describe("PagesRouterStrategy", () => {
         isOpenApi: true,
       }),
     );
+  });
+
+  it("ignores comments without methods or unsupported method values", () => {
+    strategy = new PagesRouterStrategy(pagesConfig);
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-pages-router-ignore-"));
+    roots.push(root);
+    const filePath = path.join(root, "noop.ts");
+    fs.writeFileSync(
+      filePath,
+      `
+      /**
+       * Missing method
+       * @openapi
+       */
+      /**
+       * Unsupported method
+       * @method TRACE
+       */
+      export default async function handler() {}
+      `,
+    );
+
+    const addRoute = vi.fn();
+    strategy.processFile(filePath, addRoute);
+
+    expect(addRoute).not.toHaveBeenCalled();
   });
 });

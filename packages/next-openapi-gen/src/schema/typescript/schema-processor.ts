@@ -1,17 +1,14 @@
 import fs from "fs";
 import path from "path";
-import type { NodePath } from "@babel/traverse";
 import * as t from "@babel/types";
 
 import { processCustomSchemaFiles } from "../core/custom-schema-file-processor.js";
 import { CustomSchemaProcessor } from "../core/custom-schema-processor.js";
 import { mergeSchemaDefinitionLayers } from "../core/schema-definition-processor.js";
 import { parseTypeScriptFile } from "../../shared/utils.js";
-import { traverse } from "../../shared/babel-traverse.js";
 import { ZodSchemaConverter } from "../zod/zod-converter.js";
 import { ZodSchemaProcessor } from "../zod/zod-schema-processor.js";
 import {
-  createFormDataSchema,
   createTypeReferenceFromString,
   detectContentType,
   extractKeysFromLiteralType,
@@ -26,6 +23,21 @@ import {
   parseGenericTypeString,
   splitGenericTypeArguments,
 } from "./helpers.js";
+import {
+  createDefaultPathParamsSchema,
+  createMultipleResponsesSchema,
+  createRequestBodySchema,
+  createRequestParamsSchema,
+  createResponseSchema,
+  getSchemaContent,
+} from "./schema-content.js";
+import {
+  collectAllExportedDefinitions,
+  collectImports,
+  collectTypeDefinitions,
+  resolveImportPath,
+} from "./schema-discovery.js";
+import { extractFunctionParameters, extractFunctionReturnType } from "./function-nodes.js";
 import { resolveUtilityTypeReference } from "./utility-types.js";
 import type {
   ContentType,
@@ -190,38 +202,7 @@ export class SchemaProcessor {
   }
 
   private collectImports(ast: t.File, filePath: string): void {
-    // Normalize path to avoid Windows/Unix path separator issues
-    const normalizedPath = path.normalize(filePath);
-    if (!this.importMap[normalizedPath]) {
-      this.importMap[normalizedPath] = {};
-    }
-    const importEntries = this.importMap[normalizedPath]!;
-
-    traverse(ast, {
-      ImportDeclaration: (nodePath: NodePath<t.ImportDeclaration>) => {
-        const importPath = nodePath.node.source.value;
-
-        // Handle named imports: import { foo, bar } from './file'
-        nodePath.node.specifiers.forEach((specifier) => {
-          if (t.isImportSpecifier(specifier)) {
-            const importedName = t.isIdentifier(specifier.imported)
-              ? specifier.imported.name
-              : specifier.imported.value;
-            importEntries[importedName] = importPath;
-          }
-          // Handle default imports: import foo from './file'
-          else if (t.isImportDefaultSpecifier(specifier)) {
-            const importedName = specifier.local.name;
-            importEntries[importedName] = importPath;
-          }
-          // Handle namespace imports: import * as foo from './file'
-          else if (t.isImportNamespaceSpecifier(specifier)) {
-            const importedName = specifier.local.name;
-            importEntries[importedName] = importPath;
-          }
-        });
-      },
-    });
+    collectImports(ast, filePath, this.importMap);
   }
 
   /**
@@ -229,30 +210,7 @@ export class SchemaProcessor {
    * Converts import paths like "../app/api/products/route.utils" to absolute file paths
    */
   private resolveImportPath(importPath: string, fromFilePath: string): string | null {
-    // Skip node_modules imports
-    if (!importPath.startsWith(".")) {
-      return null;
-    }
-
-    const fromDir = path.dirname(fromFilePath);
-    let resolvedPath = path.resolve(fromDir, importPath);
-
-    // Try with .ts extension
-    if (this.fileAccess.existsSync(resolvedPath + ".ts")) {
-      return resolvedPath + ".ts";
-    }
-
-    // Try with .tsx extension
-    if (this.fileAccess.existsSync(resolvedPath + ".tsx")) {
-      return resolvedPath + ".tsx";
-    }
-
-    // Try as-is (might already have extension)
-    if (this.fileAccess.existsSync(resolvedPath)) {
-      return resolvedPath;
-    }
-
-    return null;
+    return resolveImportPath(importPath, fromFilePath, this.fileAccess);
   }
 
   /**
@@ -260,139 +218,11 @@ export class SchemaProcessor {
    * Used when processing imported files to ensure all referenced types are available
    */
   private collectAllExportedDefinitions(ast: any, filePath?: string): void {
-    const currentFile = filePath || this.currentFilePath;
-
-    traverse(ast, {
-      TSTypeAliasDeclaration: (path: any) => {
-        if (path.node.id && t.isIdentifier(path.node.id)) {
-          const name = path.node.id.name;
-          if (!this.typeDefinitions[name]) {
-            const node =
-              path.node.typeParameters && path.node.typeParameters.params.length > 0
-                ? path.node
-                : path.node.typeAnnotation;
-            this.typeDefinitions[name] = { node, filePath: currentFile };
-          }
-        }
-      },
-      TSInterfaceDeclaration: (path: any) => {
-        if (path.node.id && t.isIdentifier(path.node.id)) {
-          const name = path.node.id.name;
-          if (!this.typeDefinitions[name]) {
-            this.typeDefinitions[name] = { node: path.node, filePath: currentFile };
-          }
-        }
-      },
-      TSEnumDeclaration: (path: any) => {
-        if (path.node.id && t.isIdentifier(path.node.id)) {
-          const name = path.node.id.name;
-          if (!this.typeDefinitions[name]) {
-            this.typeDefinitions[name] = { node: path.node, filePath: currentFile };
-          }
-        }
-      },
-      ExportNamedDeclaration: (path: any) => {
-        // Handle exported interfaces
-        if (t.isTSInterfaceDeclaration(path.node.declaration)) {
-          const interfaceDecl = path.node.declaration;
-          if (interfaceDecl.id && t.isIdentifier(interfaceDecl.id)) {
-            const name = interfaceDecl.id.name;
-            if (!this.typeDefinitions[name]) {
-              this.typeDefinitions[name] = { node: interfaceDecl, filePath: currentFile };
-            }
-          }
-        }
-        // Handle exported type aliases
-        if (t.isTSTypeAliasDeclaration(path.node.declaration)) {
-          const typeDecl = path.node.declaration;
-          if (typeDecl.id && t.isIdentifier(typeDecl.id)) {
-            const name = typeDecl.id.name;
-            if (!this.typeDefinitions[name]) {
-              const node =
-                typeDecl.typeParameters && typeDecl.typeParameters.params.length > 0
-                  ? typeDecl
-                  : typeDecl.typeAnnotation;
-              this.typeDefinitions[name] = { node, filePath: currentFile };
-            }
-          }
-        }
-      },
-    });
+    collectAllExportedDefinitions(ast, this.typeDefinitions, filePath || this.currentFilePath);
   }
 
   private collectTypeDefinitions(ast: any, schemaName: string, filePath?: string): void {
-    const currentFile = filePath || this.currentFilePath;
-
-    traverse(ast, {
-      VariableDeclarator: (path: any) => {
-        if (t.isIdentifier(path.node.id, { name: schemaName })) {
-          const name = path.node.id.name;
-          this.typeDefinitions[name] = { node: path.node.init || path.node, filePath: currentFile };
-        }
-      },
-      TSTypeAliasDeclaration: (path: any) => {
-        if (t.isIdentifier(path.node.id, { name: schemaName })) {
-          const name = path.node.id.name;
-          // Store the full node for generic types, just the type annotation for regular types
-          const node =
-            path.node.typeParameters && path.node.typeParameters.params.length > 0
-              ? path.node // Store the full declaration for generic types
-              : path.node.typeAnnotation; // Store just the type annotation for regular types
-          this.typeDefinitions[name] = { node, filePath: currentFile };
-        }
-      },
-      TSInterfaceDeclaration: (path: any) => {
-        if (t.isIdentifier(path.node.id, { name: schemaName })) {
-          const name = path.node.id.name;
-          this.typeDefinitions[name] = { node: path.node, filePath: currentFile };
-        }
-      },
-      TSEnumDeclaration: (path: any) => {
-        if (t.isIdentifier(path.node.id, { name: schemaName })) {
-          const name = path.node.id.name;
-          this.typeDefinitions[name] = { node: path.node, filePath: currentFile };
-        }
-      },
-      // Collect function declarations for ReturnType<typeof func> support
-      FunctionDeclaration: (path: any) => {
-        if (path.node.id && t.isIdentifier(path.node.id, { name: schemaName })) {
-          const name = path.node.id.name;
-          this.typeDefinitions[name] = { node: path.node, filePath: currentFile };
-        }
-      },
-      // Collect exported zod schemas and functions
-      ExportNamedDeclaration: (path: any) => {
-        if (t.isVariableDeclaration(path.node.declaration)) {
-          path.node.declaration.declarations.forEach((declaration: any) => {
-            if (
-              t.isIdentifier(declaration.id) &&
-              declaration.id.name === schemaName &&
-              declaration.init
-            ) {
-              // Check if is Zod schema
-              if (
-                t.isCallExpression(declaration.init) &&
-                t.isMemberExpression(declaration.init.callee) &&
-                t.isIdentifier(declaration.init.callee.object) &&
-                declaration.init.callee.object.name === "z"
-              ) {
-                const name = declaration.id.name;
-                this.typeDefinitions[name] = { node: declaration.init, filePath: currentFile };
-              }
-            }
-          });
-        }
-
-        // Handle exported function declarations
-        if (t.isFunctionDeclaration(path.node.declaration)) {
-          const funcDecl = path.node.declaration;
-          if (funcDecl.id && t.isIdentifier(funcDecl.id, { name: schemaName })) {
-            const name = funcDecl.id.name;
-            this.typeDefinitions[name] = { node: funcDecl, filePath: currentFile };
-          }
-        }
-      },
-    });
+    collectTypeDefinitions(ast, schemaName, this.typeDefinitions, filePath || this.currentFilePath);
   }
 
   private resolveType(typeName: string): OpenAPIDefinition {
@@ -908,100 +738,27 @@ export class SchemaProcessor {
     responses: Record<string, any>,
     defaultDescription?: string,
   ): Record<string, any> {
-    const result: Record<string, any> = {};
-
-    Object.entries(responses).forEach(([code, response]) => {
-      if (typeof response === "string") {
-        // Reference do components/responses
-        result[code] = { $ref: `#/components/responses/${response}` };
-      } else {
-        result[code] = {
-          description: response.description || defaultDescription || "Response",
-          content: {
-            "application/json": {
-              schema: response.schema || response,
-            },
-          },
-        };
-      }
-    });
-
-    return result;
+    return createMultipleResponsesSchema(responses, defaultDescription);
   }
 
   private createFormDataSchema(body: OpenAPIDefinition): OpenAPIDefinition {
-    return createFormDataSchema(body);
+    return createRequestBodySchema(body, undefined, "multipart/form-data").content[
+      "multipart/form-data"
+    ].schema as OpenAPIDefinition;
   }
 
   /**
    * Create a default schema for path parameters when no schema is defined
    */
   public createDefaultPathParamsSchema(paramNames: string[]): ParamSchema[] {
-    return paramNames.map((paramName) => {
-      // Guess the parameter type based on the name
-      let type = "string";
-      if (
-        paramName === "id" ||
-        paramName.endsWith("Id") ||
-        paramName === "page" ||
-        paramName === "limit" ||
-        paramName === "size" ||
-        paramName === "count"
-      ) {
-        type = "number";
-      }
-
-      const example = this.getExampleForParam(paramName, type);
-
-      return {
-        name: paramName,
-        in: "path",
-        required: true,
-        schema: {
-          type: type,
-        },
-        example: example,
-        description: `Path parameter: ${paramName}`,
-      };
-    });
+    return createDefaultPathParamsSchema(paramNames);
   }
 
   public createRequestParamsSchema(
     params: OpenAPIDefinition,
     isPathParam: boolean = false,
   ): ParamSchema[] {
-    const queryParams: ParamSchema[] = [];
-
-    if (params.properties) {
-      for (let [name, value] of Object.entries(params.properties)) {
-        const param: ParamSchema = {
-          in: isPathParam ? "path" : "query",
-          name,
-          schema: {
-            type: value.type ?? "string",
-          },
-          required: isPathParam ? true : !!value.required, // Path parameters are always required
-        };
-
-        if (value.enum) {
-          param.schema.enum = value.enum;
-        }
-
-        if (value.description) {
-          param.description = value.description;
-          param.schema.description = value.description;
-        }
-
-        // Add examples for path parameters
-        if (isPathParam) {
-          const example = this.getExampleForParam(name, value.type);
-          param.example = example;
-        }
-
-        queryParams.push(param);
-      }
-    }
-    return queryParams;
+    return createRequestParamsSchema(params, isPathParam);
   }
 
   public createRequestBodySchema(
@@ -1009,41 +766,11 @@ export class SchemaProcessor {
     description?: string,
     contentType?: string,
   ): any {
-    const detectedContentType = this.detectContentType(body?.type || "", contentType);
-
-    let schema = body;
-
-    // If it is multipart/form-data, convert schema
-    if (detectedContentType === "multipart/form-data") {
-      schema = this.createFormDataSchema(body);
-    }
-
-    const requestBody: any = {
-      content: {
-        [detectedContentType]: {
-          schema: schema,
-        },
-      },
-    };
-
-    if (description) {
-      requestBody.description = description;
-    }
-
-    return requestBody;
+    return createRequestBodySchema(body, description, contentType);
   }
 
   public createResponseSchema(responses: OpenAPIDefinition, description?: string): any {
-    return {
-      200: {
-        description: description || "Successful response",
-        content: {
-          "application/json": {
-            schema: responses,
-          },
-        },
-      },
-    };
+    return createResponseSchema(responses, description);
   }
 
   public getSchemaContent({ tag, paramsType, pathParamsType, bodyType, responseType }: any): {
@@ -1053,61 +780,15 @@ export class SchemaProcessor {
     body: OpenAPIDefinition;
     responses: OpenAPIDefinition;
   } {
-    // Helper function to strip array notation from type names
-    const stripArrayNotation = (typeName: string | undefined): string | undefined => {
-      if (!typeName) return typeName;
-      let baseType = typeName;
-      while (baseType.endsWith("[]")) {
-        baseType = baseType.slice(0, -2);
-      }
-      return baseType;
-    };
-
-    // Strip array notation for schema lookups
-    const baseBodyType = stripArrayNotation(bodyType);
-    const baseResponseType = stripArrayNotation(responseType);
-
-    // Check if schemas exist, if not try to find them
-    if (paramsType && !this.openapiDefinitions[paramsType]) {
-      this.findSchemaDefinition(paramsType, "params");
-    }
-
-    if (pathParamsType && !this.openapiDefinitions[pathParamsType]) {
-      this.findSchemaDefinition(pathParamsType, "pathParams");
-    }
-
-    if (baseBodyType && !this.openapiDefinitions[baseBodyType]) {
-      this.findSchemaDefinition(baseBodyType, "body");
-    }
-
-    if (baseResponseType && !this.openapiDefinitions[baseResponseType]) {
-      this.findSchemaDefinition(baseResponseType, "response");
-    }
-
-    // Now get the schemas (will be {} if still not found)
-    let params = paramsType ? this.openapiDefinitions[paramsType] || {} : {};
-    let pathParams = pathParamsType ? this.openapiDefinitions[pathParamsType] || {} : {};
-    let body = baseBodyType ? this.openapiDefinitions[baseBodyType] || {} : {};
-    let responses = baseResponseType ? this.openapiDefinitions[baseResponseType] || {} : {};
-
-    if (this.schemaTypes.includes("zod")) {
-      const schemasToProcess = [paramsType, pathParamsType, baseBodyType, baseResponseType].filter(
-        Boolean,
-      );
-      schemasToProcess.forEach((schemaName) => {
-        if (!this.openapiDefinitions[schemaName]) {
-          this.findSchemaDefinition(schemaName, "");
-        }
-      });
-    }
-
-    return {
-      tag,
-      params,
-      pathParams,
-      body,
-      responses,
-    };
+    return getSchemaContent(
+      { tag, paramsType, pathParamsType, bodyType, responseType },
+      {
+        openapiDefinitions: this.openapiDefinitions,
+        schemaTypes: this.schemaTypes,
+        findSchemaDefinition: (schemaName, contentType) =>
+          this.findSchemaDefinition(schemaName, contentType as ContentType),
+      },
+    );
   }
 
   /**
@@ -1453,28 +1134,7 @@ export class SchemaProcessor {
    * @returns The return type annotation node, or null if not found
    */
   private extractFunctionReturnType(funcNode: any): any | null {
-    // Handle FunctionDeclaration: function foo(): ReturnType {}
-    if (t.isFunctionDeclaration(funcNode) || t.isFunctionExpression(funcNode)) {
-      return funcNode.returnType && t.isTSTypeAnnotation(funcNode.returnType)
-        ? funcNode.returnType.typeAnnotation
-        : null;
-    }
-
-    // Handle ArrowFunctionExpression: const foo = (): ReturnType => {}
-    if (t.isArrowFunctionExpression(funcNode)) {
-      return funcNode.returnType && t.isTSTypeAnnotation(funcNode.returnType)
-        ? funcNode.returnType.typeAnnotation
-        : null;
-    }
-
-    // Handle VariableDeclarator with arrow function
-    if (t.isVariableDeclarator(funcNode) && t.isArrowFunctionExpression(funcNode.init)) {
-      return funcNode.init.returnType && t.isTSTypeAnnotation(funcNode.init.returnType)
-        ? funcNode.init.returnType.typeAnnotation
-        : null;
-    }
-
-    return null;
+    return extractFunctionReturnType(funcNode);
   }
 
   /**
@@ -1483,21 +1143,6 @@ export class SchemaProcessor {
    * @returns Array of parameter nodes
    */
   private extractFunctionParameters(funcNode: any): any[] {
-    // Handle FunctionDeclaration
-    if (t.isFunctionDeclaration(funcNode) || t.isFunctionExpression(funcNode)) {
-      return funcNode.params || [];
-    }
-
-    // Handle ArrowFunctionExpression
-    if (t.isArrowFunctionExpression(funcNode)) {
-      return funcNode.params || [];
-    }
-
-    // Handle VariableDeclarator with arrow function
-    if (t.isVariableDeclarator(funcNode) && t.isArrowFunctionExpression(funcNode.init)) {
-      return funcNode.init.params || [];
-    }
-
-    return [];
+    return extractFunctionParameters(funcNode);
   }
 }

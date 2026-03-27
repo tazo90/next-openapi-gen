@@ -97,7 +97,7 @@ describe("RouteProcessor", () => {
         summary: "Hidden route",
       });
 
-      expect(routeProcessor.getSwaggerPaths()).toEqual({});
+      expect(routeProcessor.getPaths()).toEqual({});
     });
 
     it("sorts paths by tag name and then by path depth", () => {
@@ -116,7 +116,7 @@ describe("RouteProcessor", () => {
         tag: "Admin",
       });
 
-      expect(Object.keys(routeProcessor.getSwaggerPaths())).toEqual([
+      expect(Object.keys(routeProcessor.getPaths())).toEqual([
         "/admin",
         "/users",
         "/users/settings",

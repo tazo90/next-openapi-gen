@@ -227,4 +227,197 @@ describe("TypeScript utility type helpers", () => {
       $ref: "#/components/schemas/Loop",
     });
   });
+
+  it("covers null identifiers and utility fallbacks", () => {
+    const context = createContext();
+
+    expect(resolveUtilityTypeReference({ typeName: null }, context)).toBeNull();
+    expect(
+      resolveUtilityTypeReference(
+        t.tsTypeReference(t.identifier("Partial"), t.tsTypeParameterInstantiation([])),
+        context,
+      ),
+    ).toEqual({ type: "object" });
+    expect(
+      resolveUtilityTypeReference(
+        t.tsTypeReference(t.identifier("Awaited"), t.tsTypeParameterInstantiation([])),
+        context,
+      ),
+    ).toEqual({ type: "object" });
+    expect(
+      resolveUtilityTypeReference(
+        t.tsTypeReference(
+          t.identifier("Parameters"),
+          t.tsTypeParameterInstantiation([t.tsStringKeyword()]),
+        ),
+        context,
+      ),
+    ).toEqual({ type: "array", items: { type: "object" } });
+  });
+
+  it("covers missing ReturnType and Pick/Omit fallback branches", () => {
+    const context = createContext({
+      resolveTSNodeType: () => ({ type: "fallback" }),
+      extractFunctionReturnType: () => null,
+      findSchemaDefinition: () => ({}),
+      typeDefinitions: {
+        Shape: {
+          node: t.tsTypeAliasDeclaration(t.identifier("Shape"), undefined, t.tsTypeLiteral([])),
+        },
+      },
+    });
+
+    expect(
+      resolveUtilityTypeReference(
+        t.tsTypeReference(t.identifier("ReturnType"), t.tsTypeParameterInstantiation([])),
+        context,
+      ),
+    ).toEqual({ type: "object" });
+    expect(
+      resolveUtilityTypeReference(
+        t.tsTypeReference(
+          t.identifier("ReturnType"),
+          t.tsTypeParameterInstantiation([
+            t.tsTypeQuery(t.tsQualifiedName(t.identifier("ns"), t.identifier("fn"))),
+          ]),
+        ),
+        context,
+      ),
+    ).toEqual({ type: "object" });
+    expect(
+      resolveUtilityTypeReference(
+        t.tsTypeReference(
+          t.identifier("Pick"),
+          t.tsTypeParameterInstantiation([t.tsTypeReference(t.identifier("Shape"))]),
+        ),
+        context,
+      ),
+    ).toEqual({ type: "fallback" });
+    expect(
+      resolveUtilityTypeReference(
+        t.tsTypeReference(t.identifier("Omit"), t.tsTypeParameterInstantiation([])),
+        context,
+      ),
+    ).toEqual({ type: "object" });
+  });
+
+  it("covers additional utility fallbacks and imported lookups", () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-utility-fallbacks-"));
+    roots.push(root);
+    const importedFile = path.join(root, "helpers.ts");
+    fs.writeFileSync(
+      importedFile,
+      [
+        "export function noReturn(value: string) {",
+        "  return value;",
+        "}",
+        "export function noArgs() {}",
+      ].join("\n"),
+    );
+
+    const readContext = createContext({
+      currentFilePath: path.join(root, "schema.ts"),
+      importMap: {
+        [path.join(root, "schema.ts")]: {
+          noReturn: "./helpers",
+          noArgs: "./helpers",
+        },
+      },
+      fileAccess: {
+        readFileSync: (filePath: string) => fs.readFileSync(filePath, "utf8"),
+      },
+      resolveImportPath: () => importedFile,
+      collectImports: () => {},
+      collectTypeDefinitions: (ast: any, schemaName: string, filePath?: string) => {
+        const node = ast.program.body.find((candidate: any) => {
+          if (candidate.id && t.isIdentifier(candidate.id, { name: schemaName })) {
+            return true;
+          }
+
+          return (
+            t.isExportNamedDeclaration(candidate) &&
+            candidate.declaration &&
+            "id" in candidate.declaration &&
+            candidate.declaration.id &&
+            t.isIdentifier(candidate.declaration.id, { name: schemaName })
+          );
+        });
+        if (node) {
+          readContext.typeDefinitions[schemaName] = {
+            node: t.isExportNamedDeclaration(node) ? node.declaration : node,
+            filePath,
+          };
+        }
+      },
+      collectAllExportedDefinitions: () => {},
+      extractFunctionReturnType: () => null,
+      extractFunctionParameters: () => [],
+    });
+
+    expect(
+      resolveUtilityTypeReference(
+        t.tsTypeReference(
+          t.identifier("ReturnType"),
+          t.tsTypeParameterInstantiation([t.tsTypeQuery(t.identifier("noReturn"))]),
+        ),
+        readContext,
+      ),
+    ).toEqual({ type: "object" });
+    expect(
+      resolveUtilityTypeReference(
+        t.tsTypeReference(
+          t.identifier("Parameters"),
+          t.tsTypeParameterInstantiation([t.tsTypeQuery(t.identifier("noArgs"))]),
+        ),
+        readContext,
+      ),
+    ).toEqual({
+      type: "array",
+      maxItems: 0,
+    });
+
+    const fallbackContext = createContext({
+      resolveTSNodeType: () => ({ type: "fallback" }),
+      findTypeDefinition: () => {
+        fallbackContext.typeDefinitions.MissingGeneric = undefined;
+      },
+    });
+
+    expect(
+      resolveUtilityTypeReference(
+        t.tsTypeReference(
+          t.identifier("Parameters"),
+          t.tsTypeParameterInstantiation([
+            t.tsTypeQuery(t.tsQualifiedName(t.identifier("ns"), t.identifier("fn"))),
+          ]),
+        ),
+        fallbackContext,
+      ),
+    ).toEqual({ type: "array", items: { type: "object" } });
+    expect(
+      resolveUtilityTypeReference(
+        t.tsTypeReference(
+          t.identifier("Pick"),
+          t.tsTypeParameterInstantiation([
+            t.tsTypeReference(t.identifier("Shape")),
+            t.tsLiteralType(t.stringLiteral("missing")),
+          ]),
+        ),
+        fallbackContext,
+      ),
+    ).toEqual({
+      type: "fallback",
+    });
+    expect(
+      resolveUtilityTypeReference(
+        t.tsTypeReference(
+          t.identifier("MissingGeneric"),
+          t.tsTypeParameterInstantiation([t.tsStringKeyword()]),
+        ),
+        fallbackContext,
+      ),
+    ).toEqual({
+      $ref: "#/components/schemas/MissingGeneric",
+    });
+  });
 });

@@ -2,6 +2,8 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { normalizeRapidocTemplate } from "./rapidoc-template.js";
+
 const packageRootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const uiTemplatesDir = path.join(packageRootDir, "templates", "init", "ui");
 
@@ -17,9 +19,7 @@ export function renderUiTemplate(templateFile: string, options: RenderUiTemplate
   let template = fs.readFileSync(resolveUiTemplatePath(templateFile), "utf8");
 
   if (templateFile === "rapidoc.tsx") {
-    template = template.replace('const RapiDoc = "rapi-doc" as any;\n\n', "");
-    template = template.replaceAll("<RapiDoc", "<rapi-doc");
-    template = template.replaceAll("</RapiDoc>", "</rapi-doc>");
+    template = normalizeRapidocTemplate(template);
   }
 
   return template.replaceAll("__NEXT_OPENAPI_GEN_OUTPUT_FILE__", options.outputFile);
