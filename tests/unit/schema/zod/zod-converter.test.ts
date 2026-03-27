@@ -119,6 +119,46 @@ describe("ZodSchemaConverter", () => {
     });
   });
 
+  it("supports Zod 4 top-level helpers and preserves the base schema through pipelines", () => {
+    const converter = new ZodSchemaConverter(process.cwd());
+
+    expect(converter.processZodNode(parseInitializer("z.email()"))).toEqual({
+      type: "string",
+      format: "email",
+    });
+    expect(converter.processZodNode(parseInitializer("z.url()"))).toEqual({
+      type: "string",
+      format: "uri",
+    });
+    expect(converter.processZodNode(parseInitializer("z.uuid()"))).toEqual({
+      type: "string",
+      format: "uuid",
+    });
+    expect(converter.processZodNode(parseInitializer("z.iso.datetime()"))).toEqual({
+      type: "string",
+      format: "date-time",
+    });
+    expect(
+      converter.processZodNode(
+        parseInitializer(
+          "z.string().trim().pipe(z.email()).transform((value) => value.toLowerCase())",
+        ),
+      ),
+    ).toEqual({
+      type: "string",
+      format: "email",
+    });
+    expect(
+      converter.processZodNode(
+        parseInitializer(
+          'z.string().trim().transform((value) => value || "/").refine((value) => value.startsWith("/")).brand<"SafeRedirectPath">()',
+        ),
+      ),
+    ).toEqual({
+      type: "string",
+    });
+  });
+
   it("applies reference descriptions", () => {
     const converter = new ZodSchemaConverter(process.cwd());
     converter.zodSchemas.UserSchema = {
@@ -211,6 +251,47 @@ describe("ZodSchemaConverter", () => {
 
     expect(converter.typeToSchemaMapping).toEqual({
       UserFromZod: "UserSchema",
+    });
+  });
+
+  it("supports zod v4 import paths without eagerly materializing inferred aliases", () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-zod-converter-v4-"));
+    roots.push(root);
+
+    const schemaFile = path.join(root, "schemas.ts");
+    fs.writeFileSync(
+      schemaFile,
+      [
+        'import { z } from "zod/v4";',
+        "export const LoginResponseSchema = z.object({ id: z.uuid() });",
+        "export type LoginResponse = z.infer<typeof LoginResponseSchema>;",
+      ].join("\n"),
+    );
+
+    const converter = new ZodSchemaConverter(root);
+    converter.processAllSchemasInFile(schemaFile);
+    converter.scanFileForTypeMappings(schemaFile);
+
+    expect(converter.zodSchemas.LoginResponseSchema).toEqual({
+      type: "object",
+      properties: {
+        id: {
+          type: "string",
+          format: "uuid",
+        },
+      },
+      required: ["id"],
+    });
+    expect(converter.zodSchemas).not.toHaveProperty("LoginResponse");
+    expect(converter.convertZodSchemaToOpenApi("LoginResponse")).toEqual({
+      type: "object",
+      properties: {
+        id: {
+          type: "string",
+          format: "uuid",
+        },
+      },
+      required: ["id"],
     });
   });
 });

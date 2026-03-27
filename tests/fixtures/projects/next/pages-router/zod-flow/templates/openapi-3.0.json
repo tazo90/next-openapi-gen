@@ -1,0 +1,18 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Pages Router Zod Flow",
+    "version": "1.0.0",
+    "description": "Fixture for Pages Router Zod coverage"
+  },
+  "routerType": "pages",
+  "apiDir": "./pages/api",
+  "schemaDir": "./schemas",
+  "schemaType": "zod",
+  "docsUrl": "api-docs",
+  "ui": "scalar",
+  "outputDir": "./public",
+  "outputFile": "openapi.json",
+  "includeOpenApiRoutes": true,
+  "debug": false
+}

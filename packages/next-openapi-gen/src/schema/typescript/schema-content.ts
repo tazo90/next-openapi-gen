@@ -64,13 +64,14 @@ export function createRequestParamsSchema(
   isPathParam: boolean = false,
 ): ParamSchema[] {
   const queryParams: ParamSchema[] = [];
+  const requiredProperties = new Set(Array.isArray(params.required) ? params.required : []);
 
   if (params.properties) {
     for (const [name, value] of Object.entries(params.properties)) {
       const param: ParamSchema = {
         in: typeof value.in === "string" ? value.in : isPathParam ? "path" : "query",
         name,
-        required: isPathParam ? true : !!value.required,
+        required: isPathParam ? true : requiredProperties.has(name) || !!value.required,
       };
 
       if (value.content) {
@@ -114,8 +115,29 @@ function createParameterSchema(value: OpenApiSchemaLike): OpenApiSchemaLike {
   delete schema.required;
   delete schema.example;
   delete schema.content;
-  schema.type ??= "string";
+  if (!hasSchemaKeywords(schema)) {
+    schema.type = "string";
+  }
   return schema;
+}
+
+function hasSchemaKeywords(schema: OpenApiSchemaLike): boolean {
+  return [
+    "$ref",
+    "type",
+    "properties",
+    "items",
+    "prefixItems",
+    "allOf",
+    "anyOf",
+    "oneOf",
+    "additionalProperties",
+    "enum",
+    "const",
+    "format",
+    "contentEncoding",
+    "contentMediaType",
+  ].some((key) => typeof schema[key] !== "undefined");
 }
 
 export function createRequestBodySchema(

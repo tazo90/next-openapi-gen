@@ -14,6 +14,11 @@ import {
 } from "../../helpers/test-project.js";
 
 const appRouterCoreFixture = getProjectFixturePath("next", "app-router", "core-flow");
+const appRouterZodCoverageFixture = getProjectFixturePath(
+  "next",
+  "app-router",
+  "zod-only-coverage",
+);
 
 describe("OpenAPI document validation", () => {
   it.each(["3.0", "3.1", "3.2"] as const)(
@@ -21,6 +26,22 @@ describe("OpenAPI document validation", () => {
     async (openapiVersion) => {
       const { project, spec } = generateFixtureSpec({
         fixturePath: appRouterCoreFixture,
+        openapiVersion,
+      });
+
+      try {
+        await expectValidSpec(spec);
+      } finally {
+        project.cleanup();
+      }
+    },
+  );
+
+  it.each(["3.0", "3.1", "3.2"] as const)(
+    "validates generated Zod-heavy fixture for OpenAPI %s",
+    async (openapiVersion) => {
+      const { project, spec } = generateFixtureSpec({
+        fixturePath: appRouterZodCoverageFixture,
         openapiVersion,
       });
 

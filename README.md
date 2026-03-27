@@ -40,11 +40,13 @@ pnpm add -D next-openapi-gen
 Generated route scanning and schema discovery are shared across versions. Version-specific differences are applied during finalization, which keeps generated `3.1` and `3.2` specs from remaining `3.0`-shaped internally.
 
 See [`docs/openapi-version-coverage.md`](./docs/openapi-version-coverage.md) for the full coverage matrix, generated vs template/custom boundaries, and validation strategy.
+See [`docs/zod4-support-matrix.md`](./docs/zod4-support-matrix.md) for the Zod-focused support matrix, known limitations, and regression-fixture coverage.
 
 ### Inference And Annotation Notes
 
 - Explicit `@response` tags remain authoritative.
 - If no `@response` tag is present, App Router handlers can infer responses from typed `NextResponse.json(...)` / `Response.json(...)` returns.
+- Inference is intentionally best-effort: it handles typed returns, inline object literals, multiple return paths, and `204` responses, but explicit `@response` tags remain the most deterministic option when you want stable component names.
 - TypeScript checker support is used selectively for higher-fidelity response inference and import/path-alias resolution, while the main scan pipeline remains shared across versions.
 
 ## Quick Start
@@ -514,6 +516,8 @@ export async function GET() {
 }
 ```
 
+Comma-separated `@auth` values are emitted as alternative OpenAPI security requirements. For example, `@auth bearer,SessionCookie` generates `[{ BearerAuth: [] }, { SessionCookie: [] }]`, meaning either scheme is accepted. Richer `components.securitySchemes` fields such as OAuth metadata, device authorization, custom API key locations, and OpenID Connect URLs are preserved from your template or reusable OpenAPI fragments.
+
 ### Deprecated
 
 ```typescript
@@ -914,6 +918,8 @@ const EmailSchema = z.string().email().min(5).max(100).describe("Email address")
 // Converts to OpenAPI with email format, minLength and maxLength
 ```
 
+Top-level Zod 4 helpers such as `z.email()`, `z.url()`, `z.uuid()`, and `z.iso.datetime()` are also supported. When you compose them with `pipe`, `transform`, `refine`, or `brand`, the generator preserves the strongest representable base schema instead of degrading to `{}` or `type: object`.
+
 ### Type Aliases with z.infer
 
 ```typescript
@@ -929,6 +935,8 @@ const UserSchema = z.object({
 type User = z.infer<typeof UserSchema>;
 
 // The library will be able to recognize this schema by reference `UserSchema` or `User` type.
+// In pure Zod mode, exported z.infer aliases no longer create duplicate OpenAPI components
+// unless the alias itself is explicitly referenced by route metadata.
 ```
 
 ### Factory Functions (Schema Generators)

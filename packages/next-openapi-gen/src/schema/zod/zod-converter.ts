@@ -374,11 +374,6 @@ export class ZodSchemaConverter {
                   if (!this.zodSchemas[referencedSchema]) {
                     this.processFileForZodSchema(filePath, referencedSchema);
                   }
-
-                  // Use the referenced schema for this type alias
-                  if (this.zodSchemas[referencedSchema]) {
-                    this.zodSchemas[schemaName] = this.zodSchemas[referencedSchema];
-                  }
                 }
               }
             }
@@ -647,11 +642,6 @@ export class ZodSchemaConverter {
                   if (!this.zodSchemas[referencedSchemaName]) {
                     this.processFileForZodSchema(filePath, referencedSchemaName);
                   }
-
-                  // Use the referenced schema for this type
-                  if (this.zodSchemas[referencedSchemaName]) {
-                    this.zodSchemas[typeName] = this.zodSchemas[referencedSchemaName];
-                  }
                 }
               }
             }
@@ -670,9 +660,6 @@ export class ZodSchemaConverter {
                   const referencedSchemaName = param.exprName.name;
                   // Find the referenced schema
                   this.processFileForZodSchema(filePath, referencedSchemaName);
-                  if (this.zodSchemas[referencedSchemaName]) {
-                    this.zodSchemas[schemaName] = this.zodSchemas[referencedSchemaName];
-                  }
                 }
               }
             }
@@ -775,6 +762,23 @@ export class ZodSchemaConverter {
       );
 
       return this.processZodPrimitive(syntheticNode);
+    }
+
+    // Handle nested Zod namespace helpers like z.iso.datetime()
+    if (
+      t.isCallExpression(node) &&
+      t.isMemberExpression(node.callee) &&
+      t.isMemberExpression(node.callee.object) &&
+      t.isIdentifier(node.callee.property)
+    ) {
+      let currentObject: t.Node = node.callee.object;
+      while (t.isMemberExpression(currentObject)) {
+        currentObject = currentObject.object;
+      }
+
+      if (t.isIdentifier(currentObject, { name: "z" })) {
+        return this.processZodPrimitive(node);
+      }
     }
 
     // Handle z.object({...})
@@ -1402,6 +1406,15 @@ export class ZodSchemaConverter {
       case "transform":
         // Transform doesn't change the schema validation, only the output format
         break;
+      case "pipe":
+        if (node.arguments.length > 0) {
+          const firstArgument = node.arguments[0];
+          if (firstArgument && !t.isArgumentPlaceholder(firstArgument)) {
+            const pipedSchema = this.processZodNode(firstArgument);
+            schema = this.mergePipeSchema(schema, pipedSchema);
+          }
+        }
+        break;
       case "or":
         if (node.arguments.length > 0) {
           const firstArgument = node.arguments[0];
@@ -1440,6 +1453,17 @@ export class ZodSchemaConverter {
    */
   private escapeRegExp(string: string): string {
     return escapeRegExp(string);
+  }
+
+  private mergePipeSchema(baseSchema: OpenApiSchema, pipedSchema: OpenApiSchema): OpenApiSchema {
+    if (pipedSchema.$ref || pipedSchema.allOf || pipedSchema.anyOf || pipedSchema.oneOf) {
+      return pipedSchema;
+    }
+
+    return {
+      ...baseSchema,
+      ...pipedSchema,
+    };
   }
 
   /**

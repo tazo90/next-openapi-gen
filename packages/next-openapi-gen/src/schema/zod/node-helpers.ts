@@ -232,15 +232,40 @@ export function isOptionalCall(node: t.CallExpression): boolean {
   return false;
 }
 
+function getZodCalleePath(node: t.CallExpression): string[] | null {
+  if (!t.isMemberExpression(node.callee) || !t.isIdentifier(node.callee.property)) {
+    return null;
+  }
+
+  const path = [node.callee.property.name];
+  let currentObject: t.Node = node.callee.object;
+
+  while (t.isMemberExpression(currentObject)) {
+    if (!t.isIdentifier(currentObject.property)) {
+      return null;
+    }
+
+    path.unshift(currentObject.property.name);
+    currentObject = currentObject.object;
+  }
+
+  if (!t.isIdentifier(currentObject, { name: "z" })) {
+    return null;
+  }
+
+  return path;
+}
+
 export function processZodPrimitiveNode(
   node: t.CallExpression,
   context: PrimitiveHelperContext,
 ): OpenApiSchema {
-  if (!t.isMemberExpression(node.callee) || !t.isIdentifier(node.callee.property)) {
+  const zodCalleePath = getZodCalleePath(node);
+  if (!zodCalleePath) {
     return { type: "string" };
   }
 
-  const zodType = node.callee.property.name;
+  const zodType = zodCalleePath.join(".");
   let schema: OpenApiSchema = {};
 
   switch (zodType) {
@@ -258,6 +283,28 @@ export function processZodPrimitiveNode(
       break;
     case "bigint":
       schema = { type: "integer", format: "int64" };
+      break;
+    case "email":
+      schema = { type: "string", format: "email" };
+      break;
+    case "url":
+    case "uri":
+      schema = { type: "string", format: "uri" };
+      break;
+    case "uuid":
+      schema = { type: "string", format: "uuid" };
+      break;
+    case "cuid":
+      schema = { type: "string", format: "cuid" };
+      break;
+    case "iso.datetime":
+      schema = { type: "string", format: "date-time" };
+      break;
+    case "iso.date":
+      schema = { type: "string", format: "date" };
+      break;
+    case "iso.time":
+      schema = { type: "string", format: "time" };
       break;
     case "any":
     case "unknown":

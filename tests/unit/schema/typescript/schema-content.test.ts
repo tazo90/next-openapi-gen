@@ -64,6 +64,36 @@ describe("TypeScript schema content helpers", () => {
         example: "123",
       },
     ]);
+    expect(
+      createRequestParamsSchema({
+        properties: {
+          provider: {
+            $ref: "#/components/schemas/ProviderSchema",
+          },
+          next: {
+            allOf: [{ $ref: "#/components/schemas/SafeRedirectPathSchema" }],
+          },
+        },
+        required: ["provider"],
+      }),
+    ).toEqual([
+      {
+        in: "query",
+        name: "provider",
+        schema: {
+          $ref: "#/components/schemas/ProviderSchema",
+        },
+        required: true,
+      },
+      {
+        in: "query",
+        name: "next",
+        schema: {
+          allOf: [{ $ref: "#/components/schemas/SafeRedirectPathSchema" }],
+        },
+        required: false,
+      },
+    ]);
     expect(createRequestBodySchema({ type: "string" })).toEqual({
       content: {
         "application/json": {

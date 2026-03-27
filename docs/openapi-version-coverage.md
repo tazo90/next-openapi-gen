@@ -15,19 +15,20 @@ Feature status uses three buckets:
 - OpenAPI `3.2` builds on the `3.1` schema model because `3.2` is backward-compatible with `3.1`.
 - The root `openapi` field is the only version selector; `next-openapi-gen` derives the internal target version from that string.
 - Explicit `@response` metadata wins over inferred responses.
+- Comma-separated `@auth` metadata emits alternative security requirements, one scheme per entry. Richer `securitySchemes` modeling still comes from templates or custom OpenAPI fragments.
 - TypeScript checker support is used selectively for App Router response inference and path-alias/module resolution.
 
 ## OpenAPI 3.0 Baseline
 
-| Area                                                                                                                                            | Status                                      | Notes                                                                                                                    |
-| ----------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| Root document fields (`info`, `servers`, `security`, `tags`, `externalDocs`, `paths`, `webhooks`, `$self`, etc.)                                | `template/custom`, `validated`              | Generator now preserves unknown valid OpenAPI fields instead of dropping them.                                           |
-| Components (`schemas`, `responses`, `parameters`, `requestBodies`, `headers`, `examples`, `links`, `callbacks`, `pathItems`, `securitySchemes`) | `generated`, `template/custom`, `validated` | Generated coverage remains strongest for `schemas`, `responses`, and operation-level parameter/request/response objects. |
-| Parameters (`path`, `query`, `header`, `cookie`) with schema/content                                                                            | `generated`, `template/custom`, `validated` | Generated parameters now preserve richer schema fields instead of only `type/enum/description`.                          |
-| Request/response media objects                                                                                                                  | `generated`, `template/custom`, `validated` | Inline and referenced bodies are preserved and normalized per target version.                                            |
-| Error response components and security requirements                                                                                             | `generated`, `validated`                    | Existing route/JSDoc-driven behavior remains shared.                                                                     |
-| Links, callbacks, reusable examples, path items                                                                                                 | `template/custom`, `validated`              | Preserved from templates and custom schema files.                                                                        |
-| App Router response inference                                                                                                                   | `generated`, `validated`                    | Typed `NextResponse.json(...)` / `Response.json(...)` responses can be inferred when `@response` is absent.              |
+| Area                                                                                                                                            | Status                                      | Notes                                                                                                                      |
+| ----------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| Root document fields (`info`, `servers`, `security`, `tags`, `externalDocs`, `paths`, `webhooks`, `$self`, etc.)                                | `template/custom`, `validated`              | Generator now preserves unknown valid OpenAPI fields instead of dropping them.                                             |
+| Components (`schemas`, `responses`, `parameters`, `requestBodies`, `headers`, `examples`, `links`, `callbacks`, `pathItems`, `securitySchemes`) | `generated`, `template/custom`, `validated` | Generated coverage remains strongest for `schemas`, `responses`, and operation-level parameter/request/response objects.   |
+| Parameters (`path`, `query`, `header`, `cookie`) with schema/content                                                                            | `generated`, `template/custom`, `validated` | Generated parameters now preserve richer schema fields instead of only `type/enum/description`.                            |
+| Request/response media objects                                                                                                                  | `generated`, `template/custom`, `validated` | Inline and referenced bodies are preserved and normalized per target version.                                              |
+| Error response components and security requirements                                                                                             | `generated`, `template/custom`, `validated` | Route metadata generates operation security requirements; richer scheme objects are preserved from templates/custom files. |
+| Links, callbacks, reusable examples, path items                                                                                                 | `template/custom`, `validated`              | Preserved from templates and custom schema files.                                                                          |
+| App Router response inference                                                                                                                   | `generated`, `validated`                    | Typed `NextResponse.json(...)` / `Response.json(...)` responses can be inferred when `@response` is absent.                |
 
 ## OpenAPI 3.1 Additions
 
@@ -65,6 +66,7 @@ Feature status uses three buckets:
 
 - App Router response inference can reuse named schemas when the checker resolves the response type.
 - Inline object returns still emit a best-effort inline schema instead of silently dropping the response.
+- Multiple return paths and explicit `204` responses are collected when they can be statically identified from `Response.json(...)` / `NextResponse.json(...)` returns.
 - `tsconfig.json` path aliases are resolved for TypeScript schema discovery when imports are not purely relative.
 - This checker support is intentionally selective; the generator does not require a full-project type-check-only architecture.
 
@@ -72,5 +74,5 @@ Feature status uses three buckets:
 
 - Unit tests cover version adapter transforms, new JSDoc tags, checker-assisted response inference, and TypeScript path-alias resolution.
 - Integration tests cover generated schema differences between `3.0` and `3.1`, plus first-class 3.2 route annotations and inference behavior.
-- Validation tests run generated `3.0`, `3.1`, and `3.2` specs through `@seriousme/openapi-schema-validator`.
+- Validation tests run generated `3.0`, `3.1`, and `3.2` specs through `@seriousme/openapi-schema-validator`, including a Zod-heavy fixture that exercises top-level Zod 4 helpers, transformed query params, and pure-Zod alias behavior.
 - Template/custom-fragment tests verify that advanced reusable OpenAPI objects survive generation without being dropped.
