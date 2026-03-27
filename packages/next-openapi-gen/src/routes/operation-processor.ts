@@ -1,23 +1,21 @@
-import type { FrameworkAdapter } from "../frameworks/types.js";
 import type { SchemaProcessor } from "../schema/typescript/schema-processor.js";
-import { capitalize, extractPathParameters, getOperationId } from "../shared/utils.js";
+import { capitalize, getOperationId } from "../shared/utils.js";
 import type { DataTypes, RouteDefinition } from "../shared/types.js";
 import { ResponseProcessor } from "./response-processor.js";
 
 export class OperationProcessor {
   constructor(
-    private readonly adapter: FrameworkAdapter,
     private readonly schemaProcessor: SchemaProcessor,
     private readonly responseProcessor: ResponseProcessor,
   ) {}
 
   public processOperation(
     varName: string,
-    filePath: string,
+    routePath: string,
     dataTypes: DataTypes,
+    pathParamNames: string[] = [],
   ): { routePath: string; method: string; definition: RouteDefinition } {
     const method = varName.toLowerCase();
-    const routePath = this.adapter.getRoutePath(filePath);
     const rootSegment = routePath.split("/")[1] || "";
     const rootPath = capitalize(rootSegment);
     const operationId = dataTypes.operationId || getOperationId(routePath, method);
@@ -49,7 +47,6 @@ export class OperationProcessor {
       definition.parameters = this.schemaProcessor.createRequestParamsSchema(params);
     }
 
-    const pathParamNames = extractPathParameters(routePath);
     if (pathParamNames.length > 0) {
       if (!pathParams) {
         const defaultPathParams =

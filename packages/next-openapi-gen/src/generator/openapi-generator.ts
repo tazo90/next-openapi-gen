@@ -19,11 +19,21 @@ export type OpenApiGeneratorOptions = {
   templatePath?: string;
 };
 
+export type GeneratorPerformanceProfile = {
+  prepareDocumentMs: number;
+  scanRoutesMs: number;
+  buildPathsMs: number;
+  mergeSchemasMs: number;
+  finalizeDocumentMs: number;
+  totalMs: number;
+};
+
 export class OpenApiGenerator {
   private config: ResolvedOpenApiConfig;
   private template: OpenApiTemplate;
   private diagnostics = new DiagnosticsCollector();
   private routeProcessor: RouteProcessor;
+  private performanceProfile: GeneratorPerformanceProfile | null = null;
 
   constructor(opts: OpenApiGeneratorOptions = {}) {
     const templatePath = path.resolve(opts.templatePath ?? DEFAULT_GENERATE_TEMPLATE_PATH);
@@ -45,12 +55,34 @@ export class OpenApiGenerator {
     return this.diagnostics.getAll();
   }
 
+  public getPerformanceProfile(): GeneratorPerformanceProfile | null {
+    return this.performanceProfile;
+  }
+
   public generate(): OpenApiDocument {
     logger.log("Starting OpenAPI generation...");
 
+    const generationStartedAt = performance.now();
+    const profile: GeneratorPerformanceProfile = {
+      prepareDocumentMs: 0,
+      scanRoutesMs: 0,
+      buildPathsMs: 0,
+      mergeSchemasMs: 0,
+      finalizeDocumentMs: 0,
+      totalMs: 0,
+    };
+
+    let phaseStartedAt = performance.now();
     const document = createDocumentFromTemplate(this.template);
+    profile.prepareDocumentMs = performance.now() - phaseStartedAt;
+
+    phaseStartedAt = performance.now();
     this.routeProcessor.scanRoutes();
+    profile.scanRoutesMs = performance.now() - phaseStartedAt;
+
+    phaseStartedAt = performance.now();
     document.paths = this.routeProcessor.getPaths();
+    profile.buildPathsMs = performance.now() - phaseStartedAt;
 
     // Add server URL for examples if not already defined
     if (!document.servers || document.servers.length === 0) {
@@ -89,6 +121,7 @@ export class OpenApiGenerator {
     }
 
     // Get defined schemas from the processor
+    phaseStartedAt = performance.now();
     const definedSchemas = this.routeProcessor.getSchemaProcessor().getDefinedSchemas();
     if (definedSchemas && Object.keys(definedSchemas).length > 0) {
       document.components.schemas = {
@@ -96,8 +129,17 @@ export class OpenApiGenerator {
         ...definedSchemas,
       };
     }
+    profile.mergeSchemasMs = performance.now() - phaseStartedAt;
 
+    phaseStartedAt = performance.now();
     const openapiSpec = getOpenApiVersionProcessor(this.config.openapiVersion).finalize(document);
+    profile.finalizeDocumentMs = performance.now() - phaseStartedAt;
+    profile.totalMs = performance.now() - generationStartedAt;
+    this.performanceProfile = profile;
+
+    if (process.env.NEXT_OPENAPI_GEN_TIMING === "1") {
+      logger.log("Generation timings (ms):", profile);
+    }
 
     logger.log("OpenAPI generation completed");
 

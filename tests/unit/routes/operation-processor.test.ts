@@ -4,9 +4,6 @@ import { OperationProcessor } from "@next-openapi-gen/routes/operation-processor
 
 describe("OperationProcessor", () => {
   it("builds mutation operations with auth, path params, and referenced request bodies", () => {
-    const adapter = {
-      getRoutePath: vi.fn(() => "/users/{id}"),
-    };
     const schemaProcessor = {
       getSchemaContent: vi
         .fn()
@@ -39,21 +36,22 @@ describe("OperationProcessor", () => {
       })),
     };
 
-    const processor = new OperationProcessor(
-      adapter as never,
-      schemaProcessor as never,
-      responseProcessor as never,
-    );
+    const processor = new OperationProcessor(schemaProcessor as never, responseProcessor as never);
 
-    const result = processor.processOperation("POST", "app/api/users/[id]/route.ts", {
-      auth: "BearerAuth,ApiKeyAuth",
-      deprecated: true,
-      summary: "Create user",
-      description: "Creates a user",
-      bodyType: "UploadBody",
-      bodyDescription: "Upload payload",
-      contentType: "multipart/form-data",
-    });
+    const result = processor.processOperation(
+      "POST",
+      "/users/{id}",
+      {
+        auth: "BearerAuth,ApiKeyAuth",
+        deprecated: true,
+        summary: "Create user",
+        description: "Creates a user",
+        bodyType: "UploadBody",
+        bodyDescription: "Upload payload",
+        contentType: "multipart/form-data",
+      },
+      ["id"],
+    );
 
     expect(result).toEqual({
       routePath: "/users/{id}",
@@ -91,9 +89,6 @@ describe("OperationProcessor", () => {
   });
 
   it("uses explicit path params and falls back to generated responses for root routes", () => {
-    const adapter = {
-      getRoutePath: vi.fn(() => "/"),
-    };
     const schemaProcessor = {
       getSchemaContent: vi.fn().mockReturnValue({
         params: undefined,
@@ -120,13 +115,9 @@ describe("OperationProcessor", () => {
       processResponses: vi.fn(() => ({})),
     };
 
-    const processor = new OperationProcessor(
-      adapter as never,
-      schemaProcessor as never,
-      responseProcessor as never,
-    );
+    const processor = new OperationProcessor(schemaProcessor as never, responseProcessor as never);
 
-    const result = processor.processOperation("GET", "app/api/route.ts", {
+    const result = processor.processOperation("GET", "/", {
       tag: "",
       pathParamsType: "RootPathParams",
       responseDescription: "Fallback",
@@ -157,9 +148,6 @@ describe("OperationProcessor", () => {
 });
 describe("OperationProcessor", () => {
   it("builds operation metadata, auth, parameters, request bodies, and responses", () => {
-    const adapter = {
-      getRoutePath: vi.fn(() => "/users/{id}"),
-    };
     const schemaProcessor = {
       getSchemaContent: vi
         .fn()
@@ -189,23 +177,24 @@ describe("OperationProcessor", () => {
       })),
     };
 
-    const processor = new OperationProcessor(
-      adapter as never,
-      schemaProcessor as never,
-      responseProcessor as never,
-    );
+    const processor = new OperationProcessor(schemaProcessor as never, responseProcessor as never);
 
-    const result = processor.processOperation("POST", "./src/app/api/users/[id]/route.ts", {
-      operationId: "createUser",
-      tag: "Users",
-      summary: "Create user",
-      description: "Creates a user",
-      auth: "BearerAuth,ApiKeyAuth",
-      deprecated: true,
-      bodyType: "CreateUserBody",
-      bodyDescription: "Payload",
-      contentType: "application/json",
-    });
+    const result = processor.processOperation(
+      "POST",
+      "/users/{id}",
+      {
+        operationId: "createUser",
+        tag: "Users",
+        summary: "Create user",
+        description: "Creates a user",
+        auth: "BearerAuth,ApiKeyAuth",
+        deprecated: true,
+        bodyType: "CreateUserBody",
+        bodyDescription: "Payload",
+        contentType: "application/json",
+      },
+      ["id"],
+    );
 
     expect(result.routePath).toBe("/users/{id}");
     expect(result.method).toBe("post");
@@ -237,9 +226,6 @@ describe("OperationProcessor", () => {
   });
 
   it("falls back to generated tags, explicit path params schemas, and schema response creation", () => {
-    const adapter = {
-      getRoutePath: vi.fn(() => "/reports"),
-    };
     const schemaProcessor = {
       getSchemaContent: vi.fn(() => ({
         params: undefined,
@@ -264,13 +250,9 @@ describe("OperationProcessor", () => {
       processResponses: vi.fn(() => ({})),
     };
 
-    const processor = new OperationProcessor(
-      adapter as never,
-      schemaProcessor as never,
-      responseProcessor as never,
-    );
+    const processor = new OperationProcessor(schemaProcessor as never, responseProcessor as never);
 
-    const result = processor.processOperation("PUT", "./src/app/api/reports/route.ts", {
+    const result = processor.processOperation("PUT", "/reports", {
       bodyDescription: "Updated report",
     });
 

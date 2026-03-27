@@ -34,6 +34,7 @@ import {
 import {
   collectAllExportedDefinitions,
   collectImports,
+  collectTopLevelDefinitionNames,
   collectTypeDefinitions,
   resolveImportPath,
 } from "./schema-discovery.js";
@@ -66,6 +67,9 @@ export class SchemaProcessor {
   private directoryCache: Record<string, string[]> = {};
   private statCache: Record<string, fs.Stats> = {};
   private processSchemaTracker: Record<string, boolean> = {};
+  private schemaFiles: string[] | null = null;
+  private schemaDefinitionIndex: Record<string, string[]> = {};
+  private fileASTCache: Map<string, t.File> = new Map();
   private processingTypes: Set<string> = new Set();
 
   private zodSchemaConverter: ZodSchemaConverter | null = null;
@@ -135,6 +139,10 @@ export class SchemaProcessor {
       return this.resolveGenericTypeFromString(schemaName);
     }
 
+    if (this.openapiDefinitions[schemaName]) {
+      return this.openapiDefinitions[schemaName]!;
+    }
+
     // Priority 1: Check custom schemas first (highest priority)
     const customSchema = this.customSchemaProcessor.resolveSchema(schemaName);
     if (customSchema) {
@@ -169,16 +177,35 @@ export class SchemaProcessor {
   }
 
   private scanAllSchemaDirs(schemaName: string) {
+    this.ensureSchemaIndex();
+
+    const candidateFiles = this.schemaDefinitionIndex[schemaName] ?? this.schemaFiles ?? [];
+    for (const filePath of candidateFiles) {
+      this.processSchemaFile(filePath, schemaName);
+      if (this.openapiDefinitions[schemaName]) {
+        return;
+      }
+    }
+  }
+
+  private ensureSchemaIndex(): void {
+    if (this.schemaFiles) {
+      return;
+    }
+
+    this.schemaFiles = [];
+
     for (const dir of this.schemaDirs) {
       if (!this.fileAccess.existsSync(dir)) {
         logger.warn(`Schema directory not found: ${dir}`);
         continue;
       }
-      this.scanSchemaDir(dir, schemaName);
+
+      this.scanSchemaDir(dir);
     }
   }
 
-  private scanSchemaDir(dir: string, schemaName: string) {
+  private scanSchemaDir(dir: string) {
     let files = this.directoryCache[dir];
     if (typeof files === "undefined") {
       files = this.fileAccess.readdirSync(dir);
@@ -194,11 +221,43 @@ export class SchemaProcessor {
       }
 
       if (stat.isDirectory()) {
-        this.scanSchemaDir(filePath, schemaName);
+        this.scanSchemaDir(filePath);
       } else if (file.endsWith(".ts") || file.endsWith(".tsx")) {
-        this.processSchemaFile(filePath, schemaName);
+        this.schemaFiles!.push(filePath);
+        this.indexSchemaFile(filePath);
       }
     });
+  }
+
+  private indexSchemaFile(filePath: string): void {
+    const ast = this.getParsedSchemaFile(filePath);
+
+    this.collectImports(ast, filePath);
+    this.collectAllExportedDefinitions(ast, filePath);
+
+    collectTopLevelDefinitionNames(ast).forEach((name) => {
+      const indexedFiles = this.schemaDefinitionIndex[name];
+      if (indexedFiles) {
+        if (!indexedFiles.includes(filePath)) {
+          indexedFiles.push(filePath);
+        }
+        return;
+      }
+
+      this.schemaDefinitionIndex[name] = [filePath];
+    });
+  }
+
+  private getParsedSchemaFile(filePath: string): t.File {
+    const cachedAst = this.fileASTCache.get(filePath);
+    if (cachedAst) {
+      return cachedAst;
+    }
+
+    const content = this.fileAccess.readFileSync(filePath, "utf-8");
+    const ast = parseTypeScriptFile(content);
+    this.fileASTCache.set(filePath, ast);
+    return ast;
   }
 
   private collectImports(ast: t.File, filePath: string): void {
@@ -654,9 +713,7 @@ export class SchemaProcessor {
     if (this.processSchemaTracker[`${filePath}-${schemaName}`]) return;
 
     try {
-      // Recognizes different elements of TS like variable, type, interface, enum
-      const content = this.fileAccess.readFileSync(filePath, "utf-8");
-      const ast = parseTypeScriptFile(content);
+      const ast = this.getParsedSchemaFile(filePath);
 
       // Track current file path for import resolution (normalize for consistency)
       this.currentFilePath = path.normalize(filePath);

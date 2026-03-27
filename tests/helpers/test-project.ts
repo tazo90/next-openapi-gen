@@ -3,7 +3,10 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { OpenApiGenerator } from "@next-openapi-gen/generator/openapi-generator.js";
+import {
+  OpenApiGenerator,
+  type GeneratorPerformanceProfile,
+} from "@next-openapi-gen/generator/openapi-generator.js";
 import type {
   Diagnostic,
   OpenApiDocument,
@@ -36,6 +39,7 @@ export type GenerateProjectSpecOptions = {
 
 export type GeneratedFixtureSpec = {
   diagnostics: Diagnostic[];
+  performanceProfile: GeneratorPerformanceProfile | null;
   project: TempProject;
   spec: OpenApiDocument;
   templatePath: string;
@@ -146,18 +150,20 @@ export function generateFixtureSpec({
   const templatePath = materializeTemplateVariant(project.root, openapiVersion, templateOverrides);
 
   try {
-    const { diagnostics, spec } = withProjectCwd(project.root, () => {
+    const { diagnostics, performanceProfile, spec } = withProjectCwd(project.root, () => {
       const generator = new OpenApiGenerator({ templatePath });
       const spec = generator.generate();
 
       return {
         diagnostics: generator.getDiagnostics(),
+        performanceProfile: generator.getPerformanceProfile(),
         spec,
       };
     });
 
     return {
       diagnostics,
+      performanceProfile,
       project,
       spec,
       templatePath,
@@ -182,18 +188,20 @@ export function generateProjectSpec({
   }
 
   try {
-    const { diagnostics, spec } = withProjectCwd(project.root, () => {
+    const { diagnostics, performanceProfile, spec } = withProjectCwd(project.root, () => {
       const generator = new OpenApiGenerator({ templatePath: resolvedTemplatePath });
       const spec = generator.generate();
 
       return {
         diagnostics: generator.getDiagnostics(),
+        performanceProfile: generator.getPerformanceProfile(),
         spec,
       };
     });
 
     return {
       diagnostics,
+      performanceProfile,
       project,
       spec,
       templatePath: resolvedTemplatePath,

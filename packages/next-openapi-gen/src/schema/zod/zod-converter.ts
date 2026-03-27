@@ -35,7 +35,6 @@ import {
   findFunctionInAST as findFunctionInASTHelper,
   isZodSchemaNode,
   returnsZodSchemaNode,
-  walkTypeScriptFiles,
 } from "./prescan.js";
 import type { OpenApiSchema } from "../../shared/types.js";
 
@@ -61,6 +60,9 @@ export class ZodSchemaConverter {
   factoryCheckCache: Map<string, boolean> = new Map(); // Cache for non-factory functions
   fileASTCache: Map<string, t.File> = new Map(); // Cache for parsed files
   fileImportsCache: Map<string, Record<string, string>> = new Map(); // Cache for file imports
+  routeFilesCache: string[] | null = null;
+  schemaFilesCache: Map<string, string[]> = new Map();
+  preprocessedFiles: Set<string> = new Set();
 
   // Current processing context (set during file processing)
   currentFilePath?: string;
@@ -150,7 +152,37 @@ export class ZodSchemaConverter {
    * Find all route files in the project
    */
   findRouteFiles(): string[] {
-    return collectZodRouteFiles(this.apiDir);
+    if (!this.routeFilesCache) {
+      this.routeFilesCache = collectZodRouteFiles(this.apiDir);
+    }
+
+    return this.routeFilesCache;
+  }
+
+  private getParsedFile(filePath: string, content?: string): t.File {
+    const cachedAst = this.fileASTCache.get(filePath);
+    if (cachedAst) {
+      return cachedAst;
+    }
+
+    const source = content ?? this.fileAccess.readFileSync(filePath, "utf-8");
+    const ast = parseTypeScriptFile(source);
+    this.fileASTCache.set(filePath, ast);
+    return ast;
+  }
+
+  private getSchemaFiles(dir: string): string[] {
+    const cachedFiles = this.schemaFilesCache.get(dir);
+    if (cachedFiles) {
+      return cachedFiles;
+    }
+
+    const files: string[] = [];
+    processZodSchemaFilesInDirectory(dir, (filePath) => {
+      files.push(filePath);
+    });
+    this.schemaFilesCache.set(dir, files);
+    return files;
   }
 
   /**
@@ -183,7 +215,7 @@ export class ZodSchemaConverter {
    * Recursively scan directory for Zod schemas
    */
   scanDirectoryForZodSchema(dir: string, schemaName: string): void {
-    processZodSchemaFilesInDirectory(dir, (filePath) => {
+    this.getSchemaFiles(dir).forEach((filePath) => {
       this.processFileForZodSchema(filePath, schemaName);
     });
   }
@@ -201,18 +233,14 @@ export class ZodSchemaConverter {
       }
 
       // Pre-process all schemas in file
-      this.preprocessAllSchemasInFile(filePath);
+      this.preprocessAllSchemasInFile(filePath, content);
 
       // Return it, if the schema has already been processed during pre-processing
       if (this.zodSchemas[schemaName]) {
         return;
       }
 
-      // Parse the file
-      const ast = parseTypeScriptFile(content);
-
-      // Cache AST for later use
-      this.fileASTCache.set(filePath, ast);
+      const ast = this.getParsedFile(filePath, content);
 
       // Create a map to store imported modules
       let importedModules: Record<string, string> = {};
@@ -1449,7 +1477,7 @@ export class ZodSchemaConverter {
 
     // Scan schema directories
     for (const dir of this.schemaDirs) {
-      this.scanDirectoryForTypeMappings(dir);
+      this.getSchemaFiles(dir).forEach((filePath) => this.scanFileForTypeMappings(filePath));
     }
   }
 
@@ -1458,8 +1486,7 @@ export class ZodSchemaConverter {
    */
   scanFileForTypeMappings(filePath: string): void {
     try {
-      const content = this.fileAccess.readFileSync(filePath, "utf-8");
-      const ast = parseTypeScriptFile(content);
+      const ast = this.getParsedFile(filePath);
       Object.assign(this.typeToSchemaMapping, extractTypeMappingsFromAST(ast));
     } catch (error) {
       logger.error(`Error scanning file ${filePath} for type mappings: ${error}`);
@@ -1467,28 +1494,15 @@ export class ZodSchemaConverter {
   }
 
   /**
-   * Recursively scan directory for type mappings
-   */
-  scanDirectoryForTypeMappings(dir: string): void {
-    try {
-      walkTypeScriptFiles(dir, this.fileAccess, (filePath) =>
-        this.scanFileForTypeMappings(filePath),
-      );
-    } catch (error) {
-      logger.error(`Error scanning directory ${dir} for type mappings: ${error}`);
-    }
-  }
-
-  /**
    * Pre-process all Zod schemas in a file
    */
-  preprocessAllSchemasInFile(filePath: string): void {
-    try {
-      const content = this.fileAccess.readFileSync(filePath, "utf-8");
-      const ast = parseTypeScriptFile(content);
+  preprocessAllSchemasInFile(filePath: string, content?: string): void {
+    if (this.preprocessedFiles.has(filePath)) {
+      return;
+    }
 
-      // Cache AST for later use
-      this.fileASTCache.set(filePath, ast);
+    try {
+      const ast = this.getParsedFile(filePath, content);
 
       const { importedModules, drizzleZodImports } = collectImportMetadata(ast);
       drizzleZodImports.forEach((importName) => {
@@ -1547,6 +1561,8 @@ export class ZodSchemaConverter {
           });
         },
       });
+
+      this.preprocessedFiles.add(filePath);
     } catch (error) {
       logger.error(`Error pre-processing file ${filePath}: ${error}`);
     }

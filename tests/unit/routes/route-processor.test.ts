@@ -93,7 +93,7 @@ describe("RouteProcessor", () => {
       });
 
       // @ts-expect-error exercising private integration point in focused unit test
-      routeProcessor.addRouteToPaths("GET", "./src/app/api/users/route.ts", {
+      routeProcessor.registerRoute("GET", "./src/app/api/users/route.ts", "/users", {
         summary: "Hidden route",
       });
 
@@ -104,17 +104,11 @@ describe("RouteProcessor", () => {
       routeProcessor = new RouteProcessor(baseConfig);
 
       // @ts-expect-error exercising private integration point in focused unit test
-      routeProcessor.addRouteToPaths("GET", "./src/app/api/users/route.ts", {
-        tag: "Users",
-      });
+      routeProcessor.addRouteToPaths("GET", "/users", { tag: "Users" }, []);
       // @ts-expect-error exercising private integration point in focused unit test
-      routeProcessor.addRouteToPaths("GET", "./src/app/api/users/settings/route.ts", {
-        tag: "Users",
-      });
+      routeProcessor.addRouteToPaths("GET", "/users/settings", { tag: "Users" }, []);
       // @ts-expect-error exercising private integration point in focused unit test
-      routeProcessor.addRouteToPaths("GET", "./src/app/api/admin/route.ts", {
-        tag: "Admin",
-      });
+      routeProcessor.addRouteToPaths("GET", "/admin", { tag: "Admin" }, []);
 
       expect(Object.keys(routeProcessor.getPaths())).toEqual([
         "/admin",

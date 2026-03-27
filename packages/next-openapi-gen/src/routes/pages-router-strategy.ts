@@ -14,9 +14,14 @@ import type { DataTypes, OpenApiConfig } from "../shared/types.js";
 
 export class PagesRouterStrategy implements RouterStrategy {
   private config: OpenApiConfig;
+  private normalizedApiDir: string;
 
   constructor(config: OpenApiConfig) {
     this.config = config;
+    this.normalizedApiDir = config.apiDir
+      .replaceAll("\\", "/")
+      .replace(/^\.\//, "")
+      .replace(/\/$/, "");
   }
 
   shouldProcessFile(fileName: string): boolean {
@@ -61,19 +66,13 @@ export class PagesRouterStrategy implements RouterStrategy {
 
   getRoutePath(filePath: string): string {
     const normalizedPath = filePath.replaceAll("\\", "/");
-
-    const normalizedApiDir = this.config.apiDir
-      .replaceAll("\\", "/")
-      .replace(/^\.\//, "")
-      .replace(/\/$/, "");
-
-    const apiDirIndex = normalizedPath.indexOf(normalizedApiDir);
+    const apiDirIndex = normalizedPath.indexOf(this.normalizedApiDir);
 
     if (apiDirIndex === -1) {
       throw new Error(`Could not find apiDir "${this.config.apiDir}" in file path "${filePath}"`);
     }
 
-    let relativePath = normalizedPath.substring(apiDirIndex + normalizedApiDir.length);
+    let relativePath = normalizedPath.substring(apiDirIndex + this.normalizedApiDir.length);
 
     // Remove the file extension (.ts or .tsx)
     relativePath = relativePath.replace(/\.tsx?$/, "");

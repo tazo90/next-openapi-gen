@@ -88,6 +88,7 @@ describe("OpenApiGenerator", () => {
       try {
         const generator = new OpenApiGenerator({ templatePath });
         const spec = generator.generate();
+        const performanceProfile = generator.getPerformanceProfile();
 
         expect(spec.servers).toEqual([
           {
@@ -118,6 +119,14 @@ describe("OpenApiGenerator", () => {
               },
             },
           },
+        });
+        expect(performanceProfile).toMatchObject({
+          prepareDocumentMs: expect.any(Number),
+          scanRoutesMs: expect.any(Number),
+          buildPathsMs: expect.any(Number),
+          mergeSchemasMs: expect.any(Number),
+          finalizeDocumentMs: expect.any(Number),
+          totalMs: expect.any(Number),
         });
       } finally {
         process.chdir(previousCwd);

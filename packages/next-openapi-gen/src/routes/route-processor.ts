@@ -24,6 +24,7 @@ export class RouteProcessor {
   private schemaProcessor: SchemaProcessor;
   private config: ResolvedOpenApiConfig;
   private adapter: FrameworkAdapter;
+  private ignoreRouteMatchers: RegExp[];
   private diagnostics: DiagnosticsCollector | undefined;
   private responseProcessor: ResponseProcessor;
   private operationProcessor: OperationProcessor;
@@ -42,12 +43,12 @@ export class RouteProcessor {
       this.config.apiDir,
     );
     this.adapter = createFrameworkAdapter(this.config);
+    this.ignoreRouteMatchers = (this.config.ignoreRoutes || []).map((pattern) => {
+      const regexPattern = pattern.replace(/\*/g, ".*").replace(/\//g, "\\/");
+      return new RegExp(`^${regexPattern}$`);
+    });
     this.responseProcessor = new ResponseProcessor(this.config, this.schemaProcessor);
-    this.operationProcessor = new OperationProcessor(
-      this.adapter,
-      this.schemaProcessor,
-      this.responseProcessor,
-    );
+    this.operationProcessor = new OperationProcessor(this.schemaProcessor, this.responseProcessor);
   }
 
   private processResponsesFromConfig(
@@ -74,25 +75,22 @@ export class RouteProcessor {
     }
 
     // Check if route matches any ignore patterns
-    const ignorePatterns = this.config.ignoreRoutes || [];
-    if (ignorePatterns.length === 0) {
+    if (this.ignoreRouteMatchers.length === 0) {
       return false;
     }
 
-    return ignorePatterns.some((pattern) => {
-      // Support wildcards
-      const regexPattern = pattern.replace(/\*/g, ".*").replace(/\//g, "\\/");
-      const regex = new RegExp(`^${regexPattern}$`);
-      return regex.test(routePath);
-    });
+    return this.ignoreRouteMatchers.some((regex) => regex.test(routePath));
   }
 
   /**
    * Register a discovered route after filtering
    */
-  private registerRoute(method: string, filePath: string, dataTypes: DataTypes): void {
-    const routePath = this.adapter.getRoutePath(filePath);
-
+  private registerRoute(
+    method: string,
+    filePath: string,
+    routePath: string,
+    dataTypes: DataTypes,
+  ): void {
     if (this.shouldIgnoreRoute(routePath, dataTypes)) {
       logger.debug(`Ignoring route: ${routePath}`);
       return;
@@ -118,7 +116,7 @@ export class RouteProcessor {
       );
     }
 
-    this.addRouteToPaths(method, filePath, dataTypes);
+    this.addRouteToPaths(method, routePath, dataTypes, pathParams);
   }
 
   public scanApiRoutes(dir: string): void {
@@ -134,8 +132,8 @@ export class RouteProcessor {
       (filePath) => {
         this.adapter
           .processFile(filePath)
-          .forEach(({ method, filePath: routeFilePath, dataTypes }) => {
-            this.registerRoute(method, routeFilePath, dataTypes);
+          .forEach(({ method, filePath: routeFilePath, routePath, dataTypes }) => {
+            this.registerRoute(method, routeFilePath, routePath, dataTypes);
           });
       },
     );
@@ -149,17 +147,18 @@ export class RouteProcessor {
     });
   }
 
-  private addRouteToPaths(varName: string, filePath: string, dataTypes: DataTypes): void {
+  private addRouteToPaths(
+    varName: string,
+    discoveredRoutePath: string,
+    dataTypes: DataTypes,
+    pathParamNames: string[],
+  ): void {
     const { routePath, method, definition } = this.operationProcessor.processOperation(
       varName,
-      filePath,
+      discoveredRoutePath,
       dataTypes,
+      pathParamNames,
     );
-
-    if (this.config.includeOpenApiRoutes && !dataTypes.isOpenApi) {
-      // If flag is enabled and there is no @openapi tag, then skip path
-      return;
-    }
 
     if (!this.pathDefinitions[routePath]) {
       this.pathDefinitions[routePath] = {};
@@ -169,9 +168,7 @@ export class RouteProcessor {
   }
 
   public getPaths(): Record<string, OpenApiPathDefinition> {
-    const paths = sortPathDefinitions(this.pathDefinitions);
-
-    return sortPathDefinitions(paths);
+    return sortPathDefinitions(this.pathDefinitions);
   }
 
   public getSwaggerPaths(): Record<string, OpenApiPathDefinition> {

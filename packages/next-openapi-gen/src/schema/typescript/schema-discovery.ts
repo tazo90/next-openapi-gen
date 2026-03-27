@@ -6,6 +6,35 @@ import { traverse } from "../../shared/babel-traverse.js";
 
 type TypeDefinitions = Record<string, any>;
 
+function addDefinitionName(names: Set<string>, node: t.Node | null | undefined): void {
+  if (!node) {
+    return;
+  }
+
+  if (t.isFunctionDeclaration(node) && node.id) {
+    names.add(node.id.name);
+    return;
+  }
+
+  if (t.isVariableDeclaration(node)) {
+    node.declarations.forEach((declaration) => {
+      if (t.isIdentifier(declaration.id)) {
+        names.add(declaration.id.name);
+      }
+    });
+    return;
+  }
+
+  if (
+    (t.isTSTypeAliasDeclaration(node) ||
+      t.isTSInterfaceDeclaration(node) ||
+      t.isTSEnumDeclaration(node)) &&
+    t.isIdentifier(node.id)
+  ) {
+    names.add(node.id.name);
+  }
+}
+
 export function collectImports(
   ast: t.File,
   filePath: string,
@@ -124,6 +153,21 @@ export function collectAllExportedDefinitions(
       }
     },
   });
+}
+
+export function collectTopLevelDefinitionNames(ast: t.File): string[] {
+  const names = new Set<string>();
+
+  ast.program.body.forEach((node) => {
+    if (t.isExportNamedDeclaration(node) && node.declaration) {
+      addDefinitionName(names, node.declaration);
+      return;
+    }
+
+    addDefinitionName(names, node);
+  });
+
+  return [...names];
 }
 
 export function collectTypeDefinitions(
