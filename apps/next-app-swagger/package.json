@@ -15,12 +15,14 @@
     "next": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
-    "swagger-ui-dist": "catalog:"
+    "swagger-ui": "^5.32.1",
+    "swagger-ui-react": "catalog:"
   },
   "devDependencies": {
     "@types/node": "catalog:",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
+    "@types/swagger-ui-react": "catalog:",
     "@workspace/next-config": "workspace:*",
     "next-openapi-gen": "workspace:*",
     "typescript": "catalog:"
