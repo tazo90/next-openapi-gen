@@ -1,13 +1,15 @@
-import { describe, it, expect } from "vitest";
-import { SchemaProcessor } from "@next-openapi-gen/schema/typescript/schema-processor.js";
 import path from "path";
+
+import { describe, expect, it } from "vitest";
+
+import { SchemaProcessor } from "@next-openapi-gen/schema/typescript/schema-processor.js";
 
 const fixtureBase = path.join(process.cwd(), "tests", "fixtures", "multi-schema-dir");
 const typesDir = path.join(fixtureBase, "types");
 const schemasDir = path.join(fixtureBase, "schemas");
 
 describe("Multiple schemaDir support", () => {
-  it("should find schemas from multiple directories", () => {
+  it("finds schemas from multiple directories", () => {
     const processor = new SchemaProcessor([typesDir, schemasDir], "typescript");
 
     const userDef = processor.findSchemaDefinition("User", "response");
@@ -23,7 +25,7 @@ describe("Multiple schemaDir support", () => {
     expect(productDef.properties?.price).toBeDefined();
   });
 
-  it("should work with a single string (backward compat)", () => {
+  it("keeps backward compatibility with a single schemaDir string", () => {
     const processor = new SchemaProcessor(typesDir, "typescript");
 
     const userDef = processor.findSchemaDefinition("User", "response");
@@ -31,7 +33,7 @@ describe("Multiple schemaDir support", () => {
     expect(userDef.properties?.id).toBeDefined();
   });
 
-  it("should handle non-existent directory gracefully", () => {
+  it("handles non-existent directories gracefully", () => {
     const processor = new SchemaProcessor(
       [typesDir, path.join(fixtureBase, "nonexistent")],
       "typescript",

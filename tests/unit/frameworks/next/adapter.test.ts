@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 
 import { createNextFrameworkAdapter } from "@next-openapi-gen/frameworks/next/adapter.js";
 
-import { createTempProject } from "../../helpers/test-project.js";
+import { createTempProject } from "../../../helpers/test-project.js";
 
 describe("NextFrameworkAdapter", () => {
   it("returns the configured api root and sibling app/api root when both exist", () => {

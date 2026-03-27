@@ -21,7 +21,7 @@ describe("RouteProcessor diagnostics", () => {
 
     const routeProcessor = new RouteProcessor(config, collector);
 
-    // @ts-ignore - exercising private integration point
+    // @ts-expect-error exercising private integration point in focused unit test
     routeProcessor.registerRoute("GET", "./src/app/api/users/[id]/route.ts", {});
 
     expect(collector.getAll()).toEqual([
