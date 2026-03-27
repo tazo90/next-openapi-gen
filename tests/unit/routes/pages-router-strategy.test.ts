@@ -1,4 +1,8 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { PagesRouterStrategy } from "@next-openapi-gen/routes/pages-router-strategy.js";
 import { RouteProcessor } from "@next-openapi-gen/routes/route-processor.js";
@@ -7,6 +11,7 @@ import type { OpenApiConfig } from "@next-openapi-gen/shared/types.js";
 describe("PagesRouterStrategy", () => {
   let strategy: PagesRouterStrategy;
   let pagesConfig: OpenApiConfig;
+  const roots: string[] = [];
 
   beforeEach(() => {
     pagesConfig = {
@@ -21,6 +26,11 @@ describe("PagesRouterStrategy", () => {
       schemaType: "typescript",
       debug: false,
     };
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    roots.splice(0).forEach((root) => fs.rmSync(root, { recursive: true, force: true }));
   });
 
   describe("getRoutePath", () => {
@@ -89,6 +99,26 @@ describe("PagesRouterStrategy", () => {
       expect(result.deprecated).toBe(true);
       expect(result.isIgnored).toBe(true);
     });
+
+    it("extracts response sets, body metadata, and auth presets", () => {
+      strategy = new PagesRouterStrategy(pagesConfig);
+
+      const result = strategy.extractJSDocFromComment(`
+        * Upload avatar
+        * @method POST
+        * @body UploadAvatarBody
+        * @bodyDescription Avatar form data
+        * @contentType multipart/form-data
+        * @responseSet errors
+        * @auth apikey
+      `);
+
+      expect(result.bodyType).toBe("UploadAvatarBody");
+      expect(result.bodyDescription).toBe("Avatar form data");
+      expect(result.contentType).toBe("multipart/form-data");
+      expect(result.responseSet).toBe("errors");
+      expect(result.auth).toBe("ApiKeyAuth");
+    });
   });
 
   describe("RouteProcessor interop", () => {
@@ -105,5 +135,41 @@ describe("PagesRouterStrategy", () => {
       expect(paths["/users"]).toBeDefined();
       expect(paths["/users"]?.get).toBeDefined();
     });
+  });
+
+  it("filters processable files and extracts default export handler comments", () => {
+    strategy = new PagesRouterStrategy(pagesConfig);
+
+    expect(strategy.shouldProcessFile("users.ts")).toBe(true);
+    expect(strategy.shouldProcessFile("users.tsx")).toBe(true);
+    expect(strategy.shouldProcessFile("_middleware.ts")).toBe(false);
+    expect(strategy.shouldProcessFile("users.js")).toBe(false);
+
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-pages-router-"));
+    roots.push(root);
+    const filePath = path.join(root, "users.ts");
+    fs.writeFileSync(
+      filePath,
+      `
+      /**
+       * List users
+       * @method GET
+       * @openapi
+       */
+      export default async function handler() {}
+      `,
+    );
+
+    const addRoute = vi.fn();
+    strategy.processFile(filePath, addRoute);
+
+    expect(addRoute).toHaveBeenCalledWith(
+      "GET",
+      filePath,
+      expect.objectContaining({
+        summary: "List users",
+        isOpenApi: true,
+      }),
+    );
   });
 });

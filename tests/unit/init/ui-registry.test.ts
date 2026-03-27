@@ -59,11 +59,15 @@ describe("UI registry helpers", () => {
     expect(getDocsPageDependencies("scalar")).toBe("@scalar/api-reference-react ajv");
     expect(getDocsPageDependencies("swagger")).toBe("swagger-ui swagger-ui-react");
     expect(getDocsPageDependencies("redoc")).toBe("redoc");
+    expect(getDocsPageDependencies("stoplight")).toBe("@stoplight/elements");
+    expect(getDocsPageDependencies("rapidoc")).toBe("rapidoc");
   });
 
   it("returns dev dependency strings for each UI", () => {
     expect(getDocsPageDevDependencies("scalar")).toBe("");
     expect(getDocsPageDevDependencies("swagger")).toBe("@types/swagger-ui-react");
+    expect(getDocsPageDevDependencies("stoplight")).toBe("");
+    expect(getDocsPageDevDependencies("rapidoc")).toBe("");
   });
 
   it("returns package-manager specific install flags for swagger", () => {
@@ -71,9 +75,15 @@ describe("UI registry helpers", () => {
     expect(getDocsPageInstallFlags("swagger", "pnpm")).toBe("--no-strict-peer-dependencies");
     expect(getDocsPageInstallFlags("swagger", "yarn")).toBe("");
     expect(getDocsPageInstallFlags("swagger", "npm")).toBe("--legacy-peer-deps");
+    expect(getDocsPageInstallFlags("none", "pnpm")).toBe("");
   });
 
   it("falls back to the scalar template when the UI type is unknown", () => {
     expect(getDocsPage("unknown", "openapi.json")).toContain("@scalar/api-reference-react");
+  });
+
+  it("renders stoplight and rapidoc pages through the registry", () => {
+    expect(getDocsPage("stoplight", "openapi.json")).toContain('apiDescriptionUrl="openapi.json"');
+    expect(getDocsPage("rapidoc", "openapi.json")).toContain('spec-url="openapi.json"');
   });
 });

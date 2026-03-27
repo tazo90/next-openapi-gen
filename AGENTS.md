@@ -16,7 +16,8 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - Prefer `package.json`, VS Code tasks, and Turbo pipelines composed from plain `pnpm` and upstream CLIs over bespoke `.mjs` orchestrators, and avoid duplicate script entries such as `:turbo` variants that only mirror an existing command.
 - Prefer committed workspace editor defaults when they make formatter, lint, and TypeScript SDK behavior consistent across contributors and agents.
 - For `packages/next-openapi-gen`, keep a single published package and refactor via internal module boundaries only; do not extract additional workspace packages.
-- Keep automated tests for shared library behavior under the repo root `tests/` directory with domain-aligned subfolders and consistent naming rather than one flat tests folder.
+- Keep automated tests for shared library behavior under the repo root `tests/` directory with domain-aligned subfolders that mirror `src/`; put cross-cutting scenario or behavior checks into `tests/**/regressions/` rather than leaving them flat at the root.
+- Keep Vitest coverage exclusions minimal; do not broadly exclude core source directories just to satisfy coverage thresholds.
 - After a source restructure, prefer stable imports to concrete implementation files instead of keeping long-lived barrel re-export layers as the primary layout.
 
 ## Learned Workspace Facts

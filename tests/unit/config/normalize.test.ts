@@ -34,4 +34,41 @@ describe("normalizeOpenApiConfig", () => {
     expect(config.schemaBackends).toEqual(["zod", "typescript"]);
     expect(config.docsUrl).toBe("api/docs");
   });
+
+  it("preserves explicit framework configs and normalizes newer OpenAPI versions", () => {
+    const config = normalizeOpenApiConfig({
+      openapi: "4.1.0",
+      openapiVersion: "3.1",
+      info: {
+        title: "Fixture",
+        version: "1.0.0",
+        description: "Fixture",
+      },
+      framework: {
+        kind: "tanstack",
+      },
+      schemaType: "typescript",
+    } as never);
+
+    expect(config.openapiVersion).toBe("3.1");
+    expect(config.framework).toEqual({
+      kind: "tanstack",
+    });
+  });
+
+  it("infers OpenAPI versions from the template version string", () => {
+    expect(
+      normalizeOpenApiConfig({
+        openapi: "3.1.0",
+        info: { title: "Fixture", version: "1.0.0", description: "Fixture" },
+      } as never).openapiVersion,
+    ).toBe("3.1");
+
+    expect(
+      normalizeOpenApiConfig({
+        openapi: "4.0.0",
+        info: { title: "Fixture", version: "1.0.0", description: "Fixture" },
+      } as never).openapiVersion,
+    ).toBe("4.0");
+  });
 });

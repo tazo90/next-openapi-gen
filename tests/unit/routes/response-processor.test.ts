@@ -111,6 +111,35 @@ describe("ResponseProcessor", () => {
     expect(responses["204"]).toEqual({ $ref: "#/components/responses/204" });
   });
 
+  it("skips malformed custom responses and adds explicit 204 descriptions", () => {
+    const schemaProcessor = {
+      getSchemaContent: vi.fn(),
+    };
+    const processor = new ResponseProcessor(
+      {
+        diagnostics: { enabled: true },
+      } as never,
+      schemaProcessor as never,
+    );
+
+    const responses = processor.processResponses(
+      {
+        responseSet: "none",
+        addResponses: ":Broken,204:NoContentResponse",
+      },
+      "GET",
+    );
+
+    expect(schemaProcessor.getSchemaContent).toHaveBeenCalledWith({
+      responseType: "NoContentResponse",
+    });
+    expect(responses).toEqual({
+      204: {
+        description: "HTTP 204",
+      },
+    });
+  });
+
   it("only supports request bodies for mutation methods", () => {
     const processor = new ResponseProcessor(
       { diagnostics: { enabled: true } } as never,

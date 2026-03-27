@@ -1,4 +1,8 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { AppRouterStrategy } from "@next-openapi-gen/routes/app-router-strategy.js";
 import type { OpenApiConfig } from "@next-openapi-gen/shared/types.js";
@@ -6,6 +10,7 @@ import type { OpenApiConfig } from "@next-openapi-gen/shared/types.js";
 describe("AppRouterStrategy", () => {
   let strategy: AppRouterStrategy;
   let baseConfig: OpenApiConfig;
+  const roots: string[] = [];
 
   beforeEach(() => {
     baseConfig = {
@@ -19,6 +24,11 @@ describe("AppRouterStrategy", () => {
       schemaType: "typescript",
       debug: false,
     };
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    roots.splice(0).forEach((root) => fs.rmSync(root, { recursive: true, force: true }));
   });
 
   it("handles default, nested, dynamic, grouped, and catch-all routes", () => {
@@ -56,5 +66,42 @@ describe("AppRouterStrategy", () => {
     expect(() => strategy.getRoutePath("./src/app/private/users/route.ts")).toThrow(
       'Could not find apiDir "./src/app/api" in file path "./src/app/private/users/route.ts"',
     );
+  });
+
+  it("recognizes only App Router route files and extracts exported handler variables", () => {
+    strategy = new AppRouterStrategy(baseConfig);
+
+    expect(strategy.shouldProcessFile("route.ts")).toBe(true);
+    expect(strategy.shouldProcessFile("route.tsx")).toBe(true);
+    expect(strategy.shouldProcessFile("page.tsx")).toBe(false);
+
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-app-router-"));
+    roots.push(root);
+    const routeFile = path.join(root, "route.ts");
+    fs.writeFileSync(
+      routeFile,
+      `
+      /** 
+       * Update a user
+       * @openapi
+       */
+      export const PATCH = async () => {};
+
+      export const ignored = async () => {};
+      `,
+    );
+
+    const addRoute = vi.fn();
+    strategy.processFile(routeFile, addRoute);
+
+    expect(addRoute).toHaveBeenCalledWith(
+      "PATCH",
+      routeFile,
+      expect.objectContaining({
+        summary: "Update a user",
+        isOpenApi: true,
+      }),
+    );
+    expect(addRoute).toHaveBeenCalledTimes(1);
   });
 });

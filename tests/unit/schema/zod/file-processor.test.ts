@@ -2,7 +2,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
   collectRouteFilesInDirectory,
@@ -81,5 +81,16 @@ describe("zod file processor helpers", () => {
     collectRouteFilesInDirectory(root, routeFiles);
 
     expect(routeFiles).toEqual([path.join(root, "admin", "route.ts")]);
+  });
+
+  it("swallows file system errors while scanning", () => {
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    expect(collectZodRouteFiles(path.join(process.cwd(), "missing-api-dir"))).toEqual([]);
+    expect(() =>
+      processZodSchemaFilesInDirectory(path.join(process.cwd(), "missing-schema-dir"), () => {}),
+    ).not.toThrow();
+
+    expect(errorSpy).toHaveBeenCalled();
   });
 });

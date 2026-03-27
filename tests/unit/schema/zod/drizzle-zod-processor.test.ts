@@ -88,4 +88,104 @@ describe("DrizzleZodProcessor", () => {
       ),
     ).toEqual({ type: "object" });
   });
+
+  it("covers helper branches for keys, optionality, field mapping, and method application", () => {
+    expect(
+      (DrizzleZodProcessor as any).extractPropertyKey(
+        t.objectProperty(t.identifier("title"), t.identifier("value")),
+      ),
+    ).toBe("title");
+    expect(
+      (DrizzleZodProcessor as any).extractPropertyKey(
+        t.objectProperty(t.stringLiteral("slug"), t.identifier("value")),
+      ),
+    ).toBe("slug");
+    expect(
+      (DrizzleZodProcessor as any).extractPropertyKey(
+        t.objectProperty(t.numericLiteral(1), t.identifier("value")),
+      ),
+    ).toBeNull();
+
+    const nullishCall = parseTypeScriptFile("const field = schema.name.nullish();").program.body[0];
+    if (!nullishCall || !t.isVariableDeclaration(nullishCall)) {
+      throw new Error("Expected a variable declaration");
+    }
+    const nullishNode = nullishCall.declarations[0]?.init;
+    if (!nullishNode || !t.isCallExpression(nullishNode)) {
+      throw new Error("Expected a call expression");
+    }
+
+    expect((DrizzleZodProcessor as any).isFieldOptional(nullishNode)).toBe(true);
+    expect((DrizzleZodProcessor as any).isFieldOptional(t.identifier("plain"))).toBe(false);
+
+    expect((DrizzleZodProcessor as any).mapFieldTypeToOpenApi("userEmail")).toEqual({
+      type: "string",
+      format: "email",
+    });
+    expect((DrizzleZodProcessor as any).mapFieldTypeToOpenApi("avatarUrl")).toEqual({
+      type: "string",
+      format: "uri",
+    });
+    expect((DrizzleZodProcessor as any).mapFieldTypeToOpenApi("userId")).toEqual({
+      type: "integer",
+    });
+    expect((DrizzleZodProcessor as any).mapFieldTypeToOpenApi("priceAmount")).toEqual({
+      type: "number",
+    });
+    expect((DrizzleZodProcessor as any).mapFieldTypeToOpenApi("isActive")).toEqual({
+      type: "boolean",
+    });
+    expect((DrizzleZodProcessor as any).mapFieldTypeToOpenApi("createdAt")).toEqual({
+      type: "string",
+      format: "date-time",
+    });
+    expect((DrizzleZodProcessor as any).mapFieldTypeToOpenApi("notes")).toEqual({
+      type: "string",
+    });
+
+    const apply = (
+      schema: Record<string, unknown>,
+      methodName: string,
+      args: t.Expression[] = [],
+    ) => (DrizzleZodProcessor as any).applyZodMethod(schema, methodName, args);
+
+    expect(apply({ type: "string" }, "min", [t.numericLiteral(2)])).toMatchObject({ minLength: 2 });
+    expect(apply({ type: "integer" }, "max", [t.numericLiteral(5)])).toMatchObject({ maximum: 5 });
+    expect(apply({ type: "array" }, "length", [t.numericLiteral(3)])).toMatchObject({
+      minItems: 3,
+      maxItems: 3,
+    });
+    expect(apply({ type: "string" }, "email")).toMatchObject({ format: "email" });
+    expect(apply({ type: "string" }, "url")).toMatchObject({ format: "uri" });
+    expect(apply({ type: "string" }, "uuid")).toMatchObject({ format: "uuid" });
+    expect(apply({ type: "string" }, "datetime")).toMatchObject({ format: "date-time" });
+    expect(apply({ type: "string" }, "regex", [t.regExpLiteral("a+", "")])).toMatchObject({
+      pattern: "a+",
+    });
+    expect(apply({ type: "integer" }, "positive")).toMatchObject({
+      minimum: 0,
+      exclusiveMinimum: true,
+    });
+    expect(apply({ type: "number" }, "nonnegative")).toMatchObject({ minimum: 0 });
+    expect(apply({ type: "number" }, "negative")).toMatchObject({
+      maximum: 0,
+      exclusiveMaximum: true,
+    });
+    expect(apply({ type: "number" }, "nonpositive")).toMatchObject({ maximum: 0 });
+    expect(apply({ type: "number" }, "int")).toMatchObject({ type: "integer" });
+    expect(apply({ type: "string" }, "nullable")).toMatchObject({ nullable: true });
+    expect(apply({ type: "string" }, "nullish")).toMatchObject({ nullable: true });
+    expect(apply({ type: "string" }, "describe", [t.stringLiteral("Helpful")])).toMatchObject({
+      description: "Helpful",
+    });
+    expect(apply({ type: "string" }, "default", [t.stringLiteral("draft")])).toMatchObject({
+      default: "draft",
+    });
+    expect(apply({ type: "number" }, "default", [t.numericLiteral(1)])).toMatchObject({
+      default: 1,
+    });
+    expect(apply({ type: "boolean" }, "default", [t.booleanLiteral(true)])).toMatchObject({
+      default: true,
+    });
+  });
 });
