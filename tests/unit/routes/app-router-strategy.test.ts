@@ -155,7 +155,47 @@ describe("AppRouterStrategy", () => {
       routeFile,
       expect.objectContaining({
         isOpenApi: true,
-        responseType: "PostResponse",
+        inferredResponses: [
+          expect.objectContaining({
+            contentType: "application/json",
+          }),
+        ],
+      }),
+    );
+  });
+
+  it("keeps explicit @response annotations authoritative over inferred responses", () => {
+    strategy = new AppRouterStrategy(baseConfig);
+
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-app-router-explicit-"));
+    roots.push(root);
+    const routeFile = path.join(root, "route.ts");
+    fs.writeFileSync(
+      routeFile,
+      `
+      type PostResponse = {
+        id: number;
+      };
+
+      /**
+       * Get post by ID
+       * @openapi
+       * @response ExplicitResponse
+       */
+      export async function GET(): Promise<Response> {
+        return Response.json({ id: 1 } satisfies PostResponse);
+      }
+      `,
+    );
+
+    const addRoute = vi.fn();
+    strategy.processFile(routeFile, addRoute);
+
+    expect(addRoute).toHaveBeenCalledWith(
+      "GET",
+      routeFile,
+      expect.objectContaining({
+        responseType: "ExplicitResponse",
       }),
     );
   });

@@ -264,4 +264,81 @@ describe("OperationProcessor", () => {
       200: { description: "Generated response" },
     });
   });
+
+  it("adds first-class querystring parameters and request examples", () => {
+    const schemaProcessor = {
+      getSchemaContent: vi.fn(() => ({
+        params: undefined,
+        pathParams: undefined,
+        body: {
+          type: "object",
+        },
+        responses: undefined,
+      })),
+      createRequestParamsSchema: vi.fn(() => []),
+      createDefaultPathParamsSchema: vi.fn(),
+      detectContentType: vi.fn(() => "application/json"),
+      createRequestBodySchema: vi.fn(() => ({
+        content: {
+          "application/json": {
+            schema: { type: "object" },
+            examples: {
+              request: {
+                value: { q: "hello" },
+              },
+            },
+          },
+        },
+      })),
+      createResponseSchema: vi.fn(),
+    };
+    const responseProcessor = {
+      supportsRequestBody: vi.fn(() => true),
+      processResponses: vi.fn(() => ({
+        200: {
+          description: "OK",
+        },
+      })),
+    };
+
+    const processor = new OperationProcessor(schemaProcessor as never, responseProcessor as never);
+    const result = processor.processOperation("POST", "/events/search", {
+      bodyDescription: "Search request",
+      querystringType: "SearchFilter",
+      querystringName: "advancedQuery",
+      querystringExamples: {
+        filters: {
+          value: { status: "active" },
+        },
+      },
+      requestExamples: {
+        request: {
+          value: { q: "hello" },
+        },
+      },
+    });
+
+    expect(schemaProcessor.getSchemaContent).toHaveBeenCalledWith({
+      paramsType: "SearchFilter",
+    });
+    expect(result.definition.parameters).toContainEqual({
+      in: "querystring",
+      name: "advancedQuery",
+      required: false,
+      content: {
+        "application/x-www-form-urlencoded": {
+          schema: {
+            $ref: "#/components/schemas/SearchFilter",
+          },
+          examples: {
+            filters: {
+              value: {
+                status: "active",
+              },
+            },
+          },
+        },
+      },
+    });
+  });
 });

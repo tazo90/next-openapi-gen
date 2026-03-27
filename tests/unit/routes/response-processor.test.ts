@@ -229,4 +229,100 @@ describe("ResponseProcessor", () => {
     expect(processor.supportsRequestBody("POST")).toBe(true);
     expect(processor.supportsRequestBody("PUT")).toBe(true);
   });
+
+  it("uses inferred responses when no explicit @response tag exists", () => {
+    const schemaProcessor = {
+      getSchemaContent: vi.fn(),
+    };
+    const processor = new ResponseProcessor(
+      {
+        diagnostics: { enabled: true },
+      } as never,
+      schemaProcessor as never,
+    );
+
+    const responses = processor.processResponses(
+      {
+        inferredResponses: [
+          {
+            typeName: "PostResponse",
+            contentType: "application/json",
+            source: "typescript",
+          },
+        ],
+      },
+      "GET",
+    );
+
+    expect(schemaProcessor.getSchemaContent).toHaveBeenCalledWith({
+      responseType: "PostResponse",
+    });
+    expect(responses["200"]).toEqual({
+      description: "Successful response",
+      content: {
+        "application/json": {
+          schema: { $ref: "#/components/schemas/PostResponse" },
+        },
+      },
+    });
+  });
+
+  it("emits sequential media and examples for first-class 3.2 response metadata", () => {
+    const schemaProcessor = {
+      getSchemaContent: vi.fn(),
+    };
+    const processor = new ResponseProcessor(
+      {
+        diagnostics: { enabled: true },
+      } as never,
+      schemaProcessor as never,
+    );
+
+    const responses = processor.processResponses(
+      {
+        responseItemType: "EventChunk",
+        responseContentType: "text/event-stream",
+        responseItemEncoding: {
+          headers: {
+            "content-type": "application/json",
+          },
+        },
+        responsePrefixEncoding: [{ type: "text" }],
+        responseExamples: {
+          structured: {
+            value: { id: "evt_1" },
+          },
+          wire: {
+            serializedValue: 'data: {"id":"evt_1"}\n\n',
+          },
+        },
+      },
+      "GET",
+    );
+
+    expect(responses["200"]).toEqual({
+      description: "Successful response",
+      content: {
+        "text/event-stream": {
+          itemSchema: {
+            $ref: "#/components/schemas/EventChunk",
+          },
+          itemEncoding: {
+            headers: {
+              "content-type": "application/json",
+            },
+          },
+          prefixEncoding: [{ type: "text" }],
+          examples: {
+            structured: {
+              value: { id: "evt_1" },
+            },
+            wire: {
+              serializedValue: 'data: {"id":"evt_1"}\n\n',
+            },
+          },
+        },
+      },
+    });
+  });
 });

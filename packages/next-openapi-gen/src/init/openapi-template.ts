@@ -6,7 +6,6 @@ import {
   DEFAULT_GENERATED_OPENAPI_FILENAME,
   DEFAULT_INCLUDE_OPENAPI_ROUTES,
   DEFAULT_INIT_SCHEMA_TYPE,
-  DEFAULT_OPENAPI_VERSION,
   DEFAULT_OUTPUT_DIR,
   DEFAULT_ROUTER_TYPE,
   DEFAULT_SCHEMA_DIR,
@@ -16,7 +15,6 @@ import type { OpenApiTemplate } from "../shared/types.js";
 
 const openapiTemplate = {
   openapi: "3.0.0",
-  openapiVersion: DEFAULT_OPENAPI_VERSION,
   info: {
     title: "API Documentation",
     version: "1.0.0",

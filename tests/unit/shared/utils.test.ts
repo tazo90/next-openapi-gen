@@ -69,11 +69,16 @@ describe("shared utils", () => {
 
     expect(data).toEqual({
       tag: "Users",
+      tagSummary: "",
+      tagKind: "",
+      tagParent: "",
       auth: "BasicAuth",
       summary: "Create a user",
       description: "Creates a user record",
       paramsType: "UserQuery",
       pathParamsType: "UserPath",
+      querystringType: "",
+      querystringName: "",
       bodyType: "CreateUserBody",
       isOpenApi: true,
       isIgnored: true,
@@ -81,6 +86,8 @@ describe("shared utils", () => {
       bodyDescription: "JSON payload",
       contentType: "multipart/form-data",
       responseType: "",
+      responseContentType: "",
+      responseItemType: "",
       responseDescription: "Created without body",
       responseSet: "common",
       addResponses: "401:ErrorResponse,429",
@@ -95,11 +102,16 @@ describe("shared utils", () => {
 
     expect(data).toEqual({
       tag: "",
+      tagSummary: "",
+      tagKind: "",
+      tagParent: "",
       auth: "",
       summary: "",
       description: "",
       paramsType: "",
       pathParamsType: "",
+      querystringType: "",
+      querystringName: "",
       bodyType: "",
       isOpenApi: false,
       isIgnored: false,
@@ -107,6 +119,8 @@ describe("shared utils", () => {
       bodyDescription: "",
       contentType: "",
       responseType: "",
+      responseContentType: "",
+      responseItemType: "",
       responseDescription: "",
       responseSet: "",
       addResponses: "",
@@ -174,6 +188,60 @@ describe("shared utils", () => {
 
     expect(bearerData?.auth).toBe("BearerAuth");
     expect(emptyAuthData?.auth).toBe("");
+  });
+
+  it("parses structured tag metadata, querystring, sequential media, and unified examples", () => {
+    const data = getExportCommentData(`
+      /**
+       * Search events
+       * @tag Events
+       * @tagSummary Event navigation
+       * @tagKind nav
+       * @tagParent Platform
+       * @querystring SearchFilter as advancedQuery
+       * @responseContentType text/event-stream
+       * @responseItem EventChunk
+       * @responseItemEncoding {"headers":{"content-type":"application/json"}}
+       * @responsePrefixEncoding [{"type":"text"},{"type":"binary"}]
+       * @examples querystring:filters:{"status":"active"}
+       * @examples response:[{"name":"structured","value":{"id":"evt_1"}},{"name":"wire","serializedValue":"data: {\\"id\\":\\"evt_1\\"}\\\\n\\\\n"}]
+       */
+      export async function GET() {}
+    `);
+
+    expect(data).toMatchObject({
+      tag: "Events",
+      tagSummary: "Event navigation",
+      tagKind: "nav",
+      tagParent: "Platform",
+      querystringType: "SearchFilter",
+      querystringName: "advancedQuery",
+      responseContentType: "text/event-stream",
+      responseItemType: "EventChunk",
+      responseItemEncoding: {
+        headers: {
+          "content-type": "application/json",
+        },
+      },
+      responsePrefixEncoding: [{ type: "text" }, { type: "binary" }],
+      querystringExamples: {
+        filters: {
+          value: {
+            status: "active",
+          },
+        },
+      },
+      responseExamples: {
+        structured: {
+          value: {
+            id: "evt_1",
+          },
+        },
+        wire: {
+          serializedValue: 'data: {"id":"evt_1"}\\n\\n',
+        },
+      },
+    });
   });
 
   it("extracts multiline type references and preserves empty summaries", () => {

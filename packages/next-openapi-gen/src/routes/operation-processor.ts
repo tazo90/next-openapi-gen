@@ -1,6 +1,6 @@
 import type { SchemaProcessor } from "../schema/typescript/schema-processor.js";
 import { capitalize, getOperationId } from "../shared/utils.js";
-import type { DataTypes, RouteDefinition } from "../shared/types.js";
+import type { DataTypes, ParamSchema, RouteDefinition } from "../shared/types.js";
 import { ResponseProcessor } from "./response-processor.js";
 
 export class OperationProcessor {
@@ -61,6 +61,11 @@ export class OperationProcessor {
       definition.parameters.push(...moreParams);
     }
 
+    const querystringParameter = this.createQuerystringParameter(dataTypes);
+    if (querystringParameter) {
+      definition.parameters.push(querystringParameter);
+    }
+
     if (this.responseProcessor.supportsRequestBody(method)) {
       if (dataTypes.bodyType) {
         this.schemaProcessor.getSchemaContent({
@@ -76,6 +81,9 @@ export class OperationProcessor {
           content: {
             [contentType]: {
               schema: { $ref: `#/components/schemas/${dataTypes.bodyType}` },
+              ...(dataTypes.requestExamples
+                ? { examples: structuredClone(dataTypes.requestExamples) }
+                : {}),
             },
           },
         };
@@ -88,6 +96,7 @@ export class OperationProcessor {
           body,
           bodyDescription,
           dataTypes.contentType,
+          dataTypes.requestExamples,
         );
       }
     }
@@ -103,6 +112,32 @@ export class OperationProcessor {
       routePath,
       method,
       definition,
+    };
+  }
+
+  private createQuerystringParameter(dataTypes: DataTypes): ParamSchema | undefined {
+    if (!dataTypes.querystringType) {
+      return undefined;
+    }
+
+    this.schemaProcessor.getSchemaContent({
+      paramsType: dataTypes.querystringType,
+    });
+
+    return {
+      in: "querystring",
+      name: dataTypes.querystringName || "query",
+      required: false,
+      content: {
+        "application/x-www-form-urlencoded": {
+          schema: {
+            $ref: `#/components/schemas/${dataTypes.querystringType}`,
+          },
+          ...(dataTypes.querystringExamples
+            ? { examples: structuredClone(dataTypes.querystringExamples) }
+            : {}),
+        },
+      },
     };
   }
 }

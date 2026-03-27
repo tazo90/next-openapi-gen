@@ -5,10 +5,11 @@ import type { DiagnosticsCollector } from "../diagnostics/collector.js";
 import { createFrameworkAdapter } from "../frameworks/index.js";
 import type { FrameworkAdapter } from "../frameworks/types.js";
 import { SchemaProcessor } from "../schema/typescript/schema-processor.js";
-import { extractPathParameters } from "../shared/utils.js";
+import { capitalize, extractPathParameters } from "../shared/utils.js";
 import { logger } from "../shared/logger.js";
 import type {
   DataTypes,
+  OpenApiTagDefinition,
   OpenApiConfig,
   OpenApiPathDefinition,
   ResolvedOpenApiConfig,
@@ -21,6 +22,7 @@ import { scanRouteFiles } from "./route-scanner.js";
 
 export class RouteProcessor {
   private pathDefinitions: Record<string, OpenApiPathDefinition> = {};
+  private tagDefinitions: Record<string, OpenApiTagDefinition> = {};
   private schemaProcessor: SchemaProcessor;
   private config: ResolvedOpenApiConfig;
   private adapter: FrameworkAdapter;
@@ -88,19 +90,36 @@ export class RouteProcessor {
   private registerRoute(
     method: string,
     filePath: string,
-    routePath: string,
-    dataTypes: DataTypes,
+    routePathOrDataTypes: string | DataTypes,
+    maybeDataTypes?: DataTypes,
   ): void {
+    const routePath =
+      typeof routePathOrDataTypes === "string"
+        ? routePathOrDataTypes
+        : this.adapter.getRoutePath(filePath);
+    const dataTypes =
+      (typeof routePathOrDataTypes === "string" ? maybeDataTypes : routePathOrDataTypes) ||
+      ({} as DataTypes);
+
     if (this.shouldIgnoreRoute(routePath, dataTypes)) {
       logger.debug(`Ignoring route: ${routePath}`);
       return;
     }
+
+    dataTypes.diagnostics?.forEach((diagnostic) => {
+      this.diagnostics?.add({
+        ...diagnostic,
+        filePath: diagnostic.filePath || filePath,
+        routePath: diagnostic.routePath || routePath,
+      });
+    });
 
     if (this.config.includeOpenApiRoutes && !dataTypes.isOpenApi) {
       return;
     }
 
     const pathParams = extractPathParameters(routePath);
+    this.registerTagMetadata(routePath, dataTypes);
     if (pathParams.length > 0 && !dataTypes.pathParamsType) {
       this.diagnostics?.add({
         code: "missing-path-params-type",
@@ -151,13 +170,20 @@ export class RouteProcessor {
     varName: string,
     discoveredRoutePath: string,
     dataTypes: DataTypes,
-    pathParamNames: string[],
+    pathParamNames: string[] = [],
   ): void {
+    const normalizedRoutePath =
+      discoveredRoutePath.includes("{") || discoveredRoutePath.startsWith("/")
+        ? discoveredRoutePath
+        : this.adapter.getRoutePath(discoveredRoutePath);
+    const resolvedPathParamNames =
+      pathParamNames.length > 0 ? pathParamNames : extractPathParameters(normalizedRoutePath);
+
     const { routePath, method, definition } = this.operationProcessor.processOperation(
       varName,
-      discoveredRoutePath,
+      normalizedRoutePath,
       dataTypes,
-      pathParamNames,
+      resolvedPathParamNames,
     );
 
     if (!this.pathDefinitions[routePath]) {
@@ -171,7 +197,26 @@ export class RouteProcessor {
     return sortPathDefinitions(this.pathDefinitions);
   }
 
+  public getTags(): OpenApiTagDefinition[] {
+    return Object.values(this.tagDefinitions);
+  }
+
   public getSwaggerPaths(): Record<string, OpenApiPathDefinition> {
     return this.getPaths();
+  }
+
+  private registerTagMetadata(routePath: string, dataTypes: DataTypes): void {
+    const routeTag = dataTypes.tag || capitalize(routePath.split("/")[1] || "");
+    if (!routeTag) {
+      return;
+    }
+
+    const existingTag = this.tagDefinitions[routeTag] || { name: routeTag };
+    this.tagDefinitions[routeTag] = {
+      ...existingTag,
+      ...(dataTypes.tagSummary ? { summary: dataTypes.tagSummary } : {}),
+      ...(dataTypes.tagKind ? { kind: dataTypes.tagKind } : {}),
+      ...(dataTypes.tagParent ? { parent: dataTypes.tagParent } : {}),
+    };
   }
 }

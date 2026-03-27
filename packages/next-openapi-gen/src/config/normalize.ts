@@ -33,13 +33,7 @@ function normalizeSchemaTypes(schemaType?: SchemaType | SchemaType[]): SchemaTyp
   return [...new Set(schemaBackends)];
 }
 
-function normalizeOpenApiVersion(
-  template: Pick<OpenApiTemplate, "openapiVersion" | "openapi">,
-): OpenApiVersion {
-  if (template.openapiVersion) {
-    return template.openapiVersion;
-  }
-
+function normalizeOpenApiVersion(template: Pick<OpenApiTemplate, "openapi">): OpenApiVersion {
   if (template.openapi.startsWith("3.2")) {
     return "3.2";
   }
@@ -84,7 +78,6 @@ export function normalizeOpenApiConfig(
   const routerType = normalizeRouterType(template.routerType);
   const schemaBackends = normalizeSchemaTypes(template.schemaType);
   const openapiVersion = normalizeOpenApiVersion({
-    openapiVersion: template.openapiVersion,
     openapi: "openapi" in template ? template.openapi || "3.0.0" : "3.0.0",
   });
 

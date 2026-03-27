@@ -3,6 +3,7 @@ import fs from "fs";
 import type { NodePath } from "@babel/traverse";
 
 import { HTTP_METHODS } from "./router-strategy.js";
+import { inferResponsesForExport } from "./typescript-response-inference.js";
 import { traverse } from "../shared/babel-traverse.js";
 import type { RouterStrategy } from "./router-strategy.js";
 import { extractJSDocComments, parseTypeScriptFile } from "../shared/utils.js";
@@ -37,7 +38,12 @@ export class AppRouterStrategy implements RouterStrategy {
 
         if (t.isFunctionDeclaration(declaration) && t.isIdentifier(declaration.id)) {
           if (HTTP_METHODS.includes(declaration.id.name)) {
-            const dataTypes = this.inferHandlerDataTypes(extractJSDocComments(path), declaration);
+            const dataTypes = this.inferHandlerDataTypes(
+              extractJSDocComments(path, filePath),
+              declaration,
+              filePath,
+              declaration.id.name,
+            );
             addRoute(declaration.id.name, filePath, dataTypes);
           }
         }
@@ -46,7 +52,12 @@ export class AppRouterStrategy implements RouterStrategy {
           declaration.declarations.forEach((decl) => {
             if (t.isVariableDeclarator(decl) && t.isIdentifier(decl.id)) {
               if (HTTP_METHODS.includes(decl.id.name)) {
-                const dataTypes = this.inferHandlerDataTypes(extractJSDocComments(path), decl);
+                const dataTypes = this.inferHandlerDataTypes(
+                  extractJSDocComments(path, filePath),
+                  decl,
+                  filePath,
+                  decl.id.name,
+                );
                 addRoute(decl.id.name, filePath, dataTypes);
               }
             }
@@ -87,32 +98,64 @@ export class AppRouterStrategy implements RouterStrategy {
     return relativePath || "/";
   }
 
-  private inferHandlerDataTypes(dataTypes: DataTypes, handlerNode: t.Node): DataTypes {
+  private inferHandlerDataTypes(
+    dataTypes: DataTypes,
+    handlerNode: t.Node,
+    filePath: string,
+    exportName: string,
+  ): DataTypes {
     if (dataTypes.responseType) {
       return dataTypes;
     }
 
+    const checkerResponses = inferResponsesForExport(filePath, exportName);
+    if (checkerResponses.responses.length > 0) {
+      return {
+        ...dataTypes,
+        inferredResponses: checkerResponses.responses,
+        diagnostics: [...(dataTypes.diagnostics || []), ...checkerResponses.diagnostics],
+      };
+    }
+
     const inferredResponseType = this.inferResponseTypeFromHandler(handlerNode);
     if (!inferredResponseType) {
-      return dataTypes;
+      return {
+        ...dataTypes,
+        diagnostics: [...(dataTypes.diagnostics || []), ...checkerResponses.diagnostics],
+      };
     }
 
     return {
       ...dataTypes,
       responseType: inferredResponseType,
+      diagnostics: [...(dataTypes.diagnostics || []), ...checkerResponses.diagnostics],
     };
   }
 
   private inferResponseTypeFromHandler(handlerNode: t.Node): string {
     if (t.isFunctionDeclaration(handlerNode) || t.isFunctionExpression(handlerNode)) {
-      return this.inferResponseTypeFromAnnotation(handlerNode.returnType?.typeAnnotation);
+      return this.inferResponseTypeFromAnnotation(
+        this.getReturnTypeAnnotation(handlerNode.returnType),
+      );
     }
 
     if (t.isVariableDeclarator(handlerNode) && t.isArrowFunctionExpression(handlerNode.init)) {
-      return this.inferResponseTypeFromAnnotation(handlerNode.init.returnType?.typeAnnotation);
+      return this.inferResponseTypeFromAnnotation(
+        this.getReturnTypeAnnotation(handlerNode.init.returnType),
+      );
     }
 
     return "";
+  }
+
+  private getReturnTypeAnnotation(
+    returnType: t.Noop | t.TSTypeAnnotation | t.TypeAnnotation | null | undefined,
+  ): t.TSType | null | undefined {
+    if (returnType && t.isTSTypeAnnotation(returnType)) {
+      return returnType.typeAnnotation;
+    }
+
+    return undefined;
   }
 
   private inferResponseTypeFromAnnotation(typeNode: t.TSType | null | undefined): string {

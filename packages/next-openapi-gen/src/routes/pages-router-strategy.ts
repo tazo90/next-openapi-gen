@@ -5,11 +5,7 @@ import type * as t from "@babel/types";
 import { HTTP_METHODS } from "./router-strategy.js";
 import type { RouterStrategy } from "./router-strategy.js";
 import { traverse } from "../shared/babel-traverse.js";
-import {
-  parseResponseTag,
-  parseTypeScriptFile,
-  performAuthPresetReplacements,
-} from "../shared/utils.js";
+import { parseJSDocBlock, parseTypeScriptFile } from "../shared/utils.js";
 import type { DataTypes, OpenApiConfig } from "../shared/types.js";
 
 export class PagesRouterStrategy implements RouterStrategy {
@@ -46,7 +42,7 @@ export class PagesRouterStrategy implements RouterStrategy {
           if (comment.type === "CommentBlock" && (comment.end || 0) < exportStart) {
             const commentValue = comment.value;
             if (commentValue.includes("@method")) {
-              const dataTypes = this.extractJSDocFromComment(commentValue);
+              const dataTypes = this.extractJSDocFromComment(commentValue, filePath);
               if (dataTypes.method && HTTP_METHODS.includes(dataTypes.method)) {
                 methodComments.push({
                   method: dataTypes.method,
@@ -98,144 +94,7 @@ export class PagesRouterStrategy implements RouterStrategy {
   /**
    * Extract JSDoc data from a raw comment string (Pages Router specific)
    */
-  public extractJSDocFromComment(commentValue: string): DataTypes {
-    const cleanedComment = commentValue.replace(/\*\s*/g, "").trim();
-
-    let tag = "";
-    let summary = "";
-    let description = "";
-    let paramsType = "";
-    let pathParamsType = "";
-    let bodyType = "";
-    let auth = "";
-    let isOpenApi = cleanedComment.includes("@openapi");
-    let isIgnored = cleanedComment.includes("@ignore");
-    let deprecated = cleanedComment.includes("@deprecated");
-    let bodyDescription = "";
-    let contentType = "";
-    let responseType = "";
-    let responseDescription = "";
-    let responseSet = "";
-    let addResponses = "";
-    let successCode = "";
-    let operationId = "";
-    let method = "";
-
-    const methodMatch = cleanedComment.match(/@method\s+(\S+)/);
-    if (methodMatch?.[1]) {
-      method = methodMatch[1].trim().toUpperCase();
-    }
-
-    const firstLine = cleanedComment.split("\n")[0] ?? "";
-    if (!firstLine.trim().startsWith("@")) {
-      summary = firstLine.trim();
-    }
-
-    const descMatch = cleanedComment.match(/@description\s+(.*)/);
-    if (descMatch?.[1]) {
-      description = descMatch[1].trim();
-    }
-
-    const tagMatch = cleanedComment.match(/@tag\s+(.*)/);
-    if (tagMatch?.[1]) {
-      tag = tagMatch[1].trim();
-    }
-
-    const paramsMatch =
-      cleanedComment.match(/@queryParams\s+([\w<>,\s[\]]+)/) ||
-      cleanedComment.match(/@params\s+([\w<>,\s[\]]+)/);
-    if (paramsMatch?.[1]) {
-      paramsType = paramsMatch[1].trim();
-    }
-
-    const pathParamsMatch = cleanedComment.match(/@pathParams\s+([\w<>,\s[\]]+)/);
-    if (pathParamsMatch?.[1]) {
-      pathParamsType = pathParamsMatch[1].trim();
-    }
-
-    const bodyMatch = cleanedComment.match(/@body\s+([\w<>,\s[\]]+)/);
-    if (bodyMatch?.[1]) {
-      bodyType = bodyMatch[1].trim();
-    }
-
-    const bodyDescMatch = cleanedComment.match(/@bodyDescription\s+(.*)/);
-    if (bodyDescMatch?.[1]) {
-      bodyDescription = bodyDescMatch[1].trim();
-    }
-
-    const contentTypeMatch = cleanedComment.match(/@contentType\s+(.*)/);
-    if (contentTypeMatch?.[1]) {
-      contentType = contentTypeMatch[1].trim();
-    }
-
-    const parsedResponse = parseResponseTag(cleanedComment);
-    if (parsedResponse) {
-      successCode = parsedResponse.successCode;
-      responseType = parsedResponse.responseType;
-      responseDescription = parsedResponse.responseDescription;
-    }
-
-    const respDescMatch = cleanedComment.match(/@responseDescription\s+(.*)/);
-    if (respDescMatch?.[1]) {
-      responseDescription = respDescMatch[1].trim();
-    }
-
-    const respSetMatch = cleanedComment.match(/@responseSet\s+(.*)/);
-    if (respSetMatch?.[1]) {
-      responseSet = respSetMatch[1].trim();
-    }
-
-    const addMatches = [...cleanedComment.matchAll(/@add\s+([^\n\r@]*)/g)];
-    if (addMatches.length > 0) {
-      addResponses = addMatches
-        .map((m) => m[1]?.trim() || "")
-        .filter(Boolean)
-        .join(",");
-    }
-
-    const opIdMatch = cleanedComment.match(/@operationId\s+(\S+)/);
-    if (opIdMatch?.[1]) {
-      operationId = opIdMatch[1].trim();
-    }
-
-    const authMatch = cleanedComment.match(/@auth\s+(.*)/);
-    if (authMatch?.[1]) {
-      const authValue = authMatch[1].trim();
-      switch (authValue) {
-        case "bearer":
-          auth = "BearerAuth";
-          break;
-        case "basic":
-          auth = "BasicAuth";
-          break;
-        case "apikey":
-          auth = "ApiKeyAuth";
-          break;
-        default:
-          auth = performAuthPresetReplacements(authValue);
-      }
-    }
-
-    return {
-      tag,
-      auth,
-      summary,
-      description,
-      paramsType,
-      pathParamsType,
-      bodyType,
-      isOpenApi,
-      isIgnored,
-      deprecated,
-      bodyDescription,
-      contentType,
-      responseType,
-      responseDescription,
-      responseSet,
-      addResponses,
-      successCode,
-      operationId,
-      method,
-    };
+  public extractJSDocFromComment(commentValue: string, filePath?: string): DataTypes {
+    return parseJSDocBlock(commentValue, filePath);
   }
 }

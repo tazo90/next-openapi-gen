@@ -1,6 +1,8 @@
 import type { SchemaProcessor } from "../schema/typescript/schema-processor.js";
 import type {
   DataTypes,
+  InferredResponseDefinition,
+  OpenApiMediaTypeDefinition,
   OpenApiResponseDefinition,
   OpenApiSchemaLike,
   ResolvedOpenApiConfig,
@@ -21,50 +23,45 @@ export class ResponseProcessor {
     const responses: Record<string, OpenApiResponseDefinition> = {};
     const successCode = dataTypes.successCode || this.getDefaultSuccessCode(method);
 
-    if (successCode === "204" && !dataTypes.responseType) {
-      responses[successCode] = {
-        description: dataTypes.responseDescription || "No Content",
-      };
-    } else if (dataTypes.responseType) {
-      if (successCode === "204") {
-        responses[successCode] = {
-          description: dataTypes.responseDescription || "No Content",
-        };
-      } else {
-        let schema: OpenApiSchemaLike;
-        let baseType = dataTypes.responseType;
-        let arrayDepth = 0;
+    const hasExplicitPrimaryResponse =
+      Boolean(dataTypes.responseType) ||
+      Boolean(dataTypes.responseItemType) ||
+      successCode === "204";
 
-        while (baseType.endsWith("[]")) {
-          arrayDepth++;
-          baseType = baseType.slice(0, -2);
-        }
+    if (hasExplicitPrimaryResponse) {
+      const explicitResponse = this.createTypedResponse(
+        {
+          statusCode: successCode,
+          typeName: dataTypes.responseType,
+          itemTypeName: dataTypes.responseItemType,
+          description: dataTypes.responseDescription,
+          contentType: dataTypes.responseContentType,
+          source: "typescript",
+        },
+        dataTypes,
+        method,
+      );
 
-        this.schemaProcessor.getSchemaContent({
-          responseType: baseType,
-        });
-
-        if (arrayDepth === 0) {
-          schema = { $ref: `#/components/schemas/${baseType}` };
-        } else {
-          schema = { $ref: `#/components/schemas/${baseType}` };
-          for (let i = 0; i < arrayDepth; i++) {
-            schema = {
-              type: "array",
-              items: schema,
-            };
-          }
-        }
-
-        responses[successCode] = {
-          description: dataTypes.responseDescription || "Successful response",
-          content: {
-            "application/json": {
-              schema,
-            },
-          },
-        };
+      if (explicitResponse) {
+        responses[successCode] = explicitResponse;
       }
+    }
+
+    if (
+      (!hasExplicitPrimaryResponse || dataTypes.inferredResponses?.length) &&
+      dataTypes.inferredResponses
+    ) {
+      dataTypes.inferredResponses.forEach((inferredResponse) => {
+        const inferredCode = inferredResponse.statusCode || successCode;
+        if (responses[inferredCode]) {
+          return;
+        }
+
+        const response = this.createTypedResponse(inferredResponse, dataTypes, method);
+        if (response) {
+          responses[inferredCode] = response;
+        }
+      });
     }
 
     const responseSetName = dataTypes.responseSet || this.config.defaultResponseSet;
@@ -154,5 +151,91 @@ export class ResponseProcessor {
       500: "Internal Server Error",
     };
     return defaults[code] || `HTTP ${code}`;
+  }
+
+  private createTypedResponse(
+    response: InferredResponseDefinition,
+    dataTypes: DataTypes,
+    method: string,
+  ): OpenApiResponseDefinition | undefined {
+    const statusCode =
+      response.statusCode || dataTypes.successCode || this.getDefaultSuccessCode(method);
+    const description =
+      response.description ||
+      dataTypes.responseDescription ||
+      (statusCode === "204" ? "No Content" : "Successful response");
+
+    if (
+      statusCode === "204" ||
+      (!response.typeName &&
+        !response.schema &&
+        !response.itemTypeName &&
+        !dataTypes.responseItemType)
+    ) {
+      return {
+        description,
+      };
+    }
+
+    const mediaType = this.createResponseMediaType(response, dataTypes);
+    return {
+      description,
+      content: {
+        [response.contentType || dataTypes.responseContentType || "application/json"]: mediaType,
+      },
+    };
+  }
+
+  private createResponseMediaType(
+    response: InferredResponseDefinition,
+    dataTypes: DataTypes,
+  ): OpenApiMediaTypeDefinition {
+    const typeName = response.typeName || dataTypes.responseType;
+    const itemTypeName = response.itemTypeName || dataTypes.responseItemType;
+    const mediaType: OpenApiMediaTypeDefinition = {};
+
+    if (itemTypeName) {
+      mediaType.itemSchema = this.buildSchemaReference(itemTypeName);
+      if (dataTypes.responseItemEncoding) {
+        mediaType.itemEncoding = structuredClone(dataTypes.responseItemEncoding);
+      }
+      if (dataTypes.responsePrefixEncoding) {
+        mediaType.prefixEncoding = structuredClone(dataTypes.responsePrefixEncoding);
+      }
+    } else if (response.schema) {
+      mediaType.schema = structuredClone(response.schema);
+    } else if (typeName) {
+      mediaType.schema = this.buildSchemaReference(typeName);
+    }
+
+    if (dataTypes.responseExamples) {
+      mediaType.examples = structuredClone(dataTypes.responseExamples);
+    }
+
+    return mediaType;
+  }
+
+  private buildSchemaReference(typeName: string): OpenApiSchemaLike {
+    let baseType = typeName;
+    let arrayDepth = 0;
+
+    while (baseType.endsWith("[]")) {
+      arrayDepth++;
+      baseType = baseType.slice(0, -2);
+    }
+
+    this.schemaProcessor.getSchemaContent({
+      responseType: baseType,
+    });
+
+    let schema: OpenApiSchemaLike = { $ref: `#/components/schemas/${baseType}` };
+    for (let index = 0; index < arrayDepth; index++) {
+      schema = {
+        type: "array",
+        items: schema,
+      };
+    }
+
+    return schema;
   }
 }

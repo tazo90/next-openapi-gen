@@ -42,6 +42,7 @@ import { extractFunctionParameters, extractFunctionReturnType } from "./function
 import { resolveUtilityTypeReference } from "./utility-types.js";
 import type {
   ContentType,
+  OpenApiExampleMap,
   OpenAPIDefinition,
   ParamSchema,
   PropertyOptions,
@@ -230,7 +231,15 @@ export class SchemaProcessor {
   }
 
   private indexSchemaFile(filePath: string): void {
-    const ast = this.getParsedSchemaFile(filePath);
+    let ast: t.File;
+    try {
+      ast = this.getParsedSchemaFile(filePath);
+    } catch (error) {
+      logger.error(
+        `Error indexing schema file ${filePath}: ${getSchemaProcessorErrorMessage(error)}`,
+      );
+      return;
+    }
 
     this.collectImports(ast, filePath);
     this.collectAllExportedDefinitions(ast, filePath);
@@ -737,7 +746,7 @@ export class SchemaProcessor {
       logger.error(
         `Error processing schema file ${filePath} for schema ${schemaName}: ${getSchemaProcessorErrorMessage(error)}`,
       );
-      return { type: "object" }; // By default we return an empty object on error
+      return {};
     }
   }
 
@@ -801,7 +810,7 @@ export class SchemaProcessor {
   private createFormDataSchema(body: OpenAPIDefinition): OpenAPIDefinition {
     return createRequestBodySchema(body, undefined, "multipart/form-data").content[
       "multipart/form-data"
-    ].schema as OpenAPIDefinition;
+    ]?.schema as OpenAPIDefinition;
   }
 
   /**
@@ -822,8 +831,9 @@ export class SchemaProcessor {
     body: OpenAPIDefinition,
     description?: string,
     contentType?: string,
+    examples?: OpenApiExampleMap,
   ): any {
-    return createRequestBodySchema(body, description, contentType);
+    return createRequestBodySchema(body, description, contentType, examples);
   }
 
   public createResponseSchema(responses: OpenAPIDefinition, description?: string): any {

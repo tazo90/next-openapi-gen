@@ -57,6 +57,35 @@ describe("TypeScript schema discovery helpers", () => {
     expect(resolveImportPath("../missing", fromFile, fs)).toBeNull();
   });
 
+  it("resolves tsconfig path aliases with the TypeScript resolver", () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-schema-paths-"));
+    roots.push(root);
+    const sourceDir = path.join(root, "src");
+    const libDir = path.join(root, "lib");
+    fs.mkdirSync(sourceDir, { recursive: true });
+    fs.mkdirSync(libDir, { recursive: true });
+    fs.writeFileSync(
+      path.join(root, "tsconfig.json"),
+      JSON.stringify({
+        compilerOptions: {
+          baseUrl: ".",
+          paths: {
+            "@/*": ["src/*"],
+            "@lib/*": ["lib/*"],
+          },
+        },
+        include: ["src", "lib"],
+      }),
+    );
+    fs.writeFileSync(path.join(sourceDir, "user.ts"), "export type User = { id: string };");
+    fs.writeFileSync(path.join(libDir, "event.ts"), "export type Event = { id: string };");
+
+    const fromFile = path.join(sourceDir, "route.ts");
+
+    expect(resolveImportPath("@/user", fromFile, fs)).toBe(path.join(sourceDir, "user.ts"));
+    expect(resolveImportPath("@lib/event", fromFile, fs)).toBe(path.join(libDir, "event.ts"));
+  });
+
   it("collects exported definitions without overwriting existing entries", () => {
     const ast = parseTypeScriptFile(`
       type InternalAlias<T> = { value: T };

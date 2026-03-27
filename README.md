@@ -1,13 +1,16 @@
 # next-openapi-gen
 
-Automatically generate OpenAPI 3.0 documentation from Next.js projects, with support for Zod schemas and TypeScript types.
+Automatically generate OpenAPI 3.0, 3.1, and 3.2 documentation from Next.js projects, with support for Zod schemas, TypeScript types, and reusable OpenAPI fragments.
 
 ## Features
 
-- ✅ Automatic OpenAPI 3.0 documentation generation from Next.js App Router and Pages Router 🆕
+- ✅ Automatic OpenAPI 3.0, 3.1, and 3.2 generation from Next.js App Router and Pages Router
 - ✅ Multiple schema types: `TypeScript`, `Zod`, `Drizzle-Zod`, or `custom YAML/JSON` files
 - ✅ Mix schema sources simultaneously - perfect for gradual migrations
-- ✅ JSDoc comments with intelligent parameter examples
+- ✅ Version-aware schema normalization for OpenAPI 3.1 and 3.2
+- ✅ Reusable OpenAPI fragments from templates and `schemaFiles`
+- ✅ JSDoc comments with first-class examples, structured tag metadata, `querystring`, and sequential media
+- ✅ Checker-assisted App Router response inference with explicit `@response` precedence
 - ✅ Multiple UI interfaces: `Scalar`, `Swagger`, `Redoc`, `Stoplight`, and `RapiDoc` available at `/api-docs` url
 - ✅ Auto-detection of path parameters (e.g., `/users/[id]/route.ts`)
 - ✅ Intuitive CLI for quick setup and generation
@@ -25,6 +28,24 @@ Automatically generate OpenAPI 3.0 documentation from Next.js projects, with sup
 ```bash
 pnpm add -D next-openapi-gen
 ```
+
+## OpenAPI Version Support
+
+`next-openapi-gen` supports these OpenAPI targets:
+
+- `3.0` default output and compatibility mode
+- `3.1` with JSON Schema 2020-12 style schema normalization
+- `3.2` with support for newer root/object fields plus generated route-level `querystring`, sequential media, and richer examples
+
+Generated route scanning and schema discovery are shared across versions. Version-specific differences are applied during finalization, which keeps generated `3.1` and `3.2` specs from remaining `3.0`-shaped internally.
+
+See [`docs/openapi-version-coverage.md`](./docs/openapi-version-coverage.md) for the full coverage matrix, generated vs template/custom boundaries, and validation strategy.
+
+### Inference And Annotation Notes
+
+- Explicit `@response` tags remain authoritative.
+- If no `@response` tag is present, App Router handlers can infer responses from typed `NextResponse.json(...)` / `Response.json(...)` returns.
+- TypeScript checker support is used selectively for higher-fidelity response inference and import/path-alias resolution, while the main scan pipeline remains shared across versions.
 
 ## Quick Start
 
@@ -85,22 +106,23 @@ During initialization (`pnpm exec next-openapi-gen init`), a configuration file 
 
 ### Configuration Options
 
-| Option                 | Description                                                                   |
-| ---------------------- | ----------------------------------------------------------------------------- |
-| `apiDir`               | Path to the API directory                                                     |
-| `routerType`           | Router type: `"app"` (default) or `"pages"` for legacy Pages Router           |
-| `schemaDir`            | Path to types/schemas directory, or array of paths for multiple directories   |
-| `schemaType`           | Schema type: `"zod"`, `"typescript"`, or `["zod", "typescript"]` for multiple |
-| `schemaFiles`          | Optional: Array of custom OpenAPI schema files (YAML/JSON) to include         |
-| `outputFile`           | Name of the OpenAPI output file                                               |
-| `outputDir`            | Directory where OpenAPI file will be generated (default: `"./public"`)        |
-| `docsUrl`              | API documentation URL (for Swagger UI)                                        |
-| `includeOpenApiRoutes` | Whether to include only routes with @openapi tag                              |
-| `ignoreRoutes`         | Array of route patterns to exclude from documentation (supports wildcards)    |
-| `defaultResponseSet`   | Default error response set for all endpoints                                  |
-| `responseSets`         | Named sets of error response codes                                            |
-| `errorConfig`          | Error schema configuration                                                    |
-| `debug`                | Enable detailed logging during generation                                     |
+| Option                 | Description                                                                                          |
+| ---------------------- | ---------------------------------------------------------------------------------------------------- |
+| `apiDir`               | Path to the API directory                                                                            |
+| `routerType`           | Router type: `"app"` (default) or `"pages"` for legacy Pages Router                                  |
+| `schemaDir`            | Path to types/schemas directory, or array of paths for multiple directories                          |
+| `schemaType`           | Schema type: `"zod"`, `"typescript"`, or `["zod", "typescript"]` for multiple                        |
+| `schemaFiles`          | Optional: Array of custom OpenAPI schema files (YAML/JSON) to deep-merge into the generated document |
+| `openapi`              | Output target and root OpenAPI version string (`"3.0.0"`, `"3.1.0"`, or `"3.2.0"`)                   |
+| `outputFile`           | Name of the OpenAPI output file                                                                      |
+| `outputDir`            | Directory where OpenAPI file will be generated (default: `"./public"`)                               |
+| `docsUrl`              | API documentation URL (for Swagger UI)                                                               |
+| `includeOpenApiRoutes` | Whether to include only routes with @openapi tag                                                     |
+| `ignoreRoutes`         | Array of route patterns to exclude from documentation (supports wildcards)                           |
+| `defaultResponseSet`   | Default error response set for all endpoints                                                         |
+| `responseSets`         | Named sets of error response codes                                                                   |
+| `errorConfig`          | Error schema configuration                                                                           |
+| `debug`                | Enable detailed logging during generation                                                            |
 
 ## Documenting Your API
 
@@ -203,25 +225,34 @@ export async function POST(request: NextRequest) {
 
 ## JSDoc Documentation Tags
 
-| Tag                    | Description                                                                                                                                           |
-| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `@description`         | Endpoint description                                                                                                                                  |
-| `@operationId`         | Custom operation ID (overrides auto-generated ID)                                                                                                     |
-| `@pathParams`          | Path parameters type/schema                                                                                                                           |
-| `@params`              | Query parameters type/schema (use `@queryParams` if you have prettier-plugin-jsdoc conflicts)                                                         |
-| `@body`                | Request body type/schema                                                                                                                              |
-| `@bodyDescription`     | Request body description                                                                                                                              |
-| `@response`            | Response type/schema with optional code and description (`User`, `201:User`, `User:Description`, `201:User:Description`)                              |
-| `@responseDescription` | Response description                                                                                                                                  |
-| `@responseSet`         | Override default response set (`public`, `auth`, `none`)                                                                                              |
-| `@add`                 | Add custom response codes (`409:ConflictResponse`, `429`)                                                                                             |
-| `@contentType`         | Request body content type (`application/json`, `multipart/form-data`)                                                                                 |
-| `@auth`                | Authorization type (e.g., `bearer`, `basic`, `apikey`, or a custom type) — supports multiple auths using comma separator (e.g., `bearer, CustomType`) |
-| `@tag`                 | Custom tag                                                                                                                                            |
-| `@deprecated`          | Marks the route as deprecated                                                                                                                         |
-| `@openapi`             | Marks the route for inclusion in documentation (if includeOpenApiRoutes is enabled)                                                                   |
-| `@ignore`              | Excludes the route from OpenAPI documentation                                                                                                         |
-| `@method`              | HTTP method for Pages Router (`GET`, `POST`, `PUT`, `PATCH`, `DELETE`) - required for Pages Router only                                               |
+| Tag                       | Description                                                                                                                                                                                                                                                                             |
+| ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@description`            | Endpoint description                                                                                                                                                                                                                                                                    |
+| `@operationId`            | Custom operation ID (overrides auto-generated ID)                                                                                                                                                                                                                                       |
+| `@pathParams`             | Path parameters type/schema                                                                                                                                                                                                                                                             |
+| `@params`                 | Query parameters type/schema (use `@queryParams` if you have prettier-plugin-jsdoc conflicts)                                                                                                                                                                                           |
+| `@querystring`            | OpenAPI 3.2 `querystring` parameter schema with optional parameter name (`FilterSchema as advancedQuery`)                                                                                                                                                                               |
+| `@body`                   | Request body type/schema                                                                                                                                                                                                                                                                |
+| `@bodyDescription`        | Request body description                                                                                                                                                                                                                                                                |
+| `@examples`               | Add request, response, or querystring examples. Supports inline values (`response:name:{"ok":true}`), serialized payloads (`response:wire:serialized:data: {"id":"1"}\n\n`), external URLs, and exported typed references (`response:ExampleCatalog`, `response:name:ref:ExampleValue`) |
+| `@response`               | Response type/schema with optional code and description (`User`, `201:User`, `User:Description`, `201:User:Description`)                                                                                                                                                                |
+| `@responseContentType`    | Override the response media type (`application/json`, `text/event-stream`)                                                                                                                                                                                                              |
+| `@responseItem`           | Emit sequential media item schemas for OpenAPI 3.2 (`text/event-stream`, NDJSON, etc.)                                                                                                                                                                                                  |
+| `@responseItemEncoding`   | JSON value applied to `itemEncoding` for sequential media                                                                                                                                                                                                                               |
+| `@responsePrefixEncoding` | JSON array applied to `prefixEncoding` for sequential media                                                                                                                                                                                                                             |
+| `@responseDescription`    | Response description                                                                                                                                                                                                                                                                    |
+| `@responseSet`            | Override default response set (`public`, `auth`, `none`)                                                                                                                                                                                                                                |
+| `@add`                    | Add custom response codes (`409:ConflictResponse`, `429`)                                                                                                                                                                                                                               |
+| `@contentType`            | Request body content type (`application/json`, `multipart/form-data`)                                                                                                                                                                                                                   |
+| `@auth`                   | Authorization type (e.g., `bearer`, `basic`, `apikey`, or a custom type) — supports multiple auths using comma separator (e.g., `bearer, CustomType`)                                                                                                                                   |
+| `@tag`                    | Custom tag                                                                                                                                                                                                                                                                              |
+| `@tagSummary`             | OpenAPI 3.2 tag summary                                                                                                                                                                                                                                                                 |
+| `@tagKind`                | OpenAPI 3.2 tag kind                                                                                                                                                                                                                                                                    |
+| `@tagParent`              | OpenAPI 3.2 tag parent                                                                                                                                                                                                                                                                  |
+| `@deprecated`             | Marks the route as deprecated                                                                                                                                                                                                                                                           |
+| `@openapi`                | Marks the route for inclusion in documentation (if includeOpenApiRoutes is enabled)                                                                                                                                                                                                     |
+| `@ignore`                 | Excludes the route from OpenAPI documentation                                                                                                                                                                                                                                           |
+| `@method`                 | HTTP method for Pages Router (`GET`, `POST`, `PUT`, `PATCH`, `DELETE`) - required for Pages Router only                                                                                                                                                                                 |
 
 ## Pages Router Support 🆕
 
@@ -265,6 +296,80 @@ This command will generate OpenAPI documentation based on your API code:
 To see API documenation go to `http://localhost:3000/api-docs`
 
 ## Examples
+
+### OpenAPI 3.2 Route Features
+
+```typescript
+/**
+ * Stream events
+ * @tag Events
+ * @tagSummary Event navigation
+ * @tagKind nav
+ * @querystring SearchFilter as advancedQuery
+ * @responseContentType text/event-stream
+ * @responseItem EventChunk
+ * @responseItemEncoding {"headers":{"content-type":"application/json"}}
+ * @examples querystring:filters:{"status":"active"}
+ * @examples response:[{"name":"structured","value":{"id":"evt_1","type":"update"}},{"name":"wire","serializedValue":"data: {\"id\":\"evt_1\",\"type\":\"update\"}\\n\\n"}]
+ * @openapi
+ */
+export async function GET() {
+  return new Response(null, { status: 200 });
+}
+```
+
+### Typed Example References
+
+```typescript
+import { z } from "zod";
+
+type SearchFilter = {
+  status?: "active" | "archived";
+};
+
+const SearchFilterSchema = z.object({
+  status: z.enum(["active", "archived"]).optional(),
+});
+
+const SearchFilterExample = {
+  status: "active",
+} satisfies SearchFilter;
+
+export const streamQueryExamples = [
+  {
+    name: "filters",
+    value: SearchFilterSchema.parse(SearchFilterExample),
+  },
+];
+
+/**
+ * @querystring SearchFilter as advancedQuery
+ * @examples querystring:streamQueryExamples
+ * @openapi
+ */
+export async function GET() {
+  return Response.json({ ok: true });
+}
+```
+
+### Checker-Assisted Response Inference
+
+```typescript
+type SearchResponse = {
+  total: number;
+};
+
+/**
+ * Search events
+ * @responseDescription Search result
+ * @openapi
+ */
+export async function POST(): Promise<NextResponse<SearchResponse>> {
+  return NextResponse.json({ total: 3 });
+}
+```
+
+If you omit `@response`, the generator will try to infer the response from typed App Router returns. Add `@response` whenever you want to force a specific schema or status code.
 
 ### Path Parameters
 
@@ -969,7 +1074,7 @@ Use **multiple schema types simultaneously** in a single project - perfect for g
 }
 ```
 
-Custom schema files support YAML/JSON in OpenAPI 3.0 format. See **[next-app-mixed-schemas](./apps/next-app-mixed-schemas)** for a complete working example.
+Custom schema files support YAML/JSON reusable fragments across OpenAPI 3.0, 3.1, and 3.2. They can contribute `components.schemas` and other reusable document sections such as `parameters`, `requestBodies`, `responses`, `securitySchemes`, `tags`, `paths`, and `webhooks`. See **[next-app-mixed-schemas](./apps/next-app-mixed-schemas)** for a complete working example.
 
 ## Example Apps
 

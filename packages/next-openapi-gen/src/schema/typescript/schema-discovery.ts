@@ -3,6 +3,7 @@ import type { NodePath } from "@babel/traverse";
 import * as t from "@babel/types";
 
 import { traverse } from "../../shared/babel-traverse.js";
+import { resolveTypeScriptModule } from "../../shared/typescript-project.js";
 
 type TypeDefinitions = Record<string, any>;
 
@@ -71,6 +72,11 @@ export function resolveImportPath(
   fromFilePath: string,
   fileAccess: Pick<typeof import("fs"), "existsSync">,
 ): string | null {
+  const typeScriptResolvedPath = resolveTypeScriptModule(importPath, fromFilePath);
+  if (typeScriptResolvedPath) {
+    return typeScriptResolvedPath;
+  }
+
   if (!importPath.startsWith(".")) {
     return null;
   }

@@ -1,3 +1,6 @@
+import fs from "node:fs";
+import path from "node:path";
+
 import { describe, expect, it } from "vitest";
 
 import { OpenApiGenerator } from "@next-openapi-gen/generator/openapi-generator.js";
@@ -170,6 +173,125 @@ describe("OpenApiGenerator", () => {
         expect(spec.components?.schemas).toHaveProperty("ExistingSchema");
         expect(spec.components?.responses?.["418"]).toEqual({
           description: "Teapot",
+        });
+      } finally {
+        process.chdir(previousCwd);
+      }
+    } finally {
+      project.cleanup();
+    }
+  });
+
+  it("merges reusable OpenAPI fragments from schemaFiles", () => {
+    const project = createTempProject("nxog-generator-custom-fragments-");
+
+    try {
+      const schemaFilePath = path.join(project.root, "schemas", "fragments.yaml");
+      fs.mkdirSync(path.dirname(schemaFilePath), { recursive: true });
+      fs.writeFileSync(
+        schemaFilePath,
+        `tags:
+  - name: events
+    summary: Events
+    kind: nav
+servers:
+  - url: https://api.example.com
+    description: Production
+    name: production
+paths:
+  /stream:
+    get:
+      operationId: get-stream
+      tags: [events]
+      responses:
+        "200":
+          description: Event stream
+          content:
+            text/event-stream:
+              itemSchema:
+                type: object
+                properties:
+                  id:
+                    type: string
+components:
+  parameters:
+    StreamQuery:
+      name: advancedQuery
+      in: querystring
+      content:
+        application/x-www-form-urlencoded:
+          schema:
+            type: object
+            properties:
+              q:
+                type: string
+  requestBodies:
+    StreamBody:
+      description: Stream filter body
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              cursor:
+                type: string
+  schemas:
+    ExternalEvent:
+      type: object
+      properties:
+        id:
+          type: string
+  securitySchemes:
+    DeviceOAuth:
+      type: oauth2
+      oauth2MetadataUrl: https://example.com/.well-known/oauth-authorization-server
+      flows:
+        deviceAuthorization:
+          deviceAuthorizationUrl: https://example.com/oauth/device
+          tokenUrl: https://example.com/oauth/token
+          scopes:
+            read_events: Read events
+`,
+      );
+
+      const templatePath = writeOpenApiTemplate(project.root, {
+        openapi: "3.2.0",
+        schemaFiles: ["./schemas/fragments.yaml"],
+      });
+
+      const previousCwd = process.cwd();
+      process.chdir(project.root);
+
+      try {
+        const generator = new OpenApiGenerator({ templatePath });
+        const spec = generator.generate();
+
+        expect(spec.tags).toEqual(
+          expect.arrayContaining([expect.objectContaining({ name: "events", summary: "Events" })]),
+        );
+        expect(spec.servers).toEqual(
+          expect.arrayContaining([expect.objectContaining({ name: "production" })]),
+        );
+        expect(spec.paths?.["/stream"]?.get?.responses?.["200"]).toMatchObject({
+          content: {
+            "text/event-stream": {
+              itemSchema: {
+                type: "object",
+              },
+            },
+          },
+        });
+        expect(spec.components?.parameters?.StreamQuery).toMatchObject({
+          in: "querystring",
+        });
+        expect(spec.components?.requestBodies?.StreamBody).toMatchObject({
+          description: "Stream filter body",
+        });
+        expect(spec.components?.schemas?.ExternalEvent).toMatchObject({
+          type: "object",
+        });
+        expect(spec.components?.securitySchemes?.DeviceOAuth).toMatchObject({
+          oauth2MetadataUrl: "https://example.com/.well-known/oauth-authorization-server",
         });
       } finally {
         process.chdir(previousCwd);

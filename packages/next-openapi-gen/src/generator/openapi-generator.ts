@@ -4,6 +4,7 @@ import fs from "fs";
 import { DEFAULT_GENERATE_TEMPLATE_PATH } from "../config/defaults.js";
 import { normalizeOpenApiConfig } from "../config/normalize.js";
 import { DiagnosticsCollector } from "../diagnostics/collector.js";
+import { loadCustomOpenApiFragments } from "../schema/core/custom-schema-file-processor.js";
 import {
   createErrorResponseComponent,
   generateErrorResponsesFromConfig,
@@ -13,7 +14,12 @@ import { getOpenApiVersionProcessor } from "../openapi/version-processor.js";
 import { RouteProcessor } from "../routes/route-processor.js";
 import { getErrorMessage } from "../shared/error.js";
 import { logger } from "../shared/logger.js";
-import type { OpenApiDocument, OpenApiTemplate, ResolvedOpenApiConfig } from "../shared/types.js";
+import type {
+  OpenApiDocument,
+  OpenApiTagDefinition,
+  OpenApiTemplate,
+  ResolvedOpenApiConfig,
+} from "../shared/types.js";
 
 export type OpenApiGeneratorOptions = {
   templatePath?: string;
@@ -74,6 +80,10 @@ export class OpenApiGenerator {
 
     let phaseStartedAt = performance.now();
     const document = createDocumentFromTemplate(this.template);
+    const schemaFiles = this.config.schemaFiles ?? [];
+    const customOpenApiFragments =
+      schemaFiles.length > 0 ? loadCustomOpenApiFragments(schemaFiles) : {};
+    mergeDocumentFragment(document, customOpenApiFragments);
     profile.prepareDocumentMs = performance.now() - phaseStartedAt;
 
     phaseStartedAt = performance.now();
@@ -81,7 +91,11 @@ export class OpenApiGenerator {
     profile.scanRoutesMs = performance.now() - phaseStartedAt;
 
     phaseStartedAt = performance.now();
-    document.paths = this.routeProcessor.getPaths();
+    document.paths = {
+      ...document.paths,
+      ...this.routeProcessor.getPaths(),
+    };
+    document.tags = mergeTagDefinitions(document.tags, this.routeProcessor.getTags());
     profile.buildPathsMs = performance.now() - phaseStartedAt;
 
     // Add server URL for examples if not already defined
@@ -145,6 +159,74 @@ export class OpenApiGenerator {
 
     return openapiSpec;
   }
+}
+
+function mergeDocumentFragment(document: OpenApiDocument, fragment: Partial<OpenApiDocument>) {
+  for (const [key, value] of Object.entries(fragment)) {
+    if (typeof value === "undefined") {
+      continue;
+    }
+
+    const existingValue = document[key as keyof OpenApiDocument];
+    if (Array.isArray(existingValue) && Array.isArray(value)) {
+      document[key as keyof OpenApiDocument] = [...existingValue, ...value] as never;
+      continue;
+    }
+
+    if (isRecord(existingValue) && isRecord(value)) {
+      document[key as keyof OpenApiDocument] = mergeRecord(existingValue, value) as never;
+      continue;
+    }
+
+    document[key as keyof OpenApiDocument] = structuredClone(value) as never;
+  }
+}
+
+function mergeRecord<T extends Record<string, unknown>>(base: T, fragment: T): T {
+  const merged: Record<string, unknown> = structuredClone(base);
+
+  for (const [key, value] of Object.entries(fragment)) {
+    const existingValue = merged[key];
+    if (Array.isArray(existingValue) && Array.isArray(value)) {
+      merged[key] = [...existingValue, ...value];
+      continue;
+    }
+
+    if (isRecord(existingValue) && isRecord(value)) {
+      merged[key] = mergeRecord(existingValue, value);
+      continue;
+    }
+
+    merged[key] = structuredClone(value);
+  }
+
+  return merged as T;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function mergeTagDefinitions(
+  existingTags: OpenApiTagDefinition[] | undefined,
+  generatedTags: OpenApiTagDefinition[],
+): OpenApiTagDefinition[] | undefined {
+  if ((!existingTags || existingTags.length === 0) && generatedTags.length === 0) {
+    return existingTags;
+  }
+
+  const mergedTags = new Map<string, OpenApiTagDefinition>();
+  existingTags?.forEach((tag) => {
+    mergedTags.set(tag.name, structuredClone(tag));
+  });
+  generatedTags.forEach((tag) => {
+    mergedTags.set(tag.name, {
+      ...mergedTags.get(tag.name),
+      ...structuredClone(tag),
+    });
+  });
+
+  return [...mergedTags.values()];
 }
 
 function readOpenApiTemplate(templatePath: string): OpenApiTemplate {

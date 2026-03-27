@@ -1,5 +1,12 @@
 import { createFormDataSchema, detectContentType, getExampleForParam } from "./helpers.js";
-import type { OpenAPIDefinition, ParamSchema, SchemaType } from "../../shared/types.js";
+import type {
+  OpenAPIDefinition,
+  OpenApiExampleMap,
+  OpenApiRequestBody,
+  OpenApiSchemaLike,
+  ParamSchema,
+  SchemaType,
+} from "../../shared/types.js";
 
 export function createMultipleResponsesSchema(
   responses: Record<string, any>,
@@ -61,25 +68,32 @@ export function createRequestParamsSchema(
   if (params.properties) {
     for (const [name, value] of Object.entries(params.properties)) {
       const param: ParamSchema = {
-        in: isPathParam ? "path" : "query",
+        in: typeof value.in === "string" ? value.in : isPathParam ? "path" : "query",
         name,
-        schema: {
-          type: value.type ?? "string",
-        },
         required: isPathParam ? true : !!value.required,
       };
 
-      if (value.enum) {
-        param.schema.enum = value.enum;
+      if (value.content) {
+        param.content = structuredClone(value.content) as Record<string, any>;
+      } else {
+        param.schema = createParameterSchema(value);
       }
 
       if (value.description) {
         param.description = value.description;
-        param.schema.description = value.description;
+        if (param.schema) {
+          param.schema.description = value.description;
+        }
       }
 
       if (isPathParam) {
-        param.example = getExampleForParam(name, value.type);
+        param.example = getExampleForParam(name, getPrimarySchemaType(value.type));
+      } else if (typeof value.example !== "undefined") {
+        param.example = value.example;
+      }
+
+      if (value.examples && typeof value.examples === "object" && !Array.isArray(value.examples)) {
+        param.examples = structuredClone(value.examples) as ParamSchema["examples"];
       }
 
       queryParams.push(param);
@@ -89,17 +103,34 @@ export function createRequestParamsSchema(
   return queryParams;
 }
 
+function createParameterSchema(value: OpenApiSchemaLike): OpenApiSchemaLike {
+  if (value.schema) {
+    return structuredClone(value.schema) as OpenApiSchemaLike;
+  }
+
+  const schema = structuredClone(value) as OpenApiSchemaLike;
+  delete schema.in;
+  delete schema.name;
+  delete schema.required;
+  delete schema.example;
+  delete schema.content;
+  schema.type ??= "string";
+  return schema;
+}
+
 export function createRequestBodySchema(
   body: OpenAPIDefinition,
   description?: string,
   contentType?: string,
-): any {
-  const detectedContentType = detectContentType(body?.type || "", contentType);
+  examples?: OpenApiExampleMap,
+): OpenApiRequestBody {
+  const detectedContentType = detectContentType(getPrimarySchemaType(body?.type), contentType);
   const schema = detectedContentType === "multipart/form-data" ? createFormDataSchema(body) : body;
-  const requestBody: any = {
+  const requestBody: OpenApiRequestBody = {
     content: {
       [detectedContentType]: {
         schema,
+        ...(examples ? { examples } : {}),
       },
     },
   };
@@ -109,6 +140,14 @@ export function createRequestBodySchema(
   }
 
   return requestBody;
+}
+
+function getPrimarySchemaType(type: string | string[] | undefined): string {
+  if (Array.isArray(type)) {
+    return type.find((entry) => entry !== "null") || type[0] || "string";
+  }
+
+  return type || "string";
 }
 
 export function createResponseSchema(responses: OpenAPIDefinition, description?: string): any {

@@ -30,6 +30,9 @@ catalogs:
     '@scalar/api-reference-react':
       specifier: ^0.9.15
       version: 0.9.15
+    '@seriousme/openapi-schema-validator':
+      specifier: ^2.8.0
+      version: 2.8.0
     '@tailwindcss/postcss':
       specifier: ^4.1.16
       version: 4.2.2
@@ -168,6 +171,9 @@ importers:
       '@playwright/test':
         specifier: 'catalog:'
         version: 1.58.2
+      '@seriousme/openapi-schema-validator':
+        specifier: 'catalog:'
+        version: 2.8.0
       '@vitest/coverage-v8':
         specifier: 'catalog:'
         version: 4.1.2(vitest@4.1.2)
@@ -2326,6 +2332,10 @@ packages:
 
   '@sec-ant/readable-stream@0.4.1':
     resolution: {integrity: sha512-831qok9r2t8AlxLko40y2ebgSDhenenCatLVeW/uBtnHPyhHOvG0C7TvfgecV+wHzIm5KUICgzmVpWS+IMEAeg==}
+
+  '@seriousme/openapi-schema-validator@2.8.0':
+    resolution: {integrity: sha512-5bgrzIAnoUv4kFfHR/7PS7EtepVWU5P5+u+EbsEg0NqL9LeI8Cu734pAQO5k3IjoWBJl9Tz/R67DRrx4wAdk4w==}
+    hasBin: true
 
   '@simple-libs/child-process-utils@1.0.2':
     resolution: {integrity: sha512-/4R8QKnd/8agJynkNdJmNw2MBxuFTRcNFnE5Sg/G+jkSsV8/UBgULMzhizWWW42p8L5H7flImV2ATi79Ove2Tw==}
@@ -7664,6 +7674,13 @@ snapshots:
   '@scarf/scarf@1.4.0': {}
 
   '@sec-ant/readable-stream@0.4.1': {}
+
+  '@seriousme/openapi-schema-validator@2.8.0':
+    dependencies:
+      ajv: 8.18.0
+      ajv-draft-04: 1.0.0(ajv@8.18.0)
+      ajv-formats: 3.0.1(ajv@8.18.0)
+      js-yaml: 4.1.1
 
   '@simple-libs/child-process-utils@1.0.2':
     dependencies:

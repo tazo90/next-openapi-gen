@@ -35,7 +35,7 @@ describe("normalizeOpenApiConfig", () => {
     expect(config.docsUrl).toBe("api/docs");
   });
 
-  it("preserves explicit framework configs and normalizes newer OpenAPI versions", () => {
+  it("preserves explicit framework configs and ignores legacy openapiVersion overrides", () => {
     const config = normalizeOpenApiConfig({
       openapi: "4.1.0",
       openapiVersion: "3.1",
@@ -50,7 +50,7 @@ describe("normalizeOpenApiConfig", () => {
       schemaType: "typescript",
     } as never);
 
-    expect(config.openapiVersion).toBe("3.1");
+    expect(config.openapiVersion).toBe("4.0");
     expect(config.framework).toEqual({
       kind: "tanstack",
     });

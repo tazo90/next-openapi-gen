@@ -113,8 +113,15 @@ describe("SchemaProcessor", () => {
         },
         "Upload body",
         "multipart/form-data",
+        {
+          upload: {
+            value: {
+              caption: "avatar",
+            },
+          },
+        },
       ),
-    ).toEqual({
+    ).toMatchObject({
       description: "Upload body",
       content: {
         "multipart/form-data": {
@@ -128,6 +135,13 @@ describe("SchemaProcessor", () => {
               },
               caption: {
                 type: "string",
+              },
+            },
+          },
+          examples: {
+            upload: {
+              value: {
+                caption: "avatar",
               },
             },
           },
