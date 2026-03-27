@@ -118,4 +118,45 @@ describe("AppRouterStrategy", () => {
     );
     expect(addRoute).toHaveBeenCalledTimes(2);
   });
+
+  it("infers response schemas from typed NextResponse return annotations", () => {
+    strategy = new AppRouterStrategy(baseConfig);
+
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-app-router-infer-"));
+    roots.push(root);
+    const routeFile = path.join(root, "route.ts");
+    fs.writeFileSync(
+      routeFile,
+      `
+      import { NextRequest, NextResponse } from "next/server";
+
+      type PostResponse = {
+        id: number;
+        title: string;
+      };
+
+      /**
+       * Get post by ID
+       * @openapi
+       */
+      export async function GET(
+        request: NextRequest
+      ): Promise<NextResponse<PostResponse>> {
+        return NextResponse.json({ id: 1, title: "Hello" });
+      }
+      `,
+    );
+
+    const addRoute = vi.fn();
+    strategy.processFile(routeFile, addRoute);
+
+    expect(addRoute).toHaveBeenCalledWith(
+      "GET",
+      routeFile,
+      expect.objectContaining({
+        isOpenApi: true,
+        responseType: "PostResponse",
+      }),
+    );
+  });
 });

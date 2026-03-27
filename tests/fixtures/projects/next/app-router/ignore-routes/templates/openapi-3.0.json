@@ -1,0 +1,17 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Ignore Routes Fixture",
+    "version": "1.0.0",
+    "description": "Fixture for ignore route integration tests"
+  },
+  "apiDir": "./src/app/api",
+  "schemaDir": "./src",
+  "schemaType": "typescript",
+  "docsUrl": "api-docs",
+  "ui": "scalar",
+  "outputDir": "./public",
+  "outputFile": "openapi.json",
+  "includeOpenApiRoutes": false,
+  "debug": false
+}

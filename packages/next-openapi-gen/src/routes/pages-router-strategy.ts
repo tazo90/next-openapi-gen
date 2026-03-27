@@ -5,7 +5,11 @@ import type * as t from "@babel/types";
 import { HTTP_METHODS } from "./router-strategy.js";
 import type { RouterStrategy } from "./router-strategy.js";
 import { traverse } from "../shared/babel-traverse.js";
-import { parseTypeScriptFile, performAuthPresetReplacements } from "../shared/utils.js";
+import {
+  parseResponseTag,
+  parseTypeScriptFile,
+  performAuthPresetReplacements,
+} from "../shared/utils.js";
 import type { DataTypes, OpenApiConfig } from "../shared/types.js";
 
 export class PagesRouterStrategy implements RouterStrategy {
@@ -165,18 +169,11 @@ export class PagesRouterStrategy implements RouterStrategy {
       contentType = contentTypeMatch[1].trim();
     }
 
-    const responseMatch = cleanedComment.match(/@response\s+(?:(\d+):)?([^@\n\r]+)/);
-    if (responseMatch) {
-      const [, code, type] = responseMatch;
-      const trimmedType = type?.trim();
-
-      if (!code && trimmedType && /^\d{3}$/.test(trimmedType)) {
-        successCode = trimmedType;
-        responseType = "";
-      } else {
-        successCode = code || "";
-        responseType = trimmedType || "";
-      }
+    const parsedResponse = parseResponseTag(cleanedComment);
+    if (parsedResponse) {
+      successCode = parsedResponse.successCode;
+      responseType = parsedResponse.responseType;
+      responseDescription = parsedResponse.responseDescription;
     }
 
     const respDescMatch = cleanedComment.match(/@responseDescription\s+(.*)/);

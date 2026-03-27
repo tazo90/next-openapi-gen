@@ -32,7 +32,7 @@ export class AppRouterStrategy implements RouterStrategy {
 
         if (t.isFunctionDeclaration(declaration) && t.isIdentifier(declaration.id)) {
           if (HTTP_METHODS.includes(declaration.id.name)) {
-            const dataTypes = extractJSDocComments(path);
+            const dataTypes = this.inferHandlerDataTypes(extractJSDocComments(path), declaration);
             addRoute(declaration.id.name, filePath, dataTypes);
           }
         }
@@ -41,7 +41,7 @@ export class AppRouterStrategy implements RouterStrategy {
           declaration.declarations.forEach((decl) => {
             if (t.isVariableDeclarator(decl) && t.isIdentifier(decl.id)) {
               if (HTTP_METHODS.includes(decl.id.name)) {
-                const dataTypes = extractJSDocComments(path);
+                const dataTypes = this.inferHandlerDataTypes(extractJSDocComments(path), decl);
                 addRoute(decl.id.name, filePath, dataTypes);
               }
             }
@@ -86,5 +86,80 @@ export class AppRouterStrategy implements RouterStrategy {
     relativePath = relativePath.replace(/\/\[([^\]]+)\]/g, "/{$1}");
 
     return relativePath || "/";
+  }
+
+  private inferHandlerDataTypes(dataTypes: DataTypes, handlerNode: t.Node): DataTypes {
+    if (dataTypes.responseType) {
+      return dataTypes;
+    }
+
+    const inferredResponseType = this.inferResponseTypeFromHandler(handlerNode);
+    if (!inferredResponseType) {
+      return dataTypes;
+    }
+
+    return {
+      ...dataTypes,
+      responseType: inferredResponseType,
+    };
+  }
+
+  private inferResponseTypeFromHandler(handlerNode: t.Node): string {
+    if (t.isFunctionDeclaration(handlerNode) || t.isFunctionExpression(handlerNode)) {
+      return this.inferResponseTypeFromAnnotation(handlerNode.returnType?.typeAnnotation);
+    }
+
+    if (t.isVariableDeclarator(handlerNode) && t.isArrowFunctionExpression(handlerNode.init)) {
+      return this.inferResponseTypeFromAnnotation(handlerNode.init.returnType?.typeAnnotation);
+    }
+
+    return "";
+  }
+
+  private inferResponseTypeFromAnnotation(typeNode: t.TSType | null | undefined): string {
+    if (!typeNode) {
+      return "";
+    }
+
+    if (t.isTSTypeReference(typeNode)) {
+      const typeName = this.getTypeReferenceName(typeNode.typeName);
+      const typeParams = typeNode.typeParameters?.params ?? [];
+
+      if (typeName === "Promise" && typeParams[0]) {
+        return this.inferResponseTypeFromAnnotation(typeParams[0]);
+      }
+
+      if (typeName === "NextResponse" && typeParams[0]) {
+        return this.stringifyTypeNode(typeParams[0]);
+      }
+    }
+
+    return "";
+  }
+
+  private getTypeReferenceName(typeName: t.TSEntityName): string {
+    if (t.isIdentifier(typeName)) {
+      return typeName.name;
+    }
+
+    return typeName.right.name;
+  }
+
+  private stringifyTypeNode(typeNode: t.TSType): string {
+    if (t.isTSTypeReference(typeNode)) {
+      const typeName = this.getTypeReferenceName(typeNode.typeName);
+      const typeParams = typeNode.typeParameters?.params ?? [];
+      if (typeParams.length === 0) {
+        return typeName;
+      }
+
+      return `${typeName}<${typeParams.map((param) => this.stringifyTypeNode(param)).join(", ")}>`;
+    }
+
+    if (t.isTSArrayType(typeNode)) {
+      return `${this.stringifyTypeNode(typeNode.elementType)}[]`;
+    }
+
+    return "";
   }
 }

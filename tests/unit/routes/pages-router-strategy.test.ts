@@ -145,6 +145,20 @@ describe("PagesRouterStrategy", () => {
       expect(result.auth).toBe("BasicAuth");
     });
 
+    it("supports inline response descriptions from README-style syntax", () => {
+      strategy = new PagesRouterStrategy(pagesConfig);
+
+      const result = strategy.extractJSDocFromComment(`
+        * Create invite
+        * @method POST
+        * @response 201:InviteResponse:Invitation sent successfully
+      `);
+
+      expect(result.successCode).toBe("201");
+      expect(result.responseType).toBe("InviteResponse");
+      expect(result.responseDescription).toBe("Invitation sent successfully");
+    });
+
     it("falls back to auth preset replacement and leaves summary empty for tag-only comments", () => {
       strategy = new PagesRouterStrategy(pagesConfig);
 

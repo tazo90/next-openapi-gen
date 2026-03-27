@@ -9,6 +9,7 @@ import {
   extractTypeFromComment,
   extractPathParameters,
   getOperationId,
+  parseResponseTag,
   parseTypeScriptFile,
   performAuthPresetReplacements,
 } from "@next-openapi-gen/shared/utils.js";
@@ -127,6 +128,34 @@ describe("shared utils", () => {
     expect(data?.auth).toBe("ApiKeyAuth");
     expect(data?.responseType).toBe("");
     expect(data?.successCode).toBe("");
+  });
+
+  it("parses inline @response variants documented in the README", () => {
+    expect(parseResponseTag("@response UserResponse")).toEqual({
+      responseDescription: "",
+      responseType: "UserResponse",
+      successCode: "",
+    });
+    expect(parseResponseTag("@response 201:UserResponse")).toEqual({
+      responseDescription: "",
+      responseType: "UserResponse",
+      successCode: "201",
+    });
+    expect(parseResponseTag("@response UserResponse:Returns user profile data")).toEqual({
+      responseDescription: "Returns user profile data",
+      responseType: "UserResponse",
+      successCode: "",
+    });
+    expect(parseResponseTag("@response 201:UserResponse:Returns newly created user")).toEqual({
+      responseDescription: "Returns newly created user",
+      responseType: "UserResponse",
+      successCode: "201",
+    });
+    expect(parseResponseTag("@response 204:Empty:User successfully deleted")).toEqual({
+      responseDescription: "User successfully deleted",
+      responseType: "Empty",
+      successCode: "204",
+    });
   });
 
   it("handles bearer auth tags and ignores empty auth values", () => {

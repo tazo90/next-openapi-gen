@@ -152,6 +152,43 @@ describe("ResponseProcessor", () => {
     });
   });
 
+  it("uses inline descriptions for custom @add response schemas", () => {
+    const schemaProcessor = {
+      getSchemaContent: vi.fn(),
+    };
+    const processor = new ResponseProcessor(
+      {
+        diagnostics: { enabled: true },
+      } as never,
+      schemaProcessor as never,
+    );
+
+    const responses = processor.processResponses(
+      {
+        addResponses:
+          "400:ValidationError:Invalid notification data,429:RateLimitError:Rate limit exceeded",
+      },
+      "POST",
+    );
+
+    expect(responses["400"]).toEqual({
+      description: "Invalid notification data",
+      content: {
+        "application/json": {
+          schema: { $ref: "#/components/schemas/ValidationError" },
+        },
+      },
+    });
+    expect(responses["429"]).toEqual({
+      description: "Rate limit exceeded",
+      content: {
+        "application/json": {
+          schema: { $ref: "#/components/schemas/RateLimitError" },
+        },
+      },
+    });
+  });
+
   it("skips malformed custom responses and adds explicit 204 descriptions", () => {
     const schemaProcessor = {
       getSchemaContent: vi.fn(),

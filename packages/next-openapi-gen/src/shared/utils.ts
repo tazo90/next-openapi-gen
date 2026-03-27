@@ -128,10 +128,6 @@ export function extractJSDocComments(path: NodePath): DataTypes {
         bodyType = extractTypeFromComment(commentValue, "@body");
       }
 
-      if (commentValue.includes("@response")) {
-        responseType = extractTypeFromComment(commentValue, "@response");
-      }
-
       if (commentValue.includes("@contentType")) {
         const regex = /@contentType\s*(.*)/;
         const match = commentValue.match(regex);
@@ -183,20 +179,12 @@ export function extractJSDocComments(path: NodePath): DataTypes {
       }
 
       if (commentValue.includes("@response")) {
-        // Updated regex to support generic types
-        const responseMatch = commentValue.match(/@response\s+(?:(\d+):)?([^@\n\r]+)(?:\s+(.*))?/);
-        if (responseMatch) {
-          const [, code, type] = responseMatch;
-          const trimmedType = type?.trim();
-
-          // Check if the type is just a status code (e.g., "@response 204")
-          if (!code && trimmedType && /^\d{3}$/.test(trimmedType)) {
-            // Type is actually a status code without a schema
-            successCode = trimmedType;
-            responseType = "";
-          } else {
-            successCode = code || "";
-            responseType = trimmedType || "";
+        const parsedResponse = parseResponseTag(commentValue);
+        if (parsedResponse) {
+          successCode = parsedResponse.successCode;
+          responseType = parsedResponse.responseType;
+          if (!responseDescription && parsedResponse.responseDescription) {
+            responseDescription = parsedResponse.responseDescription;
           }
         } else {
           responseType = extractTypeFromComment(commentValue, "@response");
@@ -235,6 +223,49 @@ export function extractTypeFromComment(commentValue: string, tag: string): strin
     commentValue.match(new RegExp(`^\\s*\\*?\\s*${tag}\\s+([\\w<>,\\s[\\]]+)`, "m"))?.[1]?.trim() ||
     ""
   );
+}
+
+export function parseResponseTag(commentValue: string): {
+  responseDescription: string;
+  responseType: string;
+  successCode: string;
+} | null {
+  const rawValue = commentValue.match(/@response\s+([^\n\r@]+)/)?.[1]?.trim();
+
+  if (!rawValue) {
+    return null;
+  }
+
+  if (/^\d{3}$/.test(rawValue)) {
+    return {
+      responseDescription: "",
+      responseType: "",
+      successCode: rawValue,
+    };
+  }
+
+  const segments = rawValue.split(":").map((segment) => segment.trim());
+  let successCode = "";
+  let responseType = rawValue;
+  let responseDescription = "";
+
+  if (segments[0] && /^\d{3}$/.test(segments[0])) {
+    successCode = segments.shift() || "";
+  }
+
+  if (segments.length > 0) {
+    responseType = segments.shift() || "";
+  }
+
+  if (segments.length > 0) {
+    responseDescription = segments.join(":").trim();
+  }
+
+  return {
+    responseDescription,
+    responseType,
+    successCode,
+  };
 }
 
 export function cleanComment(commentValue: string): string {

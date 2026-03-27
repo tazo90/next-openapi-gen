@@ -88,21 +88,27 @@ export class ResponseProcessor {
       const customResponses = dataTypes.addResponses.split(",").map((item) => item.trim());
 
       customResponses.forEach((responseRef) => {
-        const [code, ref] = responseRef.split(":");
+        const [code, ref, ...descriptionParts] = responseRef.split(":");
         if (!code) {
           return;
         }
+
+        const customDescription = descriptionParts.join(":").trim();
 
         if (ref) {
           this.schemaProcessor.getSchemaContent({ responseType: ref });
 
           if (code === "204") {
             responses[code] = {
-              description: this.getDefaultErrorDescription(code) || "No Content",
+              description:
+                customDescription || this.getDefaultErrorDescription(code) || "No Content",
             };
           } else {
             responses[code] = {
-              description: this.getDefaultErrorDescription(code) || `HTTP ${code} response`,
+              description:
+                customDescription ||
+                this.getDefaultErrorDescription(code) ||
+                `HTTP ${code} response`,
               content: {
                 "application/json": {
                   schema: { $ref: `#/components/schemas/${ref}` },

@@ -1,0 +1,101 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "App Router Core Flow",
+    "version": "1.0.0",
+    "description": "Fixture for generator integration tests"
+  },
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      },
+      "BasicAuth": {
+        "type": "http",
+        "scheme": "basic"
+      },
+      "SessionCookie": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "sb-access-token"
+      },
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key"
+      },
+      "PartnerToken": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-Partner-Token"
+      }
+    }
+  },
+  "defaultResponseSet": "common",
+  "responseSets": {
+    "common": ["400", "401", "500"],
+    "public": ["400", "500"],
+    "auth": ["401", "403"],
+    "crud": ["409"]
+  },
+  "errorConfig": {
+    "template": {
+      "type": "object",
+      "properties": {
+        "message": {
+          "type": "string",
+          "example": "{{ERROR_MESSAGE}}"
+        }
+      }
+    },
+    "codes": {
+      "400": {
+        "description": "Bad Request",
+        "variables": {
+          "ERROR_MESSAGE": "Invalid request"
+        }
+      },
+      "401": {
+        "description": "Unauthorized",
+        "variables": {
+          "ERROR_MESSAGE": "Authentication required"
+        }
+      },
+      "403": {
+        "description": "Forbidden",
+        "variables": {
+          "ERROR_MESSAGE": "Access denied"
+        }
+      },
+      "409": {
+        "description": "Conflict",
+        "variables": {
+          "ERROR_MESSAGE": "Resource already exists"
+        }
+      },
+      "429": {
+        "description": "Too Many Requests",
+        "variables": {
+          "ERROR_MESSAGE": "Rate limit exceeded"
+        }
+      },
+      "500": {
+        "description": "Internal Server Error",
+        "variables": {
+          "ERROR_MESSAGE": "Unexpected error"
+        }
+      }
+    }
+  },
+  "apiDir": "./src/app/api",
+  "schemaDir": "./src",
+  "schemaType": "typescript",
+  "docsUrl": "api-docs",
+  "ui": "scalar",
+  "outputDir": "./public",
+  "outputFile": "openapi.json",
+  "includeOpenApiRoutes": true,
+  "debug": false
+}
