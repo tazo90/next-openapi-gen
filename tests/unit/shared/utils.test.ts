@@ -128,6 +128,24 @@ describe("shared utils", () => {
     expect(data?.successCode).toBe("");
   });
 
+  it("handles bearer auth tags and ignores empty auth values", () => {
+    const bearerData = getExportCommentData(`
+      /**
+       * @auth bearer
+       */
+      export async function GET() {}
+    `);
+    const emptyAuthData = getExportCommentData(`
+      /**
+       * @auth
+       */
+      export async function POST() {}
+    `);
+
+    expect(bearerData?.auth).toBe("BearerAuth");
+    expect(emptyAuthData?.auth).toBe("");
+  });
+
   it("adds path parameter examples without clobbering existing values", () => {
     const spec = cleanSpec({
       paths: {

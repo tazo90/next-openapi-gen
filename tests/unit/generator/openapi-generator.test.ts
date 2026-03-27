@@ -169,4 +169,107 @@ describe("OpenApiGenerator", () => {
       project.cleanup();
     }
   });
+
+  it("covers private error helper branches", () => {
+    const project = createTempProject("nxog-generator-private-");
+
+    try {
+      const templatePath = writeOpenApiTemplate(project.root);
+      const generator = new OpenApiGenerator({ templatePath });
+
+      expect((generator as any).guessHttpStatus("418")).toBe(418);
+      expect((generator as any).guessHttpStatus("permission_denied")).toBe(403);
+      expect((generator as any).guessHttpStatus("mystery_error")).toBe(500);
+
+      expect(
+        (generator as any).processTemplate(
+          {
+            message: "{{MESSAGE}}",
+            code: "{{CODE}}",
+          },
+          {
+            MESSAGE: "Created",
+            CODE: "USER_CREATED",
+          },
+        ),
+      ).toEqual({
+        message: "Created",
+        code: "USER_CREATED",
+      });
+
+      expect(
+        (generator as any).createErrorResponseComponent("401", {
+          description: "Unauthorized",
+          schema: { type: "object" },
+        }),
+      ).toEqual({
+        description: "Unauthorized",
+        content: {
+          "application/json": {
+            schema: { type: "object" },
+          },
+        },
+      });
+
+      expect(() =>
+        (generator as any).generateErrorResponsesFromConfig(
+          {
+            components: {},
+          },
+          {
+            template: {},
+            codes: {},
+          },
+        ),
+      ).not.toThrow();
+    } finally {
+      project.cleanup();
+    }
+  });
+
+  it("builds manual error response components from errorDefinitions", () => {
+    const project = createTempProject("nxog-generator-manual-errors-");
+
+    try {
+      const templatePath = writeOpenApiTemplate(project.root, {
+        errorConfig: undefined,
+        errorDefinitions: {
+          conflict: {
+            description: "Conflict happened",
+            schema: {
+              type: "object",
+              properties: {
+                code: { type: "string" },
+              },
+            },
+          },
+        },
+      });
+      const previousCwd = process.cwd();
+      process.chdir(project.root);
+
+      try {
+        const generator = new OpenApiGenerator({ templatePath });
+        const spec = generator.generate();
+
+        expect(spec.components?.responses?.conflict).toEqual({
+          description: "Conflict happened",
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  code: { type: "string" },
+                },
+              },
+            },
+          },
+        });
+      } finally {
+        process.chdir(previousCwd);
+      }
+    } finally {
+      project.cleanup();
+    }
+  });
 });

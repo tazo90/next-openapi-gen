@@ -98,4 +98,36 @@ describe("installDependencies", () => {
     expect(spinner.succeed).toHaveBeenCalledWith("Installing typescript...");
     expect(spinner.succeed).toHaveBeenCalledWith("Successfully installed typescript.");
   });
+
+  it("uses non-npm install flags for dev dependencies and skips already-installed schemas", async () => {
+    const spinner: SpinnerMock = {
+      succeed: vi.fn(),
+    };
+    const execMock = vi.fn((command: string, callback: (...args: unknown[]) => void) => {
+      callback(null, "", "");
+      return {} as never;
+    });
+    const hasDependencyMock = vi.fn(async (pkg: string) => pkg === "zod");
+
+    const { installDependencies } = await loadInstallDependenciesModule(
+      execMock,
+      "pnpm",
+      hasDependencyMock,
+    );
+
+    await installDependencies("swagger", ["zod", "typescript"], spinner);
+
+    expect(execMock).toHaveBeenNthCalledWith(
+      1,
+      "pnpm add swagger-ui swagger-ui-react ",
+      expect.any(Function),
+    );
+    expect(execMock).toHaveBeenNthCalledWith(
+      2,
+      "pnpm add -D @types/swagger-ui-react ",
+      expect.any(Function),
+    );
+    expect(execMock).toHaveBeenNthCalledWith(3, "pnpm add -D typescript", expect.any(Function));
+    expect(execMock).toHaveBeenCalledTimes(3);
+  });
 });

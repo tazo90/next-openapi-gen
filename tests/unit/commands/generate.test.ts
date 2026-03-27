@@ -77,4 +77,25 @@ export async function GET() {}
       project.cleanup();
     }
   });
+
+  it("uses the default template path when no template option is provided", async () => {
+    const project = createTempProject("nxog-generate-default-template-");
+    const spinner = {
+      start: vi.fn().mockReturnThis(),
+      succeed: vi.fn(),
+    };
+
+    try {
+      writeOpenApiTemplate(project.root);
+      process.chdir(project.root);
+
+      const { generate } = await loadGenerateModule(spinner);
+
+      await generate({});
+
+      expect(fs.existsSync(path.join(project.root, "public", "openapi.json"))).toBe(true);
+    } finally {
+      project.cleanup();
+    }
+  });
 });

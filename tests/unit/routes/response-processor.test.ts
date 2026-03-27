@@ -25,13 +25,12 @@ describe("ResponseProcessor", () => {
         {
           responseType: "DeletedItem",
           successCode: "204",
-          responseDescription: "Deleted",
         },
         "DELETE",
       ),
     ).toEqual({
       204: {
-        description: "Deleted",
+        description: "No Content",
       },
     });
   });
@@ -109,6 +108,48 @@ describe("ResponseProcessor", () => {
       },
     });
     expect(responses["204"]).toEqual({ $ref: "#/components/responses/204" });
+  });
+
+  it("ignores missing response sets and uses fallback descriptions for custom schema refs", () => {
+    const schemaProcessor = {
+      getSchemaContent: vi.fn(),
+    };
+    const processor = new ResponseProcessor(
+      {
+        defaultResponseSet: "shared,missing",
+        responseSets: {
+          shared: ["401"],
+        },
+        diagnostics: { enabled: true },
+      } as never,
+      schemaProcessor as never,
+    );
+
+    const responses = processor.processResponses(
+      {
+        responseType: "Healthcheck",
+        addResponses: "418:TeapotError",
+      },
+      "GET",
+    );
+
+    expect(responses["200"]).toEqual({
+      description: "Successful response",
+      content: {
+        "application/json": {
+          schema: { $ref: "#/components/schemas/Healthcheck" },
+        },
+      },
+    });
+    expect(responses["401"]).toEqual({ $ref: "#/components/responses/401" });
+    expect(responses["418"]).toEqual({
+      description: "HTTP 418",
+      content: {
+        "application/json": {
+          schema: { $ref: "#/components/schemas/TeapotError" },
+        },
+      },
+    });
   });
 
   it("skips malformed custom responses and adds explicit 204 descriptions", () => {

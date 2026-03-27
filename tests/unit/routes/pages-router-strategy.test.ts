@@ -119,6 +119,23 @@ describe("PagesRouterStrategy", () => {
       expect(result.responseSet).toBe("errors");
       expect(result.auth).toBe("ApiKeyAuth");
     });
+
+    it("handles status-only responses and basic auth", () => {
+      strategy = new PagesRouterStrategy(pagesConfig);
+
+      const result = strategy.extractJSDocFromComment(`
+        * Delete avatar
+        * @method DELETE
+        * @response 204
+        * @responseDescription Deleted
+        * @auth basic
+      `);
+
+      expect(result.successCode).toBe("204");
+      expect(result.responseType).toBe("");
+      expect(result.responseDescription).toBe("Deleted");
+      expect(result.auth).toBe("BasicAuth");
+    });
   });
 
   describe("RouteProcessor interop", () => {

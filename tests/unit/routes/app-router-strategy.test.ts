@@ -68,7 +68,7 @@ describe("AppRouterStrategy", () => {
     );
   });
 
-  it("recognizes only App Router route files and extracts exported handler variables", () => {
+  it("recognizes only App Router route files and extracts exported handlers", () => {
     strategy = new AppRouterStrategy(baseConfig);
 
     expect(strategy.shouldProcessFile("route.ts")).toBe(true);
@@ -81,6 +81,12 @@ describe("AppRouterStrategy", () => {
     fs.writeFileSync(
       routeFile,
       `
+      /**
+       * Fetch a user
+       * @openapi
+       */
+      export async function GET() {}
+
       /** 
        * Update a user
        * @openapi
@@ -95,6 +101,14 @@ describe("AppRouterStrategy", () => {
     strategy.processFile(routeFile, addRoute);
 
     expect(addRoute).toHaveBeenCalledWith(
+      "GET",
+      routeFile,
+      expect.objectContaining({
+        summary: "Fetch a user",
+        isOpenApi: true,
+      }),
+    );
+    expect(addRoute).toHaveBeenCalledWith(
       "PATCH",
       routeFile,
       expect.objectContaining({
@@ -102,6 +116,6 @@ describe("AppRouterStrategy", () => {
         isOpenApi: true,
       }),
     );
-    expect(addRoute).toHaveBeenCalledTimes(1);
+    expect(addRoute).toHaveBeenCalledTimes(2);
   });
 });

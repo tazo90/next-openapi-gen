@@ -3,6 +3,159 @@ import { describe, expect, it, vi } from "vitest";
 import { OperationProcessor } from "@next-openapi-gen/routes/operation-processor.js";
 
 describe("OperationProcessor", () => {
+  it("builds mutation operations with auth, path params, and referenced request bodies", () => {
+    const adapter = {
+      getRoutePath: vi.fn(() => "/users/{id}"),
+    };
+    const schemaProcessor = {
+      getSchemaContent: vi
+        .fn()
+        .mockReturnValueOnce({
+          params: { properties: { search: { type: "string", required: true } } },
+          pathParams: {},
+          body: {},
+          responses: {},
+        })
+        .mockReturnValueOnce({}),
+      createRequestParamsSchema: vi
+        .fn()
+        .mockReturnValueOnce([
+          { in: "query", name: "search", required: true, schema: { type: "string" } },
+        ])
+        .mockReturnValueOnce([
+          { in: "path", name: "id", required: true, schema: { type: "string" } },
+        ]),
+      createDefaultPathParamsSchema: vi.fn(),
+      detectContentType: vi.fn(() => "multipart/form-data"),
+      createRequestBodySchema: vi.fn(),
+      createResponseSchema: vi.fn(),
+    };
+    const responseProcessor = {
+      supportsRequestBody: vi.fn(() => true),
+      processResponses: vi.fn(() => ({
+        201: {
+          description: "Created",
+        },
+      })),
+    };
+
+    const processor = new OperationProcessor(
+      adapter as never,
+      schemaProcessor as never,
+      responseProcessor as never,
+    );
+
+    const result = processor.processOperation("POST", "app/api/users/[id]/route.ts", {
+      auth: "BearerAuth,ApiKeyAuth",
+      deprecated: true,
+      summary: "Create user",
+      description: "Creates a user",
+      bodyType: "UploadBody",
+      bodyDescription: "Upload payload",
+      contentType: "multipart/form-data",
+    });
+
+    expect(result).toEqual({
+      routePath: "/users/{id}",
+      method: "post",
+      definition: {
+        operationId: "post-users-{id}",
+        summary: "Create user",
+        description: "Creates a user",
+        deprecated: true,
+        tags: ["Users"],
+        security: [{ BearerAuth: [] }, { ApiKeyAuth: [] }],
+        parameters: [
+          { in: "query", name: "search", required: true, schema: { type: "string" } },
+          { in: "path", name: "id", required: true, schema: { type: "string" } },
+        ],
+        requestBody: {
+          description: "Upload payload",
+          content: {
+            "multipart/form-data": {
+              schema: { $ref: "#/components/schemas/UploadBody" },
+            },
+          },
+        },
+        responses: {
+          201: {
+            description: "Created",
+          },
+        },
+      },
+    });
+    expect(schemaProcessor.detectContentType).toHaveBeenCalledWith(
+      "UploadBody",
+      "multipart/form-data",
+    );
+  });
+
+  it("uses explicit path params and falls back to generated responses for root routes", () => {
+    const adapter = {
+      getRoutePath: vi.fn(() => "/"),
+    };
+    const schemaProcessor = {
+      getSchemaContent: vi.fn().mockReturnValue({
+        params: undefined,
+        pathParams: { properties: { slug: { type: "string", required: true } } },
+        body: { type: "object", properties: { name: { type: "string" } } },
+        responses: { type: "object", properties: { ok: { type: "boolean" } } },
+      }),
+      createRequestParamsSchema: vi.fn(() => [
+        { in: "path", name: "slug", required: true, schema: { type: "string" } },
+      ]),
+      createDefaultPathParamsSchema: vi.fn(),
+      detectContentType: vi.fn(),
+      createRequestBodySchema: vi.fn(() => ({
+        description: "Body",
+      })),
+      createResponseSchema: vi.fn(() => ({
+        200: {
+          description: "Fallback",
+        },
+      })),
+    };
+    const responseProcessor = {
+      supportsRequestBody: vi.fn(() => false),
+      processResponses: vi.fn(() => ({})),
+    };
+
+    const processor = new OperationProcessor(
+      adapter as never,
+      schemaProcessor as never,
+      responseProcessor as never,
+    );
+
+    const result = processor.processOperation("GET", "app/api/route.ts", {
+      tag: "",
+      pathParamsType: "RootPathParams",
+      responseDescription: "Fallback",
+    });
+
+    expect(result).toEqual({
+      routePath: "/",
+      method: "get",
+      definition: {
+        operationId: "get-",
+        summary: undefined,
+        description: undefined,
+        tags: [""],
+        parameters: [{ in: "path", name: "slug", required: true, schema: { type: "string" } }],
+        responses: {
+          200: {
+            description: "Fallback",
+          },
+        },
+      },
+    });
+    expect(schemaProcessor.createDefaultPathParamsSchema).not.toHaveBeenCalled();
+    expect(schemaProcessor.createResponseSchema).toHaveBeenCalledWith(
+      { type: "object", properties: { ok: { type: "boolean" } } },
+      "Fallback",
+    );
+  });
+});
+describe("OperationProcessor", () => {
   it("builds operation metadata, auth, parameters, request bodies, and responses", () => {
     const adapter = {
       getRoutePath: vi.fn(() => "/users/{id}"),

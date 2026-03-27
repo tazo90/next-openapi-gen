@@ -44,7 +44,7 @@ catalog:
   swagger-ui-dist: ^5.32.1
   tailwindcss: ^4.2.2
   turbo: ^2.8.20
-  typescript: ^6.0.2
+  typescript: ^5.9.3
   vitest: ^4.1.2
   zod: ^4.3.6
 
@@ -55,6 +55,9 @@ catalogs:
     zod: ^3.25.76
 
 managePackageManagerVersions: true
+
+onlyBuiltDependencies:
+  - vue-demi
 
 saveWorkspaceProtocol: rolling
 

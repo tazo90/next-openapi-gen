@@ -56,6 +56,30 @@ describe("normalizeOpenApiConfig", () => {
     });
   });
 
+  it("fills missing next framework fields from router and next adapter settings", () => {
+    const config = normalizeOpenApiConfig({
+      openapi: "3.0.0",
+      info: {
+        title: "Fixture",
+        version: "1.0.0",
+        description: "Fixture",
+      },
+      routerType: "pages",
+      framework: {
+        kind: "next",
+      },
+      next: {
+        adapterPath: "./custom-adapter.ts",
+      },
+    } as never);
+
+    expect(config.framework).toEqual({
+      kind: "next",
+      router: "pages",
+      adapterPath: "./custom-adapter.ts",
+    });
+  });
+
   it("infers OpenAPI versions from the template version string", () => {
     expect(
       normalizeOpenApiConfig({
@@ -70,5 +94,17 @@ describe("normalizeOpenApiConfig", () => {
         info: { title: "Fixture", version: "1.0.0", description: "Fixture" },
       } as never).openapiVersion,
     ).toBe("4.0");
+  });
+
+  it("defaults config-style inputs without an explicit openapi version", () => {
+    const config = normalizeOpenApiConfig({
+      info: {
+        title: "Fixture",
+        version: "1.0.0",
+        description: "Fixture",
+      },
+    } as never);
+
+    expect(config.openapiVersion).toBe("3.0");
   });
 });

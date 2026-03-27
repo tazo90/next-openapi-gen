@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { RouteProcessor } from "@next-openapi-gen/routes/route-processor.js";
 import type { DataTypes, OpenApiConfig } from "@next-openapi-gen/shared/types.js";
@@ -64,6 +64,79 @@ describe("RouteProcessor", () => {
       expect(routeProcessor.shouldIgnoreRoute("/api/users/{id}/internal", {})).toBe(true);
       // @ts-expect-error exercising private method in focused unit test
       expect(routeProcessor.shouldIgnoreRoute("/api/posts/internal/test", {})).toBe(true);
+    });
+  });
+
+  describe("orchestration helpers", () => {
+    it("delegates response processing to the shared response processor", () => {
+      routeProcessor = new RouteProcessor(baseConfig);
+
+      expect(
+        // @ts-expect-error exercising private helper in focused unit test
+        routeProcessor.processResponsesFromConfig({ responseType: "User" }, "GET"),
+      ).toEqual({
+        200: {
+          description: "Successful response",
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/User" },
+            },
+          },
+        },
+      });
+    });
+
+    it("skips non-openapi routes when includeOpenApiRoutes is enabled", () => {
+      routeProcessor = new RouteProcessor({
+        ...baseConfig,
+        includeOpenApiRoutes: true,
+      });
+
+      // @ts-expect-error exercising private integration point in focused unit test
+      routeProcessor.addRouteToPaths("GET", "./src/app/api/users/route.ts", {
+        summary: "Hidden route",
+      });
+
+      expect(routeProcessor.getSwaggerPaths()).toEqual({});
+    });
+
+    it("sorts paths by tag name and then by path depth", () => {
+      routeProcessor = new RouteProcessor(baseConfig);
+
+      // @ts-expect-error exercising private integration point in focused unit test
+      routeProcessor.addRouteToPaths("GET", "./src/app/api/users/route.ts", {
+        tag: "Users",
+      });
+      // @ts-expect-error exercising private integration point in focused unit test
+      routeProcessor.addRouteToPaths("GET", "./src/app/api/users/settings/route.ts", {
+        tag: "Users",
+      });
+      // @ts-expect-error exercising private integration point in focused unit test
+      routeProcessor.addRouteToPaths("GET", "./src/app/api/admin/route.ts", {
+        tag: "Admin",
+      });
+
+      expect(Object.keys(routeProcessor.getSwaggerPaths())).toEqual([
+        "/admin",
+        "/users",
+        "/users/settings",
+      ]);
+    });
+
+    it("only scans existing adapter roots", () => {
+      routeProcessor = new RouteProcessor(baseConfig);
+      const scanApiRoutesSpy = vi
+        .spyOn(routeProcessor, "scanApiRoutes")
+        .mockImplementation(() => {});
+      // @ts-expect-error overriding adapter in focused unit test
+      routeProcessor.adapter = {
+        getScanRoots: () => ["./missing-root", "."],
+      };
+
+      routeProcessor.scanRoutes();
+
+      expect(scanApiRoutesSpy).toHaveBeenCalledTimes(1);
+      expect(scanApiRoutesSpy).toHaveBeenCalledWith(".");
     });
   });
 });

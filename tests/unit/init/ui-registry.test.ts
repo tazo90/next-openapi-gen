@@ -6,12 +6,16 @@ import {
   getDocsPageDependencies,
   getDocsPageDevDependencies,
   getDocsPageInstallFlags,
+  UI_REGISTRY,
+  UI_TYPES,
+  UI_TYPES_WITH_NONE,
 } from "@next-openapi-gen/init/ui-registry.js";
 import { RapidocUI, rapidocDeps } from "@next-openapi-gen/init/ui/rapidoc.js";
 import { RedocUI, redocDeps } from "@next-openapi-gen/init/ui/redoc.js";
 import { ScalarUI, scalarDeps } from "@next-openapi-gen/init/ui/scalar.js";
 import { StoplightUI, stoplightDeps } from "@next-openapi-gen/init/ui/stoplight.js";
 import { SwaggerUI, swaggerDeps, swaggerDevDeps } from "@next-openapi-gen/init/ui/swagger.js";
+import openapiTemplateSource from "../../../packages/next-openapi-gen/src/init/openapi-template.ts";
 
 describe("OpenAPI init defaults", () => {
   it("keeps the default template aligned with the CLI defaults", () => {
@@ -22,6 +26,12 @@ describe("OpenAPI init defaults", () => {
       outputFile: "openapi.json",
       outputDir: "./public",
       schemaType: "zod",
+    });
+    expect(openapiTemplateSource).toMatchObject({
+      defaultResponseSet: "common",
+      responseSets: {
+        common: ["400", "500"],
+      },
     });
   });
 });
@@ -55,6 +65,12 @@ describe("UI templates", () => {
 });
 
 describe("UI registry helpers", () => {
+  it("exports the supported registry keys", () => {
+    expect(UI_TYPES).toEqual(["scalar", "swagger", "redoc", "stoplight", "rapidoc"]);
+    expect(UI_TYPES_WITH_NONE).toEqual([...UI_TYPES, "none"]);
+    expect(Object.keys(UI_REGISTRY)).toEqual(UI_TYPES);
+  });
+
   it("returns dependency strings for each UI", () => {
     expect(getDocsPageDependencies("scalar")).toBe("@scalar/api-reference-react ajv");
     expect(getDocsPageDependencies("swagger")).toBe("swagger-ui swagger-ui-react");
@@ -66,6 +82,7 @@ describe("UI registry helpers", () => {
   it("returns dev dependency strings for each UI", () => {
     expect(getDocsPageDevDependencies("scalar")).toBe("");
     expect(getDocsPageDevDependencies("swagger")).toBe("@types/swagger-ui-react");
+    expect(getDocsPageDevDependencies("redoc")).toBe("");
     expect(getDocsPageDevDependencies("stoplight")).toBe("");
     expect(getDocsPageDevDependencies("rapidoc")).toBe("");
   });
@@ -80,10 +97,20 @@ describe("UI registry helpers", () => {
 
   it("falls back to the scalar template when the UI type is unknown", () => {
     expect(getDocsPage("unknown", "openapi.json")).toContain("@scalar/api-reference-react");
+    expect(getDocsPage("", "openapi.json")).toContain("@scalar/api-reference-react");
   });
 
   it("renders stoplight and rapidoc pages through the registry", () => {
+    expect(getDocsPage("redoc", "openapi.json")).toContain(
+      '<RedocStandalone specUrl="/openapi.json" />',
+    );
     expect(getDocsPage("stoplight", "openapi.json")).toContain('apiDescriptionUrl="openapi.json"');
     expect(getDocsPage("rapidoc", "openapi.json")).toContain('spec-url="openapi.json"');
+  });
+
+  it("returns empty install flags for non-swagger registry entries", () => {
+    expect(getDocsPageInstallFlags("redoc", "npm")).toBe("");
+    expect(getDocsPageInstallFlags("stoplight", "pnpm")).toBe("");
+    expect(getDocsPageInstallFlags("rapidoc", "yarn")).toBe("");
   });
 });

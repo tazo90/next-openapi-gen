@@ -45,6 +45,7 @@
     "oxlint": "catalog:",
     "simple-git-hooks": "catalog:",
     "turbo": "catalog:",
+    "typescript": "catalog:",
     "vitest": "catalog:"
   },
   "simple-git-hooks": {

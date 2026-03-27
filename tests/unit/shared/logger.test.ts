@@ -48,6 +48,18 @@ describe("logger", () => {
     expect((logger as any).getCallerInfo()).toBe("Unknown");
   });
 
+  it("extracts standalone function names from stack traces", () => {
+    class FunctionStackError extends OriginalError {
+      constructor() {
+        super("stack");
+        this.stack = ["Error", "    at one", "    at two", "    at createUser"].join("\n");
+      }
+    }
+
+    globalThis.Error = FunctionStackError as ErrorConstructor;
+    expect((logger as any).getCallerInfo()).toBe("createUser");
+  });
+
   it("falls back to Unknown when the caller line is missing", () => {
     class ShortStackError extends OriginalError {
       constructor() {

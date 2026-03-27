@@ -59,4 +59,16 @@ describe("processCustomSchemaFiles", () => {
     ).not.toThrow();
     expect(processCustomSchemaFiles([path.join(root, "missing.json"), txtPath])).toEqual({});
   });
+
+  it("returns empty results for invalid and malformed schema payloads", () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-custom-schema-invalid-"));
+    roots.push(root);
+
+    const invalidJsonPath = path.join(root, "invalid.json");
+    const scalarJsonPath = path.join(root, "scalar.json");
+    fs.writeFileSync(invalidJsonPath, "{");
+    fs.writeFileSync(scalarJsonPath, JSON.stringify("nope"));
+
+    expect(processCustomSchemaFiles([invalidJsonPath, scalarJsonPath])).toEqual({});
+  });
 });

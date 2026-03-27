@@ -11,7 +11,11 @@ type SpinnerMock = {
   fail: ReturnType<typeof vi.fn>;
 };
 
-async function loadInitModule(execMock: ReturnType<typeof vi.fn>, spinner: SpinnerMock) {
+async function loadInitModule(
+  execMock: ReturnType<typeof vi.fn>,
+  spinner: SpinnerMock,
+  setupMocks?: () => void,
+) {
   vi.resetModules();
   vi.doMock("child_process", () => ({
     exec: execMock,
@@ -19,6 +23,7 @@ async function loadInitModule(execMock: ReturnType<typeof vi.fn>, spinner: Spinn
   vi.doMock("ora", () => ({
     default: vi.fn(() => spinner),
   }));
+  setupMocks?.();
 
   return import("@next-openapi-gen/cli/commands/init.js");
 }
@@ -121,6 +126,39 @@ describe("init command", () => {
       );
       expect(execMock).not.toHaveBeenCalled();
       expect(spinner.fail).not.toHaveBeenCalled();
+    } finally {
+      project.cleanup();
+    }
+  });
+
+  it("reports initialization failures through the spinner", async () => {
+    const project = createTempProject("nxog-init-failure-");
+    const spinner = {
+      start: vi.fn(),
+      succeed: vi.fn(),
+      fail: vi.fn(),
+    };
+    const execMock = vi.fn((command: string, callback: (...args: unknown[]) => void) => {
+      callback(null, "", "");
+      return {} as never;
+    });
+
+    try {
+      process.chdir(project.root);
+
+      const { init } = await loadInitModule(execMock, spinner, () => {
+        vi.doMock("fs-extra", () => ({
+          default: {
+            writeJson: vi.fn(async () => {
+              throw new Error("disk full");
+            }),
+          },
+        }));
+      });
+
+      await init({});
+
+      expect(fs.existsSync(path.join(project.root, "next.openapi.json"))).toBe(false);
     } finally {
       project.cleanup();
     }

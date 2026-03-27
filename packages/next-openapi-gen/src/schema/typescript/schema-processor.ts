@@ -12,6 +12,23 @@ import { mergeSchemaDefinitionLayers } from "../core/schema-definition-processor
 import { parseTypeScriptFile } from "../../shared/utils.js";
 import { ZodSchemaConverter } from "../zod/zod-converter.js";
 import { ZodSchemaProcessor } from "../zod/zod-schema-processor.js";
+import {
+  createFormDataSchema,
+  createTypeReferenceFromString,
+  detectContentType,
+  extractKeysFromLiteralType,
+  getExampleForParam,
+  getPropertyOptions,
+  getSchemaProcessorErrorMessage,
+  isDateNode,
+  isDateObject,
+  isDateString,
+  normalizeSchemaDirs,
+  normalizeSchemaTypes,
+  parseGenericTypeString,
+  splitGenericTypeArguments,
+} from "./helpers.js";
+import { resolveUtilityTypeReference } from "./utility-types.js";
 import type {
   ContentType,
   OpenAPIDefinition,
@@ -21,23 +38,13 @@ import type {
 } from "../../shared/types.js";
 import { logger } from "../../shared/logger.js";
 
-/**
- * Normalize schemaType to array
- */
-function normalizeSchemaTypes(schemaType: SchemaType | SchemaType[]): SchemaType[] {
-  return Array.isArray(schemaType) ? schemaType : [schemaType];
-}
+export type SchemaProcessorFileAccess = Pick<
+  typeof fs,
+  "existsSync" | "readdirSync" | "statSync" | "readFileSync"
+>;
 
-/**
- * Normalize schemaDir to array
- */
-function normalizeSchemaDirs(schemaDir: string | string[]): string[] {
-  return Array.isArray(schemaDir) ? schemaDir : [schemaDir];
-}
-
-function getErrorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
-}
+const defaultFileAccess: SchemaProcessorFileAccess = fs;
+export { createTypeReferenceFromString, parseGenericTypeString, splitGenericTypeArguments };
 
 export class SchemaProcessor {
   private schemaDirs: string[];
@@ -55,6 +62,7 @@ export class SchemaProcessor {
   private zodSchemaProcessor: ZodSchemaProcessor | null = null;
   private schemaTypes: SchemaType[];
   private isResolvingPickOmitBase: boolean = false;
+  private readonly fileAccess: SchemaProcessorFileAccess;
 
   // Track imports per file for resolving ReturnType<typeof func>
   private importMap: Record<string, Record<string, string>> = {}; // { filePath: { importName: importPath } }
@@ -65,9 +73,11 @@ export class SchemaProcessor {
     schemaType: SchemaType | SchemaType[] = "typescript",
     schemaFiles?: string[],
     apiDir?: string,
+    fileAccess: SchemaProcessorFileAccess = defaultFileAccess,
   ) {
     this.schemaDirs = normalizeSchemaDirs(schemaDir).map((d) => path.resolve(d));
     this.schemaTypes = normalizeSchemaTypes(schemaType);
+    this.fileAccess = fileAccess;
     this.customSchemaProcessor = new CustomSchemaProcessor(
       schemaFiles && schemaFiles.length > 0 ? processCustomSchemaFiles(schemaFiles) : {},
     );
@@ -150,7 +160,7 @@ export class SchemaProcessor {
 
   private scanAllSchemaDirs(schemaName: string) {
     for (const dir of this.schemaDirs) {
-      if (!fs.existsSync(dir)) {
+      if (!this.fileAccess.existsSync(dir)) {
         logger.warn(`Schema directory not found: ${dir}`);
         continue;
       }
@@ -161,7 +171,7 @@ export class SchemaProcessor {
   private scanSchemaDir(dir: string, schemaName: string) {
     let files = this.directoryCache[dir];
     if (typeof files === "undefined") {
-      files = fs.readdirSync(dir);
+      files = this.fileAccess.readdirSync(dir);
       this.directoryCache[dir] = files;
     }
 
@@ -169,7 +179,7 @@ export class SchemaProcessor {
       const filePath = path.join(dir, file);
       let stat = this.statCache[filePath];
       if (typeof stat === "undefined") {
-        stat = fs.statSync(filePath);
+        stat = this.fileAccess.statSync(filePath);
         this.statCache[filePath] = stat;
       }
 
@@ -230,17 +240,17 @@ export class SchemaProcessor {
     let resolvedPath = path.resolve(fromDir, importPath);
 
     // Try with .ts extension
-    if (fs.existsSync(resolvedPath + ".ts")) {
+    if (this.fileAccess.existsSync(resolvedPath + ".ts")) {
       return resolvedPath + ".ts";
     }
 
     // Try with .tsx extension
-    if (fs.existsSync(resolvedPath + ".tsx")) {
+    if (this.fileAccess.existsSync(resolvedPath + ".tsx")) {
       return resolvedPath + ".tsx";
     }
 
     // Try as-is (might already have extension)
-    if (fs.existsSync(resolvedPath)) {
+    if (this.fileAccess.existsSync(resolvedPath)) {
       return resolvedPath;
     }
 
@@ -515,19 +525,15 @@ export class SchemaProcessor {
   }
 
   private isDateString(node: any): boolean {
-    if (t.isStringLiteral(node)) {
-      const dateRegex = /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2}(\.\d{3})?Z)?$/;
-      return dateRegex.test(node.value);
-    }
-    return false;
+    return isDateString(node);
   }
 
   private isDateObject(node: any): boolean {
-    return t.isNewExpression(node) && t.isIdentifier(node.callee, { name: "Date" });
+    return isDateObject(node);
   }
 
   private isDateNode(node: any): boolean {
-    return this.isDateString(node) || this.isDateObject(node);
+    return isDateNode(node);
   }
 
   private resolveTSNodeType(node: any): OpenAPIDefinition {
@@ -654,254 +660,39 @@ export class SchemaProcessor {
         return { type: "object", additionalProperties: true };
       }
 
-      if (typeName === "Partial" || typeName === "Required" || typeName === "Readonly") {
-        if (node.typeParameters && node.typeParameters.params.length > 0) {
-          return this.resolveTSNodeType(node.typeParameters.params[0]);
-        }
+      const utilityType = resolveUtilityTypeReference(node, {
+        currentFilePath: this.currentFilePath,
+        contentType: this.contentType,
+        importMap: this.importMap,
+        typeDefinitions: this.typeDefinitions,
+        fileAccess: this.fileAccess,
+        resolveImportPath: (importPath, fromFilePath) =>
+          this.resolveImportPath(importPath, fromFilePath),
+        resolveTSNodeType: (currentNode) => this.resolveTSNodeType(currentNode),
+        findSchemaDefinition: (schemaName, contentType) =>
+          this.findSchemaDefinition(schemaName, contentType),
+        collectImports: (ast, filePath) => this.collectImports(ast, filePath),
+        collectTypeDefinitions: (ast, schemaName, filePath) =>
+          this.collectTypeDefinitions(ast, schemaName, filePath),
+        collectAllExportedDefinitions: (ast, filePath) =>
+          this.collectAllExportedDefinitions(ast, filePath),
+        extractFunctionReturnType: (funcNode) => this.extractFunctionReturnType(funcNode),
+        extractFunctionParameters: (funcNode) => this.extractFunctionParameters(funcNode),
+        extractKeysFromLiteralType: (currentNode) => this.extractKeysFromLiteralType(currentNode),
+        resolveGenericType: (definition, params, currentTypeName) =>
+          this.resolveGenericType(definition, params, currentTypeName),
+        processingTypes: this.processingTypes,
+        findTypeDefinition: (schemaName) => {
+          this.findSchemaDefinition(schemaName, this.contentType);
+        },
+        resolveType: (schemaName) => this.resolveType(schemaName),
+        setResolvingPickOmitBase: (value) => {
+          this.isResolvingPickOmitBase = value;
+        },
+      });
+      if (utilityType) {
+        return utilityType;
       }
-
-      // Handle Awaited<T> utility type
-      if (typeName === "Awaited") {
-        if (node.typeParameters && node.typeParameters.params.length > 0) {
-          // Unwrap the inner type - promises are transparent in OpenAPI
-          return this.resolveTSNodeType(node.typeParameters.params[0]);
-        }
-      }
-
-      // Handle ReturnType<typeof X> utility type
-      if (typeName === "ReturnType") {
-        if (node.typeParameters && node.typeParameters.params.length > 0) {
-          const typeParam = node.typeParameters.params[0];
-
-          // ReturnType<typeof functionName>
-          if (t.isTSTypeQuery(typeParam)) {
-            const funcName = t.isIdentifier(typeParam.exprName) ? typeParam.exprName.name : null;
-
-            if (funcName) {
-              // Save current file path before findSchemaDefinition which may change it
-              const savedFilePath = this.currentFilePath;
-
-              // First try to find the function in the current file
-              this.findSchemaDefinition(funcName, this.contentType);
-              let funcDefEntry = this.typeDefinitions[funcName];
-              let funcNode = funcDefEntry?.node || funcDefEntry; // Support both old and new format
-              const _funcFilePath = funcDefEntry?.filePath;
-
-              // If not found, check if it's an imported function
-              // Use the saved file path (where the utility type is defined)
-              const sourceFilePath = savedFilePath;
-              const normalizedSourcePath = path.normalize(sourceFilePath);
-              if (!funcNode && sourceFilePath && this.importMap[normalizedSourcePath]) {
-                const importPath = this.importMap[normalizedSourcePath][funcName];
-                if (importPath) {
-                  // Resolve the import path to an absolute file path
-                  const resolvedPath = this.resolveImportPath(importPath, sourceFilePath);
-                  if (resolvedPath) {
-                    // Process the imported file to collect the function
-                    const content = fs.readFileSync(resolvedPath, "utf-8");
-                    const ast = parseTypeScriptFile(content);
-
-                    // Collect imports and type definitions from the imported file
-                    this.collectImports(ast, resolvedPath);
-                    this.collectTypeDefinitions(ast, funcName, resolvedPath);
-
-                    // Also collect all exported types/interfaces from the same file
-                    // This ensures referenced types like Product are available
-                    this.collectAllExportedDefinitions(ast, resolvedPath);
-
-                    // Now try to get the function node again
-                    funcDefEntry = this.typeDefinitions[funcName];
-                    funcNode = funcDefEntry?.node || funcDefEntry;
-                  }
-                }
-              }
-
-              if (funcNode) {
-                // Extract the return type annotation
-                const returnTypeNode = this.extractFunctionReturnType(funcNode);
-
-                if (returnTypeNode) {
-                  // Recursively resolve the return type
-                  return this.resolveTSNodeType(returnTypeNode);
-                } else {
-                  logger.warn(
-                    `ReturnType<typeof ${funcName}>: Function '${funcName}' does not have an explicit return type annotation. ` +
-                      `Add a return type to the function signature for accurate schema generation.`,
-                  );
-                  return { type: "object" };
-                }
-              } else {
-                logger.warn(
-                  `ReturnType<typeof ${funcName}>: Function '${funcName}' not found in schema files or imports. ` +
-                    `Ensure the function is exported and imported correctly.`,
-                );
-                return { type: "object" };
-              }
-            }
-          }
-
-          // Fallback: If not TSTypeQuery, try resolving directly
-          logger.warn(
-            `ReturnType<T>: Expected 'typeof functionName' but got a different type. ` +
-              `Use ReturnType<typeof yourFunction> pattern for best results.`,
-          );
-          return this.resolveTSNodeType(typeParam);
-        }
-      }
-
-      // Handle Parameters<typeof X> utility type
-      if (typeName === "Parameters") {
-        if (node.typeParameters && node.typeParameters.params.length > 0) {
-          const typeParam = node.typeParameters.params[0];
-
-          // Parameters<typeof functionName>
-          if (t.isTSTypeQuery(typeParam)) {
-            const funcName = t.isIdentifier(typeParam.exprName) ? typeParam.exprName.name : null;
-
-            if (funcName) {
-              // Save current file path before findSchemaDefinition which may change it
-              const savedFilePath = this.currentFilePath;
-
-              // First try to find the function in the current file
-              this.findSchemaDefinition(funcName, this.contentType);
-              let funcDefEntry = this.typeDefinitions[funcName];
-              let funcNode = funcDefEntry?.node || funcDefEntry; // Support both old and new format
-              const _funcFilePath = funcDefEntry?.filePath;
-
-              // If not found, check if it's an imported function
-              // Use the saved file path (where the utility type is defined)
-              const sourceFilePath = savedFilePath;
-              const normalizedSourcePath = path.normalize(sourceFilePath);
-              if (!funcNode && sourceFilePath && this.importMap[normalizedSourcePath]) {
-                const importPath = this.importMap[normalizedSourcePath][funcName];
-                if (importPath) {
-                  // Resolve the import path to an absolute file path
-                  const resolvedPath = this.resolveImportPath(importPath, sourceFilePath);
-                  if (resolvedPath) {
-                    // Process the imported file to collect the function
-                    const content = fs.readFileSync(resolvedPath, "utf-8");
-                    const ast = parseTypeScriptFile(content);
-
-                    // Collect imports and type definitions from the imported file
-                    this.collectImports(ast, resolvedPath);
-                    this.collectTypeDefinitions(ast, funcName, resolvedPath);
-
-                    // Also collect all exported types/interfaces from the same file
-                    // This ensures referenced types like Product are available
-                    this.collectAllExportedDefinitions(ast, resolvedPath);
-
-                    // Now try to get the function node again
-                    funcDefEntry = this.typeDefinitions[funcName];
-                    funcNode = funcDefEntry?.node || funcDefEntry;
-                  }
-                }
-              }
-
-              if (funcNode) {
-                // Extract parameters from function
-                const params = this.extractFunctionParameters(funcNode);
-
-                if (params && params.length > 0) {
-                  // Parameters<T> returns a tuple type [Param1, Param2, ...]
-                  const paramTypes = params.map((param: any) => {
-                    if (param.typeAnnotation && param.typeAnnotation.typeAnnotation) {
-                      return this.resolveTSNodeType(param.typeAnnotation.typeAnnotation);
-                    }
-                    return { type: "any" };
-                  });
-
-                  // Return as tuple (array with prefixItems for OpenAPI 3.1)
-                  return {
-                    type: "array",
-                    prefixItems: paramTypes,
-                    items: false,
-                    minItems: paramTypes.length,
-                    maxItems: paramTypes.length,
-                  };
-                } else {
-                  // No parameters
-                  return {
-                    type: "array",
-                    maxItems: 0,
-                  };
-                }
-              } else {
-                logger.warn(
-                  `Parameters<typeof ${funcName}>: Function '${funcName}' not found in schema files or imports.`,
-                );
-                return { type: "array", items: { type: "object" } };
-              }
-            }
-          }
-        }
-      }
-
-      if (typeName === "Pick" || typeName === "Omit") {
-        if (node.typeParameters && node.typeParameters.params.length > 1) {
-          const baseTypeParam = node.typeParameters.params[0];
-          const keysParam = node.typeParameters.params[1];
-
-          // Resolve base type without adding it to schema definitions
-          this.isResolvingPickOmitBase = true;
-          const baseType = this.resolveTSNodeType(baseTypeParam);
-          this.isResolvingPickOmitBase = false;
-
-          if (baseType.properties) {
-            const baseProperties = baseType.properties;
-            const properties: Record<string, any> = {};
-            const keyNames = this.extractKeysFromLiteralType(keysParam);
-
-            if (typeName === "Pick") {
-              keyNames.forEach((key) => {
-                if (baseProperties[key]) {
-                  properties[key] = baseProperties[key];
-                }
-              });
-            } else {
-              // Omit
-              Object.entries(baseProperties).forEach(([key, value]) => {
-                if (!keyNames.includes(key)) {
-                  properties[key] = value;
-                }
-              });
-            }
-
-            return { type: "object", properties };
-          }
-        }
-
-        // Fallback to just the base type if we can't process properly
-        if (node.typeParameters && node.typeParameters.params.length > 0) {
-          return this.resolveTSNodeType(node.typeParameters.params[0]);
-        }
-      }
-
-      // Handle custom generic types
-      if (node.typeParameters && node.typeParameters.params.length > 0) {
-        // Find the generic type definition first
-        this.findSchemaDefinition(typeName, this.contentType);
-        const genericDefEntry = this.typeDefinitions[typeName];
-        const genericTypeDefinition = genericDefEntry?.node || genericDefEntry;
-
-        if (genericTypeDefinition) {
-          // Resolve the generic type by substituting type parameters
-          return this.resolveGenericType(
-            genericTypeDefinition,
-            node.typeParameters.params,
-            typeName,
-          );
-        }
-      }
-
-      // Check if it is a type that we are already processing
-      if (this.processingTypes.has(typeName)) {
-        return { $ref: `#/components/schemas/${typeName}` };
-      }
-
-      // Find type definition
-      this.findSchemaDefinition(typeName, this.contentType);
-
-      return this.resolveType(node.typeName.name);
     }
 
     if (t.isTSArrayType(node)) {
@@ -1031,7 +822,7 @@ export class SchemaProcessor {
 
     try {
       // Recognizes different elements of TS like variable, type, interface, enum
-      const content = fs.readFileSync(filePath, "utf-8");
+      const content = this.fileAccess.readFileSync(filePath, "utf-8");
       const ast = parseTypeScriptFile(content);
 
       // Track current file path for import resolution (normalize for consistency)
@@ -1054,7 +845,7 @@ export class SchemaProcessor {
       return definition;
     } catch (error) {
       logger.error(
-        `Error processing schema file ${filePath} for schema ${schemaName}: ${getErrorMessage(error)}`,
+        `Error processing schema file ${filePath} for schema ${schemaName}: ${getSchemaProcessorErrorMessage(error)}`,
       );
       return { type: "object" }; // By default we return an empty object on error
     }
@@ -1092,97 +883,22 @@ export class SchemaProcessor {
   }
 
   private extractKeysFromLiteralType(node: any): string[] {
-    if (t.isTSLiteralType(node) && t.isStringLiteral(node.literal)) {
-      return [node.literal.value];
-    }
-
-    if (t.isTSUnionType(node)) {
-      const keys: string[] = [];
-      node.types.forEach((type: any) => {
-        if (t.isTSLiteralType(type) && t.isStringLiteral(type.literal)) {
-          keys.push(type.literal.value);
-        }
-      });
-      return keys;
-    }
-
-    return [];
+    return extractKeysFromLiteralType(node);
   }
 
   private getPropertyOptions(node: any): PropertyOptions {
-    const isOptional = !!node.optional; // check if property is optional
-
-    let description = null;
-    // get comments for field
-    if (node.trailingComments && node.trailingComments.length) {
-      description = node.trailingComments[0].value.trim(); // get first comment
-    }
-
-    const options: PropertyOptions = {};
-
-    if (description) {
-      options.description = description;
-    }
-
-    if (this.contentType === "body") {
-      options.nullable = isOptional;
-    }
-
-    return options;
+    return getPropertyOptions(node, this.contentType);
   }
 
   /**
    * Generate example values based on parameter type and name
    */
   public getExampleForParam(paramName: string, type: string = "string"): any {
-    // Common ID-like parameters
-    if (paramName === "id" || paramName.endsWith("Id") || paramName.endsWith("_id")) {
-      return type === "string" ? "123" : 123;
-    }
-
-    // For specific common parameter names
-    switch (paramName.toLowerCase()) {
-      case "slug":
-        return "slug";
-      case "uuid":
-        return "123e4567-e89b-12d3-a456-426614174000";
-      case "username":
-        return "johndoe";
-      case "email":
-        return "user@example.com";
-      case "name":
-        return "name";
-      case "date":
-        return "2023-01-01";
-      case "page":
-        return 1;
-      case "role":
-        return "admin";
-      default:
-        // Default examples by type
-        if (type === "string") return "example";
-        if (type === "number") return 1;
-        if (type === "boolean") return true;
-        return "example";
-    }
+    return getExampleForParam(paramName, type);
   }
 
   public detectContentType(bodyType: string, explicitContentType?: string): string {
-    if (explicitContentType) {
-      return explicitContentType;
-    }
-
-    // Automatic detection based on type name
-    if (
-      bodyType &&
-      (bodyType.toLowerCase().includes("formdata") ||
-        bodyType.toLowerCase().includes("fileupload") ||
-        bodyType.toLowerCase().includes("multipart"))
-    ) {
-      return "multipart/form-data";
-    }
-
-    return "application/json";
+    return detectContentType(bodyType, explicitContentType);
   }
 
   public createMultipleResponsesSchema(
@@ -1211,32 +927,7 @@ export class SchemaProcessor {
   }
 
   private createFormDataSchema(body: OpenAPIDefinition): OpenAPIDefinition {
-    if (!body.properties) {
-      return body;
-    }
-
-    const formDataProperties: Record<string, any> = {};
-
-    Object.entries(body.properties).forEach(([key, value]: [string, any]) => {
-      // Convert File types to binary format
-      if (
-        value.type === "object" &&
-        (key.toLowerCase().includes("file") || value.description?.toLowerCase().includes("file"))
-      ) {
-        formDataProperties[key] = {
-          type: "string",
-          format: "binary",
-          description: value.description,
-        };
-      } else {
-        formDataProperties[key] = value;
-      }
-    });
-
-    return {
-      ...body,
-      properties: formDataProperties,
-    };
+    return createFormDataSchema(body);
   }
 
   /**
@@ -1423,7 +1114,7 @@ export class SchemaProcessor {
    */
   private resolveGenericTypeFromString(genericTypeString: string): OpenAPIDefinition {
     // Parse the generic type string
-    const parsed = this.parseGenericTypeString(genericTypeString);
+    const parsed = parseGenericTypeString(genericTypeString);
     if (!parsed) {
       return {};
     }
@@ -1450,7 +1141,7 @@ export class SchemaProcessor {
 
     // Create AST nodes for the type arguments by parsing them
     const typeArgumentNodes = typeArguments.map((arg: string) =>
-      this.createTypeNodeFromString(arg),
+      createTypeReferenceFromString(arg),
     );
 
     // Resolve the generic type
@@ -1551,18 +1242,7 @@ export class SchemaProcessor {
   private parseGenericTypeString(
     genericTypeString: string,
   ): { baseTypeName: string; typeArguments: string[] } | null {
-    const match = genericTypeString.match(/^([^<]+)<(.+)>$/);
-    if (!match) {
-      return null;
-    }
-
-    const baseTypeName = match[1]?.trim() || "";
-    const typeArgsString = match[2]?.trim() || "";
-
-    // Split type arguments by comma, handling nested generics
-    const typeArguments = this.splitTypeArguments(typeArgsString);
-
-    return { baseTypeName, typeArguments };
+    return parseGenericTypeString(genericTypeString);
   }
 
   /**
@@ -1571,31 +1251,7 @@ export class SchemaProcessor {
    * @returns Array of individual type argument strings
    */
   private splitTypeArguments(typeArgsString: string): string[] {
-    const args: string[] = [];
-    let currentArg = "";
-    let bracketDepth = 0;
-
-    for (let i = 0; i < typeArgsString.length; i++) {
-      const char = typeArgsString[i];
-
-      if (char === "<") {
-        bracketDepth++;
-      } else if (char === ">") {
-        bracketDepth--;
-      } else if (char === "," && bracketDepth === 0) {
-        args.push(currentArg.trim());
-        currentArg = "";
-        continue;
-      }
-
-      currentArg += char;
-    }
-
-    if (currentArg.trim()) {
-      args.push(currentArg.trim());
-    }
-
-    return args;
+    return splitGenericTypeArguments(typeArgsString);
   }
 
   /**
@@ -1604,44 +1260,7 @@ export class SchemaProcessor {
    * @returns A TypeScript AST node
    */
   private createTypeNodeFromString(typeString: string): any {
-    // For simple type references, create a TSTypeReference node
-    if (!typeString.includes("<")) {
-      return {
-        type: "TSTypeReference",
-        typeName: {
-          type: "Identifier",
-          name: typeString,
-        },
-      };
-    }
-
-    // For nested generics, recursively parse
-    const parsed = this.parseGenericTypeString(typeString);
-    if (parsed) {
-      const typeParameterNodes = parsed.typeArguments.map((arg: string) =>
-        this.createTypeNodeFromString(arg),
-      );
-      return {
-        type: "TSTypeReference",
-        typeName: {
-          type: "Identifier",
-          name: parsed.baseTypeName,
-        },
-        typeParameters: {
-          type: "TSTypeParameterInstantiation",
-          params: typeParameterNodes,
-        },
-      };
-    }
-
-    // Fallback for unknown patterns
-    return {
-      type: "TSTypeReference",
-      typeName: {
-        type: "Identifier",
-        name: typeString,
-      },
-    };
+    return createTypeReferenceFromString(typeString);
   }
 
   /**
