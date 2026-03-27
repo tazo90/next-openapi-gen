@@ -1,184 +1,50 @@
 import fs from "fs";
-import path from "path";
 
+import { normalizeOpenApiConfig } from "../config/normalize.js";
+import type { DiagnosticsCollector } from "../diagnostics/collector.js";
+import { createFrameworkAdapter } from "../frameworks/index.js";
+import type { FrameworkAdapter } from "../frameworks/types.js";
 import { SchemaProcessor } from "../schema/typescript/schema-processor.js";
-import { capitalize, extractPathParameters, getOperationId } from "../shared/utils.js";
+import { extractPathParameters } from "../shared/utils.js";
 import { logger } from "../shared/logger.js";
-import { AppRouterStrategy } from "./app-router-strategy.js";
-import { PagesRouterStrategy } from "./pages-router-strategy.js";
-import type { DataTypes, OpenApiConfig, RouteDefinition } from "../shared/types.js";
-import type { RouterStrategy } from "./router-strategy.js";
-
-const MUTATION_HTTP_METHODS = ["PATCH", "POST", "PUT"];
+import type { DataTypes, OpenApiConfig, ResolvedOpenApiConfig } from "../shared/types.js";
+import { OperationProcessor } from "./operation-processor.js";
+import { ResponseProcessor } from "./response-processor.js";
+import { scanRouteFiles } from "./route-scanner.js";
 
 export class RouteProcessor {
   private swaggerPaths: Record<string, any> = {};
   private schemaProcessor: SchemaProcessor;
-  private config: OpenApiConfig;
-  private strategy: RouterStrategy;
+  private config: ResolvedOpenApiConfig;
+  private adapter: FrameworkAdapter;
+  private diagnostics: DiagnosticsCollector | undefined;
+  private responseProcessor: ResponseProcessor;
+  private operationProcessor: OperationProcessor;
 
   private directoryCache: Record<string, string[]> = {};
   private statCache: Record<string, fs.Stats> = {};
   private processFileTracker: Record<string, boolean> = {};
 
-  constructor(config: OpenApiConfig) {
-    this.config = config;
+  constructor(config: OpenApiConfig | ResolvedOpenApiConfig, diagnostics?: DiagnosticsCollector) {
+    this.config = normalizeOpenApiConfig(config);
+    this.diagnostics = diagnostics;
     this.schemaProcessor = new SchemaProcessor(
-      config.schemaDir,
-      config.schemaType,
-      config.schemaFiles,
-      config.apiDir,
+      this.config.schemaDir,
+      this.config.schemaBackends,
+      this.config.schemaFiles,
+      this.config.apiDir,
     );
-    this.strategy =
-      config.routerType === "pages"
-        ? new PagesRouterStrategy(config)
-        : new AppRouterStrategy(config);
+    this.adapter = createFrameworkAdapter(this.config);
+    this.responseProcessor = new ResponseProcessor(this.config, this.schemaProcessor);
+    this.operationProcessor = new OperationProcessor(
+      this.adapter,
+      this.schemaProcessor,
+      this.responseProcessor,
+    );
   }
 
-  private buildResponsesFromConfig(dataTypes: DataTypes, method: string): Record<string, any> {
-    const responses: Record<string, any> = {};
-
-    // 1. Add success response
-    const successCode = dataTypes.successCode || this.getDefaultSuccessCode(method);
-
-    // Handle 204 No Content responses without a schema
-    if (successCode === "204" && !dataTypes.responseType) {
-      responses[successCode] = {
-        description: dataTypes.responseDescription || "No Content",
-      };
-    } else if (dataTypes.responseType) {
-      // 204 No Content should not have a content section per HTTP/OpenAPI spec
-      if (successCode === "204") {
-        responses[successCode] = {
-          description: dataTypes.responseDescription || "No Content",
-        };
-      } else {
-        // Handle array notation (e.g., "Type[]", "Type[][]", "Generic<T>[]")
-        let schema: any;
-        let baseType = dataTypes.responseType;
-        let arrayDepth = 0;
-
-        // Count and remove array brackets
-        while (baseType.endsWith("[]")) {
-          arrayDepth++;
-          baseType = baseType.slice(0, -2);
-        }
-
-        // Ensure the base schema is defined in components/schemas
-        this.schemaProcessor.getSchemaContent({
-          responseType: baseType,
-        });
-
-        // Build schema reference
-        if (arrayDepth === 0) {
-          // Not an array
-          schema = { $ref: `#/components/schemas/${baseType}` };
-        } else {
-          // Build nested array schema
-          schema = { $ref: `#/components/schemas/${baseType}` };
-          for (let i = 0; i < arrayDepth; i++) {
-            schema = {
-              type: "array",
-              items: schema,
-            };
-          }
-        }
-
-        responses[successCode] = {
-          description: dataTypes.responseDescription || "Successful response",
-          content: {
-            "application/json": {
-              schema: schema,
-            },
-          },
-        };
-      }
-    }
-
-    // 2. Add responses from ResponseSet
-    const responseSetName = dataTypes.responseSet || this.config.defaultResponseSet;
-    if (responseSetName && responseSetName !== "none") {
-      const responseSets = this.config.responseSets || {};
-
-      const setNames = responseSetName.split(",").map((s) => s.trim());
-
-      setNames.forEach((setName) => {
-        const responseSet = responseSets[setName];
-        if (responseSet) {
-          responseSet.forEach((errorCode) => {
-            // Use $ref for components/responses
-            responses[errorCode] = {
-              $ref: `#/components/responses/${errorCode}`,
-            };
-          });
-        }
-      });
-    }
-
-    // 3. Add custom responses (@add)
-    if (dataTypes.addResponses) {
-      const customResponses = dataTypes.addResponses.split(",").map((s) => s.trim());
-
-      customResponses.forEach((responseRef) => {
-        const [code, ref] = responseRef.split(":");
-        if (!code) {
-          return;
-        }
-        if (ref) {
-          // Ensure the referenced schema is resolved (triggers Zod converter)
-          this.schemaProcessor.getSchemaContent({ responseType: ref });
-
-          // Custom schema: "409:ConflictResponse"
-          // 204 No Content should not have a content section per HTTP/OpenAPI spec
-          if (code === "204") {
-            responses[code] = {
-              description: this.getDefaultErrorDescription(code) || "No Content",
-            };
-          } else {
-            responses[code] = {
-              description: this.getDefaultErrorDescription(code) || `HTTP ${code} response`,
-              content: {
-                "application/json": {
-                  schema: { $ref: `#/components/schemas/${ref}` },
-                },
-              },
-            };
-          }
-        } else {
-          // Only code: "409" - use $ref fro components/responses
-          responses[code] = {
-            $ref: `#/components/responses/${code}`,
-          };
-        }
-      });
-    }
-
-    return responses;
-  }
-
-  private getDefaultSuccessCode(method: string): string {
-    switch (method.toUpperCase()) {
-      case "POST":
-        return "201";
-      case "DELETE":
-        return "204";
-      default:
-        return "200";
-    }
-  }
-
-  private getDefaultErrorDescription(code: string): string {
-    const defaults: Record<string, string> = {
-      400: "Bad Request",
-      401: "Unauthorized",
-      403: "Forbidden",
-      404: "Not Found",
-      409: "Conflict",
-      422: "Unprocessable Entity",
-      429: "Too Many Requests",
-      500: "Internal Server Error",
-    };
-    return defaults[code] || `HTTP ${code}`;
+  private processResponsesFromConfig(dataTypes: DataTypes, method: string): Record<string, any> {
+    return this.responseProcessor.processResponses(dataTypes, method);
   }
 
   /**
@@ -215,7 +81,7 @@ export class RouteProcessor {
    * Register a discovered route after filtering
    */
   private registerRoute(method: string, filePath: string, dataTypes: DataTypes): void {
-    const routePath = this.strategy.getRoutePath(filePath);
+    const routePath = this.adapter.getRoutePath(filePath);
 
     if (this.shouldIgnoreRoute(routePath, dataTypes)) {
       logger.debug(`Ignoring route: ${routePath}`);
@@ -228,6 +94,13 @@ export class RouteProcessor {
 
     const pathParams = extractPathParameters(routePath);
     if (pathParams.length > 0 && !dataTypes.pathParamsType) {
+      this.diagnostics?.add({
+        code: "missing-path-params-type",
+        severity: "warning",
+        message: `Route ${routePath} contains path parameters ${pathParams.join(", ")} but no @pathParams type is defined.`,
+        filePath,
+        routePath,
+      });
       logger.debug(
         `Route ${routePath} contains path parameters ${pathParams.join(
           ", ",
@@ -240,149 +113,46 @@ export class RouteProcessor {
 
   public scanApiRoutes(dir: string): void {
     logger.debug(`Scanning API routes in: ${dir}`);
-
-    let files = this.directoryCache[dir];
-    if (!files) {
-      files = fs.readdirSync(dir);
-      this.directoryCache[dir] = files;
-    }
-
-    files.forEach((file) => {
-      const filePath = path.join(dir, file);
-      let stat = this.statCache[filePath];
-      if (!stat) {
-        stat = fs.statSync(filePath);
-        this.statCache[filePath] = stat;
-      }
-
-      if (stat.isDirectory()) {
-        this.scanApiRoutes(filePath);
-      } else if (this.strategy.shouldProcessFile(file)) {
-        if (!this.processFileTracker[filePath]) {
-          this.strategy.processFile(filePath, (method, fp, dataTypes) => {
-            this.registerRoute(method, fp, dataTypes);
+    scanRouteFiles(
+      dir,
+      this.adapter,
+      {
+        directoryCache: this.directoryCache,
+        statCache: this.statCache,
+        processFileTracker: this.processFileTracker,
+      },
+      (filePath) => {
+        this.adapter
+          .processFile(filePath)
+          .forEach(({ method, filePath: routeFilePath, dataTypes }) => {
+            this.registerRoute(method, routeFilePath, dataTypes);
           });
-          this.processFileTracker[filePath] = true;
-        }
+      },
+    );
+  }
+
+  public scanRoutes(): void {
+    this.adapter.getScanRoots().forEach((rootDir) => {
+      if (fs.existsSync(rootDir)) {
+        this.scanApiRoutes(rootDir);
       }
     });
   }
 
   private addRouteToPaths(varName: string, filePath: string, dataTypes: DataTypes): void {
-    const method = varName.toLowerCase();
-    const routePath = this.strategy.getRoutePath(filePath);
-    const rootSegment = routePath.split("/")[1] || "";
-    const rootPath = capitalize(rootSegment);
-    const operationId = dataTypes.operationId || getOperationId(routePath, method);
-    const {
-      tag,
-      summary,
-      description,
-      auth,
-      isOpenApi,
-      deprecated,
-      bodyDescription,
-      responseDescription,
-    } = dataTypes;
+    const { routePath, method, definition } = this.operationProcessor.processOperation(
+      varName,
+      filePath,
+      dataTypes,
+    );
 
-    if (this.config.includeOpenApiRoutes && !isOpenApi) {
+    if (this.config.includeOpenApiRoutes && !dataTypes.isOpenApi) {
       // If flag is enabled and there is no @openapi tag, then skip path
       return;
     }
 
     if (!this.swaggerPaths[routePath]) {
       this.swaggerPaths[routePath] = {};
-    }
-
-    const { params, pathParams, body, responses } =
-      this.schemaProcessor.getSchemaContent(dataTypes);
-
-    const definition: RouteDefinition = {
-      operationId: operationId,
-      summary,
-      description,
-      tags: [tag || rootPath],
-      parameters: [],
-    };
-
-    if (deprecated) {
-      definition.deprecated = true;
-    }
-
-    // Add auth
-    if (auth) {
-      const authItems = auth.split(",").map((item) => item.trim());
-
-      definition.security = authItems.map((authItem) => ({
-        [authItem]: [],
-      }));
-    }
-
-    if (params) {
-      definition.parameters = this.schemaProcessor.createRequestParamsSchema(params);
-    }
-
-    // Add path parameters
-    const pathParamNames = extractPathParameters(routePath);
-    if (pathParamNames.length > 0) {
-      // If we have path parameters but no schema, create a default schema
-      if (!pathParams) {
-        const defaultPathParams =
-          this.schemaProcessor.createDefaultPathParamsSchema(pathParamNames);
-        definition.parameters.push(...defaultPathParams);
-      } else {
-        const moreParams = this.schemaProcessor.createRequestParamsSchema(pathParams, true);
-        definition.parameters.push(...moreParams);
-      }
-    } else if (pathParams) {
-      // If no path parameters in route but we have a schema, use it
-      const moreParams = this.schemaProcessor.createRequestParamsSchema(pathParams, true);
-      definition.parameters.push(...moreParams);
-    }
-
-    // Add request body
-    if (MUTATION_HTTP_METHODS.includes(method.toUpperCase())) {
-      if (dataTypes.bodyType) {
-        // Ensure the schema is defined in components/schemas
-        this.schemaProcessor.getSchemaContent({
-          bodyType: dataTypes.bodyType,
-        });
-
-        // Use reference to the schema
-        const contentType = this.schemaProcessor.detectContentType(
-          dataTypes.bodyType || "",
-          dataTypes.contentType,
-        );
-
-        definition.requestBody = {
-          content: {
-            [contentType]: {
-              schema: { $ref: `#/components/schemas/${dataTypes.bodyType}` },
-            },
-          },
-        };
-
-        if (bodyDescription) {
-          definition.requestBody.description = bodyDescription;
-        }
-      } else if (body && Object.keys(body).length > 0) {
-        // Fallback to inline schema for backward compatibility
-        definition.requestBody = this.schemaProcessor.createRequestBodySchema(
-          body,
-          bodyDescription,
-          dataTypes.contentType,
-        );
-      }
-    }
-
-    // Add responses
-    definition.responses = this.buildResponsesFromConfig(dataTypes, method);
-
-    // If there are no responses from config, use the old logic
-    if (Object.keys(definition.responses).length === 0) {
-      definition.responses = responses
-        ? this.schemaProcessor.createResponseSchema(responses, responseDescription)
-        : {};
     }
 
     this.swaggerPaths[routePath]![method] = definition;

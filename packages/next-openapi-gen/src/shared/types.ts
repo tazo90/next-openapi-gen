@@ -3,6 +3,35 @@ export type ResponseSets = Record<string, ResponseSetDefinition>;
 
 export type SchemaType = "typescript" | "zod";
 export type RouterType = "app" | "pages";
+export type OpenApiVersion = "3.0" | "3.1" | "3.2" | "4.0";
+export type FrameworkKind = "next" | "tanstack";
+export type DiagnosticSeverity = "info" | "warning" | "error";
+
+export type DiagnosticsConfig = {
+  enabled?: boolean | undefined;
+};
+
+export type NextFrameworkConfig = {
+  kind: "next";
+  router: RouterType;
+  adapterPath?: string | undefined;
+};
+
+export type TanstackFrameworkConfig = {
+  kind: "tanstack";
+  adapterPath?: string | undefined;
+};
+
+export type FrameworkConfig = NextFrameworkConfig | TanstackFrameworkConfig;
+
+export type Diagnostic = {
+  code: string;
+  severity: DiagnosticSeverity;
+  message: string;
+  filePath?: string | undefined;
+  routePath?: string | undefined;
+  metadata?: Record<string, unknown> | undefined;
+};
 
 export type OpenApiConfig = {
   apiDir: string;
@@ -20,10 +49,31 @@ export type OpenApiConfig = {
   responseSets?: ResponseSets | undefined;
   errorConfig?: ErrorTemplateConfig | undefined;
   errorDefinitions?: Record<string, ErrorDefinition> | undefined;
+  openapiVersion?: OpenApiVersion | undefined;
+  framework?: FrameworkConfig | undefined;
+  next?: {
+    adapterPath?: string | undefined;
+  };
+  diagnostics?: DiagnosticsConfig | undefined;
   debug: boolean;
 };
 
-export type OpenApiTemplate = {
+export type ResolvedOpenApiConfig = Omit<
+  OpenApiConfig,
+  "routerType" | "schemaType" | "framework" | "next" | "diagnostics" | "openapiVersion"
+> & {
+  framework: FrameworkConfig;
+  next: {
+    adapterPath?: string | undefined;
+  };
+  diagnostics: DiagnosticsConfig;
+  routerType: RouterType;
+  schemaType: SchemaType | SchemaType[];
+  schemaBackends: SchemaType[];
+  openapiVersion: OpenApiVersion;
+};
+
+export type OpenApiDocument = {
   openapi: string;
   info: {
     title: string;
@@ -45,6 +95,10 @@ export type OpenApiTemplate = {
       }
     | undefined;
   paths?: Record<string, any> | undefined;
+  webhooks?: Record<string, any> | undefined;
+};
+
+export type OpenApiTemplate = OpenApiDocument & {
   apiDir?: string | undefined;
   routerType?: RouterType | undefined;
   schemaDir?: string | string[] | undefined;
@@ -60,6 +114,12 @@ export type OpenApiTemplate = {
   responseSets?: ResponseSets | undefined;
   errorConfig?: ErrorTemplateConfig | undefined;
   errorDefinitions?: Record<string, ErrorDefinition> | undefined;
+  openapiVersion?: OpenApiVersion | undefined;
+  framework?: FrameworkConfig | undefined;
+  next?: {
+    adapterPath?: string | undefined;
+  };
+  diagnostics?: DiagnosticsConfig | undefined;
   debug?: boolean | undefined;
 };
 

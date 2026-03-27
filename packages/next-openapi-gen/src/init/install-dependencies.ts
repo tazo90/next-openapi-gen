@@ -5,7 +5,7 @@ import {
   getDocsPageDependencies,
   getDocsPageDevDependencies,
   getDocsPageInstallFlags,
-} from "./ui-manifest.js";
+} from "./ui-registry.js";
 import { getPackageManager, hasDependency } from "./package-manager.js";
 
 const execPromise = util.promisify(exec);

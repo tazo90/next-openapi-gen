@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { RouteProcessor } from "@next-openapi-gen/routes/route-processor.js";
-import { OpenApiConfig } from "@next-openapi-gen/types.js";
+import { OpenApiConfig } from "@next-openapi-gen/shared/types.js";
 import fs from "fs-extra";
 import path from "path";
 

@@ -6,7 +6,7 @@ import {
   getDocsPageDependencies,
   getDocsPageDevDependencies,
   getDocsPageInstallFlags,
-} from "@next-openapi-gen/init/ui-manifest.js";
+} from "@next-openapi-gen/init/ui-registry.js";
 import { RapidocUI, rapidocDeps } from "@next-openapi-gen/init/ui/rapidoc.js";
 import { RedocUI, redocDeps } from "@next-openapi-gen/init/ui/redoc.js";
 import { ScalarUI, scalarDeps } from "@next-openapi-gen/init/ui/scalar.js";
@@ -54,7 +54,7 @@ describe("UI templates", () => {
   });
 });
 
-describe("UI manifest helpers", () => {
+describe("UI registry helpers", () => {
   it("returns dependency strings for each UI", () => {
     expect(getDocsPageDependencies("scalar")).toBe("@scalar/api-reference-react ajv");
     expect(getDocsPageDependencies("swagger")).toBe("swagger-ui swagger-ui-react");

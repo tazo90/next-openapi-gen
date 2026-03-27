@@ -20,7 +20,7 @@ async function loadInitModule(execMock: ReturnType<typeof vi.fn>, spinner: Spinn
     default: vi.fn(() => spinner),
   }));
 
-  return import("@next-openapi-gen/commands/init.js");
+  return import("@next-openapi-gen/cli/commands/init.js");
 }
 
 describe("init command", () => {

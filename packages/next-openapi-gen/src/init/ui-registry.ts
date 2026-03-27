@@ -3,71 +3,82 @@ import { RedocUI, redocDeps, redocDevDeps } from "./ui/redoc.js";
 import { scalarDeps, scalarDevDeps, ScalarUI } from "./ui/scalar.js";
 import { StoplightUI, stoplightDeps, stoplightDevDeps } from "./ui/stoplight.js";
 import { swaggerDeps, swaggerDevDeps, SwaggerUI } from "./ui/swagger.js";
-
 import type { UiType } from "./types.js";
 
-type UiManifest = {
+export const UI_TYPES = ["scalar", "swagger", "redoc", "stoplight", "rapidoc"] as const;
+export const UI_TYPES_WITH_NONE = [...UI_TYPES, "none"] as const;
+
+export type RegisteredUiType = (typeof UI_TYPES)[number];
+export type UiRegistryEntry = {
   deps: string[];
   devDeps: string[];
   render: (outputFile: string) => string;
+  getInstallFlags: (packageManager: string) => string;
 };
 
-const uiManifests: Record<Exclude<UiType, "none">, UiManifest> = {
+export const UI_REGISTRY: Record<RegisteredUiType, UiRegistryEntry> = {
   scalar: {
     deps: scalarDeps,
     devDeps: scalarDevDeps,
     render: ScalarUI,
+    getInstallFlags: () => "",
   },
   swagger: {
     deps: swaggerDeps,
     devDeps: swaggerDevDeps,
     render: SwaggerUI,
+    getInstallFlags: (packageManager) => {
+      if (packageManager === "pnpm") {
+        return "--no-strict-peer-dependencies";
+      }
+
+      if (packageManager === "yarn") {
+        return "";
+      }
+
+      return "--legacy-peer-deps";
+    },
   },
   redoc: {
     deps: redocDeps,
     devDeps: redocDevDeps,
     render: RedocUI,
+    getInstallFlags: () => "",
   },
   stoplight: {
     deps: stoplightDeps,
     devDeps: stoplightDevDeps,
     render: StoplightUI,
+    getInstallFlags: () => "",
   },
   rapidoc: {
     deps: rapidocDeps,
     devDeps: rapidocDevDeps,
     render: RapidocUI,
+    getInstallFlags: () => "",
   },
 };
 
-function getUiManifest(ui: UiType | string): UiManifest {
-  return uiManifests[(ui as Exclude<UiType, "none">) || "scalar"] || uiManifests.scalar;
+function getUiRegistryEntry(ui: UiType | string): UiRegistryEntry {
+  return UI_REGISTRY[(ui as RegisteredUiType) || "scalar"] || UI_REGISTRY.scalar;
 }
 
 export function getDocsPage(ui: UiType | string, outputFile: string): string {
-  return getUiManifest(ui).render(outputFile);
+  return getUiRegistryEntry(ui).render(outputFile);
 }
 
 export function getDocsPageDependencies(ui: UiType | string): string {
-  return getUiManifest(ui).deps.join(" ");
+  return getUiRegistryEntry(ui).deps.join(" ");
 }
 
 export function getDocsPageDevDependencies(ui: UiType | string): string {
-  return getUiManifest(ui).devDeps.join(" ");
+  return getUiRegistryEntry(ui).devDeps.join(" ");
 }
 
 export function getDocsPageInstallFlags(ui: UiType | string, packageManager: string): string {
-  if (ui !== "swagger") {
+  if (ui === "none") {
     return "";
   }
 
-  if (packageManager === "pnpm") {
-    return "--no-strict-peer-dependencies";
-  }
-
-  if (packageManager === "yarn") {
-    return "";
-  }
-
-  return "--legacy-peer-deps";
+  return getUiRegistryEntry(ui).getInstallFlags(packageManager);
 }

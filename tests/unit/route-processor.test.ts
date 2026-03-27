@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { RouteProcessor } from "@next-openapi-gen/routes/route-processor.js";
-import { OpenApiConfig, DataTypes } from "@next-openapi-gen/types.js";
+import { OpenApiConfig, DataTypes } from "@next-openapi-gen/shared/types.js";
 
 describe("RouteProcessor - Ignore Routes", () => {
   let routeProcessor: RouteProcessor;

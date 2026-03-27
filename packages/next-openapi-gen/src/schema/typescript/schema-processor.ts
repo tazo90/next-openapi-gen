@@ -2,13 +2,16 @@ import fs from "fs";
 import path from "path";
 import traverseModule from "@babel/traverse";
 import * as t from "@babel/types";
-import yaml from "js-yaml";
 
 // Handle both ES modules and CommonJS
 const traverse = (traverseModule as any).default || traverseModule;
 
+import { processCustomSchemaFiles } from "../core/custom-schema-file-processor.js";
+import { CustomSchemaProcessor } from "../core/custom-schema-processor.js";
+import { mergeSchemaDefinitionLayers } from "../core/schema-definition-processor.js";
 import { parseTypeScriptFile } from "../../shared/utils.js";
 import { ZodSchemaConverter } from "../zod/zod-converter.js";
+import { ZodSchemaProcessor } from "../zod/zod-schema-processor.js";
 import type {
   ContentType,
   OpenAPIDefinition,
@@ -41,7 +44,7 @@ export class SchemaProcessor {
   private typeDefinitions: Record<string, any> = {};
   private openapiDefinitions: Record<string, OpenAPIDefinition> = {};
   private contentType: ContentType = "";
-  private customSchemas: Record<string, OpenAPIDefinition> = {};
+  private customSchemaProcessor: CustomSchemaProcessor;
 
   private directoryCache: Record<string, string[]> = {};
   private statCache: Record<string, fs.Stats> = {};
@@ -49,6 +52,7 @@ export class SchemaProcessor {
   private processingTypes: Set<string> = new Set();
 
   private zodSchemaConverter: ZodSchemaConverter | null = null;
+  private zodSchemaProcessor: ZodSchemaProcessor | null = null;
   private schemaTypes: SchemaType[];
   private isResolvingPickOmitBase: boolean = false;
 
@@ -64,58 +68,14 @@ export class SchemaProcessor {
   ) {
     this.schemaDirs = normalizeSchemaDirs(schemaDir).map((d) => path.resolve(d));
     this.schemaTypes = normalizeSchemaTypes(schemaType);
+    this.customSchemaProcessor = new CustomSchemaProcessor(
+      schemaFiles && schemaFiles.length > 0 ? processCustomSchemaFiles(schemaFiles) : {},
+    );
 
     // Initialize Zod converter if Zod is enabled
     if (this.schemaTypes.includes("zod")) {
       this.zodSchemaConverter = new ZodSchemaConverter(schemaDir, apiDir);
-    }
-
-    // Load custom schema files if provided
-    if (schemaFiles && schemaFiles.length > 0) {
-      this.loadCustomSchemas(schemaFiles);
-    }
-  }
-
-  /**
-   * Load custom OpenAPI schema files (YAML/JSON)
-   */
-  private loadCustomSchemas(schemaFiles: string[]): void {
-    for (const filePath of schemaFiles) {
-      try {
-        const resolvedPath = path.resolve(filePath);
-
-        if (!fs.existsSync(resolvedPath)) {
-          logger.warn(`Schema file not found: ${filePath}`);
-          continue;
-        }
-
-        const content = fs.readFileSync(resolvedPath, "utf-8");
-        const ext = path.extname(filePath).toLowerCase();
-
-        let parsed: any;
-        if (ext === ".yaml" || ext === ".yml") {
-          parsed = yaml.load(content) as any;
-        } else if (ext === ".json") {
-          parsed = JSON.parse(content);
-        } else {
-          logger.warn(`Unsupported file type: ${filePath} (use .json, .yaml, or .yml)`);
-          continue;
-        }
-
-        // Extract schemas from OpenAPI structure or use file content directly
-        const schemas = parsed?.components?.schemas || parsed?.schemas || parsed;
-
-        if (typeof schemas === "object" && schemas !== null) {
-          Object.assign(this.customSchemas, schemas);
-          logger.log(`✓ Loaded custom schemas from: ${filePath}`);
-        } else {
-          logger.warn(
-            `No valid schemas found in ${filePath}. Expected OpenAPI format with components.schemas or plain object.`,
-          );
-        }
-      } catch (error) {
-        logger.warn(`Failed to load schema file ${filePath}: ${getErrorMessage(error)}`);
-      }
+      this.zodSchemaProcessor = new ZodSchemaProcessor(this.zodSchemaConverter);
     }
   }
 
@@ -127,9 +87,6 @@ export class SchemaProcessor {
    * 3. Custom files (highest priority - overrides all)
    */
   public getDefinedSchemas(): Record<string, OpenAPIDefinition> {
-    const merged: Record<string, OpenAPIDefinition> = {};
-
-    // Layer 1: TypeScript types (base layer)
     const filteredSchemas: Record<string, OpenAPIDefinition> = {};
     Object.entries(this.openapiDefinitions).forEach(([key, value]) => {
       if (
@@ -141,18 +98,12 @@ export class SchemaProcessor {
         filteredSchemas[key] = value;
       }
     });
-    Object.assign(merged, filteredSchemas);
 
-    // Layer 2: Zod schemas (if enabled - overrides TypeScript)
-    if (this.schemaTypes.includes("zod") && this.zodSchemaConverter) {
-      const zodSchemas = this.zodSchemaConverter.getProcessedSchemas();
-      Object.assign(merged, zodSchemas);
-    }
-
-    // Layer 3: Custom files (highest priority - overrides all)
-    Object.assign(merged, this.customSchemas);
-
-    return merged;
+    return mergeSchemaDefinitionLayers([
+      filteredSchemas,
+      this.zodSchemaProcessor?.getDefinedSchemas(),
+      this.customSchemaProcessor.getDefinedSchemas(),
+    ]);
   }
 
   public findSchemaDefinition(schemaName: string, contentType: ContentType): OpenAPIDefinition {
@@ -165,13 +116,14 @@ export class SchemaProcessor {
     }
 
     // Priority 1: Check custom schemas first (highest priority)
-    if (this.customSchemas[schemaName]) {
+    const customSchema = this.customSchemaProcessor.resolveSchema(schemaName);
+    if (customSchema) {
       logger.debug(`Found schema in custom files: ${schemaName}`);
-      return this.customSchemas[schemaName];
+      return customSchema;
     }
 
     // Priority 2: Try Zod schemas if enabled
-    if (this.schemaTypes.includes("zod") && this.zodSchemaConverter) {
+    if (this.schemaTypes.includes("zod") && this.zodSchemaProcessor && this.zodSchemaConverter) {
       logger.debug(`Looking for Zod schema: ${schemaName}`);
 
       // Check type mapping first
@@ -181,7 +133,7 @@ export class SchemaProcessor {
       }
 
       // Try to convert Zod schema
-      const zodSchema = this.zodSchemaConverter.convertZodSchemaToOpenApi(schemaName);
+      const zodSchema = this.zodSchemaProcessor.resolveSchema(schemaName);
       if (zodSchema) {
         logger.debug(`Found and processed Zod schema: ${schemaName}`);
         this.openapiDefinitions[schemaName] = zodSchema;

@@ -242,26 +242,7 @@ export function cleanComment(commentValue: string): string {
 }
 
 export function cleanSpec(spec: any) {
-  const propsToRemove = [
-    "apiDir",
-    "routerType",
-    "schemaDir",
-    "docsUrl",
-    "ui",
-    "outputFile",
-    "includeOpenApiRoutes",
-    "ignoreRoutes",
-    "schemaType",
-    "defaultResponseSet",
-    "responseSets",
-    "errorConfig",
-    "debug",
-    "schemaFiles",
-    "outputDir",
-  ];
   const newSpec = { ...spec };
-
-  propsToRemove.forEach((key) => delete newSpec[key]);
 
   // Process paths to ensure good examples for path parameters
   if (newSpec.paths) {

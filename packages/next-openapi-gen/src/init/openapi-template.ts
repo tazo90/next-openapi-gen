@@ -1,5 +1,6 @@
 export default {
   openapi: "3.0.0",
+  openapiVersion: "3.0",
   info: {
     title: "API Documentation",
     version: "1.0.0",
@@ -86,6 +87,7 @@ export default {
     },
   },
   apiDir: "./src/app/api",
+  routerType: "app",
   schemaDir: "./src",
   schemaType: "zod", // or "typescript" or ["zod", "typescript"]
   schemaFiles: [], // Optional: ["./openapi-models.yaml", "./schemas.json"]
@@ -93,6 +95,16 @@ export default {
   ui: "scalar",
   outputFile: "openapi.json",
   outputDir: "./public",
+  framework: {
+    kind: "next",
+    router: "app",
+  },
+  next: {
+    adapterPath: undefined,
+  },
+  diagnostics: {
+    enabled: true,
+  },
   includeOpenApiRoutes: false,
   ignoreRoutes: [],
   debug: false,

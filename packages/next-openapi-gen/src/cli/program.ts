@@ -2,6 +2,7 @@ import { Command, Option } from "commander";
 
 import { generate } from "./commands/generate.js";
 import { init } from "./commands/init.js";
+import { UI_TYPES_WITH_NONE } from "../init/ui-registry.js";
 
 export function buildProgram() {
   const program = new Command();
@@ -15,7 +16,7 @@ export function buildProgram() {
     .command("init")
     .addOption(
       new Option("-i, --ui <type>", 'Specify the UI type, e.g., scalar. Use "none" for no UI')
-        .choices(["scalar", "swagger", "redoc", "stoplight", "rapidoc", "none"])
+        .choices([...UI_TYPES_WITH_NONE])
         .default("scalar"),
     )
     .option("-u, --docs-url <url>", "Specify the docs URL", "api-docs")

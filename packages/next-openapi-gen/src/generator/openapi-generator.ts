@@ -1,14 +1,18 @@
 import path from "path";
 import fs from "fs";
 
+import { normalizeOpenApiConfig } from "../config/normalize.js";
+import { DiagnosticsCollector } from "../diagnostics/collector.js";
+import { createDocumentFromTemplate } from "../openapi/document.js";
+import { getOpenApiVersionProcessor } from "../openapi/version-processor.js";
 import { RouteProcessor } from "../routes/route-processor.js";
-import { cleanSpec } from "../shared/utils.js";
 import { logger } from "../shared/logger.js";
 import type {
   ErrorDefinition,
   ErrorTemplateConfig,
-  OpenApiConfig,
+  OpenApiDocument,
   OpenApiTemplate,
+  ResolvedOpenApiConfig,
 } from "../shared/types.js";
 
 export type OpenApiGeneratorOptions = {
@@ -16,8 +20,9 @@ export type OpenApiGeneratorOptions = {
 };
 
 export class OpenApiGenerator {
-  private config: OpenApiConfig;
+  private config: ResolvedOpenApiConfig;
   private template: OpenApiTemplate;
+  private diagnostics = new DiagnosticsCollector();
   private routeProcessor: RouteProcessor;
 
   constructor(opts: OpenApiGeneratorOptions = {}) {
@@ -26,103 +31,58 @@ export class OpenApiGenerator {
     this.template = JSON.parse(fs.readFileSync(templatePath, "utf-8"));
     this.config = this.getConfig();
 
-    this.routeProcessor = new RouteProcessor(this.config);
+    this.routeProcessor = new RouteProcessor(this.config, this.diagnostics);
 
     // Initialize logger
     logger.init(this.config);
   }
 
-  public getConfig(): OpenApiConfig {
-    const {
-      apiDir,
-      routerType,
-      schemaDir,
-      docsUrl,
-      ui,
-      outputFile,
-      outputDir,
-      includeOpenApiRoutes,
-      ignoreRoutes,
-      schemaType = "typescript",
-      schemaFiles,
-      defaultResponseSet,
-      responseSets,
-      errorConfig,
-      debug,
-    } = this.template;
-
-    return {
-      apiDir: apiDir || "./src/app/api",
-      routerType: routerType || "app",
-      schemaDir: schemaDir || "./src",
-      docsUrl: docsUrl || "api-docs",
-      ui: ui || "scalar",
-      outputFile: outputFile || "openapi.json",
-      outputDir: outputDir || "./public",
-      includeOpenApiRoutes: includeOpenApiRoutes || false,
-      ignoreRoutes: ignoreRoutes || [],
-      schemaType,
-      schemaFiles: schemaFiles || [],
-      defaultResponseSet,
-      responseSets,
-      errorConfig,
-      debug: debug || false,
-    };
+  public getConfig(): ResolvedOpenApiConfig {
+    return normalizeOpenApiConfig(this.template);
   }
 
-  public generate() {
+  public getDiagnostics() {
+    return this.diagnostics.getAll();
+  }
+
+  public generate(): OpenApiDocument {
     logger.log("Starting OpenAPI generation...");
 
-    const { apiDir } = this.config;
-
-    // Check if app router structure exists
-    let appRouterApiDir = "";
-    if (fs.existsSync(path.join(path.dirname(apiDir), "app", "api"))) {
-      appRouterApiDir = path.join(path.dirname(apiDir), "app", "api");
-      logger.debug(`Found app router API directory at ${appRouterApiDir}`);
-    }
-
-    // Scan pages router routes
-    this.routeProcessor.scanApiRoutes(apiDir);
-
-    // If app router directory exists, scan it as well
-    if (appRouterApiDir) {
-      this.routeProcessor.scanApiRoutes(appRouterApiDir);
-    }
-
-    this.template.paths = this.routeProcessor.getSwaggerPaths();
+    const document = createDocumentFromTemplate(this.template);
+    this.routeProcessor.scanRoutes();
+    document.paths = this.routeProcessor.getSwaggerPaths();
 
     // Add server URL for examples if not already defined
-    if (!this.template.servers || this.template.servers.length === 0) {
-      this.template.servers = [
+    if (!document.servers || document.servers.length === 0) {
+      document.servers = [
         {
-          url: this.template.basePath || "",
+          url: document.basePath || "",
           description: "API server",
         },
       ];
     }
 
     // Ensure there's a components section if not already defined
-    if (!this.template.components) {
-      this.template.components = {};
+    if (!document.components) {
+      document.components = {};
     }
 
     // Add schemas section if not already defined
-    if (!this.template.components.schemas) {
-      this.template.components.schemas = {};
+    if (!document.components.schemas) {
+      document.components.schemas = {};
     }
 
     // Generate error responses using errorConfig or manual definitions
-    if (!this.template.components.responses) {
-      this.template.components.responses = {};
+    if (!document.components.responses) {
+      document.components.responses = {};
     }
 
     const errorConfig = this.config.errorConfig;
     if (errorConfig) {
-      this.generateErrorResponsesFromConfig(errorConfig);
+      this.generateErrorResponsesFromConfig(document, errorConfig);
     } else if (this.config.errorDefinitions) {
       // Use manual definitions (existing logic - if exists)
-      const responses = this.template.components.responses;
+      const responses = document.components.responses;
       Object.entries(this.config.errorDefinitions).forEach(([code, errorDef]) => {
         responses[code] = this.createErrorResponseComponent(code, errorDef);
       });
@@ -131,22 +91,25 @@ export class OpenApiGenerator {
     // Get defined schemas from the processor
     const definedSchemas = this.routeProcessor.getSchemaProcessor().getDefinedSchemas();
     if (definedSchemas && Object.keys(definedSchemas).length > 0) {
-      this.template.components.schemas = {
-        ...this.template.components.schemas,
+      document.components.schemas = {
+        ...document.components.schemas,
         ...definedSchemas,
       };
     }
 
-    const openapiSpec = cleanSpec(this.template);
+    const openapiSpec = getOpenApiVersionProcessor(this.config.openapiVersion).finalize(document);
 
     logger.log("OpenAPI generation completed");
 
     return openapiSpec;
   }
 
-  private generateErrorResponsesFromConfig(errorConfig: ErrorTemplateConfig): void {
+  private generateErrorResponsesFromConfig(
+    document: OpenApiDocument,
+    errorConfig: ErrorTemplateConfig,
+  ): void {
     const { template, codes, variables: globalVars = {} } = errorConfig;
-    const responses = this.template.components?.responses;
+    const responses = document.components?.responses;
     if (!responses) {
       return;
     }

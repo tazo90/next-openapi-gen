@@ -2,7 +2,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
-import type { OpenApiTemplate } from "@next-openapi-gen/types.js";
+import type { OpenApiTemplate } from "@next-openapi-gen/shared/types.js";
 
 export function createTempProject(prefix: string) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), prefix));

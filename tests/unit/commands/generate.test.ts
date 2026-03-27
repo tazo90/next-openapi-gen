@@ -18,7 +18,7 @@ async function loadGenerateModule(spinner: {
     default: vi.fn(() => spinner),
   }));
 
-  return import("@next-openapi-gen/commands/generate.js");
+  return import("@next-openapi-gen/cli/commands/generate.js");
 }
 
 describe("generate command", () => {

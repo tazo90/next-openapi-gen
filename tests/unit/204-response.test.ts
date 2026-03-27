@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { RouteProcessor } from "@next-openapi-gen/routes/route-processor.js";
-import { OpenApiConfig, DataTypes } from "@next-openapi-gen/types.js";
+import { OpenApiConfig, DataTypes } from "@next-openapi-gen/shared/types.js";
 
 describe("RouteProcessor - 204 No Content Responses", () => {
   let routeProcessor: RouteProcessor;
@@ -29,7 +29,7 @@ describe("RouteProcessor - 204 No Content Responses", () => {
       };
 
       // @ts-ignore - accessing private method for testing
-      const responses = routeProcessor.buildResponsesFromConfig(dataTypes, "DELETE");
+      const responses = routeProcessor.processResponsesFromConfig(dataTypes, "DELETE");
 
       expect(responses["204"]).toBeDefined();
       expect(responses["204"].description).toBe("No Content");
@@ -44,7 +44,7 @@ describe("RouteProcessor - 204 No Content Responses", () => {
       };
 
       // @ts-ignore - accessing private method for testing
-      const responses = routeProcessor.buildResponsesFromConfig(dataTypes, "DELETE");
+      const responses = routeProcessor.processResponsesFromConfig(dataTypes, "DELETE");
 
       expect(responses["204"]).toBeDefined();
       expect(responses["204"].description).toBe("User deleted successfully");
@@ -58,7 +58,7 @@ describe("RouteProcessor - 204 No Content Responses", () => {
       };
 
       // @ts-ignore - accessing private method for testing
-      const responses = routeProcessor.buildResponsesFromConfig(dataTypes, "DELETE");
+      const responses = routeProcessor.processResponsesFromConfig(dataTypes, "DELETE");
 
       expect(responses["204"]).toBeDefined();
       expect(responses["204"].content).toBeUndefined();
@@ -73,7 +73,7 @@ describe("RouteProcessor - 204 No Content Responses", () => {
       };
 
       // @ts-ignore - accessing private method for testing
-      const responses = routeProcessor.buildResponsesFromConfig(dataTypes, "GET");
+      const responses = routeProcessor.processResponsesFromConfig(dataTypes, "GET");
 
       expect(responses["200"]).toBeDefined();
       expect(responses["200"].description).toBe("Successful response");
@@ -91,7 +91,7 @@ describe("RouteProcessor - 204 No Content Responses", () => {
       };
 
       // @ts-ignore - accessing private method for testing
-      const responses = routeProcessor.buildResponsesFromConfig(dataTypes, "POST");
+      const responses = routeProcessor.processResponsesFromConfig(dataTypes, "POST");
 
       expect(responses["201"]).toBeDefined();
       expect(responses["201"].description).toBe("Successful response");
@@ -110,7 +110,7 @@ describe("RouteProcessor - 204 No Content Responses", () => {
       };
 
       // @ts-ignore - accessing private method for testing
-      const responses = routeProcessor.buildResponsesFromConfig(dataTypes, "DELETE");
+      const responses = routeProcessor.processResponsesFromConfig(dataTypes, "DELETE");
 
       expect(responses["204"]).toBeDefined();
       expect(responses["204"].content).toBeUndefined();
@@ -120,7 +120,7 @@ describe("RouteProcessor - 204 No Content Responses", () => {
       const dataTypes: DataTypes = {};
 
       // @ts-ignore - accessing private method for testing
-      const responses = routeProcessor.buildResponsesFromConfig(dataTypes, "DELETE");
+      const responses = routeProcessor.processResponsesFromConfig(dataTypes, "DELETE");
 
       // DELETE without explicit @response should still generate 204 No Content
       expect(responses["204"]).toBeDefined();
@@ -138,7 +138,7 @@ describe("RouteProcessor - 204 No Content Responses", () => {
       };
 
       // @ts-ignore - accessing private method for testing
-      const responses = routeProcessor.buildResponsesFromConfig(dataTypes, "POST");
+      const responses = routeProcessor.processResponsesFromConfig(dataTypes, "POST");
 
       expect(responses["204"]).toBeDefined();
       expect(responses["204"].description).toBe("HTTP 204");
@@ -153,7 +153,7 @@ describe("RouteProcessor - 204 No Content Responses", () => {
       };
 
       // @ts-ignore - accessing private method for testing
-      const responses = routeProcessor.buildResponsesFromConfig(dataTypes, "POST");
+      const responses = routeProcessor.processResponsesFromConfig(dataTypes, "POST");
 
       expect(responses["204"]).toBeDefined();
       expect(responses["204"].content).toBeUndefined();
@@ -167,7 +167,7 @@ describe("RouteProcessor - 204 No Content Responses", () => {
       };
 
       // @ts-ignore - accessing private method for testing
-      const responses = routeProcessor.buildResponsesFromConfig(dataTypes, "POST");
+      const responses = routeProcessor.processResponsesFromConfig(dataTypes, "POST");
 
       expect(responses["409"]).toBeDefined();
       expect(responses["409"].content).toBeDefined();
@@ -185,7 +185,7 @@ describe("RouteProcessor - 204 No Content Responses", () => {
       };
 
       // @ts-ignore - accessing private method for testing
-      const responses = routeProcessor.buildResponsesFromConfig(dataTypes, "POST");
+      const responses = routeProcessor.processResponsesFromConfig(dataTypes, "POST");
 
       // 204 should not have content
       expect(responses["204"]).toBeDefined();
@@ -204,7 +204,7 @@ describe("RouteProcessor - 204 No Content Responses", () => {
       };
 
       // @ts-ignore - accessing private method for testing
-      const responses = routeProcessor.buildResponsesFromConfig(dataTypes, "POST");
+      const responses = routeProcessor.processResponsesFromConfig(dataTypes, "POST");
 
       // When using only code (no schema), it creates a $ref to components/responses
       expect(responses["204"]).toBeDefined();
@@ -220,7 +220,7 @@ describe("RouteProcessor - 204 No Content Responses", () => {
       };
 
       // @ts-ignore - accessing private method for testing
-      const responses = routeProcessor.buildResponsesFromConfig(dataTypes, "DELETE");
+      const responses = routeProcessor.processResponsesFromConfig(dataTypes, "DELETE");
 
       expect(responses["204"]).toBeDefined();
       expect(responses["204"].content).toBeUndefined();
@@ -233,7 +233,7 @@ describe("RouteProcessor - 204 No Content Responses", () => {
       };
 
       // @ts-ignore - accessing private method for testing
-      const responses = routeProcessor.buildResponsesFromConfig(dataTypes, "GET");
+      const responses = routeProcessor.processResponsesFromConfig(dataTypes, "GET");
 
       expect(responses["200"]).toBeDefined();
       expect(responses["200"].content).toBeDefined();

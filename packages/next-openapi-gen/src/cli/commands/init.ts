@@ -25,6 +25,7 @@ export async function init(options: InitOptions): Promise<void> {
     spinner.succeed(`Created OpenAPI template in ${outputPath}`);
 
     const docsPagePath = await createDocsPage(
+      template.docsUrl ?? "api-docs",
       ui ?? "scalar",
       template.outputFile ?? "openapi.json",
     );

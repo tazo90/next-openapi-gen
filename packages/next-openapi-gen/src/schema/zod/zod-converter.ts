@@ -10,6 +10,8 @@ const traverse = (traverseModule as any).default || traverseModule;
 import { parseTypeScriptFile } from "../../shared/utils.js";
 import { logger } from "../../shared/logger.js";
 import { DrizzleZodProcessor } from "./drizzle-zod-processor.js";
+import { collectZodRouteFiles, processZodSchemaFilesInDirectory } from "./file-processor.js";
+import { processImports } from "./import-processor.js";
 import type { OpenApiSchema } from "../../shared/types.js";
 
 /**
@@ -110,32 +112,7 @@ export class ZodSchemaConverter {
    * Find all route files in the project
    */
   findRouteFiles(): string[] {
-    const routeFiles: string[] = [];
-
-    // When apiDir is configured, scan only that directory to prevent
-    // leaking schemas from routes outside the configured API boundary.
-    if (this.apiDir) {
-      if (fs.existsSync(this.apiDir)) {
-        this.findRouteFilesInDir(this.apiDir, routeFiles);
-      }
-      return routeFiles;
-    }
-
-    // Look for route files in common Next.js API directories
-    const possibleApiDirs = [
-      path.join(process.cwd(), "src", "app", "api"),
-      path.join(process.cwd(), "src", "pages", "api"),
-      path.join(process.cwd(), "app", "api"),
-      path.join(process.cwd(), "pages", "api"),
-    ];
-
-    for (const dir of possibleApiDirs) {
-      if (fs.existsSync(dir)) {
-        this.findRouteFilesInDir(dir, routeFiles);
-      }
-    }
-
-    return routeFiles;
+    return collectZodRouteFiles(this.apiDir);
   }
 
   /**
@@ -168,22 +145,9 @@ export class ZodSchemaConverter {
    * Recursively scan directory for Zod schemas
    */
   scanDirectoryForZodSchema(dir: string, schemaName: string): void {
-    try {
-      const files = fs.readdirSync(dir);
-
-      for (const file of files) {
-        const filePath = path.join(dir, file);
-        const stats = fs.statSync(filePath);
-
-        if (stats.isDirectory()) {
-          this.scanDirectoryForZodSchema(filePath, schemaName);
-        } else if (file.endsWith(".ts") || file.endsWith(".tsx")) {
-          this.processFileForZodSchema(filePath, schemaName);
-        }
-      }
-    } catch (error) {
-      logger.error(`Error scanning directory ${dir}: ${error}`);
-    }
+    processZodSchemaFilesInDirectory(dir, (filePath) => {
+      this.processFileForZodSchema(filePath, schemaName);
+    });
   }
 
   /**
@@ -215,37 +179,14 @@ export class ZodSchemaConverter {
       // Create a map to store imported modules
       let importedModules: Record<string, string> = {};
 
-      // Check if we have cached imports
       if (this.fileImportsCache.has(filePath)) {
         importedModules = this.fileImportsCache.get(filePath)!;
       } else {
-        // Build imports cache
-        traverse(ast, {
-          ImportDeclaration: (path: NodePath<t.ImportDeclaration>) => {
-            const source = path.node.source.value;
-
-            // Track drizzle-zod imports
-            if (source === "drizzle-zod") {
-              path.node.specifiers.forEach(
-                (specifier: t.ImportDeclaration["specifiers"][number]) => {
-                  if (t.isImportSpecifier(specifier) || t.isImportDefaultSpecifier(specifier)) {
-                    this.drizzleZodImports.add(specifier.local.name);
-                  }
-                },
-              );
-            }
-
-            // Process each import specifier
-            path.node.specifiers.forEach((specifier: t.ImportDeclaration["specifiers"][number]) => {
-              if (t.isImportSpecifier(specifier) || t.isImportDefaultSpecifier(specifier)) {
-                const importedName = specifier.local.name;
-                importedModules[importedName] = source;
-              }
-            });
-          },
+        const resolution = processImports(ast);
+        importedModules = resolution.importedModules;
+        resolution.drizzleZodImports.forEach((importName) => {
+          this.drizzleZodImports.add(importName);
         });
-
-        // Cache imports for this file
         this.fileImportsCache.set(filePath, importedModules);
       }
 
