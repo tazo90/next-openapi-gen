@@ -15,6 +15,8 @@
     "format:check": "pnpm format:check:root && turbo run format:check",
     "format:check:root": "oxfmt --config ./.oxfmtrc.json --ignore-path .gitignore --check tests .vscode package.json pnpm-workspace.yaml turbo.json vitest.config.ts vitest.bench.config.ts playwright.config.ts commitlint.config.ts README.md CONTRIBUTING.md CHANGELOG.md .oxlintrc.json .oxfmtrc.json",
     "format:root": "oxfmt --config ./.oxfmtrc.json --ignore-path .gitignore tests .vscode package.json pnpm-workspace.yaml turbo.json vitest.config.ts vitest.bench.config.ts playwright.config.ts commitlint.config.ts README.md CONTRIBUTING.md CHANGELOG.md .oxlintrc.json .oxfmtrc.json",
+    "knip": "knip -c knip.mts",
+    "knip:ci": "knip -c knip.mts --reporter compact",
     "lint": "pnpm lint:root && turbo run lint",
     "lint:root": "oxlint --config ./.oxlintrc.json tests vitest.config.ts vitest.bench.config.ts playwright.config.ts commitlint.config.ts --ignore-path .gitignore --deny-warnings",
     "lint:staged": "lint-staged",
@@ -39,6 +41,7 @@
     "test:e2e:next-pages-router": "E2E_APP=next-pages-router pnpm test:e2e:app",
     "test:e2e:next-app-mixed-schemas": "E2E_APP=next-app-mixed-schemas pnpm test:e2e:app",
     "release": "pnpm --filter next-openapi-gen release",
+    "verify": "pnpm check && pnpm knip:ci && pnpm test:unit && pnpm test:integration && pnpm build",
     "version": "pnpm --filter next-openapi-gen version"
   },
   "devDependencies": {
@@ -51,8 +54,7 @@
     "@seriousme/openapi-schema-validator": "catalog:",
     "@vitest/coverage-v8": "catalog:",
     "@vitest/ui": "catalog:",
-    "babel-plugin-react-compiler": "catalog:",
-    "fs-extra": "catalog:",
+    "knip": "catalog:",
     "lint-staged": "catalog:",
     "oxfmt": "catalog:",
     "oxlint": "catalog:",

@@ -23,21 +23,21 @@ export type TempProject = {
   cleanup(): void;
 };
 
-export type FixtureOpenApiVersion = "3.0" | "3.1" | "3.2";
+type FixtureOpenApiVersion = "3.0" | "3.1" | "3.2";
 
-export type GenerateFixtureSpecOptions = {
+type GenerateFixtureSpecOptions = {
   fixturePath: string;
   openapiVersion?: FixtureOpenApiVersion;
   templateOverrides?: Partial<OpenApiTemplate>;
 };
 
-export type GenerateProjectSpecOptions = {
+type GenerateProjectSpecOptions = {
   projectPath: string;
   templateOverrides?: Partial<OpenApiTemplate>;
   templatePath?: string;
 };
 
-export type GeneratedFixtureSpec = {
+type GeneratedFixtureSpec = {
   diagnostics: Diagnostic[];
   performanceProfile: GeneratorPerformanceProfile | null;
   project: TempProject;

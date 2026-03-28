@@ -6,7 +6,7 @@ import { PagesRouterStrategy } from "../../routes/pages-router-strategy.js";
 import type { ResolvedOpenApiConfig } from "../../shared/types.js";
 import type { FrameworkAdapter } from "../types.js";
 
-export class NextFrameworkAdapter implements FrameworkAdapter {
+class NextFrameworkAdapter implements FrameworkAdapter {
   private readonly strategy;
 
   constructor(public readonly config: ResolvedOpenApiConfig) {

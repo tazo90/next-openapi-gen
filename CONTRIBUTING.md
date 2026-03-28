@@ -146,11 +146,17 @@ Before submitting a PR:
 # Run the repo-wide format + lint checks
 pnpm check
 
+# Run dead-code and unused-dependency checks
+pnpm knip
+
 # Run tests
 pnpm test
 
 # Build the project
 pnpm build
+
+# Run the main local verification flow
+pnpm verify
 ```
 
 If you want to preview what the pre-commit hook will do before committing, run:
@@ -271,6 +277,18 @@ pnpm test:coverage
 # Run the Playwright suite against next-app-zod
 pnpm test:e2e
 ```
+
+### Knip
+
+```bash
+# Full local report
+pnpm knip
+
+# Compact CI-style report
+pnpm knip:ci
+```
+
+Use Knip findings to remove real unused files, exports, and dependencies first. Only add a targeted exception in `knip.mts` when a file is intentionally discovered indirectly, such as published UI templates, test fixtures, or example-app schema inputs scanned by the generator.
 
 ### Local Testing
 

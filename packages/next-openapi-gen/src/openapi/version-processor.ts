@@ -13,7 +13,7 @@ import type {
   RouteDefinition,
 } from "../shared/types.js";
 
-export interface OpenApiVersionProcessor {
+interface OpenApiVersionProcessor {
   readonly id: OpenApiVersion;
   readonly version: string;
   finalize(document: OpenApiDocument): OpenApiDocument;

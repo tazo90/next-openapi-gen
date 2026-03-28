@@ -53,6 +53,9 @@ jobs:
       - name: Run lint
         run: pnpm lint
 
+      - name: Run Knip
+        run: pnpm knip:ci
+
   build:
     name: Build
     runs-on: ubuntu-latest

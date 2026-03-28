@@ -4,7 +4,7 @@
  */
 
 // Base product data
-export interface Product {
+interface Product {
   id: string;
   name: string;
   price: number;

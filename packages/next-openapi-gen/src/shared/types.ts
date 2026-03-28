@@ -4,7 +4,6 @@ export type ResponseSets = Record<string, ResponseSetDefinition>;
 export type SchemaType = "typescript" | "zod";
 export type RouterType = "app" | "pages";
 export type OpenApiVersion = "3.0" | "3.1" | "3.2" | "4.0";
-export type FrameworkKind = "next" | "tanstack";
 export type DiagnosticSeverity = "info" | "warning" | "error";
 export type JsonPrimitive = string | number | boolean | null;
 export type JsonValue = JsonPrimitive | JsonValue[] | { [key: string]: JsonValue | undefined };
@@ -177,24 +176,6 @@ export type RouteDefinition = {
   [key: string]: unknown;
 };
 
-export type Property = {
-  in?: "query" | "path";
-  name?: string;
-  type?: string;
-  description?: string;
-  required?: boolean;
-  nullable?: boolean;
-  enum?: Array<string | number | boolean | null>;
-  example?: JsonValue;
-  schema?: OpenApiSchemaLike;
-  content?: Record<string, OpenApiMediaTypeDefinition>;
-  [key: string]: unknown;
-};
-
-export type Params = {
-  properties: Record<string, Property>;
-};
-
 export type OpenApiSchema = {
   type?: string | string[] | undefined;
   properties?: Record<string, OpenApiSchema> | undefined;
@@ -247,13 +228,6 @@ export type PropertyOptions = {
   description?: string;
   required?: boolean;
   nullable?: boolean;
-};
-
-export type SchemaContent = {
-  paramsType?: string;
-  pathParamsType?: string;
-  bodyType?: string;
-  responseType?: string;
 };
 
 export type ParamSchema = {
@@ -359,15 +333,6 @@ export type DataTypes = {
   diagnostics?: Diagnostic[] | undefined;
 };
 
-export type RouteConfig = {
-  schemaDir: string | string[];
-  schemaType: string;
-  includeOpenApiRoutes?: boolean;
-  ignoreRoutes?: string[];
-};
-
-export type PathDefinition = RouteDefinition;
-
 export interface ErrorTemplateConfig {
   template: JsonValue;
   codes: Record<string, ErrorCodeConfig>;
@@ -378,11 +343,6 @@ export interface ErrorCodeConfig {
   description: string;
   httpStatus?: number;
   variables?: Record<string, string>; // Per-code variables
-}
-
-export interface ErrorConfig {
-  globalTemplate?: JsonValue;
-  variables?: Record<string, string>;
 }
 
 export interface ErrorDefinition {

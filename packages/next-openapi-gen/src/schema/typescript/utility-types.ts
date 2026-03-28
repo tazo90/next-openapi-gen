@@ -10,7 +10,7 @@ type TypeDefinitionEntry = {
   filePath?: string;
 };
 
-export type UtilityTypeResolverContext = {
+type UtilityTypeResolverContext = {
   currentFilePath: string;
   contentType: ContentType;
   importMap: Record<string, Record<string, string>>;

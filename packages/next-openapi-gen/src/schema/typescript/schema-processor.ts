@@ -50,7 +50,7 @@ import type {
 } from "../../shared/types.js";
 import { logger } from "../../shared/logger.js";
 
-export type SchemaProcessorFileAccess = Pick<
+type SchemaProcessorFileAccess = Pick<
   typeof fs,
   "existsSync" | "readdirSync" | "statSync" | "readFileSync"
 >;

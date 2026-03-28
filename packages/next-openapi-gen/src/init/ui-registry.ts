@@ -12,8 +12,8 @@ const REDOC_DEPS = ["redoc"];
 const STOPLIGHT_DEPS = ["@stoplight/elements"];
 const RAPIDOC_DEPS = ["rapidoc"];
 
-export type RegisteredUiType = (typeof UI_TYPES)[number];
-export type UiRegistryEntry = {
+type RegisteredUiType = (typeof UI_TYPES)[number];
+type UiRegistryEntry = {
   deps: string[];
   devDeps: string[];
   templateFile: string;

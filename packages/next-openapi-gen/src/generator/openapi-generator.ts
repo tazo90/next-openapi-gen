@@ -21,7 +21,7 @@ import type {
   ResolvedOpenApiConfig,
 } from "../shared/types.js";
 
-export type OpenApiGeneratorOptions = {
+type OpenApiGeneratorOptions = {
   templatePath?: string;
 };
 

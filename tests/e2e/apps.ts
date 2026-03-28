@@ -20,9 +20,9 @@ export type E2EAppConfig = {
   title: string;
 };
 
-export const DEFAULT_E2E_APP_NAME: E2EAppName = "next-app-zod";
+const DEFAULT_E2E_APP_NAME: E2EAppName = "next-app-zod";
 
-export const E2E_APPS: readonly E2EAppConfig[] = [
+const E2E_APPS: readonly E2EAppConfig[] = [
   {
     name: "next-app-zod",
     appDir: "apps/next-app-zod",

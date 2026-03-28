@@ -38,7 +38,7 @@ import {
 } from "./prescan.js";
 import type { OpenApiSchema } from "../../shared/types.js";
 
-export type ZodConverterFileAccess = Pick<
+type ZodConverterFileAccess = Pick<
   typeof fs,
   "existsSync" | "readdirSync" | "statSync" | "readFileSync"
 >;

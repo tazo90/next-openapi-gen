@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "generate": "node ../../packages/next-openapi-gen/dist/index.js generate",
+    "generate": "pnpm exec next-openapi-gen generate",
     "start": "next start",
     "lint": "oxlint --config ../../packages/oxlint-config/base.json . --ignore-path ../../.gitignore --deny-warnings",
     "format": "oxfmt --config ../../packages/oxfmt-config/oxfmt.json --ignore-path ../../.gitignore .",
@@ -16,7 +16,6 @@
     "next": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
-    "swagger-ui": "^5.32.1",
     "swagger-ui-react": "catalog:"
   },
   "devDependencies": {
