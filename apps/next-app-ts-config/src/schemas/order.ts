@@ -12,3 +12,9 @@ export interface OrderRecord {
   totalCents: number;
   status: "paid" | "refunded";
 }
+
+export type OrderReceiptIdParams = {
+  id: string;
+};
+
+export type OrderReceiptBody = string;

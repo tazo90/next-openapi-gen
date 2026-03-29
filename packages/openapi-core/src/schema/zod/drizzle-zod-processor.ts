@@ -1,6 +1,24 @@
 import * as t from "@babel/types";
 import { logger } from "../../shared/logger.js";
+import { resolveTypeScriptModule } from "../../shared/typescript-project.js";
 import type { OpenApiSchema } from "../../shared/types.js";
+
+type DrizzleZodProcessingContext = {
+  currentAST?: t.File | undefined;
+  currentFilePath?: string | undefined;
+  importedModules?: Record<string, string> | undefined;
+  parseFileWithCache?: ((filePath: string) => t.File | null) | undefined;
+  resolveImportPath?:
+    | ((currentFilePath: string, importSource: string) => string | null)
+    | undefined;
+};
+
+type DrizzleColumnMetadata = {
+  hasDefault: boolean;
+  isGenerated: boolean;
+  isNotNull: boolean;
+  schema: OpenApiSchema;
+};
 
 /**
  * Processor for drizzle-zod schemas
@@ -28,23 +46,22 @@ export class DrizzleZodProcessor {
    * @param node - The CallExpression node representing a drizzle-zod function call
    * @returns OpenAPI schema object
    */
-  static processSchema(node: t.CallExpression): OpenApiSchema {
+  static processSchema(
+    node: t.CallExpression,
+    context: DrizzleZodProcessingContext = {},
+  ): OpenApiSchema {
     const functionName = t.isIdentifier(node.callee) ? node.callee.name : "unknown";
 
     logger.debug(`Processing drizzle-zod schema: ${functionName}`);
 
-    const schema: OpenApiSchema = {
-      type: "object",
-      properties: {},
-      required: [],
-    };
+    const schema = this.createBaseSchema(functionName, node.arguments[0], context);
+    const properties = schema.properties;
+    const required = new Set(schema.required ?? []);
 
     // Check if there's a refinements object (second argument)
     if (node.arguments.length > 1 && t.isObjectExpression(node.arguments[1])) {
       const refinements = node.arguments[1];
-      const properties = schema.properties;
-      const required = schema.required;
-      if (!properties || !required) {
+      if (!properties) {
         return { type: "object" };
       }
 
@@ -62,11 +79,18 @@ export class DrizzleZodProcessor {
             const fieldSchema = this.extractFieldSchema(arrowFunc.body, key, parameterName);
 
             if (fieldSchema) {
-              properties[key] = fieldSchema;
+              properties[key] = {
+                ...properties[key],
+                ...fieldSchema,
+              };
 
               // Determine if field is required based on schema modifiers
-              if (!this.isFieldOptional(arrowFunc.body)) {
-                required.push(key);
+              if (functionName === "createSelectSchema") {
+                required.add(key);
+              } else if (this.isFieldOptional(arrowFunc.body)) {
+                required.delete(key);
+              } else {
+                required.add(key);
               }
             }
           }
@@ -78,6 +102,250 @@ export class DrizzleZodProcessor {
     if (!schema.properties || Object.keys(schema.properties).length === 0) {
       logger.debug("No properties extracted from drizzle-zod schema, returning generic object");
       return { type: "object" };
+    }
+
+    return required.size > 0 ? { ...schema, required: [...required] } : { ...schema, required: [] };
+  }
+
+  private static createBaseSchema(
+    functionName: string,
+    tableArgument: t.CallExpression["arguments"][number] | undefined,
+    context: DrizzleZodProcessingContext,
+  ): OpenApiSchema {
+    if (functionName !== "createSelectSchema") {
+      return {
+        type: "object",
+        properties: {},
+        required: [],
+      };
+    }
+
+    const tableCall = tableArgument ? this.resolveTableCall(tableArgument, context) : null;
+    const schema = tableCall ? this.extractSelectSchemaFromTable(tableCall) : null;
+    if (schema) {
+      return schema;
+    }
+
+    return {
+      type: "object",
+      properties: {},
+      required: [],
+    };
+  }
+
+  private static resolveTableCall(
+    node: t.ArgumentPlaceholder | t.SpreadElement | t.Expression,
+    context: DrizzleZodProcessingContext,
+  ): t.CallExpression | null {
+    if (t.isCallExpression(node) && this.isPgTableCall(node)) {
+      return node;
+    }
+
+    if (!t.isIdentifier(node)) {
+      return null;
+    }
+
+    const localDeclaration = this.findVariableInitializer(context.currentAST, node.name);
+    if (t.isCallExpression(localDeclaration) && this.isPgTableCall(localDeclaration)) {
+      return localDeclaration;
+    }
+
+    const importSource = context.importedModules?.[node.name];
+    if (!importSource || !context.currentFilePath) {
+      return null;
+    }
+
+    const resolvedPath =
+      context.resolveImportPath?.(context.currentFilePath, importSource) ||
+      resolveTypeScriptModule(importSource, context.currentFilePath);
+    if (!resolvedPath) {
+      return null;
+    }
+
+    const importedAst = context.parseFileWithCache?.(resolvedPath);
+    const importedDeclaration = this.findVariableInitializer(importedAst ?? undefined, node.name);
+    return t.isCallExpression(importedDeclaration) && this.isPgTableCall(importedDeclaration)
+      ? importedDeclaration
+      : null;
+  }
+
+  private static findVariableInitializer(
+    ast: t.File | undefined,
+    name: string,
+  ): t.Expression | null {
+    if (!ast) {
+      return null;
+    }
+
+    for (const statement of ast.program.body) {
+      const declaration =
+        t.isExportNamedDeclaration(statement) && statement.declaration
+          ? statement.declaration
+          : statement;
+
+      if (!t.isVariableDeclaration(declaration)) {
+        continue;
+      }
+
+      for (const declarator of declaration.declarations) {
+        if (
+          t.isIdentifier(declarator.id, { name }) &&
+          declarator.init &&
+          t.isExpression(declarator.init)
+        ) {
+          return declarator.init;
+        }
+      }
+    }
+
+    return null;
+  }
+
+  private static isPgTableCall(node: t.CallExpression): boolean {
+    return t.isIdentifier(node.callee, { name: "pgTable" });
+  }
+
+  private static extractSelectSchemaFromTable(node: t.CallExpression): OpenApiSchema | null {
+    const columnsArgument = node.arguments[1];
+    if (!t.isObjectExpression(columnsArgument)) {
+      return null;
+    }
+
+    const properties: Record<string, OpenApiSchema> = {};
+    const required: string[] = [];
+
+    columnsArgument.properties.forEach((property) => {
+      if (!t.isObjectProperty(property)) {
+        return;
+      }
+
+      const key = this.extractPropertyKey(property);
+      if (!key || !t.isExpression(property.value)) {
+        return;
+      }
+
+      const column = this.extractColumnMetadata(property.value);
+      if (!column) {
+        return;
+      }
+
+      properties[key] = {
+        ...column.schema,
+        ...(column.isNotNull ? {} : { nullable: true }),
+      };
+      required.push(key);
+    });
+
+    return {
+      type: "object",
+      properties,
+      required,
+    };
+  }
+
+  private static extractColumnMetadata(node: t.Expression): DrizzleColumnMetadata | null {
+    if (t.isCallExpression(node) && t.isMemberExpression(node.callee)) {
+      const baseMetadata = this.extractColumnMetadata(node.callee.object as t.Expression);
+      if (!baseMetadata) {
+        return null;
+      }
+
+      const methodName = t.isIdentifier(node.callee.property) ? node.callee.property.name : null;
+      if (!methodName) {
+        return baseMetadata;
+      }
+
+      switch (methodName) {
+        case "notNull":
+          return { ...baseMetadata, isNotNull: true };
+        case "default":
+        case "defaultNow":
+          return { ...baseMetadata, hasDefault: true };
+        case "primaryKey":
+          return { ...baseMetadata, isNotNull: true };
+        default:
+          return baseMetadata;
+      }
+    }
+
+    if (!t.isCallExpression(node) || !t.isIdentifier(node.callee)) {
+      return null;
+    }
+
+    const factoryName = node.callee.name;
+    const schema = this.mapDrizzleColumnFactoryToOpenApi(factoryName, node.arguments);
+    if (!schema) {
+      return null;
+    }
+
+    return {
+      schema,
+      hasDefault: factoryName === "serial",
+      isGenerated: factoryName === "serial",
+      isNotNull: factoryName === "serial",
+    };
+  }
+
+  private static mapDrizzleColumnFactoryToOpenApi(
+    factoryName: string,
+    args: (t.ArgumentPlaceholder | t.SpreadElement | t.Expression)[],
+  ): OpenApiSchema | null {
+    switch (factoryName) {
+      case "serial":
+      case "integer":
+      case "smallint":
+      case "bigint":
+        return { type: "integer" };
+      case "numeric":
+      case "real":
+      case "doublePrecision":
+      case "decimal":
+        return { type: "number" };
+      case "boolean":
+        return { type: "boolean" };
+      case "timestamp":
+      case "datetime":
+        return { type: "string", format: "date-time" };
+      case "date":
+        return { type: "string", format: "date" };
+      case "text":
+        return { type: "string" };
+      case "varchar":
+      case "char":
+      case "textEnum":
+      case "pgEnum":
+      case "uuid":
+        return this.buildStringColumnSchema(factoryName, args);
+      default:
+        return null;
+    }
+  }
+
+  private static buildStringColumnSchema(
+    factoryName: string,
+    args: (t.ArgumentPlaceholder | t.SpreadElement | t.Expression)[],
+  ): OpenApiSchema {
+    const schema: OpenApiSchema = { type: "string" };
+
+    if (factoryName === "uuid") {
+      schema.format = "uuid";
+      return schema;
+    }
+
+    const options = args[1];
+    if (t.isObjectExpression(options)) {
+      const lengthProperty = options.properties.find(
+        (property) =>
+          t.isObjectProperty(property) && t.isIdentifier(property.key, { name: "length" }),
+      );
+
+      if (
+        lengthProperty &&
+        t.isObjectProperty(lengthProperty) &&
+        t.isNumericLiteral(lengthProperty.value)
+      ) {
+        schema.maxLength = lengthProperty.value.value;
+      }
     }
 
     return schema;

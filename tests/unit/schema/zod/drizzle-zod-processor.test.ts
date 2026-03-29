@@ -12,7 +12,9 @@ function processFirstDrizzleCall(code: string, calleeName: string) {
   traverse(ast, {
     CallExpression: (path) => {
       if (t.isIdentifier(path.node.callee) && path.node.callee.name === calleeName) {
-        processedSchema = DrizzleZodProcessor.processSchema(path.node);
+        processedSchema = DrizzleZodProcessor.processSchema(path.node, {
+          currentAST: ast,
+        });
       }
     },
   });
@@ -87,6 +89,65 @@ describe("DrizzleZodProcessor", () => {
         "createInsertSchema",
       ),
     ).toEqual({ type: "object" });
+  });
+
+  it("merges base drizzle table columns for select schemas", () => {
+    const processedSchema = processFirstDrizzleCall(
+      `
+        import { createSelectSchema } from "drizzle-zod";
+        import { pgTable, serial, varchar, text, integer, boolean, timestamp } from "drizzle-orm/pg-core";
+
+        const posts = pgTable("posts", {
+          id: serial("id").primaryKey(),
+          title: varchar("title", { length: 255 }).notNull(),
+          excerpt: varchar("excerpt", { length: 500 }),
+          content: text("content").notNull(),
+          authorId: integer("author_id").notNull(),
+          published: boolean("published").default(false).notNull(),
+          createdAt: timestamp("created_at").defaultNow().notNull(),
+        });
+
+        const schema = createSelectSchema(posts, {
+          title: (schema) => schema.describe("Post title"),
+          excerpt: (schema) => schema.describe("Post excerpt"),
+        });
+      `,
+      "createSelectSchema",
+    );
+
+    expect(processedSchema).toMatchObject({
+      type: "object",
+      properties: {
+        id: {
+          type: "integer",
+        },
+        title: {
+          type: "string",
+          maxLength: 255,
+          description: "Post title",
+        },
+        excerpt: {
+          type: "string",
+          maxLength: 500,
+          nullable: true,
+          description: "Post excerpt",
+        },
+        content: {
+          type: "string",
+        },
+        authorId: {
+          type: "integer",
+        },
+        published: {
+          type: "boolean",
+        },
+        createdAt: {
+          type: "string",
+          format: "date-time",
+        },
+      },
+      required: ["id", "title", "excerpt", "content", "authorId", "published", "createdAt"],
+    });
   });
 
   it("covers helper branches for keys, optionality, field mapping, and method application", () => {

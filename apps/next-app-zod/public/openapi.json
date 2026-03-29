@@ -20,6 +20,197 @@
       }
     },
     "schemas": {
+      "LegacyEventCsv": {
+        "type": "string",
+        "description": "Legacy CSV export payload"
+      },
+      "EventStreamQuery": {
+        "type": "object",
+        "properties": {
+          "cursor": {
+            "type": "string",
+            "description": "Opaque cursor for the next event window"
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100,
+            "description": "Maximum events to stream"
+          },
+          "product": {
+            "type": "string",
+            "enum": [
+              "catalog",
+              "billing",
+              "identity"
+            ],
+            "description": "Product event source"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "paused"
+            ],
+            "description": "Filter by stream status"
+          }
+        }
+      },
+      "EventChunk": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Event identifier"
+          },
+          "product": {
+            "type": "string",
+            "enum": [
+              "catalog",
+              "billing",
+              "identity"
+            ],
+            "description": "Product source"
+          },
+          "sequence": {
+            "type": "integer",
+            "description": "Monotonic event sequence number"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "paused"
+            ],
+            "description": "Current stream state"
+          },
+          "emittedAt": {
+            "type": "string",
+            "description": "Emission timestamp"
+          },
+          "payload": {
+            "type": "object",
+            "properties": {
+              "actorId": {
+                "type": "string",
+                "description": "Actor or user that caused the event"
+              },
+              "summary": {
+                "type": "string",
+                "description": "Short event summary"
+              }
+            },
+            "required": [
+              "actorId",
+              "summary"
+            ],
+            "description": "Structured event payload"
+          }
+        },
+        "required": [
+          "id",
+          "product",
+          "sequence",
+          "status",
+          "emittedAt",
+          "payload"
+        ]
+      },
+      "EventSearchRequest": {
+        "type": "object",
+        "properties": {
+          "product": {
+            "type": "string",
+            "enum": [
+              "catalog",
+              "billing",
+              "identity"
+            ],
+            "description": "Product event source"
+          },
+          "includeArchived": {
+            "type": "boolean",
+            "default": false,
+            "description": "Include archived events in search results"
+          },
+          "statuses": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "active",
+                "paused"
+              ]
+            },
+            "minItems": 1,
+            "description": "Statuses that should be returned"
+          },
+          "query": {
+            "type": "string",
+            "minLength": 2,
+            "description": "Free-text search term"
+          }
+        },
+        "required": [
+          "includeArchived",
+          "query"
+        ]
+      },
+      "EventSearchResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EventChunk"
+            },
+            "description": "Matching events"
+          },
+          "nextCursor": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Cursor for the next page of results"
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Total matching events"
+          }
+        },
+        "required": [
+          "data",
+          "nextCursor",
+          "total"
+        ]
+      },
+      "EventExportJob": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Background export job identifier"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "queued",
+              "running"
+            ],
+            "description": "Export job status"
+          },
+          "submittedAt": {
+            "type": "string",
+            "description": "Submission timestamp"
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "submittedAt"
+        ]
+      },
       "NestedSchema": {
         "type": "object",
         "properties": {
@@ -1678,6 +1869,191 @@
     }
   },
   "paths": {
+    "/events": {
+      "get": {
+        "operationId": "zodStreamPlatformEvents",
+        "summary": "Stream platform events",
+        "description": "Streams event records with first-class OpenAPI 3.2 querystring and sequential media metadata.",
+        "tags": [
+          "Events"
+        ],
+        "parameters": [
+          {
+            "in": "querystring",
+            "name": "advancedQuery",
+            "required": false,
+            "content": {
+              "application/x-www-form-urlencoded": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventStreamQuery"
+                },
+                "examples": {
+                  "catalog-feed": {
+                    "value": {
+                      "limit": 10,
+                      "product": "catalog",
+                      "status": "active"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "text/event-stream": {
+                "itemSchema": {
+                  "$ref": "#/components/schemas/EventChunk"
+                },
+                "itemEncoding": {
+                  "headers": {
+                    "content-type": "application/json"
+                  }
+                },
+                "prefixEncoding": [
+                  {
+                    "type": "text",
+                    "text": "event: message\ndata: "
+                  },
+                  {
+                    "type": "text",
+                    "text": "\n\n"
+                  }
+                ],
+                "examples": {
+                  "structured": {
+                    "dataValue": {
+                      "emittedAt": "2026-03-29T12:00:00.000Z",
+                      "id": "evt_001",
+                      "payload": {
+                        "actorId": "user_123",
+                        "summary": "Catalog publish completed"
+                      },
+                      "product": "catalog",
+                      "sequence": 17,
+                      "status": "active"
+                    }
+                  },
+                  "wire": {
+                    "serializedValue": "event: message\ndata: {\"id\":\"evt_001\",\"product\":\"catalog\",\"sequence\":17,\"status\":\"active\",\"emittedAt\":\"2026-03-29T12:00:00.000Z\",\"payload\":{\"actorId\":\"user_123\",\"summary\":\"Catalog publish completed\"}}\n\n"
+                  },
+                  "external": {
+                    "externalValue": "https://example.com/openapi/events/catalog-stream.txt"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      },
+      "post": {
+        "operationId": "zodSearchPlatformEvents",
+        "summary": "Search platform events",
+        "description": "Searches the retained event log and can schedule an async export job for larger result sets.",
+        "tags": [
+          "Events"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EventSearchRequest"
+              },
+              "examples": {
+                "identity-search": {
+                  "value": {
+                    "includeArchived": false,
+                    "product": "identity",
+                    "query": "session refresh",
+                    "statuses": [
+                      "active"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventSearchResponse"
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "Async export job accepted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventExportJob"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    },
+    "/events/legacy": {
+      "get": {
+        "operationId": "zodDownloadLegacyEvents",
+        "summary": "Download legacy event export",
+        "description": "Deprecated CSV export kept to demonstrate migration guidance and versioned tags.",
+        "tags": [
+          "Events v1"
+        ],
+        "parameters": [],
+        "deprecated": true,
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "$ref": "#/components/schemas/LegacyEventCsv"
+                },
+                "examples": {
+                  "csv-preview": {
+                    "serializedValue": "id,product,status,sequence,emittedAt\nevt_001,catalog,active,17,2026-03-29T12:00:00.000Z\n"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    },
     "/extended": {
       "get": {
         "operationId": "get-extended",
@@ -1725,7 +2101,7 @@
           "description": "Extended schema with base and additional properties"
         },
         "responses": {
-          "201": {
+          "200": {
             "description": "Returns the created extended schema",
             "content": {
               "application/json": {
@@ -1998,7 +2374,7 @@
           }
         },
         "responses": {
-          "201": {
+          "200": {
             "description": "Successful response",
             "content": {
               "application/json": {
@@ -2144,8 +2520,15 @@
           }
         ],
         "responses": {
-          "204": {
-            "description": "No Content"
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
           },
           "400": {
             "$ref": "#/components/responses/400"
@@ -2352,9 +2735,6 @@
           }
         ],
         "responses": {
-          "204": {
-            "description": "No Content"
-          },
           "400": {
             "$ref": "#/components/responses/400"
           },
@@ -2384,7 +2764,7 @@
           "description": "Multipart form data containing image file (PNG/JPG, max 5MB), optional description and category"
         },
         "responses": {
-          "201": {
+          "200": {
             "description": "Returns upload confirmation with file metadata and access URL",
             "content": {
               "application/json": {
@@ -2589,8 +2969,15 @@
           }
         ],
         "responses": {
-          "204": {
-            "description": "No Content"
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
           },
           "400": {
             "$ref": "#/components/responses/400"
@@ -2678,6 +3065,18 @@
     }
   },
   "tags": [
+    {
+      "name": "Events v1",
+      "summary": "Legacy exports",
+      "kind": "maintenance",
+      "parent": "Platform"
+    },
+    {
+      "name": "Events",
+      "summary": "Event navigation",
+      "kind": "nav",
+      "parent": "Platform"
+    },
     {
       "name": "Extended"
     },

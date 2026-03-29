@@ -2,6 +2,7 @@ import { DiagnosticsCollector } from "../diagnostics/collector.js";
 import { createDocumentFromTemplate } from "../openapi/document.js";
 import { getOpenApiVersionProcessor } from "../openapi/version-processor.js";
 import { loadCustomOpenApiFragments } from "../schema/core/custom-schema-file-processor.js";
+import { FrameworkKind } from "../shared/types.js";
 import type {
   OpenApiDocument,
   OpenApiTagDefinition,
@@ -114,7 +115,7 @@ export function runGenerationOrchestrator({
   if (!document.servers || document.servers.length === 0) {
     document.servers = [
       {
-        url: document.basePath || "",
+        url: document.basePath || getDefaultServerUrl(config),
         description: "API server",
       },
     ];
@@ -169,6 +170,26 @@ export function runGenerationOrchestrator({
     diagnostics: diagnostics.getAll(),
     performanceProfile: profile,
   };
+}
+
+function getDefaultServerUrl(config: ResolvedOpenApiConfig): string {
+  if (config.framework.kind !== FrameworkKind.Nextjs) {
+    return "";
+  }
+
+  const normalizedApiDir = config.apiDir
+    .replaceAll("\\", "/")
+    .replace(/^\.\//, "")
+    .replace(/\/$/, "");
+  const routeRootSegment = config.framework.router === "pages" ? "/pages/" : "/app/";
+  const routeRootIndex = normalizedApiDir.lastIndexOf(routeRootSegment);
+
+  if (routeRootIndex === -1) {
+    return "";
+  }
+
+  const routeBasePath = normalizedApiDir.slice(routeRootIndex + routeRootSegment.length);
+  return routeBasePath ? `/${routeBasePath}` : "";
 }
 
 function mergeDocumentFragment(document: OpenApiDocument, fragment: Partial<OpenApiDocument>) {

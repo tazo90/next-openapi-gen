@@ -609,6 +609,10 @@ describe("ZodSchemaConverter helper seams", () => {
       type: "string",
       pattern: "b",
     });
+    expect(converter.processZodChain(getFirstInitializer("z.string().endsWith('z')"))).toEqual({
+      type: "string",
+      pattern: "z$",
+    });
     expect(
       converter.processZodChain(
         getFirstInitializer("z.object({ enabled: z.boolean() }).default({ enabled: true })"),

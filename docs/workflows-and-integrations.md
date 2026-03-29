@@ -176,6 +176,9 @@ Choose an example app based on your use case:
 - [../apps/next-pages-router](../apps/next-pages-router) for legacy router
   support
 
+For the longer-term plan that expands what each example app demonstrates, see
+[example-app-coverage-plan](./example-app-coverage-plan.md).
+
 ## Related guides
 
 - [Getting started and configuration](./getting-started.md)

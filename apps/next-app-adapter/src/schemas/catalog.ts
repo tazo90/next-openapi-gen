@@ -12,3 +12,9 @@ export interface CatalogItem {
   name: string;
   status: "active" | "archived";
 }
+
+export type CatalogExportIdParams = {
+  id: string;
+};
+
+export type CatalogExportBody = string;

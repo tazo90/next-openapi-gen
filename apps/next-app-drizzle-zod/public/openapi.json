@@ -12,6 +12,256 @@
     }
   ],
   "paths": {
+    "/authors": {
+      "get": {
+        "operationId": "get-authors",
+        "summary": "List authors",
+        "description": "Lists authors with filtering and sorting to broaden the drizzle-zod example beyond a single resource.",
+        "tags": [
+          "Authors"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d+$",
+              "description": "Page number"
+            },
+            "description": "Page number"
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d+$",
+              "description": "Items per page"
+            },
+            "description": "Items per page"
+          },
+          {
+            "in": "query",
+            "name": "search",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "Case-insensitive author search"
+            },
+            "description": "Case-insensitive author search"
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "name",
+                "recent"
+              ],
+              "description": "Sort mode"
+            },
+            "description": "Sort mode"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AuthorResponseSchema"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      },
+      "post": {
+        "operationId": "post-authors",
+        "summary": "Create author",
+        "description": "Creates a new author using drizzle-zod insert schema generation.",
+        "tags": [
+          "Authors"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateAuthorSchema"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorResponseSchema"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      },
+      "patch": {
+        "operationId": "batchUpdateAuthorVisibility",
+        "summary": "Batch update author visibility",
+        "description": "Demonstrates batch request bodies and non-CRUD mutations in the drizzle-zod example.",
+        "tags": [
+          "Authors"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AuthorBatchStatusUpdateSchema"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    },
+    "/authors/{id}": {
+      "get": {
+        "operationId": "get-authors-{id}",
+        "summary": "Get author by ID",
+        "description": "Retrieves a single author with relation-ready response fields.",
+        "tags": [
+          "Authors"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d+$",
+              "description": "Author ID"
+            },
+            "description": "Author ID",
+            "example": "123"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorResponseSchema"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      },
+      "patch": {
+        "operationId": "patch-authors-{id}",
+        "summary": "Update author by ID",
+        "description": "Updates author profile details using drizzle-zod update schemas.",
+        "tags": [
+          "Authors"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d+$",
+              "description": "Author ID"
+            },
+            "description": "Author ID",
+            "example": "123"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateAuthorSchema"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorResponseSchema"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    },
     "/posts": {
       "get": {
         "operationId": "get-posts",
@@ -272,11 +522,172 @@
   },
   "tags": [
     {
+      "name": "Authors"
+    },
+    {
       "name": "Posts"
     }
   ],
   "components": {
     "schemas": {
+      "AuthorIdParams": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^\\d+$",
+            "description": "Author ID"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "AuthorResponseSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 100,
+            "description": "Author display name"
+          },
+          "email": {
+            "type": "string",
+            "maxLength": 255,
+            "format": "email",
+            "description": "Author email address"
+          },
+          "bio": {
+            "type": "string",
+            "nullable": true,
+            "description": "Author biography"
+          },
+          "avatarUrl": {
+            "type": "string",
+            "maxLength": 500,
+            "nullable": true,
+            "format": "uri",
+            "description": "Author avatar URL"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Creation timestamp"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "email",
+          "bio",
+          "avatarUrl",
+          "createdAt"
+        ]
+      },
+      "UpdateAuthorSchema": {
+        "type": "object",
+        "properties": {
+          "avatarUrl": {
+            "type": "string",
+            "format": "uri",
+            "description": "Author avatar URL"
+          },
+          "bio": {
+            "type": "string",
+            "maxLength": 280,
+            "description": "Author biography"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 100,
+            "description": "Author display name"
+          }
+        },
+        "required": []
+      },
+      "AuthorsQueryParams": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "string",
+            "pattern": "^\\d+$",
+            "description": "Page number"
+          },
+          "limit": {
+            "type": "string",
+            "pattern": "^\\d+$",
+            "description": "Items per page"
+          },
+          "search": {
+            "type": "string",
+            "description": "Case-insensitive author search"
+          },
+          "sort": {
+            "type": "string",
+            "enum": [
+              "name",
+              "recent"
+            ],
+            "description": "Sort mode"
+          }
+        }
+      },
+      "CreateAuthorSchema": {
+        "type": "object",
+        "properties": {
+          "bio": {
+            "type": "string",
+            "maxLength": 280,
+            "description": "Author biography"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "Author email address"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 100,
+            "description": "Author display name"
+          }
+        },
+        "required": [
+          "email",
+          "name"
+        ]
+      },
+      "AuthorBatchStatusUpdateSchema": {
+        "type": "object",
+        "properties": {
+          "authorIds": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "minimum": 0,
+              "exclusiveMinimum": true
+            },
+            "minItems": 1,
+            "description": "Author IDs to update"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "featured",
+              "standard"
+            ],
+            "description": "Visibility bucket to assign"
+          }
+        },
+        "required": [
+          "authorIds",
+          "status"
+        ]
+      },
       "PostIdParams": {
         "type": "object",
         "properties": {
@@ -293,16 +704,23 @@
       "PostResponseSchema": {
         "type": "object",
         "properties": {
+          "id": {
+            "type": "integer"
+          },
           "title": {
             "type": "string",
+            "maxLength": 255,
             "description": "Post title"
           },
           "slug": {
             "type": "string",
+            "maxLength": 255,
             "description": "URL-friendly slug"
           },
           "excerpt": {
             "type": "string",
+            "maxLength": 500,
+            "nullable": true,
             "description": "Post excerpt"
           },
           "content": {
@@ -317,6 +735,9 @@
             "type": "integer",
             "description": "Number of views"
           },
+          "authorId": {
+            "type": "integer"
+          },
           "createdAt": {
             "type": "string",
             "format": "date-time",
@@ -329,12 +750,14 @@
           }
         },
         "required": [
+          "id",
           "title",
           "slug",
           "excerpt",
           "content",
           "published",
           "viewCount",
+          "authorId",
           "createdAt",
           "updatedAt"
         ]

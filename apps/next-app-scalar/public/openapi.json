@@ -33,7 +33,11 @@
             "description": "user password",
             "nullable": false
           }
-        }
+        },
+        "required": [
+          "email",
+          "password"
+        ]
       },
       "LoginResponse": {
         "type": "object",
@@ -46,7 +50,11 @@
             "type": "string",
             "description": "refresh token"
           }
-        }
+        },
+        "required": [
+          "token",
+          "refresh_token"
+        ]
       },
       "CommentsQueryParams": {
         "type": "object",
@@ -97,7 +105,12 @@
             "type": "string",
             "description": "Task ID within the project"
           }
-        }
+        },
+        "required": [
+          "orgId",
+          "projectId",
+          "taskId"
+        ]
       },
       "User": {
         "type": "object",
@@ -123,7 +136,13 @@
             ],
             "description": "User's role in the organization"
           }
-        }
+        },
+        "required": [
+          "id",
+          "name",
+          "avatar",
+          "role"
+        ]
       },
       "Attachment": {
         "type": "object",
@@ -157,7 +176,15 @@
             "format": "date-time",
             "description": "When the file was uploaded"
           }
-        }
+        },
+        "required": [
+          "id",
+          "fileName",
+          "fileSize",
+          "fileType",
+          "url",
+          "uploadedAt"
+        ]
       },
       "Comment": {
         "type": "object",
@@ -195,6 +222,12 @@
                 "description": "User's role in the organization"
               }
             },
+            "required": [
+              "id",
+              "name",
+              "avatar",
+              "role"
+            ],
             "description": "User who created the comment"
           },
           "attachments": {
@@ -231,7 +264,15 @@
                   "format": "date-time",
                   "description": "When the file was uploaded"
                 }
-              }
+              },
+              "required": [
+                "id",
+                "fileName",
+                "fileSize",
+                "fileType",
+                "url",
+                "uploadedAt"
+              ]
             },
             "description": "Attached files"
           },
@@ -261,7 +302,13 @@
                   ],
                   "description": "User's role in the organization"
                 }
-              }
+              },
+              "required": [
+                "id",
+                "name",
+                "avatar",
+                "role"
+              ]
             },
             "description": "Users mentioned in the comment"
           },
@@ -318,6 +365,12 @@
                       "description": "User's role in the organization"
                     }
                   },
+                  "required": [
+                    "id",
+                    "name",
+                    "avatar",
+                    "role"
+                  ],
                   "description": "User who created the comment"
                 },
                 "attachments": {
@@ -354,7 +407,15 @@
                         "format": "date-time",
                         "description": "When the file was uploaded"
                       }
-                    }
+                    },
+                    "required": [
+                      "id",
+                      "fileName",
+                      "fileSize",
+                      "fileType",
+                      "url",
+                      "uploadedAt"
+                    ]
                   },
                   "description": "Attached files"
                 },
@@ -384,7 +445,13 @@
                         ],
                         "description": "User's role in the organization"
                       }
-                    }
+                    },
+                    "required": [
+                      "id",
+                      "name",
+                      "avatar",
+                      "role"
+                    ]
                   },
                   "description": "Users mentioned in the comment"
                 },
@@ -425,7 +492,17 @@
                   "format": "date-time",
                   "description": "Soft deletion timestamp"
                 }
-              }
+              },
+              "required": [
+                "id",
+                "content",
+                "author",
+                "attachments",
+                "mentions",
+                "likes",
+                "likedBy",
+                "createdAt"
+              ]
             },
             "description": "Child comments (if includeReplies=true)"
           },
@@ -444,7 +521,17 @@
             "format": "date-time",
             "description": "Soft deletion timestamp"
           }
-        }
+        },
+        "required": [
+          "id",
+          "content",
+          "author",
+          "attachments",
+          "mentions",
+          "likes",
+          "likedBy",
+          "createdAt"
+        ]
       },
       "CommentsResponse": {
         "type": "object",
@@ -453,34 +540,52 @@
             "type": "object",
             "properties": {
               "id": {
-                "type": "string"
+                "type": "string",
+                "description": "Task ID"
               },
               "title": {
-                "type": "string"
+                "type": "string",
+                "description": "Task title"
               }
-            }
+            },
+            "required": [
+              "id",
+              "title"
+            ]
           },
           "project": {
             "type": "object",
             "properties": {
               "id": {
-                "type": "string"
+                "type": "string",
+                "description": "Project ID"
               },
               "name": {
-                "type": "string"
+                "type": "string",
+                "description": "Project name"
               }
-            }
+            },
+            "required": [
+              "id",
+              "name"
+            ]
           },
           "organization": {
             "type": "object",
             "properties": {
               "id": {
-                "type": "string"
+                "type": "string",
+                "description": "Organization ID"
               },
               "name": {
-                "type": "string"
+                "type": "string",
+                "description": "Organization name"
               }
-            }
+            },
+            "required": [
+              "id",
+              "name"
+            ]
           },
           "comments": {
             "type": "array",
@@ -520,6 +625,12 @@
                       "description": "User's role in the organization"
                     }
                   },
+                  "required": [
+                    "id",
+                    "name",
+                    "avatar",
+                    "role"
+                  ],
                   "description": "User who created the comment"
                 },
                 "attachments": {
@@ -556,7 +667,15 @@
                         "format": "date-time",
                         "description": "When the file was uploaded"
                       }
-                    }
+                    },
+                    "required": [
+                      "id",
+                      "fileName",
+                      "fileSize",
+                      "fileType",
+                      "url",
+                      "uploadedAt"
+                    ]
                   },
                   "description": "Attached files"
                 },
@@ -586,7 +705,13 @@
                         ],
                         "description": "User's role in the organization"
                       }
-                    }
+                    },
+                    "required": [
+                      "id",
+                      "name",
+                      "avatar",
+                      "role"
+                    ]
                   },
                   "description": "Users mentioned in the comment"
                 },
@@ -627,7 +752,17 @@
                   "format": "date-time",
                   "description": "Soft deletion timestamp"
                 }
-              }
+              },
+              "required": [
+                "id",
+                "content",
+                "author",
+                "attachments",
+                "mentions",
+                "likes",
+                "likedBy",
+                "createdAt"
+              ]
             },
             "description": "List of comments"
           },
@@ -635,37 +770,65 @@
             "type": "object",
             "properties": {
               "total": {
-                "type": "number"
+                "type": "number",
+                "description": "Total number of comments"
               },
               "page": {
-                "type": "number"
+                "type": "number",
+                "description": "Current page"
               },
               "limit": {
-                "type": "number"
+                "type": "number",
+                "description": "Items per page"
               },
               "pages": {
-                "type": "number"
+                "type": "number",
+                "description": "Total number of pages"
               }
-            }
+            },
+            "required": [
+              "total",
+              "page",
+              "limit",
+              "pages"
+            ]
           },
           "permissions": {
             "type": "object",
             "properties": {
               "canCreate": {
-                "type": "boolean"
+                "type": "boolean",
+                "description": "Whether user can create comments"
               },
               "canEdit": {
-                "type": "boolean"
+                "type": "boolean",
+                "description": "Whether user can edit comments"
               },
               "canDelete": {
-                "type": "boolean"
+                "type": "boolean",
+                "description": "Whether user can delete comments"
               },
               "canModerate": {
-                "type": "boolean"
+                "type": "boolean",
+                "description": "Whether user can moderate comments"
               }
-            }
+            },
+            "required": [
+              "canCreate",
+              "canEdit",
+              "canDelete",
+              "canModerate"
+            ]
           }
-        }
+        },
+        "required": [
+          "task",
+          "project",
+          "organization",
+          "comments",
+          "pagination",
+          "permissions"
+        ]
       },
       "CreateCommentBody": {
         "type": "object",
@@ -696,7 +859,10 @@
             "description": "Parent comment ID if this is a reply",
             "nullable": true
           }
-        }
+        },
+        "required": [
+          "content"
+        ]
       },
       "CreateCommentResponse": {
         "type": "object",
@@ -737,6 +903,12 @@
                     "description": "User's role in the organization"
                   }
                 },
+                "required": [
+                  "id",
+                  "name",
+                  "avatar",
+                  "role"
+                ],
                 "description": "User who created the comment"
               },
               "attachments": {
@@ -773,7 +945,15 @@
                       "format": "date-time",
                       "description": "When the file was uploaded"
                     }
-                  }
+                  },
+                  "required": [
+                    "id",
+                    "fileName",
+                    "fileSize",
+                    "fileType",
+                    "url",
+                    "uploadedAt"
+                  ]
                 },
                 "description": "Attached files"
               },
@@ -803,7 +983,13 @@
                       ],
                       "description": "User's role in the organization"
                     }
-                  }
+                  },
+                  "required": [
+                    "id",
+                    "name",
+                    "avatar",
+                    "role"
+                  ]
                 },
                 "description": "Users mentioned in the comment"
               },
@@ -845,6 +1031,16 @@
                 "description": "Soft deletion timestamp"
               }
             },
+            "required": [
+              "id",
+              "content",
+              "author",
+              "attachments",
+              "mentions",
+              "likes",
+              "likedBy",
+              "createdAt"
+            ],
             "description": "Created comment"
           },
           "success": {
@@ -855,7 +1051,11 @@
             "type": "string",
             "description": "Success or error message"
           }
-        }
+        },
+        "required": [
+          "comment",
+          "success"
+        ]
       },
       "UpdateCommentBody": {
         "type": "object",
@@ -938,6 +1138,12 @@
                     "description": "User's role in the organization"
                   }
                 },
+                "required": [
+                  "id",
+                  "name",
+                  "avatar",
+                  "role"
+                ],
                 "description": "User who created the comment"
               },
               "attachments": {
@@ -974,7 +1180,15 @@
                       "format": "date-time",
                       "description": "When the file was uploaded"
                     }
-                  }
+                  },
+                  "required": [
+                    "id",
+                    "fileName",
+                    "fileSize",
+                    "fileType",
+                    "url",
+                    "uploadedAt"
+                  ]
                 },
                 "description": "Attached files"
               },
@@ -1004,7 +1218,13 @@
                       ],
                       "description": "User's role in the organization"
                     }
-                  }
+                  },
+                  "required": [
+                    "id",
+                    "name",
+                    "avatar",
+                    "role"
+                  ]
                 },
                 "description": "Users mentioned in the comment"
               },
@@ -1046,6 +1266,16 @@
                 "description": "Soft deletion timestamp"
               }
             },
+            "required": [
+              "id",
+              "content",
+              "author",
+              "attachments",
+              "mentions",
+              "likes",
+              "likedBy",
+              "createdAt"
+            ],
             "description": "Updated comment"
           },
           "success": {
@@ -1056,8 +1286,25 @@
             "type": "string",
             "description": "Success or error message"
           }
+        },
+        "required": [
+          "comment",
+          "success"
+        ]
+      },
+      "ReportExportQuery": {
+        "type": "object",
+        "properties": {
+          "format": {
+            "type": "string",
+            "enum": [
+              "csv",
+              "ndjson"
+            ]
+          }
         }
       },
+      "string": {},
       "UserIdParam": {
         "type": "object",
         "properties": {
@@ -1065,7 +1312,10 @@
             "type": "string",
             "description": "User's unique identifier"
           }
-        }
+        },
+        "required": [
+          "id"
+        ]
       },
       "UserAddress": {
         "type": "object",
@@ -1082,7 +1332,12 @@
           "postalCode": {
             "type": "string"
           }
-        }
+        },
+        "required": [
+          "line1",
+          "city",
+          "postalCode"
+        ]
       },
       "UserResponse": {
         "type": "object",
@@ -1118,9 +1373,21 @@
               "postalCode": {
                 "type": "string"
               }
-            }
+            },
+            "required": [
+              "line1",
+              "city",
+              "postalCode"
+            ]
           }
-        }
+        },
+        "required": [
+          "id",
+          "name",
+          "email",
+          "role",
+          "address"
+        ]
       }
     },
     "responses": {
@@ -1206,7 +1473,7 @@
           }
         },
         "responses": {
-          "201": {
+          "200": {
             "description": "Successful response",
             "content": {
               "application/json": {
@@ -1414,7 +1681,7 @@
           }
         },
         "responses": {
-          "201": {
+          "200": {
             "description": "Successful response",
             "content": {
               "application/json": {
@@ -1440,6 +1707,15 @@
           "Organizations"
         ],
         "parameters": [
+          {
+            "in": "query",
+            "name": "commentId",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123"
+          },
           {
             "in": "path",
             "name": "orgId",
@@ -1516,6 +1792,15 @@
         ],
         "parameters": [
           {
+            "in": "query",
+            "name": "commentId",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123"
+          },
+          {
             "in": "path",
             "name": "orgId",
             "required": true,
@@ -1555,8 +1840,68 @@
           }
         ],
         "responses": {
-          "204": {
-            "description": "boolean, message?:string }"
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    },
+    "/reports/export": {
+      "get": {
+        "operationId": "get-reports-export",
+        "summary": "Export reports",
+        "description": "Keeps the Scalar smoke app aligned with the richer baseline route surface.",
+        "tags": [
+          "Reports"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "format",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "csv",
+                "ndjson"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           },
           "400": {
             "$ref": "#/components/responses/400"
@@ -1615,6 +1960,9 @@
     },
     {
       "name": "Organizations"
+    },
+    {
+      "name": "Reports"
     },
     {
       "name": "Users"

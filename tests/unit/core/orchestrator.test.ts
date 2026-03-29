@@ -62,4 +62,41 @@ export async function GET() {}
       project.cleanup();
     }
   });
+
+  it("derives a default Next.js API server url from apiDir", () => {
+    const project = createTempProject("nxog-orchestrator-next-base-");
+
+    try {
+      const templatePath = writeOpenApiTemplate(project.root);
+      writeAppRoute(
+        project.root,
+        ["users"],
+        `/**
+ * @openapi
+ */
+export async function GET() {}
+`,
+      );
+      process.chdir(project.root);
+
+      const template = JSON.parse(fs.readFileSync(templatePath, "utf8"));
+      const config = normalizeOpenApiConfig(template);
+      const adapters = createDefaultGenerationAdapters();
+
+      const result = runGenerationOrchestrator({
+        config,
+        createFrameworkSource: adapters.createFrameworkSource,
+        template,
+      });
+
+      expect(result.document.servers).toEqual([
+        {
+          url: "/api",
+          description: "API server",
+        },
+      ]);
+    } finally {
+      project.cleanup();
+    }
+  });
 });

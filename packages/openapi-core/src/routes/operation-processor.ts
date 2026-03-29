@@ -47,6 +47,30 @@ export class OperationProcessor {
       definition.parameters = this.schemaProcessor.createRequestParamsSchema(params);
     }
 
+    if (dataTypes.inferredQueryParamNames?.length) {
+      const knownQueryParameterNames = new Set(
+        definition.parameters
+          .filter((parameter) => parameter.in === "query")
+          .map((parameter) => parameter.name),
+      );
+
+      dataTypes.inferredQueryParamNames.forEach((name) => {
+        if (knownQueryParameterNames.has(name)) {
+          return;
+        }
+
+        definition.parameters.push({
+          in: "query",
+          name,
+          required: false,
+          schema: {
+            type: "string",
+          },
+          example: this.schemaProcessor.getExampleForParam(name, "string"),
+        });
+      });
+    }
+
     if (pathParamNames.length > 0) {
       if (!pathParams) {
         const defaultPathParams =

@@ -14,3 +14,4 @@ This folder contains the longer-form guides that support the main
 
 - [OpenAPI version coverage](./openapi-version-coverage.md)
 - [Zod 4 support matrix](./zod4-support-matrix.md)
+- [Example app coverage plan](./example-app-coverage-plan.md)

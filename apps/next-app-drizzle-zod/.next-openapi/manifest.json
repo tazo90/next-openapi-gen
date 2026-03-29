@@ -6,23 +6,30 @@
       "code": "response-inference-unresolved",
       "severity": "warning",
       "message": "Could not fully infer a response schema from a return statement. Add an explicit @response tag to make the output deterministic.",
+      "filePath": "/Users/mhvdijk/Code/next-openapi-gen/apps/next-app-drizzle-zod/src/app/api/authors/route.ts",
+      "routePath": "/authors"
+    },
+    {
+      "code": "response-inference-unresolved",
+      "severity": "warning",
+      "message": "Could not fully infer a response schema from a return statement. Add an explicit @response tag to make the output deterministic.",
       "filePath": "/Users/mhvdijk/Code/next-openapi-gen/apps/next-app-drizzle-zod/src/app/api/posts/[id]/route.ts",
       "routePath": "/posts/{id}"
     }
   ],
   "performance": {
-    "prepareTemplateMs": 0.07541600000001836,
-    "loadCustomFragmentsMs": 0.0003749999999627107,
-    "prepareDocumentMs": 0.07579099999998107,
-    "scanRouteFilesMs": 0.26904100000001563,
-    "processRouteFilesMs": 2607.84625,
-    "buildOperationsMs": 12.388083000000279,
-    "scanRoutesMs": 2620.5033740000003,
-    "sortAndMergePathsMs": 0.5857080000000678,
-    "buildPathsMs": 0.5857080000000678,
-    "defaultComponentsAndErrorsMs": 0.13812499999994543,
-    "mergeSchemasMs": 0.1639589999999771,
-    "finalizeDocumentMs": 1.0876250000001164,
-    "totalMs": 2622.766083
+    "prepareTemplateMs": 0.059416000000055647,
+    "loadCustomFragmentsMs": 0.00041699999997035775,
+    "prepareDocumentMs": 0.059833000000026004,
+    "scanRouteFilesMs": 0.3670829999999796,
+    "processRouteFilesMs": 64.22795899999949,
+    "buildOperationsMs": 5312.566167,
+    "scanRoutesMs": 5377.161209,
+    "sortAndMergePathsMs": 1.4463750000004438,
+    "buildPathsMs": 1.4463750000004438,
+    "defaultComponentsAndErrorsMs": 0.18458300000020245,
+    "mergeSchemasMs": 0.218166999999994,
+    "finalizeDocumentMs": 1.7701250000000073,
+    "totalMs": 5381.061750000001
   }
 }

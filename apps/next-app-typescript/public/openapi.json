@@ -43,7 +43,11 @@
             "description": "user password",
             "nullable": false
           }
-        }
+        },
+        "required": [
+          "email",
+          "password"
+        ]
       },
       "LoginResponse": {
         "type": "object",
@@ -56,7 +60,37 @@
             "type": "string",
             "description": "refresh token"
           }
+        },
+        "required": [
+          "token",
+          "refresh_token"
+        ]
+      },
+      "ExportIdParam": {
+        "type": "object",
+        "properties": {
+          "exportId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "exportId"
+        ]
+      },
+      "ExportDownloadQuery": {
+        "type": "object",
+        "properties": {
+          "format": {
+            "type": "string",
+            "enum": [
+              "csv",
+              "ndjson"
+            ]
+          }
         }
+      },
+      "CsvExportBody": {
+        "type": "string"
       },
       "MyApiSuccessResponseBody": {
         "type": "object",
@@ -70,7 +104,11 @@
           "httpCode": {
             "type": "string"
           }
-        }
+        },
+        "required": [
+          "success",
+          "httpCode"
+        ]
       },
       "LLMSResponse": {
         "type": "object",
@@ -92,10 +130,19 @@
                 "isDefault": {
                   "type": "boolean"
                 }
-              }
+              },
+              "required": [
+                "id",
+                "name",
+                "provider",
+                "isDefault"
+              ]
             }
           }
-        }
+        },
+        "required": [
+          "llms"
+        ]
       },
       "MyApiSuccessResponseBody<LLMSResponse>": {
         "type": "object",
@@ -117,7 +164,13 @@
                 "isDefault": {
                   "type": "boolean"
                 }
-              }
+              },
+              "required": [
+                "id",
+                "name",
+                "provider",
+                "isDefault"
+              ]
             }
           },
           "success": {
@@ -129,7 +182,12 @@
           "httpCode": {
             "type": "string"
           }
-        }
+        },
+        "required": [
+          "llms",
+          "success",
+          "httpCode"
+        ]
       },
       "SuccessResponse": {
         "type": "object",
@@ -144,14 +202,24 @@
             "type": "object",
             "properties": {
               "id": {
-                "type": "string"
+                "type": "string",
+                "description": "Unique identifier"
               },
               "message": {
-                "type": "string"
+                "type": "string",
+                "description": "Success message"
               }
-            }
+            },
+            "required": [
+              "id",
+              "message"
+            ]
           }
-        }
+        },
+        "required": [
+          "status",
+          "data"
+        ]
       },
       "ErrorResponse": {
         "type": "object",
@@ -170,7 +238,12 @@
             "type": "number",
             "description": "Error code"
           }
-        }
+        },
+        "required": [
+          "status",
+          "error",
+          "code"
+        ]
       },
       "ApiResponse": {
         "oneOf": [
@@ -187,14 +260,24 @@
                 "type": "object",
                 "properties": {
                   "id": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Unique identifier"
                   },
                   "message": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Success message"
                   }
-                }
+                },
+                "required": [
+                  "id",
+                  "message"
+                ]
               }
-            }
+            },
+            "required": [
+              "status",
+              "data"
+            ]
           },
           {
             "type": "object",
@@ -213,7 +296,12 @@
                 "type": "number",
                 "description": "Error code"
               }
-            }
+            },
+            "required": [
+              "status",
+              "error",
+              "code"
+            ]
           }
         ]
       },
@@ -242,7 +330,13 @@
             "description": "Email body content",
             "nullable": false
           }
-        }
+        },
+        "required": [
+          "type",
+          "to",
+          "subject",
+          "body"
+        ]
       },
       "SmsNotification": {
         "type": "object",
@@ -264,7 +358,12 @@
             "description": "SMS message (max 160 characters)",
             "nullable": false
           }
-        }
+        },
+        "required": [
+          "type",
+          "phoneNumber",
+          "message"
+        ]
       },
       "PushNotification": {
         "type": "object",
@@ -291,7 +390,13 @@
             "description": "Notification body",
             "nullable": false
           }
-        }
+        },
+        "required": [
+          "type",
+          "deviceId",
+          "title",
+          "body"
+        ]
       },
       "Notification": {
         "oneOf": [
@@ -320,7 +425,13 @@
                 "description": "Email body content",
                 "nullable": false
               }
-            }
+            },
+            "required": [
+              "type",
+              "to",
+              "subject",
+              "body"
+            ]
           },
           {
             "type": "object",
@@ -342,7 +453,12 @@
                 "description": "SMS message (max 160 characters)",
                 "nullable": false
               }
-            }
+            },
+            "required": [
+              "type",
+              "phoneNumber",
+              "message"
+            ]
           },
           {
             "type": "object",
@@ -369,7 +485,13 @@
                 "description": "Notification body",
                 "nullable": false
               }
-            }
+            },
+            "required": [
+              "type",
+              "deviceId",
+              "title",
+              "body"
+            ]
           }
         ]
       },
@@ -422,7 +544,12 @@
             "type": "string",
             "description": "Task ID within the project"
           }
-        }
+        },
+        "required": [
+          "orgId",
+          "projectId",
+          "taskId"
+        ]
       },
       "User": {
         "type": "object",
@@ -448,7 +575,13 @@
             ],
             "description": "User's role in the organization"
           }
-        }
+        },
+        "required": [
+          "id",
+          "name",
+          "avatar",
+          "role"
+        ]
       },
       "Attachment": {
         "type": "object",
@@ -482,7 +615,15 @@
             "format": "date-time",
             "description": "When the file was uploaded"
           }
-        }
+        },
+        "required": [
+          "id",
+          "fileName",
+          "fileSize",
+          "fileType",
+          "url",
+          "uploadedAt"
+        ]
       },
       "Comment": {
         "type": "object",
@@ -520,6 +661,12 @@
                 "description": "User's role in the organization"
               }
             },
+            "required": [
+              "id",
+              "name",
+              "avatar",
+              "role"
+            ],
             "description": "User who created the comment"
           },
           "attachments": {
@@ -556,7 +703,15 @@
                   "format": "date-time",
                   "description": "When the file was uploaded"
                 }
-              }
+              },
+              "required": [
+                "id",
+                "fileName",
+                "fileSize",
+                "fileType",
+                "url",
+                "uploadedAt"
+              ]
             },
             "description": "Attached files"
           },
@@ -586,7 +741,13 @@
                   ],
                   "description": "User's role in the organization"
                 }
-              }
+              },
+              "required": [
+                "id",
+                "name",
+                "avatar",
+                "role"
+              ]
             },
             "description": "Users mentioned in the comment"
           },
@@ -643,6 +804,12 @@
                       "description": "User's role in the organization"
                     }
                   },
+                  "required": [
+                    "id",
+                    "name",
+                    "avatar",
+                    "role"
+                  ],
                   "description": "User who created the comment"
                 },
                 "attachments": {
@@ -679,7 +846,15 @@
                         "format": "date-time",
                         "description": "When the file was uploaded"
                       }
-                    }
+                    },
+                    "required": [
+                      "id",
+                      "fileName",
+                      "fileSize",
+                      "fileType",
+                      "url",
+                      "uploadedAt"
+                    ]
                   },
                   "description": "Attached files"
                 },
@@ -709,7 +884,13 @@
                         ],
                         "description": "User's role in the organization"
                       }
-                    }
+                    },
+                    "required": [
+                      "id",
+                      "name",
+                      "avatar",
+                      "role"
+                    ]
                   },
                   "description": "Users mentioned in the comment"
                 },
@@ -750,7 +931,17 @@
                   "format": "date-time",
                   "description": "Soft deletion timestamp"
                 }
-              }
+              },
+              "required": [
+                "id",
+                "content",
+                "author",
+                "attachments",
+                "mentions",
+                "likes",
+                "likedBy",
+                "createdAt"
+              ]
             },
             "description": "Child comments (if includeReplies=true)"
           },
@@ -769,7 +960,17 @@
             "format": "date-time",
             "description": "Soft deletion timestamp"
           }
-        }
+        },
+        "required": [
+          "id",
+          "content",
+          "author",
+          "attachments",
+          "mentions",
+          "likes",
+          "likedBy",
+          "createdAt"
+        ]
       },
       "CommentsResponse": {
         "type": "object",
@@ -778,34 +979,52 @@
             "type": "object",
             "properties": {
               "id": {
-                "type": "string"
+                "type": "string",
+                "description": "Task ID"
               },
               "title": {
-                "type": "string"
+                "type": "string",
+                "description": "Task title"
               }
-            }
+            },
+            "required": [
+              "id",
+              "title"
+            ]
           },
           "project": {
             "type": "object",
             "properties": {
               "id": {
-                "type": "string"
+                "type": "string",
+                "description": "Project ID"
               },
               "name": {
-                "type": "string"
+                "type": "string",
+                "description": "Project name"
               }
-            }
+            },
+            "required": [
+              "id",
+              "name"
+            ]
           },
           "organization": {
             "type": "object",
             "properties": {
               "id": {
-                "type": "string"
+                "type": "string",
+                "description": "Organization ID"
               },
               "name": {
-                "type": "string"
+                "type": "string",
+                "description": "Organization name"
               }
-            }
+            },
+            "required": [
+              "id",
+              "name"
+            ]
           },
           "comments": {
             "type": "array",
@@ -845,6 +1064,12 @@
                       "description": "User's role in the organization"
                     }
                   },
+                  "required": [
+                    "id",
+                    "name",
+                    "avatar",
+                    "role"
+                  ],
                   "description": "User who created the comment"
                 },
                 "attachments": {
@@ -881,7 +1106,15 @@
                         "format": "date-time",
                         "description": "When the file was uploaded"
                       }
-                    }
+                    },
+                    "required": [
+                      "id",
+                      "fileName",
+                      "fileSize",
+                      "fileType",
+                      "url",
+                      "uploadedAt"
+                    ]
                   },
                   "description": "Attached files"
                 },
@@ -911,7 +1144,13 @@
                         ],
                         "description": "User's role in the organization"
                       }
-                    }
+                    },
+                    "required": [
+                      "id",
+                      "name",
+                      "avatar",
+                      "role"
+                    ]
                   },
                   "description": "Users mentioned in the comment"
                 },
@@ -952,7 +1191,17 @@
                   "format": "date-time",
                   "description": "Soft deletion timestamp"
                 }
-              }
+              },
+              "required": [
+                "id",
+                "content",
+                "author",
+                "attachments",
+                "mentions",
+                "likes",
+                "likedBy",
+                "createdAt"
+              ]
             },
             "description": "List of comments"
           },
@@ -960,37 +1209,65 @@
             "type": "object",
             "properties": {
               "total": {
-                "type": "number"
+                "type": "number",
+                "description": "Total number of comments"
               },
               "page": {
-                "type": "number"
+                "type": "number",
+                "description": "Current page"
               },
               "limit": {
-                "type": "number"
+                "type": "number",
+                "description": "Items per page"
               },
               "pages": {
-                "type": "number"
+                "type": "number",
+                "description": "Total number of pages"
               }
-            }
+            },
+            "required": [
+              "total",
+              "page",
+              "limit",
+              "pages"
+            ]
           },
           "permissions": {
             "type": "object",
             "properties": {
               "canCreate": {
-                "type": "boolean"
+                "type": "boolean",
+                "description": "Whether user can create comments"
               },
               "canEdit": {
-                "type": "boolean"
+                "type": "boolean",
+                "description": "Whether user can edit comments"
               },
               "canDelete": {
-                "type": "boolean"
+                "type": "boolean",
+                "description": "Whether user can delete comments"
               },
               "canModerate": {
-                "type": "boolean"
+                "type": "boolean",
+                "description": "Whether user can moderate comments"
               }
-            }
+            },
+            "required": [
+              "canCreate",
+              "canEdit",
+              "canDelete",
+              "canModerate"
+            ]
           }
-        }
+        },
+        "required": [
+          "task",
+          "project",
+          "organization",
+          "comments",
+          "pagination",
+          "permissions"
+        ]
       },
       "CreateCommentBody": {
         "type": "object",
@@ -1021,7 +1298,10 @@
             "description": "Parent comment ID if this is a reply",
             "nullable": true
           }
-        }
+        },
+        "required": [
+          "content"
+        ]
       },
       "CreateCommentResponse": {
         "type": "object",
@@ -1062,6 +1342,12 @@
                     "description": "User's role in the organization"
                   }
                 },
+                "required": [
+                  "id",
+                  "name",
+                  "avatar",
+                  "role"
+                ],
                 "description": "User who created the comment"
               },
               "attachments": {
@@ -1098,7 +1384,15 @@
                       "format": "date-time",
                       "description": "When the file was uploaded"
                     }
-                  }
+                  },
+                  "required": [
+                    "id",
+                    "fileName",
+                    "fileSize",
+                    "fileType",
+                    "url",
+                    "uploadedAt"
+                  ]
                 },
                 "description": "Attached files"
               },
@@ -1128,7 +1422,13 @@
                       ],
                       "description": "User's role in the organization"
                     }
-                  }
+                  },
+                  "required": [
+                    "id",
+                    "name",
+                    "avatar",
+                    "role"
+                  ]
                 },
                 "description": "Users mentioned in the comment"
               },
@@ -1170,6 +1470,16 @@
                 "description": "Soft deletion timestamp"
               }
             },
+            "required": [
+              "id",
+              "content",
+              "author",
+              "attachments",
+              "mentions",
+              "likes",
+              "likedBy",
+              "createdAt"
+            ],
             "description": "Created comment"
           },
           "success": {
@@ -1180,7 +1490,11 @@
             "type": "string",
             "description": "Success or error message"
           }
-        }
+        },
+        "required": [
+          "comment",
+          "success"
+        ]
       },
       "UpdateCommentBody": {
         "type": "object",
@@ -1263,6 +1577,12 @@
                     "description": "User's role in the organization"
                   }
                 },
+                "required": [
+                  "id",
+                  "name",
+                  "avatar",
+                  "role"
+                ],
                 "description": "User who created the comment"
               },
               "attachments": {
@@ -1299,7 +1619,15 @@
                       "format": "date-time",
                       "description": "When the file was uploaded"
                     }
-                  }
+                  },
+                  "required": [
+                    "id",
+                    "fileName",
+                    "fileSize",
+                    "fileType",
+                    "url",
+                    "uploadedAt"
+                  ]
                 },
                 "description": "Attached files"
               },
@@ -1329,7 +1657,13 @@
                       ],
                       "description": "User's role in the organization"
                     }
-                  }
+                  },
+                  "required": [
+                    "id",
+                    "name",
+                    "avatar",
+                    "role"
+                  ]
                 },
                 "description": "Users mentioned in the comment"
               },
@@ -1371,6 +1705,16 @@
                 "description": "Soft deletion timestamp"
               }
             },
+            "required": [
+              "id",
+              "content",
+              "author",
+              "attachments",
+              "mentions",
+              "likes",
+              "likedBy",
+              "createdAt"
+            ],
             "description": "Updated comment"
           },
           "success": {
@@ -1381,7 +1725,11 @@
             "type": "string",
             "description": "Success or error message"
           }
-        }
+        },
+        "required": [
+          "comment",
+          "success"
+        ]
       },
       "DeleteCommentResponse": {
         "type": "object",
@@ -1394,7 +1742,10 @@
             "type": "string",
             "description": "Success or error message"
           }
-        }
+        },
+        "required": [
+          "success"
+        ]
       },
       "ProductIdParam": {
         "type": "object",
@@ -1402,7 +1753,10 @@
           "id": {
             "type": "string"
           }
-        }
+        },
+        "required": [
+          "id"
+        ]
       },
       "Product": {
         "type": "object",
@@ -1422,7 +1776,13 @@
           "inStock": {
             "type": "boolean"
           }
-        }
+        },
+        "required": [
+          "id",
+          "name",
+          "price",
+          "inStock"
+        ]
       },
       "ProductByIdResponse": {
         "type": "object",
@@ -1445,12 +1805,22 @@
               "inStock": {
                 "type": "boolean"
               }
-            }
+            },
+            "required": [
+              "id",
+              "name",
+              "price",
+              "inStock"
+            ]
           },
           "fetchedAt": {
             "type": "string"
           }
-        }
+        },
+        "required": [
+          "product",
+          "fetchedAt"
+        ]
       },
       "UpdateStockRequest": {
         "type": "object",
@@ -1459,9 +1829,65 @@
             "type": "boolean",
             "nullable": false
           }
-        }
+        },
+        "required": [
+          "inStock"
+        ]
       },
-      "UpdateStockApiResponse": {},
+      "UpdateStockResponse": {
+        "type": "object",
+        "properties": {
+          "updated": {
+            "type": "boolean"
+          },
+          "productId": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "updated",
+          "productId",
+          "timestamp"
+        ]
+      },
+      "UpdateStockApiResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "updated": {
+                "type": "boolean"
+              },
+              "productId": {
+                "type": "string"
+              },
+              "timestamp": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "updated",
+              "productId",
+              "timestamp"
+            ]
+          },
+          "timestamp": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "success",
+          "data",
+          "timestamp"
+        ]
+      },
       "ProductSummaryResponse": {
         "type": "object",
         "properties": {
@@ -1471,26 +1897,40 @@
           "price": {
             "type": "number"
           }
-        }
+        },
+        "required": [
+          "name",
+          "price"
+        ]
       },
       "CreateProductData": {
         "type": "object",
         "properties": {
           "name": {
-            "type": "string"
+            "type": "string",
+            "nullable": false
           },
           "price": {
-            "type": "number"
+            "type": "number",
+            "nullable": false
           }
-        }
+        },
+        "required": [
+          "name",
+          "price"
+        ]
       },
       "CreateProductOptions": {
         "type": "object",
         "properties": {
           "notify": {
-            "type": "boolean"
+            "type": "boolean",
+            "nullable": false
           }
-        }
+        },
+        "required": [
+          "notify"
+        ]
       },
       "CreateProductRequest": {
         "type": "object",
@@ -1499,26 +1939,84 @@
             "type": "object",
             "properties": {
               "name": {
-                "type": "string"
+                "type": "string",
+                "nullable": false
               },
               "price": {
-                "type": "number"
+                "type": "number",
+                "nullable": false
               }
             },
+            "required": [
+              "name",
+              "price"
+            ],
             "nullable": false
           },
           "options": {
             "type": "object",
             "properties": {
               "notify": {
-                "type": "boolean"
+                "type": "boolean",
+                "nullable": false
               }
             },
+            "required": [
+              "notify"
+            ],
             "nullable": true
           }
-        }
+        },
+        "required": [
+          "product"
+        ]
       },
-      "CreateProductApiResponse": {},
+      "CreateProductResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "productId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "success",
+          "productId"
+        ]
+      },
+      "CreateProductApiResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "success": {
+                "type": "boolean"
+              },
+              "productId": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "success",
+              "productId"
+            ]
+          },
+          "timestamp": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "success",
+          "data",
+          "timestamp"
+        ]
+      },
       "ReportQuery": {
         "type": "object",
         "properties": {
@@ -1544,7 +2042,12 @@
           "generatedAt": {
             "type": "string"
           }
-        }
+        },
+        "required": [
+          "id",
+          "title",
+          "generatedAt"
+        ]
       },
       "ReportsResponse": {
         "type": "object",
@@ -1563,13 +2066,22 @@
                 "generatedAt": {
                   "type": "string"
                 }
-              }
+              },
+              "required": [
+                "id",
+                "title",
+                "generatedAt"
+              ]
             }
           },
           "total": {
             "type": "number"
           }
-        }
+        },
+        "required": [
+          "data",
+          "total"
+        ]
       },
       "CreateReportBody": {
         "type": "object",
@@ -1587,6 +2099,144 @@
             "type": "string",
             "description": "end date (ISO 8601)",
             "nullable": false
+          }
+        },
+        "required": [
+          "title",
+          "from",
+          "to"
+        ]
+      },
+      "SessionIdParam": {
+        "type": "object",
+        "properties": {
+          "sessionId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "sessionId"
+        ]
+      },
+      "Envelope": {
+        "type": "object",
+        "properties": {
+          "data": {},
+          "meta": {}
+        },
+        "required": [
+          "data",
+          "meta"
+        ]
+      },
+      "SessionResource": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "userId": {
+            "type": "string"
+          },
+          "authChannel": {
+            "type": "string",
+            "enum": [
+              "bearer",
+              "header",
+              "cookie"
+            ]
+          },
+          "device": {
+            "type": "string"
+          },
+          "ipAddress": {
+            "type": "string"
+          },
+          "lastSeenAt": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "revoked"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "userId",
+          "authChannel",
+          "device",
+          "ipAddress",
+          "lastSeenAt",
+          "status"
+        ]
+      },
+      "SessionEnvelope": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "userId": {
+                "type": "string"
+              },
+              "authChannel": {
+                "type": "string",
+                "enum": [
+                  "bearer",
+                  "header",
+                  "cookie"
+                ]
+              },
+              "device": {
+                "type": "string"
+              },
+              "ipAddress": {
+                "type": "string"
+              },
+              "lastSeenAt": {
+                "type": "string"
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "active",
+                  "revoked"
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "userId",
+              "authChannel",
+              "device",
+              "ipAddress",
+              "lastSeenAt",
+              "status"
+            ]
+          },
+          "meta": {}
+        },
+        "required": [
+          "data",
+          "meta"
+        ]
+      },
+      "SessionActionInput": {
+        "type": "object",
+        "properties": {
+          "extendMinutes": {
+            "type": "number",
+            "nullable": true
+          },
+          "revokeReason": {
+            "type": "string",
+            "nullable": true
           }
         }
       },
@@ -1606,7 +2256,11 @@
             "type": "string",
             "nullable": false
           }
-        }
+        },
+        "required": [
+          "file",
+          "category"
+        ]
       },
       "UploadResponse": {
         "type": "object",
@@ -1638,7 +2292,16 @@
           "uploadedAt": {
             "type": "string"
           }
-        }
+        },
+        "required": [
+          "id",
+          "filename",
+          "size",
+          "type",
+          "url",
+          "category",
+          "uploadedAt"
+        ]
       },
       "UserIdParam": {
         "type": "object",
@@ -1647,7 +2310,10 @@
             "type": "string",
             "description": "User's unique identifier"
           }
-        }
+        },
+        "required": [
+          "id"
+        ]
       },
       "UserResponse": {
         "type": "object",
@@ -1759,7 +2425,7 @@
           }
         },
         "responses": {
-          "201": {
+          "200": {
             "description": "Successful response",
             "content": {
               "application/json": {
@@ -1768,6 +2434,89 @@
                 }
               }
             }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    },
+    "/exports/{exportId}": {
+      "get": {
+        "operationId": "typescriptDownloadExport",
+        "summary": "Download an export payload.",
+        "description": "Returns a CSV export body using an explicit non-JSON media type.",
+        "tags": [
+          "Exports"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "format",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "csv",
+                "ndjson"
+              ]
+            }
+          },
+          {
+            "in": "path",
+            "name": "exportId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "$ref": "#/components/schemas/CsvExportBody"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    },
+    "/exports/{exportId}/latest": {
+      "get": {
+        "operationId": "typescriptRedirectLatestExport",
+        "summary": "Redirect to the latest export artifact.",
+        "description": "Demonstrates redirect-style transport routes from typed route modules.",
+        "tags": [
+          "Exports"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "exportId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123"
+          }
+        ],
+        "responses": {
+          "307": {
+            "description": "Successful response"
           },
           "400": {
             "$ref": "#/components/responses/400"
@@ -2078,7 +2827,7 @@
           }
         },
         "responses": {
-          "201": {
+          "200": {
             "description": "Successful response",
             "content": {
               "application/json": {
@@ -2104,6 +2853,15 @@
           "Organizations"
         ],
         "parameters": [
+          {
+            "in": "query",
+            "name": "commentId",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123"
+          },
           {
             "in": "path",
             "name": "orgId",
@@ -2180,6 +2938,15 @@
         ],
         "parameters": [
           {
+            "in": "query",
+            "name": "commentId",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123"
+          },
+          {
             "in": "path",
             "name": "orgId",
             "required": true,
@@ -2219,8 +2986,15 @@
           }
         ],
         "responses": {
-          "204": {
-            "description": "No Content"
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteCommentResponse"
+                }
+              }
+            }
           },
           "400": {
             "$ref": "#/components/responses/400"
@@ -2250,7 +3024,7 @@
           }
         },
         "responses": {
-          "201": {
+          "200": {
             "description": "Successful response",
             "content": {
               "application/json": {
@@ -2476,7 +3250,7 @@
           }
         },
         "responses": {
-          "201": {
+          "200": {
             "description": "Successful response",
             "content": {
               "application/json": {
@@ -2485,6 +3259,142 @@
                 }
               }
             }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    },
+    "/sessions/{sessionId}": {
+      "get": {
+        "operationId": "typescriptGetSession",
+        "summary": "Get a session.",
+        "description": "Demonstrates generic wrapper responses for session resources that can be authenticated by bearer, API key, or a session cookie.",
+        "tags": [
+          "Sessions"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "sessionId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123"
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionEnvelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      },
+      "patch": {
+        "operationId": "typescriptUpdateSession",
+        "summary": "Update a session.",
+        "description": "Extends or revokes a session while preserving the generic response envelope.",
+        "tags": [
+          "Sessions"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "sessionId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123"
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "PartnerToken": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SessionActionInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionEnvelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "typescriptDeleteSession",
+        "summary": "Delete a session.",
+        "description": "Demonstrates 204 responses from typed route modules.",
+        "tags": [
+          "Sessions"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "sessionId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123"
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
           },
           "400": {
             "$ref": "#/components/responses/400"
@@ -2515,7 +3425,7 @@
           "description": "Multipart form data containing image file (PNG/JPG, max 5MB), optional description and category"
         },
         "responses": {
-          "201": {
+          "200": {
             "description": "Returns upload confirmation with file metadata and access URL",
             "content": {
               "application/json": {
@@ -2581,6 +3491,9 @@
       "name": "Auth"
     },
     {
+      "name": "Exports"
+    },
+    {
       "name": "Llms"
     },
     {
@@ -2594,6 +3507,9 @@
     },
     {
       "name": "Reports"
+    },
+    {
+      "name": "Sessions"
     },
     {
       "name": "Uploads"

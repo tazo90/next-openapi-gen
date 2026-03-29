@@ -38,8 +38,7 @@
     "@types/js-yaml": "catalog:",
     "@types/node": "catalog:",
     "oxfmt": "catalog:",
-    "oxlint": "catalog:",
-    "typescript": "catalog:"
+    "oxlint": "catalog:"
   },
   "engines": {
     "node": ">=24.0.0"

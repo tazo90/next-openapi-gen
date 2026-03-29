@@ -54,6 +54,7 @@ describe("SchemaProcessor helper seams", () => {
           type: "string",
         },
       },
+      required: ["id"],
     });
   });
 
@@ -125,6 +126,7 @@ describe("SchemaProcessor helper seams", () => {
           type: "string",
         },
       },
+      required: ["id"],
     });
     expect(processor.findSchemaDefinition("ImportedFirstArg", "params")).toEqual({
       type: "object",
@@ -133,6 +135,7 @@ describe("SchemaProcessor helper seams", () => {
           type: "string",
         },
       },
+      required: ["id"],
     });
     expect(processor.findSchemaDefinition("ImportedArgs", "params")).toEqual({
       type: "array",
@@ -144,6 +147,7 @@ describe("SchemaProcessor helper seams", () => {
               type: "string",
             },
           },
+          required: ["id"],
         },
       ],
       items: false,
@@ -160,8 +164,10 @@ describe("SchemaProcessor helper seams", () => {
               type: "string",
             },
           },
+          required: ["id"],
         },
       },
+      required: ["data"],
     });
     expect(processor.findSchemaDefinition("AsyncUser", "response")).toEqual({
       type: "object",
@@ -170,6 +176,7 @@ describe("SchemaProcessor helper seams", () => {
           type: "string",
         },
       },
+      required: ["id"],
     });
     expect(processor.findSchemaDefinition("UserMap", "response")).toEqual({
       type: "object",
@@ -180,6 +187,7 @@ describe("SchemaProcessor helper seams", () => {
             type: "string",
           },
         },
+        required: ["id"],
       },
     });
   });
@@ -248,6 +256,7 @@ describe("SchemaProcessor helper seams", () => {
           type: "number",
         },
       },
+      required: ["count"],
     });
     expect(processor.findSchemaDefinition("OnlyA", "response")).toEqual({
       type: "object",
@@ -400,6 +409,7 @@ describe("SchemaProcessor helper seams", () => {
       properties: {
         enabled: { type: "boolean" },
       },
+      required: ["enabled"],
     });
     expect(
       (processor as any).resolveTSNodeType(
@@ -521,6 +531,7 @@ describe("SchemaProcessor helper seams", () => {
       properties: {
         name: { type: "string" },
       },
+      required: ["name"],
     });
     expect((processor as any).resolveGenericType(t.identifier("Nope"), [], "Nope")).toEqual({});
   });

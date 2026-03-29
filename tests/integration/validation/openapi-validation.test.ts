@@ -358,9 +358,9 @@ export async function POST(): Promise<NextResponse<SearchResponse>> {
           },
         });
         expect(
-          spec.paths?.["/events/stream"]?.post?.responses?.["201"] &&
-            "content" in spec.paths["/events/stream"].post.responses["201"]
-            ? spec.paths["/events/stream"].post.responses["201"].content?.["application/json"]
+          spec.paths?.["/events/stream"]?.post?.responses?.["200"] &&
+            "content" in spec.paths["/events/stream"].post.responses["200"]
+            ? spec.paths["/events/stream"].post.responses["200"].content?.["application/json"]
             : undefined,
         ).toMatchObject({
           schema: {

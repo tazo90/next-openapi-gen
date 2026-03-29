@@ -231,12 +231,33 @@ importers:
       '@vitest/ui':
         specifier: 'catalog:'
         version: 4.1.2(vitest@4.1.2)
+      '@workspace/openapi-cli':
+        specifier: workspace:*
+        version: link:packages/openapi-cli
+      '@workspace/openapi-core':
+        specifier: workspace:*
+        version: link:packages/openapi-core
+      '@workspace/openapi-framework-next':
+        specifier: workspace:*
+        version: link:packages/openapi-framework-next
+      '@workspace/openapi-framework-react-router':
+        specifier: workspace:*
+        version: link:packages/openapi-framework-react-router
+      '@workspace/openapi-framework-tanstack':
+        specifier: workspace:*
+        version: link:packages/openapi-framework-tanstack
+      '@workspace/openapi-init':
+        specifier: workspace:*
+        version: link:packages/openapi-init
       knip:
         specifier: 'catalog:'
         version: 6.1.0(@emnapi/core@1.9.1)(@emnapi/runtime@1.9.1)
       lint-staged:
         specifier: 'catalog:'
         version: 16.4.0
+      next-openapi-gen:
+        specifier: workspace:*
+        version: link:packages/next-openapi-gen
       oxfmt:
         specifier: 'catalog:'
         version: 0.42.0
@@ -880,16 +901,10 @@ importers:
       ora:
         specifier: 'catalog:'
         version: 9.3.0
+      typescript:
+        specifier: 'catalog:'
+        version: 5.9.3
     devDependencies:
-      '@types/babel__traverse':
-        specifier: 'catalog:'
-        version: 7.28.0
-      '@types/fs-extra':
-        specifier: 'catalog:'
-        version: 11.0.4
-      '@types/js-yaml':
-        specifier: 'catalog:'
-        version: 4.0.9
       '@types/node':
         specifier: 'catalog:'
         version: 25.5.0
@@ -908,9 +923,6 @@ importers:
       '@workspace/openapi-framework-tanstack':
         specifier: workspace:*
         version: link:../openapi-framework-tanstack
-      '@workspace/openapi-init':
-        specifier: workspace:*
-        version: link:../openapi-init
       conventional-changelog-cli:
         specifier: 'catalog:'
         version: 5.0.0(conventional-commits-filter@5.0.0)
@@ -926,9 +938,6 @@ importers:
       tsup:
         specifier: 'catalog:'
         version: 8.5.1(jiti@2.6.1)(postcss@8.5.8)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.3)
-      typescript:
-        specifier: 'catalog:'
-        version: 5.9.3
 
   packages/openapi-cli:
     dependencies:

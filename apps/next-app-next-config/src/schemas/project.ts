@@ -12,3 +12,7 @@ export interface ProjectRecord {
   name: string;
   visibility: "private" | "public";
 }
+
+export type ProjectShareIdParams = {
+  id: string;
+};

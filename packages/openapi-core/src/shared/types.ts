@@ -302,6 +302,7 @@ export type JSDocExampleDefinition = {
   summary?: string | undefined;
   description?: string | undefined;
   value?: JsonValue | undefined;
+  dataValue?: JsonValue | undefined;
   serializedValue?: string | undefined;
   externalValue?: string | undefined;
 };
@@ -335,6 +336,7 @@ export type DataTypes = {
   responseExamples?: OpenApiExampleMap | undefined;
   querystringExamples?: OpenApiExampleMap | undefined;
   inferredResponses?: InferredResponseDefinition[] | undefined;
+  inferredQueryParamNames?: string[] | undefined;
   summary?: string | undefined;
   description?: string | undefined;
   auth?: string | undefined;

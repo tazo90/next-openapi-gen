@@ -720,7 +720,14 @@ export class ZodSchemaConverter {
       t.isIdentifier(node.callee) &&
       this.drizzleZodImports.has(node.callee.name)
     ) {
-      return DrizzleZodProcessor.processSchema(node);
+      return DrizzleZodProcessor.processSchema(node, {
+        currentAST: this.currentAST,
+        currentFilePath: this.currentFilePath,
+        importedModules: this.currentImports,
+        parseFileWithCache: (filePath) => this.parseFileWithCache(filePath),
+        resolveImportPath: (currentFilePath, importSource) =>
+          this.resolveImportPath(currentFilePath, importSource),
+      });
     }
 
     // Handle reference to another schema (e.g. UserBaseSchema.extend)
@@ -1290,8 +1297,9 @@ export class ZodSchemaConverter {
         break;
       case "endsWith":
         if (node.arguments.length > 0 && t.isStringLiteral(node.arguments[0])) {
-          schema.pattern = `${this.escapeRegExp(node.arguments[0].value)}`;
+          schema.pattern = `${this.escapeRegExp(node.arguments[0].value)}$`;
         }
+        break;
       case "includes":
         if (node.arguments.length > 0 && t.isStringLiteral(node.arguments[0])) {
           schema.pattern = this.escapeRegExp(node.arguments[0].value);

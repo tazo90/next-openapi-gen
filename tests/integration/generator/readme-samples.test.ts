@@ -27,9 +27,18 @@ describe.sequential("README-backed generator samples", () => {
           },
         },
         responses: {
-          201: {
+          200: {
             description: "Returns upload confirmation with file metadata and access URL",
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/UploadResponseSchema",
+                },
+              },
+            },
           },
+          400: { $ref: "#/components/responses/400" },
+          500: { $ref: "#/components/responses/500" },
         },
       });
       expect(spec.paths?.["/orders"]?.get).toMatchObject({

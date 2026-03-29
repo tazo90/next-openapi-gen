@@ -45,6 +45,76 @@
         }
       }
     },
+    "/uploads": {
+      "get": {
+        "operationId": "tanstackGetUploadInstructions",
+        "summary": "Load upload instructions.",
+        "description": "",
+        "tags": [
+          "Uploads"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      },
+      "post": {
+        "operationId": "tanstackCreateUpload",
+        "summary": "Create an upload record.",
+        "description": "",
+        "tags": [
+          "Uploads"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/AssetUploadInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssetUpload"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          }
+        }
+      }
+    },
     "/users/{id}": {
       "get": {
         "operationId": "tanstackGetUserById",
@@ -111,7 +181,7 @@
           }
         },
         "responses": {
-          "201": {
+          "200": {
             "description": "Successful response",
             "content": {
               "application/json": {
@@ -136,6 +206,9 @@
       "name": "Reports"
     },
     {
+      "name": "Uploads"
+    },
+    {
       "name": "Users"
     }
   ],
@@ -153,7 +226,10 @@
           "reportId": {
             "type": "string"
           }
-        }
+        },
+        "required": [
+          "reportId"
+        ]
       },
       "ReportSummary": {
         "type": "object",
@@ -174,7 +250,58 @@
           "updatedAt": {
             "type": "string"
           }
-        }
+        },
+        "required": [
+          "id",
+          "title",
+          "status",
+          "updatedAt"
+        ]
+      },
+      "string": {},
+      "AssetUploadInput": {
+        "type": "object",
+        "properties": {
+          "fileName": {
+            "type": "string",
+            "nullable": false
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "avatar",
+              "report"
+            ],
+            "nullable": false
+          }
+        },
+        "required": [
+          "fileName",
+          "kind"
+        ]
+      },
+      "AssetUpload": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "avatar",
+              "report"
+            ]
+          },
+          "url": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "url"
+        ]
       },
       "UserIdParams": {
         "type": "object",
@@ -182,7 +309,10 @@
           "id": {
             "type": "string"
           }
-        }
+        },
+        "required": [
+          "id"
+        ]
       },
       "User": {
         "type": "object",
@@ -200,7 +330,12 @@
               "member"
             ]
           }
-        }
+        },
+        "required": [
+          "id",
+          "email",
+          "role"
+        ]
       },
       "UpdateUserInput": {
         "type": "object",

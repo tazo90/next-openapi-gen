@@ -1,6 +1,7 @@
 import type fs from "fs";
 import path from "path";
 
+import * as t from "@babel/types";
 import { parseTypeScriptFile } from "../../shared/utils.js";
 import type { ContentType, OpenAPIDefinition } from "../../shared/types.js";
 import { logger } from "../../shared/logger.js";
@@ -72,6 +73,77 @@ function resolveFunctionNodeFromQuery(funcName: string, context: UtilityTypeReso
   }
 
   return funcNode;
+}
+
+function hasGenericTypeParameters(node: any): boolean {
+  if (t.isTSTypeAliasDeclaration(node) || t.isTSInterfaceDeclaration(node)) {
+    return !!node.typeParameters?.params?.length;
+  }
+
+  return false;
+}
+
+function findNamedTypeDeclarationInAst(ast: any, typeName: string): any | null {
+  for (const statement of ast.program.body) {
+    const declaration =
+      t.isExportNamedDeclaration(statement) && statement.declaration
+        ? statement.declaration
+        : statement;
+
+    if (
+      (t.isTSTypeAliasDeclaration(declaration) || t.isTSInterfaceDeclaration(declaration)) &&
+      t.isIdentifier(declaration.id, { name: typeName })
+    ) {
+      return declaration;
+    }
+  }
+
+  return null;
+}
+
+function resolvePreferredGenericDefinition(
+  typeName: string,
+  context: UtilityTypeResolverContext,
+): any | null {
+  const existingEntry = context.typeDefinitions[typeName];
+  const existingNode = getTypeDefinitionNode(existingEntry);
+  if (existingNode && hasGenericTypeParameters(existingNode)) {
+    return existingNode;
+  }
+
+  const candidateFiles = [context.currentFilePath];
+  const normalizedPath = path.normalize(context.currentFilePath);
+  const importedPath = context.importMap[normalizedPath]?.[typeName];
+  if (importedPath) {
+    const resolvedImportPath = context.resolveImportPath(importedPath, context.currentFilePath);
+    if (resolvedImportPath) {
+      candidateFiles.push(resolvedImportPath);
+    }
+  }
+
+  for (const candidateFile of candidateFiles) {
+    if (!candidateFile) {
+      continue;
+    }
+
+    try {
+      const content = context.fileAccess.readFileSync(candidateFile, "utf-8");
+      const ast = parseTypeScriptFile(content);
+      const declaration = findNamedTypeDeclarationInAst(ast, typeName);
+
+      if (declaration && hasGenericTypeParameters(declaration)) {
+        context.typeDefinitions[typeName] = {
+          node: declaration,
+          filePath: candidateFile,
+        };
+        return declaration;
+      }
+    } catch {
+      // Ignore unreadable candidates and fall back to the indexed definitions.
+    }
+  }
+
+  return existingNode;
 }
 
 function resolveReturnTypeUtility(
@@ -243,8 +315,7 @@ export function resolveUtilityTypeReference(
 
   if (node.typeParameters?.params.length > 0) {
     context.findTypeDefinition(typeName);
-    const genericDefEntry = context.typeDefinitions[typeName];
-    const genericTypeDefinition = getTypeDefinitionNode(genericDefEntry);
+    const genericTypeDefinition = resolvePreferredGenericDefinition(typeName, context);
 
     if (genericTypeDefinition) {
       return context.resolveGenericType(

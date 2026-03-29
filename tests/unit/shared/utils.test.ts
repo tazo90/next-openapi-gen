@@ -244,6 +244,45 @@ describe("shared utils", () => {
     });
   });
 
+  it("supports body example aliases, 3.2 dataValue examples, and inline response types", () => {
+    const data = getExportCommentData(`
+      export const requestExamples = [
+        {
+          name: "default",
+          value: {
+            reason: "cleanup",
+          },
+        },
+      ];
+
+      /**
+       * @response { success: boolean, message?: string }
+       * @examples body:{"reason":"cleanup"}
+       * @examples response:[{"name":"structured","dataValue":{"id":"evt_1"}}]
+       * @openapi
+       */
+      export async function DELETE() {}
+    `);
+
+    expect(data).toMatchObject({
+      responseType: "{ success: boolean, message?: string }",
+      requestExamples: {
+        example: {
+          value: {
+            reason: "cleanup",
+          },
+        },
+      },
+      responseExamples: {
+        structured: {
+          dataValue: {
+            id: "evt_1",
+          },
+        },
+      },
+    });
+  });
+
   it("extracts multiline type references and preserves empty summaries", () => {
     expect(
       extractTypeFromComment(

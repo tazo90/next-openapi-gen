@@ -420,4 +420,49 @@ describe("TypeScript utility type helpers", () => {
       $ref: "#/components/schemas/MissingGeneric",
     });
   });
+
+  it("prefers generic declarations from the current file over conflicting indexed symbols", () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-utility-generic-preference-"));
+    roots.push(root);
+
+    const schemaFile = path.join(root, "schema.ts");
+    fs.writeFileSync(
+      schemaFile,
+      [
+        "export interface ApiResponse<T> {",
+        "  success: boolean;",
+        "  data: T;",
+        "  timestamp: string;",
+        "}",
+      ].join("\n"),
+    );
+
+    const context = createContext({
+      currentFilePath: schemaFile,
+      fileAccess: {
+        readFileSync: (filePath: string) => fs.readFileSync(filePath, "utf8"),
+      },
+      typeDefinitions: {
+        ApiResponse: {
+          node: t.tsUnionType([t.tsStringKeyword(), t.tsNumberKeyword()]),
+          filePath: "/virtual/conflict.ts",
+        },
+      },
+    });
+
+    expect(
+      resolveUtilityTypeReference(
+        t.tsTypeReference(
+          t.identifier("ApiResponse"),
+          t.tsTypeParameterInstantiation([t.tsStringKeyword()]),
+        ),
+        context,
+      ),
+    ).toEqual({
+      type: "object",
+      properties: {
+        wrapped: { type: "string" },
+      },
+    });
+  });
 });

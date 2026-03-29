@@ -72,7 +72,7 @@
           }
         },
         "responses": {
-          "201": {
+          "200": {
             "description": "Successful response",
             "content": {
               "application/json": {
@@ -119,6 +119,76 @@
           }
         }
       }
+    },
+    "/uploads": {
+      "get": {
+        "operationId": "reactRouterGetUploadInstructions",
+        "summary": "Load upload instructions.",
+        "description": "",
+        "tags": [
+          "Uploads"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      },
+      "post": {
+        "operationId": "reactRouterCreateUpload",
+        "summary": "Create an upload artifact.",
+        "description": "",
+        "tags": [
+          "Uploads"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/UploadDraft"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UploadArtifact"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          }
+        }
+      }
     }
   },
   "tags": [
@@ -127,6 +197,9 @@
     },
     {
       "name": "Settings"
+    },
+    {
+      "name": "Uploads"
     }
   ],
   "servers": [
@@ -143,7 +216,10 @@
           "projectId": {
             "type": "string"
           }
-        }
+        },
+        "required": [
+          "projectId"
+        ]
       },
       "Project": {
         "type": "object",
@@ -161,7 +237,12 @@
               "public"
             ]
           }
-        }
+        },
+        "required": [
+          "id",
+          "name",
+          "visibility"
+        ]
       },
       "ProjectMutationInput": {
         "type": "object",
@@ -178,7 +259,11 @@
             ],
             "nullable": false
           }
-        }
+        },
+        "required": [
+          "name",
+          "visibility"
+        ]
       },
       "ProfileSettings": {
         "type": "object",
@@ -193,7 +278,56 @@
           "locale": {
             "type": "string"
           }
-        }
+        },
+        "required": [
+          "theme",
+          "locale"
+        ]
+      },
+      "string": {},
+      "UploadDraft": {
+        "type": "object",
+        "properties": {
+          "fileName": {
+            "type": "string",
+            "nullable": false
+          },
+          "folder": {
+            "type": "string",
+            "enum": [
+              "avatars",
+              "exports"
+            ],
+            "nullable": false
+          }
+        },
+        "required": [
+          "fileName",
+          "folder"
+        ]
+      },
+      "UploadArtifact": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "folder": {
+            "type": "string",
+            "enum": [
+              "avatars",
+              "exports"
+            ]
+          },
+          "url": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "folder",
+          "url"
+        ]
       }
     },
     "responses": {

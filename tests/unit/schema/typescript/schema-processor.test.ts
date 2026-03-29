@@ -261,7 +261,80 @@ describe("SchemaProcessor", () => {
           type: "boolean",
         },
       },
+      required: ["id", "success"],
     });
+  });
+
+  it("preserves primitive aliases, required properties, and generic array substitution", () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-schema-processor-fidelity-"));
+    roots.push(root);
+
+    fs.writeFileSync(
+      path.join(root, "schemas.ts"),
+      [
+        "export type PlainString = string;",
+        "",
+        "export interface FilterShape {",
+        "  id: string;",
+        "  label?: string;",
+        "}",
+        "",
+        "export interface WebhookAttempt {",
+        "  id: string;",
+        '  status: "delivered" | "failed";',
+        "}",
+        "",
+        "export interface PaginatedResponse<T> {",
+        "  data: T[];",
+        "  total: number;",
+        "}",
+      ].join("\n"),
+    );
+
+    const processor = new SchemaProcessor(root, "typescript");
+
+    expect(processor.findSchemaDefinition("PlainString", "response")).toEqual({
+      type: "string",
+    });
+    expect(processor.findSchemaDefinition("FilterShape", "response")).toEqual({
+      type: "object",
+      properties: {
+        id: {
+          type: "string",
+        },
+        label: {
+          type: "string",
+        },
+      },
+      required: ["id"],
+    });
+    expect(processor.findSchemaDefinition("PaginatedResponse<WebhookAttempt>", "response")).toEqual(
+      {
+        type: "object",
+        properties: {
+          data: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                id: {
+                  type: "string",
+                },
+                status: {
+                  type: "string",
+                  enum: ["delivered", "failed"],
+                },
+              },
+              required: ["id", "status"],
+            },
+          },
+          total: {
+            type: "number",
+          },
+        },
+        required: ["data", "total"],
+      },
+    );
   });
 
   it("filters invalid, generic, utility, and function schemas from defined schemas", () => {

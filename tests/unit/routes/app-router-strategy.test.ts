@@ -166,6 +166,40 @@ describe("AppRouterStrategy", () => {
     );
   });
 
+  it("infers query parameters read from URL searchParams", () => {
+    strategy = new AppRouterStrategy(baseConfig);
+
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-app-router-query-"));
+    roots.push(root);
+    const routeFile = path.join(root, "route.ts");
+    fs.writeFileSync(
+      routeFile,
+      `
+      /**
+       * Update comment
+       * @openapi
+       */
+      export async function PATCH(request: Request) {
+        const url = new URL(request.url);
+        const commentId = url.searchParams.get("commentId");
+
+        return Response.json({ commentId });
+      }
+      `,
+    );
+
+    const addRoute = vi.fn();
+    strategy.processFile(routeFile, addRoute);
+
+    expect(addRoute).toHaveBeenCalledWith(
+      "PATCH",
+      routeFile,
+      expect.objectContaining({
+        inferredQueryParamNames: ["commentId"],
+      }),
+    );
+  });
+
   it("keeps explicit @response annotations authoritative over inferred responses", () => {
     strategy = new AppRouterStrategy(baseConfig);
 

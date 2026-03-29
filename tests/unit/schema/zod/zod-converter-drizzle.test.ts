@@ -125,6 +125,9 @@ describe("ZodSchemaConverter drizzle-zod support", () => {
     expect(responseSchema).toMatchObject({
       type: "object",
       properties: {
+        id: {
+          type: "integer",
+        },
         title: {
           type: "string",
           description: "Post title",
@@ -135,6 +138,7 @@ describe("ZodSchemaConverter drizzle-zod support", () => {
         },
         excerpt: {
           type: "string",
+          nullable: true,
           description: "Post excerpt",
         },
         content: {
@@ -149,6 +153,9 @@ describe("ZodSchemaConverter drizzle-zod support", () => {
           type: "integer",
           description: "Number of views",
         },
+        authorId: {
+          type: "integer",
+        },
         createdAt: {
           type: "string",
           format: "date-time",
@@ -161,5 +168,17 @@ describe("ZodSchemaConverter drizzle-zod support", () => {
         },
       },
     });
+    expect(responseSchema?.required).toEqual([
+      "id",
+      "title",
+      "slug",
+      "excerpt",
+      "content",
+      "published",
+      "viewCount",
+      "authorId",
+      "createdAt",
+      "updatedAt",
+    ]);
   });
 });

@@ -104,8 +104,12 @@ export class AppRouterStrategy implements RouterStrategy {
     filePath: string,
     exportName: string,
   ): DataTypes {
+    const inferredQueryParamNames = this.inferQueryParamsFromHandler(handlerNode);
     if (dataTypes.responseType) {
-      return dataTypes;
+      return {
+        ...dataTypes,
+        ...(inferredQueryParamNames.length > 0 ? { inferredQueryParamNames } : {}),
+      };
     }
 
     const checkerResponses = inferResponsesForExport(filePath, exportName);
@@ -113,6 +117,7 @@ export class AppRouterStrategy implements RouterStrategy {
       return {
         ...dataTypes,
         inferredResponses: checkerResponses.responses,
+        ...(inferredQueryParamNames.length > 0 ? { inferredQueryParamNames } : {}),
         diagnostics: [...(dataTypes.diagnostics || []), ...checkerResponses.diagnostics],
       };
     }
@@ -128,8 +133,65 @@ export class AppRouterStrategy implements RouterStrategy {
     return {
       ...dataTypes,
       responseType: inferredResponseType,
+      ...(inferredQueryParamNames.length > 0 ? { inferredQueryParamNames } : {}),
       diagnostics: [...(dataTypes.diagnostics || []), ...checkerResponses.diagnostics],
     };
+  }
+
+  private inferQueryParamsFromHandler(handlerNode: t.Node): string[] {
+    const functionLike =
+      t.isFunctionDeclaration(handlerNode) || t.isFunctionExpression(handlerNode)
+        ? handlerNode
+        : t.isVariableDeclarator(handlerNode) && t.isArrowFunctionExpression(handlerNode.init)
+          ? handlerNode.init
+          : null;
+
+    if (!functionLike || !functionLike.body || !t.isBlockStatement(functionLike.body)) {
+      return [];
+    }
+
+    const queryParamNames = new Set<string>();
+    const syntheticStatement = t.isFunctionDeclaration(functionLike)
+      ? t.cloneNode(functionLike, true)
+      : t.variableDeclaration("const", [
+          t.variableDeclarator(
+            t.identifier("__handler"),
+            t.cloneNode(functionLike, true) as t.ArrowFunctionExpression | t.FunctionExpression,
+          ),
+        ]);
+    const program = t.file(t.program([syntheticStatement]));
+
+    traverse(program, {
+      CallExpression: (path) => {
+        const name = this.getSearchParamName(path.node);
+        if (name) {
+          queryParamNames.add(name);
+        }
+      },
+    });
+
+    return Array.from(queryParamNames);
+  }
+
+  private getSearchParamName(node: t.CallExpression): string | null {
+    if (!t.isMemberExpression(node.callee) || !t.isIdentifier(node.callee.property)) {
+      return null;
+    }
+
+    const methodName = node.callee.property.name;
+    if (methodName !== "get" && methodName !== "getAll" && methodName !== "has") {
+      return null;
+    }
+
+    if (
+      !t.isMemberExpression(node.callee.object) ||
+      !t.isIdentifier(node.callee.object.property, { name: "searchParams" })
+    ) {
+      return null;
+    }
+
+    const firstArgument = node.arguments[0];
+    return t.isStringLiteral(firstArgument) ? firstArgument.value : null;
   }
 
   private inferResponseTypeFromHandler(handlerNode: t.Node): string {

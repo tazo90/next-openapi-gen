@@ -70,3 +70,16 @@ export type PaginatedResponse<T> = {
   /** Total number of pages */
   totalPages: number;
 };
+
+export type WebhookAttempt = {
+  deliveredAt: Date;
+  eventId: string;
+  id: string;
+  status: "delivered" | "failed";
+};
+
+export type WebhookAttemptList = PaginatedResponse<WebhookAttempt>;
+
+export type WebhookDeliveryLinkParams = {
+  eventId: string;
+};

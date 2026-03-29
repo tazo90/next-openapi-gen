@@ -132,6 +132,60 @@
           }
         }
       },
+      "UploadRequestSchema": {
+        "type": "object",
+        "properties": {
+          "fileName": {
+            "type": "string",
+            "description": "Uploaded filename"
+          },
+          "purpose": {
+            "type": "string",
+            "enum": [
+              "avatar",
+              "attachment"
+            ],
+            "description": "Upload purpose"
+          }
+        },
+        "required": [
+          "fileName",
+          "purpose"
+        ]
+      },
+      "UploadResponseSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Upload identifier"
+          },
+          "fileName": {
+            "type": "string",
+            "description": "Stored filename"
+          },
+          "purpose": {
+            "type": "string",
+            "enum": [
+              "avatar",
+              "attachment"
+            ],
+            "description": "Upload purpose"
+          },
+          "url": {
+            "type": "string",
+            "format": "uri",
+            "description": "Public download URL"
+          }
+        },
+        "required": [
+          "id",
+          "fileName",
+          "purpose",
+          "url"
+        ]
+      },
+      "string": {},
       "UserIdParamsSchema": {
         "type": "object",
         "properties": {
@@ -443,6 +497,64 @@
         }
       }
     },
+    "/uploads": {
+      "post": {
+        "operationId": "post-uploads",
+        "summary": "Upload an attachment",
+        "description": "Demonstrates multipart-style documentation and auth-heavy Pages Router handlers.",
+        "tags": [
+          "Uploads"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/UploadRequestSchema"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UploadResponseSchema"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "operationId": "get-uploads",
+        "summary": "Download upload instructions",
+        "description": "Returns plain-text upload instructions for Pages Router transport coverage.",
+        "tags": [
+          "Uploads"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/users": {
       "get": {
         "operationId": "get-users",
@@ -637,6 +749,9 @@
   "tags": [
     {
       "name": "Products"
+    },
+    {
+      "name": "Uploads"
     },
     {
       "name": "Users"

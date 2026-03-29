@@ -20,6 +20,47 @@
       }
     },
     "schemas": {
+      "AdminAuditQuery": {
+        "type": "object",
+        "properties": {
+          "actorId": {
+            "type": "string",
+            "description": "Filter by actor"
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true,
+            "description": "Maximum audit rows"
+          }
+        }
+      },
+      "AdminAuditEntry": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "description": "Administrative action"
+          },
+          "actorId": {
+            "type": "string",
+            "description": "Administrator identifier"
+          },
+          "occurredAt": {
+            "type": "string",
+            "description": "Timestamp"
+          },
+          "resourceId": {
+            "type": "string",
+            "description": "Optional related resource"
+          }
+        },
+        "required": [
+          "action",
+          "actorId",
+          "occurredAt"
+        ]
+      },
       "AdminUserQuery": {
         "type": "object",
         "properties": {
@@ -250,6 +291,61 @@
           "user"
         ]
       },
+      "ProfileFilters": {
+        "type": "object",
+        "properties": {
+          "includeHidden": {
+            "type": "boolean",
+            "description": "Include hidden profiles"
+          },
+          "q": {
+            "type": "string",
+            "description": "Search term"
+          }
+        }
+      },
+      "ProfileDraft": {
+        "type": "object",
+        "properties": {
+          "avatar": {
+            "type": "object",
+            "properties": {
+              "url": {
+                "type": "string",
+                "format": "uri",
+                "description": "Avatar URL"
+              }
+            },
+            "required": [
+              "url"
+            ],
+            "nullable": true,
+            "description": "Nullable avatar"
+          },
+          "banner": {
+            "type": "object",
+            "properties": {
+              "url": {
+                "type": "string",
+                "format": "uri",
+                "description": "Banner URL"
+              }
+            },
+            "required": [
+              "url"
+            ],
+            "nullable": true,
+            "description": "Nullish banner"
+          },
+          "displayName": {
+            "type": "string",
+            "description": "Optional public display name"
+          }
+        },
+        "required": [
+          "avatar"
+        ]
+      },
       "User": {
         "type": "object",
         "properties": {
@@ -459,6 +555,63 @@
     }
   },
   "paths": {
+    "/audit": {
+      "get": {
+        "operationId": "get-audit",
+        "summary": "List admin audit entries",
+        "description": "Provides a second admin route-group example with explicit auth and edge-case query parsing.",
+        "tags": [
+          "Admin"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "actorId",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "Filter by actor"
+            },
+            "description": "Filter by actor"
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "exclusiveMinimum": true,
+              "description": "Maximum audit rows"
+            },
+            "description": "Maximum audit rows"
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AdminAuditEntry"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          }
+        }
+      }
+    },
     "/users": {
       "get": {
         "operationId": "get-users",
@@ -562,7 +715,7 @@
           }
         },
         "responses": {
-          "201": {
+          "200": {
             "description": "Successful response",
             "content": {
               "application/json": {
@@ -643,6 +796,116 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/DashboardResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    },
+    "/profiles": {
+      "get": {
+        "operationId": "get-profiles",
+        "summary": "List public profiles",
+        "description": "Exercises nullable, nullish, and optional permutations from a public route group.",
+        "tags": [
+          "Profiles"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "includeHidden",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Include hidden profiles"
+            },
+            "description": "Include hidden profiles"
+          },
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "Search term"
+            },
+            "description": "Search term"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ProfileDraft"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      },
+      "post": {
+        "operationId": "post-profiles",
+        "summary": "Create a profile preview",
+        "description": "Mixes query and body metadata in the sandbox app to stress route parsing.",
+        "tags": [
+          "Profiles"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "includeHidden",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Include hidden profiles"
+            },
+            "description": "Include hidden profiles"
+          },
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "Search term"
+            },
+            "description": "Search term"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProfileDraft"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileDraft"
                 }
               }
             }
@@ -931,6 +1194,9 @@
     },
     {
       "name": "Authentication"
+    },
+    {
+      "name": "Profiles"
     },
     {
       "name": "Test-optional"

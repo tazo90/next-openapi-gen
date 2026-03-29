@@ -105,8 +105,15 @@ function inferResponseFromExpression(
           : {};
       return {
         ...candidate,
-        statusCode: getStatusCodeFromInit(expression.arguments[1]),
+        statusCode: getStatusCodeFromInit(expression.arguments[1]) || "200",
         contentType: "application/json",
+        source: "typescript",
+      };
+    }
+
+    if (calleeText === "NextResponse.redirect" || calleeText === "Response.redirect") {
+      return {
+        statusCode: getStatusCodeFromRedirectCall(expression) || "302",
         source: "typescript",
       };
     }
@@ -206,6 +213,19 @@ function getStatusCodeFromInit(node: ts.Node | undefined): string | undefined {
   }
 
   return undefined;
+}
+
+function getStatusCodeFromRedirectCall(expression: ts.CallExpression): string | undefined {
+  const statusArgument = expression.arguments[1];
+  if (statusArgument && ts.isNumericLiteral(statusArgument)) {
+    return statusArgument.text;
+  }
+
+  if (!statusArgument || !ts.isObjectLiteralExpression(statusArgument)) {
+    return undefined;
+  }
+
+  return getStatusCodeFromInit(statusArgument);
 }
 
 function toSchemaCandidate(

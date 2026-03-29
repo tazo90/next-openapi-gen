@@ -145,6 +145,49 @@ describe("OperationProcessor", () => {
       "Fallback",
     );
   });
+
+  it("adds inferred query parameters that are missing from schema-driven params", () => {
+    const schemaProcessor = {
+      getSchemaContent: vi.fn(() => ({
+        params: undefined,
+        pathParams: undefined,
+        body: undefined,
+        responses: {},
+      })),
+      createRequestParamsSchema: vi.fn(),
+      createDefaultPathParamsSchema: vi.fn(),
+      detectContentType: vi.fn(),
+      createRequestBodySchema: vi.fn(),
+      createResponseSchema: vi.fn(),
+      getExampleForParam: vi.fn(() => "123"),
+    };
+    const responseProcessor = {
+      supportsRequestBody: vi.fn(() => false),
+      processResponses: vi.fn(() => ({
+        200: {
+          description: "Successful response",
+        },
+      })),
+    };
+
+    const processor = new OperationProcessor(schemaProcessor as never, responseProcessor as never);
+    const result = processor.processOperation("PATCH", "/comments", {
+      inferredQueryParamNames: ["commentId"],
+    });
+
+    expect(result.definition.parameters).toEqual([
+      {
+        in: "query",
+        name: "commentId",
+        required: false,
+        schema: {
+          type: "string",
+        },
+        example: "123",
+      },
+    ]);
+    expect(schemaProcessor.getExampleForParam).toHaveBeenCalledWith("commentId", "string");
+  });
 });
 describe("OperationProcessor", () => {
   it("builds operation metadata, auth, parameters, request bodies, and responses", () => {

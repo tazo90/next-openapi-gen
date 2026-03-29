@@ -267,6 +267,90 @@ describe("ResponseProcessor", () => {
     });
   });
 
+  it("prefers inferred success status codes over mutation defaults", () => {
+    const schemaProcessor = {
+      getSchemaContent: vi.fn(),
+      resolveTypeExpression: vi.fn(),
+    };
+    const processor = new ResponseProcessor(
+      {
+        diagnostics: { enabled: true },
+      } as never,
+      schemaProcessor as never,
+    );
+
+    const responses = processor.processResponses(
+      {
+        responseType: "SearchResponse",
+        inferredResponses: [
+          {
+            statusCode: "200",
+            typeName: "SearchResponse",
+            source: "typescript",
+          },
+        ],
+      },
+      "POST",
+    );
+
+    expect(responses["200"]).toEqual({
+      description: "Successful response",
+      content: {
+        "application/json": {
+          schema: { $ref: "#/components/schemas/SearchResponse" },
+        },
+      },
+    });
+    expect(responses["201"]).toBeUndefined();
+  });
+
+  it("supports inline response type expressions", () => {
+    const schemaProcessor = {
+      getSchemaContent: vi.fn(),
+      resolveTypeExpression: vi.fn(() => ({
+        type: "object",
+        properties: {
+          success: {
+            type: "boolean",
+          },
+        },
+        required: ["success"],
+      })),
+    };
+    const processor = new ResponseProcessor(
+      {
+        diagnostics: { enabled: true },
+      } as never,
+      schemaProcessor as never,
+    );
+
+    const responses = processor.processResponses(
+      {
+        responseType: "{ success: boolean }",
+      },
+      "DELETE",
+    );
+
+    expect(schemaProcessor.resolveTypeExpression).toHaveBeenCalledWith("{ success: boolean }");
+    expect(responses["204"]).toBeUndefined();
+    expect(responses["200"]).toEqual({
+      description: "Successful response",
+      content: {
+        "application/json": {
+          schema: {
+            type: "object",
+            properties: {
+              success: {
+                type: "boolean",
+              },
+            },
+            required: ["success"],
+          },
+        },
+      },
+    });
+  });
+
   it("emits sequential media and examples for first-class 3.2 response metadata", () => {
     const schemaProcessor = {
       getSchemaContent: vi.fn(),

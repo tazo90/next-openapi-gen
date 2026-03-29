@@ -165,6 +165,22 @@ export function parseResponseTag(commentValue: string): {
 
   if (segments[0] && /^\d{3}$/.test(segments[0])) {
     successCode = segments.shift() || "";
+    const remainingValue = segments.join(":").trim();
+    if (isInlineResponseType(remainingValue)) {
+      return {
+        responseDescription: "",
+        responseType: remainingValue,
+        successCode,
+      };
+    }
+  }
+
+  if (isInlineResponseType(responseType)) {
+    return {
+      responseDescription: "",
+      responseType,
+      successCode,
+    };
   }
 
   if (segments.length > 0) {
@@ -180,6 +196,11 @@ export function parseResponseTag(commentValue: string): {
     responseType,
     successCode,
   };
+}
+
+function isInlineResponseType(value: string): boolean {
+  const trimmed = value.trim();
+  return trimmed.startsWith("{") || trimmed.startsWith("[");
 }
 
 function createEmptyDataTypes(): DataTypes {
@@ -312,7 +333,7 @@ function parseExampleDefinition(
     return { definitions: [], diagnostics: [] };
   }
 
-  const target = rawValue.slice(0, firstColon).trim();
+  const target = normalizeExampleTarget(rawValue.slice(0, firstColon).trim());
   const rest = rawValue.slice(firstColon + 1).trim();
   if (!isExampleTarget(target) || !rest) {
     return { definitions: [], diagnostics: [] };
@@ -368,7 +389,11 @@ function buildExampleMap(
       {
         ...(definition.summary ? { summary: definition.summary } : {}),
         ...(definition.description ? { description: definition.description } : {}),
-        ...(typeof definition.value !== "undefined" ? { value: definition.value } : {}),
+        ...(typeof definition.dataValue !== "undefined"
+          ? { dataValue: definition.dataValue }
+          : typeof definition.value !== "undefined"
+            ? { value: definition.value }
+            : {}),
         ...(definition.serializedValue ? { serializedValue: definition.serializedValue } : {}),
         ...(definition.externalValue ? { externalValue: definition.externalValue } : {}),
       },
@@ -401,6 +426,14 @@ function toCamelCase(value: string): string {
 
 function isExampleTarget(value: string): value is JSDocExampleDefinition["target"] {
   return value === "request" || value === "response" || value === "querystring";
+}
+
+function normalizeExampleTarget(value: string): string {
+  if (value === "body") {
+    return "request";
+  }
+
+  return value;
 }
 
 function normalizeExampleSource(
@@ -482,7 +515,11 @@ function coerceSingleExampleDefinition(
           name: exampleName,
           ...(typeof source.summary === "string" ? { summary: source.summary } : {}),
           ...(typeof source.description === "string" ? { description: source.description } : {}),
-          ...(typeof source.value !== "undefined" ? { value: source.value as JsonValue } : {}),
+          ...(typeof source.dataValue !== "undefined"
+            ? { dataValue: source.dataValue as JsonValue }
+            : typeof source.value !== "undefined"
+              ? { value: source.value as JsonValue }
+              : {}),
           ...(typeof source.serializedValue === "string"
             ? { serializedValue: source.serializedValue }
             : {}),

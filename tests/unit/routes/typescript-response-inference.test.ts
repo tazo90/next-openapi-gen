@@ -44,6 +44,7 @@ export async function GET(flag: boolean) {
     expect(result.responses).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
+          statusCode: "200",
           contentType: "application/json",
           source: "typescript",
           schema: {
@@ -117,5 +118,28 @@ export async function GET(flag: boolean) {
         }),
       ]),
     );
+  });
+
+  it("infers redirect status codes from Response.redirect calls", () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-response-redirect-"));
+    roots.push(root);
+
+    const routeFile = path.join(root, "route.ts");
+    fs.writeFileSync(
+      routeFile,
+      `export async function GET() {
+  return Response.redirect("https://example.com/export.csv", 307);
+}
+`,
+    );
+
+    const result = inferResponsesForExport(routeFile, "GET");
+
+    expect(result.responses).toEqual([
+      {
+        statusCode: "307",
+        source: "typescript",
+      },
+    ]);
   });
 });

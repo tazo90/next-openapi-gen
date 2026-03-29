@@ -21,12 +21,20 @@ export class ResponseProcessor {
     method: string,
   ): Record<string, OpenApiResponseDefinition> {
     const responses: Record<string, OpenApiResponseDefinition> = {};
-    const successCode = dataTypes.successCode || this.getDefaultSuccessCode(method);
+    const inferredPrimarySuccessCode = this.getPrimaryInferredSuccessCode(
+      dataTypes.inferredResponses,
+    );
+    const successCode =
+      dataTypes.successCode ||
+      inferredPrimarySuccessCode ||
+      (dataTypes.responseType || dataTypes.responseItemType
+        ? "200"
+        : this.getDefaultSuccessCode(method));
 
     const hasExplicitPrimaryResponse =
       Boolean(dataTypes.responseType) ||
       Boolean(dataTypes.responseItemType) ||
-      successCode === "204";
+      Boolean(dataTypes.successCode);
 
     if (hasExplicitPrimaryResponse) {
       const explicitResponse = this.createTypedResponse(
@@ -119,6 +127,17 @@ export class ResponseProcessor {
           };
         }
       });
+    }
+
+    if (
+      Object.keys(responses).length === 0 &&
+      !hasExplicitPrimaryResponse &&
+      (!dataTypes.inferredResponses || dataTypes.inferredResponses.length === 0) &&
+      this.getDefaultSuccessCode(method) === "204"
+    ) {
+      responses["204"] = {
+        description: "No Content",
+      };
     }
 
     return responses;
@@ -215,6 +234,17 @@ export class ResponseProcessor {
     return mediaType;
   }
 
+  private getPrimaryInferredSuccessCode(
+    inferredResponses: InferredResponseDefinition[] | undefined,
+  ): string | undefined {
+    const primarySuccessResponse = inferredResponses?.find((response) => {
+      const statusCode = response.statusCode;
+      return !statusCode || (Number(statusCode) >= 200 && Number(statusCode) < 300);
+    });
+
+    return primarySuccessResponse ? primarySuccessResponse.statusCode || "200" : undefined;
+  }
+
   private buildSchemaReference(typeName: string): OpenApiSchemaLike {
     let baseType = typeName;
     let arrayDepth = 0;
@@ -224,11 +254,7 @@ export class ResponseProcessor {
       baseType = baseType.slice(0, -2);
     }
 
-    this.schemaProcessor.getSchemaContent({
-      responseType: baseType,
-    });
-
-    let schema: OpenApiSchemaLike = { $ref: `#/components/schemas/${baseType}` };
+    let schema = this.resolveSchemaLike(baseType);
     for (let index = 0; index < arrayDepth; index++) {
       schema = {
         type: "array",
@@ -237,5 +263,26 @@ export class ResponseProcessor {
     }
 
     return schema;
+  }
+
+  private resolveSchemaLike(typeName: string): OpenApiSchemaLike {
+    if (
+      typeName === "string" ||
+      typeName === "number" ||
+      typeName === "boolean" ||
+      typeName === "null"
+    ) {
+      return { type: typeName };
+    }
+
+    if (typeName.trim().startsWith("{") || typeName.trim().startsWith("[")) {
+      return this.schemaProcessor.resolveTypeExpression(typeName);
+    }
+
+    this.schemaProcessor.getSchemaContent({
+      responseType: typeName,
+    });
+
+    return { $ref: `#/components/schemas/${typeName}` };
   }
 }

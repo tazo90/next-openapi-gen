@@ -44,9 +44,27 @@ describe("TypeScript and Zod regression scenarios", () => {
       );
 
       const schema = processor.findSchemaDefinition("ProductByIdResponse", "");
+      const getResponse = processor.findSchemaDefinition("GetProductApiResponse", "");
+      const createResponse = processor.findSchemaDefinition("CreateProductApiResponse", "");
 
       expect(schema.type).toBe("object");
       expect(schema.properties).toBeDefined();
+      expect(getResponse).toMatchObject({
+        type: "object",
+        properties: {
+          success: { type: "boolean" },
+          data: { type: "object" },
+          timestamp: { type: "string" },
+        },
+      });
+      expect(createResponse).toMatchObject({
+        type: "object",
+        properties: {
+          success: { type: "boolean" },
+          data: { type: "object" },
+          timestamp: { type: "string" },
+        },
+      });
     });
   });
 

@@ -309,6 +309,7 @@ Use these deeper references when you need more than the quick start:
 - [docs/faq.md](./docs/faq.md): troubleshooting and common questions
 - [docs/openapi-version-coverage.md](./docs/openapi-version-coverage.md): version-specific behavior, validation strategy, and generated vs preserved fields
 - [docs/zod4-support-matrix.md](./docs/zod4-support-matrix.md): tested Zod 4 coverage and known boundaries
+- [docs/example-app-coverage-plan.md](./docs/example-app-coverage-plan.md): roadmap for expanding the runnable example suite and OpenAPI 3.2 coverage
 - [apps](./apps): complete runnable examples
 
 ## CLI

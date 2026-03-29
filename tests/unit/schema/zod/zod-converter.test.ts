@@ -193,6 +193,11 @@ describe("ZodSchemaConverter", () => {
       default: "guest",
     });
 
+    expect(converter.processZodNode(parseInitializer('z.string().endsWith("cd")'))).toEqual({
+      type: "string",
+      pattern: "cd$",
+    });
+
     expect(
       converter.processZodNode(parseInitializer("z.number().int().positive().safe()")),
     ).toEqual({

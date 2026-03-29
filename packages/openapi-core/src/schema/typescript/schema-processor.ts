@@ -368,6 +368,7 @@ export class SchemaProcessor {
         t.isTSInterfaceDeclaration(typeNode)
       ) {
         const properties: Record<string, any> = {};
+        const required: string[] = [];
 
         // Handle interface extends clause
         if (
@@ -400,11 +401,16 @@ export class SchemaProcessor {
               };
 
               properties[propName] = property;
+              if (!member.optional) {
+                required.push(propName);
+              }
             }
           });
         }
 
-        return { type: "object", properties };
+        return required.length > 0
+          ? { type: "object", properties, required }
+          : { type: "object", properties };
       }
 
       if (t.isTSArrayType(typeNode)) {
@@ -427,7 +433,7 @@ export class SchemaProcessor {
         return this.resolveTSNodeType(typeNode);
       }
 
-      return {};
+      return this.resolveTSNodeType(typeNode);
     } finally {
       // Remove type from processed set after we finish
       this.processingTypes.delete(typeName);
@@ -619,13 +625,23 @@ export class SchemaProcessor {
 
     if (t.isTSTypeLiteral(node)) {
       const properties: Record<string, any> = {};
+      const required: string[] = [];
       node.members.forEach((member: any) => {
         if (t.isTSPropertySignature(member) && t.isIdentifier(member.key)) {
           const propName = member.key.name;
-          properties[propName] = this.resolveTSNodeType(member.typeAnnotation?.typeAnnotation);
+          const property = {
+            ...this.resolveTSNodeType(member.typeAnnotation?.typeAnnotation),
+            ...this.getPropertyOptions(member),
+          };
+          properties[propName] = property;
+          if (!member.optional) {
+            required.push(propName);
+          }
         }
       });
-      return { type: "object", properties };
+      return required.length > 0
+        ? { type: "object", properties, required }
+        : { type: "object", properties };
     }
 
     if (t.isTSUnionType(node)) {
@@ -703,7 +719,9 @@ export class SchemaProcessor {
         if (resolvedType.type === "object" && resolvedType.properties) {
           Object.entries(resolvedType.properties).forEach(([key, value]) => {
             allProperties[key] = value;
-            if (value.required) {
+          });
+          resolvedType.required?.forEach((key) => {
+            if (!requiredProperties.includes(key)) {
               requiredProperties.push(key);
             }
           });
@@ -852,6 +870,28 @@ export class SchemaProcessor {
 
   public createResponseSchema(responses: OpenAPIDefinition, description?: string): any {
     return createResponseSchema(responses, description);
+  }
+
+  public resolveTypeExpression(typeExpression: string): OpenAPIDefinition {
+    const trimmedExpression = typeExpression.trim();
+    if (!trimmedExpression) {
+      return { type: "object" };
+    }
+
+    try {
+      const ast = parseTypeScriptFile(`type __InlineResponse = ${trimmedExpression};`);
+      const declaration = ast.program.body.find((statement) =>
+        t.isTSTypeAliasDeclaration(statement),
+      );
+
+      if (declaration && t.isTSTypeAliasDeclaration(declaration)) {
+        return this.resolveTSNodeType(declaration.typeAnnotation);
+      }
+    } catch {
+      // Fall through to object below when the inline expression cannot be parsed.
+    }
+
+    return { type: "object" };
   }
 
   public getSchemaContent({ tag, paramsType, pathParamsType, bodyType, responseType }: any): {
@@ -1118,6 +1158,13 @@ export class SchemaProcessor {
       }
     }
 
+    if (t.isTSArrayType(node)) {
+      return {
+        type: "array",
+        items: this.resolveTypeWithSubstitution(node.elementType, typeParameterMap),
+      };
+    }
+
     // Handle intersection types (e.g., T & { success: true })
     if (t.isTSIntersectionType(node)) {
       const allProperties: Record<string, any> = {};
@@ -1156,7 +1203,9 @@ export class SchemaProcessor {
         if (resolvedType.type === "object" && resolvedType.properties) {
           Object.entries(resolvedType.properties).forEach(([key, value]: [string, any]) => {
             allProperties[key] = value;
-            if (value.required) {
+          });
+          resolvedType.required?.forEach((key) => {
+            if (!requiredProperties.includes(key)) {
               requiredProperties.push(key);
             }
           });
@@ -1178,31 +1227,49 @@ export class SchemaProcessor {
     // For other types, use the standard resolution but with parameter substitution
     if (t.isTSTypeLiteral(node)) {
       const properties: Record<string, any> = {};
+      const required: string[] = [];
       node.members.forEach((member: any) => {
         if (t.isTSPropertySignature(member) && t.isIdentifier(member.key)) {
           const propName = member.key.name;
-          properties[propName] = this.resolveTypeWithSubstitution(
-            member.typeAnnotation?.typeAnnotation,
-            typeParameterMap,
-          );
+          properties[propName] = {
+            ...this.resolveTypeWithSubstitution(
+              member.typeAnnotation?.typeAnnotation,
+              typeParameterMap,
+            ),
+            ...this.getPropertyOptions(member),
+          };
+          if (!member.optional) {
+            required.push(propName);
+          }
         }
       });
-      return { type: "object", properties };
+      return required.length > 0
+        ? { type: "object", properties, required }
+        : { type: "object", properties };
     }
 
     // Handle interface body (from generic interfaces)
     if (t.isTSInterfaceBody(node)) {
       const properties: Record<string, any> = {};
+      const required: string[] = [];
       node.body.forEach((member: any) => {
         if (t.isTSPropertySignature(member) && t.isIdentifier(member.key)) {
           const propName = member.key.name;
-          properties[propName] = this.resolveTypeWithSubstitution(
-            member.typeAnnotation?.typeAnnotation,
-            typeParameterMap,
-          );
+          properties[propName] = {
+            ...this.resolveTypeWithSubstitution(
+              member.typeAnnotation?.typeAnnotation,
+              typeParameterMap,
+            ),
+            ...this.getPropertyOptions(member),
+          };
+          if (!member.optional) {
+            required.push(propName);
+          }
         }
       });
-      return { type: "object", properties };
+      return required.length > 0
+        ? { type: "object", properties, required }
+        : { type: "object", properties };
     }
 
     // Fallback to standard type resolution

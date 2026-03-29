@@ -175,9 +175,19 @@ describe.sequential("OpenApiGenerator integration flow", () => {
           },
         },
         responses: {
-          201: {
+          200: {
             description: "Returns upload confirmation with asset metadata",
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/UploadedAsset",
+                },
+              },
+            },
           },
+          400: { $ref: "#/components/responses/400" },
+          401: { $ref: "#/components/responses/401" },
+          500: { $ref: "#/components/responses/500" },
         },
       });
       expect(spec.paths?.["/catalog/products"]?.get?.responses).toMatchObject({

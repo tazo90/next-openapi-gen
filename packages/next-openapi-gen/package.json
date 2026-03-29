@@ -80,16 +80,12 @@
     "typescript": "catalog:"
   },
   "devDependencies": {
-    "@types/babel__traverse": "catalog:",
-    "@types/fs-extra": "catalog:",
-    "@types/js-yaml": "catalog:",
     "@types/node": "catalog:",
     "@workspace/openapi-cli": "workspace:*",
     "@workspace/openapi-core": "workspace:*",
     "@workspace/openapi-framework-next": "workspace:*",
     "@workspace/openapi-framework-react-router": "workspace:*",
     "@workspace/openapi-framework-tanstack": "workspace:*",
-    "@workspace/openapi-init": "workspace:*",
     "conventional-changelog-cli": "catalog:",
     "np": "catalog:",
     "oxfmt": "catalog:",

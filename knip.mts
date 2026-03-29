@@ -6,8 +6,10 @@ const config: KnipConfig = {
     "playwright-report/**",
     "test-results/**",
     "turbo/**",
+    "apps/react-router-app/.react-router/**",
     "packages/next-openapi-gen/dist/**",
     "packages/next-openapi-gen/templates/**",
+    "packages/openapi-init/templates/**",
     "tests/fixtures/**",
   ],
   ignoreIssues: {
@@ -22,6 +24,7 @@ const config: KnipConfig = {
     "apps/next-pages-router/package.json": ["devDependencies"],
     "apps/react-router-app/package.json": ["devDependencies"],
     "apps/tanstack-app/package.json": ["devDependencies"],
+    "packages/next-openapi-gen/package.json": ["dependencies"],
   },
   ignoreUnresolved: ["next"],
   workspaces: {
@@ -46,8 +49,12 @@ const config: KnipConfig = {
     "apps/*": {
       entry: [
         "next.openapi.json",
+        "next-openapi.adapter.mjs",
+        "next-openapi.config.ts",
         "schemas/**/*.{ts,tsx}",
         "src/db/**/*.{ts,tsx}",
+        "src/router.tsx",
+        "src/routes/**/*.{ts,tsx}",
         "src/schemas/**/*.{ts,tsx}",
         "src/types/**/*.{ts,tsx}",
       ],
