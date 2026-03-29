@@ -100,6 +100,66 @@ export async function GET() {}
     }
   });
 
+  it("discovers typed config files when no template option is provided", async () => {
+    const project = createTempProject("nxog-generate-typed-config-");
+    const spinner = {
+      start: vi.fn().mockReturnThis(),
+      succeed: vi.fn(),
+    };
+
+    try {
+      fs.writeFileSync(
+        path.join(project.root, "next-openapi.config.js"),
+        `export default {
+          openapi: "3.0.0",
+          info: {
+            title: "Typed Config",
+            version: "1.0.0"
+          },
+          apiDir: "./src/app/api",
+          schemaDir: "./src",
+          schemaType: "typescript",
+          docsUrl: "api-docs",
+          ui: "scalar",
+          outputDir: "./public",
+          outputFile: "openapi.json",
+          includeOpenApiRoutes: false,
+          debug: false
+        };`,
+      );
+      writeAppRoute(
+        project.root,
+        ["orders"],
+        `export type OrderResponse = {
+  id: string;
+};
+
+/**
+ * List orders
+ * @openapi
+ * @response OrderResponse
+ */
+export async function GET() {}`,
+      );
+      process.chdir(project.root);
+
+      const { generate } = await loadGenerateModule(spinner);
+
+      await generate({});
+
+      const outputPath = path.join(project.root, "public", "openapi.json");
+      const spec = JSON.parse(fs.readFileSync(outputPath, "utf8")) as {
+        info: { title: string };
+        paths: Record<string, Record<string, { operationId: string }>>;
+      };
+
+      expect(spec.info.title).toBe("Typed Config");
+      expect(spec.paths["/orders"]?.get?.operationId).toBe("get-orders");
+    } finally {
+      project.cleanup();
+    }
+  });
+
   it("propagates generation errors before reporting success", async () => {
     const project = createTempProject("nxog-generate-missing-template-");
     const spinner = {

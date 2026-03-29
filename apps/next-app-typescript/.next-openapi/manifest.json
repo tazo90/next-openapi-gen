@@ -1,0 +1,20 @@
+{
+  "configPath": "/Users/mhvdijk/Code/next-openapi-gen/apps/next-app-typescript/next.openapi.json",
+  "outputFile": "/Users/mhvdijk/Code/next-openapi-gen/apps/next-app-typescript/public/openapi.json",
+  "diagnostics": [],
+  "performance": {
+    "prepareTemplateMs": 0.06879200000003038,
+    "loadCustomFragmentsMs": 0.0004159999999728825,
+    "prepareDocumentMs": 0.06920800000000327,
+    "scanRouteFilesMs": 0.773208000000011,
+    "processRouteFilesMs": 33.162249999998835,
+    "buildOperationsMs": 6222.935292000001,
+    "scanRoutesMs": 6256.87075,
+    "sortAndMergePathsMs": 0.6828329999998459,
+    "buildPathsMs": 0.6828329999998459,
+    "defaultComponentsAndErrorsMs": 0.1257080000004862,
+    "mergeSchemasMs": 0.27762499999971624,
+    "finalizeDocumentMs": 4.196791000000303,
+    "totalMs": 6262.662082999999
+  }
+}

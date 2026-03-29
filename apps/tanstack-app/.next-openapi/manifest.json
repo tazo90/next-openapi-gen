@@ -1,0 +1,20 @@
+{
+  "configPath": "/Users/mhvdijk/Code/next-openapi-gen/apps/tanstack-app/next.openapi.json",
+  "outputFile": "/Users/mhvdijk/Code/next-openapi-gen/apps/tanstack-app/public/openapi.json",
+  "diagnostics": [],
+  "performance": {
+    "prepareTemplateMs": 0.1550409999981639,
+    "loadCustomFragmentsMs": 0.011709000002156245,
+    "prepareDocumentMs": 0.16675000000032014,
+    "scanRouteFilesMs": 0.22104200000103447,
+    "processRouteFilesMs": 4.501832999998442,
+    "buildOperationsMs": 8.53349999999773,
+    "scanRoutesMs": 13.256374999997206,
+    "sortAndMergePathsMs": 0.02600000000165892,
+    "buildPathsMs": 0.02600000000165892,
+    "defaultComponentsAndErrorsMs": 0.060708000000886386,
+    "mergeSchemasMs": 0.18345899999985704,
+    "finalizeDocumentMs": 1.0120410000017728,
+    "totalMs": 15.55595799999719
+  }
+}

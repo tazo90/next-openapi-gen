@@ -1,0 +1,34 @@
+{
+  "name": "next-app-ts-config",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "generate": "pnpm exec next-openapi-gen generate",
+    "start": "next start",
+    "lint": "oxlint --config ../../packages/oxlint-config/base.json . --ignore-path ../../.gitignore --deny-warnings",
+    "format": "oxfmt --config ../../packages/oxfmt-config/oxfmt.json --ignore-path ../../.gitignore .",
+    "format:check": "oxfmt --config ../../packages/oxfmt-config/oxfmt.json --ignore-path ../../.gitignore --check .",
+    "check": "pnpm format:check && pnpm lint"
+  },
+  "dependencies": {
+    "@scalar/api-reference-react": "catalog:",
+    "next": "catalog:nextjs",
+    "react": "catalog:nextjs",
+    "react-dom": "catalog:nextjs"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "@types/react": "catalog:nextjs",
+    "@types/react-dom": "catalog:nextjs",
+    "@workspace/next-config": "workspace:*",
+    "ajv": "catalog:",
+    "autoprefixer": "catalog:",
+    "next-openapi-gen": "workspace:*",
+    "postcss": "catalog:",
+    "tailwindcss": "catalog:",
+    "typescript": "catalog:"
+  }
+}

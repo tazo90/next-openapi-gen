@@ -1,8 +1,6 @@
-"use client";
-
 import { RedocStandalone } from "redoc";
 
-export default async function ApiDocsPage() {
+export default function ApiDocsPage() {
   return (
     <section>
       <RedocStandalone specUrl="/__NEXT_OPENAPI_GEN_OUTPUT_FILE__" />

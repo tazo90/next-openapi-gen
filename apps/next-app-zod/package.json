@@ -14,15 +14,15 @@
   },
   "dependencies": {
     "@scalar/api-reference-react": "catalog:",
-    "next": "catalog:",
-    "react": "catalog:",
-    "react-dom": "catalog:",
+    "next": "catalog:nextjs",
+    "react": "catalog:nextjs",
+    "react-dom": "catalog:nextjs",
     "zod": "catalog:"
   },
   "devDependencies": {
     "@types/node": "catalog:",
-    "@types/react": "catalog:",
-    "@types/react-dom": "catalog:",
+    "@types/react": "catalog:nextjs",
+    "@types/react-dom": "catalog:nextjs",
     "@workspace/next-config": "workspace:*",
     "ajv": "catalog:",
     "autoprefixer": "catalog:",

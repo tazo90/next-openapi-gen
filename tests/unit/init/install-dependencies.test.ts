@@ -50,7 +50,7 @@ describe("installDependencies", () => {
 
     const { installDependencies } = await loadInstallDependenciesModule(
       execMock,
-      "npm",
+      "pnpm",
       hasDependencyMock,
     );
 
@@ -58,15 +58,15 @@ describe("installDependencies", () => {
 
     expect(execMock).toHaveBeenNthCalledWith(
       1,
-      "npm install swagger-ui swagger-ui-react --legacy-peer-deps",
+      "pnpm add swagger-ui swagger-ui-react ",
       expect.any(Function),
     );
     expect(execMock).toHaveBeenNthCalledWith(
       2,
-      "npm install --save-dev @types/swagger-ui-react --legacy-peer-deps",
+      "pnpm add -D @types/swagger-ui-react ",
       expect.any(Function),
     );
-    expect(execMock).toHaveBeenNthCalledWith(3, "npm install zod", expect.any(Function));
+    expect(execMock).toHaveBeenNthCalledWith(3, "pnpm add zod", expect.any(Function));
     expect(spinner.succeed).toHaveBeenCalledWith(
       "Installing @types/swagger-ui-react dev dependencies...",
     );
@@ -85,21 +85,18 @@ describe("installDependencies", () => {
 
     const { installDependencies } = await loadInstallDependenciesModule(
       execMock,
-      "npm",
+      "pnpm",
       hasDependencyMock,
     );
 
     await installDependencies("none", ["typescript"], spinner);
 
-    expect(execMock).toHaveBeenCalledWith(
-      "npm install --save-dev typescript",
-      expect.any(Function),
-    );
+    expect(execMock).toHaveBeenCalledWith("pnpm add -D typescript", expect.any(Function));
     expect(spinner.succeed).toHaveBeenCalledWith("Installing typescript...");
     expect(spinner.succeed).toHaveBeenCalledWith("Successfully installed typescript.");
   });
 
-  it("uses non-npm install flags for dev dependencies and skips already-installed schemas", async () => {
+  it("uses pnpm install flags for dev dependencies and skips already-installed schemas", async () => {
     const spinner: SpinnerMock = {
       succeed: vi.fn(),
     };
@@ -143,7 +140,7 @@ describe("installDependencies", () => {
 
     const { installDependencies } = await loadInstallDependenciesModule(
       execMock,
-      "npm",
+      "pnpm",
       hasDependencyMock,
     );
 

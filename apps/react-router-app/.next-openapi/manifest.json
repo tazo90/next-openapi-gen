@@ -1,0 +1,20 @@
+{
+  "configPath": "/Users/mhvdijk/Code/next-openapi-gen/apps/react-router-app/next.openapi.json",
+  "outputFile": "/Users/mhvdijk/Code/next-openapi-gen/apps/react-router-app/public/openapi.json",
+  "diagnostics": [],
+  "performance": {
+    "prepareTemplateMs": 0.06045799999992596,
+    "loadCustomFragmentsMs": 0.0005830000000059954,
+    "prepareDocumentMs": 0.061040999999931955,
+    "scanRouteFilesMs": 0.17295800000010786,
+    "processRouteFilesMs": 59.26870799999983,
+    "buildOperationsMs": 10.438873999999942,
+    "scanRoutesMs": 69.88053999999988,
+    "sortAndMergePathsMs": 0.6717089999999644,
+    "buildPathsMs": 0.6717089999999644,
+    "defaultComponentsAndErrorsMs": 0.15499999999997272,
+    "mergeSchemasMs": 0.18962499999997817,
+    "finalizeDocumentMs": 1.3883339999999862,
+    "totalMs": 72.50641599999994
+  }
+}

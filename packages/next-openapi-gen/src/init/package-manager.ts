@@ -21,6 +21,23 @@ export async function getPackageManager(): Promise<PackageManager> {
   let currentDir = process.cwd();
 
   while (true) {
+    const packageJsonPath = path.join(currentDir, "package.json");
+
+    if (fs.existsSync(packageJsonPath)) {
+      try {
+        const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf8")) as {
+          packageManager?: string;
+        };
+        const packageManager = packageJson.packageManager?.split("@")[0];
+
+        if (packageManager === "pnpm" || packageManager === "yarn" || packageManager === "npm") {
+          return packageManager;
+        }
+      } catch {
+        // Ignore invalid package.json files while detecting the package manager.
+      }
+    }
+
     if (fs.existsSync(path.join(currentDir, "yarn.lock"))) {
       return "yarn";
     }
@@ -37,5 +54,5 @@ export async function getPackageManager(): Promise<PackageManager> {
     currentDir = parentDir;
   }
 
-  return "npm";
+  return "pnpm";
 }

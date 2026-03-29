@@ -2,7 +2,8 @@ import fs from "node:fs";
 
 import { describe, expect, it } from "vitest";
 
-import openapiTemplate from "@next-openapi-gen/init/openapi-template.js";
+import openapiTemplate, { createOpenApiTemplate } from "@next-openapi-gen/init/openapi-template.js";
+import { INIT_FRAMEWORKS } from "@next-openapi-gen/init/types.js";
 import {
   getDocsPage,
   getDocsPageDependencies,
@@ -32,6 +33,31 @@ describe("OpenAPI init defaults", () => {
       },
     });
   });
+
+  it("creates framework-aware defaults for each supported init target", () => {
+    expect(INIT_FRAMEWORKS).toEqual(["next", "tanstack", "react-router"]);
+    expect(createOpenApiTemplate("next")).toMatchObject({
+      apiDir: "./src/app/api",
+      framework: {
+        kind: "nextjs",
+        router: "app",
+      },
+    });
+    expect(createOpenApiTemplate("tanstack")).toMatchObject({
+      apiDir: "./src/routes/api",
+      includeOpenApiRoutes: true,
+      framework: {
+        kind: "tanstack",
+      },
+    });
+    expect(createOpenApiTemplate("react-router")).toMatchObject({
+      apiDir: "./src/routes/api",
+      includeOpenApiRoutes: true,
+      framework: {
+        kind: "reactrouter",
+      },
+    });
+  });
 });
 
 describe("UI templates", () => {
@@ -50,7 +76,7 @@ describe("UI templates", () => {
     expect(UI_REGISTRY.rapidoc.templateFile).toBe("rapidoc.tsx");
 
     for (const uiType of UI_TYPES) {
-      const templatePath = getDocsPageTemplatePath(uiType);
+      const templatePath = getDocsPageTemplatePath("next", uiType);
       expect(fs.existsSync(templatePath)).toBe(true);
       expect(templatePath.endsWith(".tsx")).toBe(true);
     }
@@ -94,13 +120,28 @@ describe("UI registry helpers", () => {
   });
 
   it("renders the original built-in page code through the registry", () => {
+    expect(getDocsPage("scalar", "openapi.json")).toContain(
+      "export default function ApiDocsPage()",
+    );
     expect(getDocsPage("scalar", "openapi.json")).toContain('url: "/openapi.json"');
     expect(getDocsPage("swagger", "openapi.json")).toContain('<SwaggerUI url="/openapi.json" />');
     expect(getDocsPage("redoc", "openapi.json")).toContain(
       '<RedocStandalone specUrl="/openapi.json" />',
     );
-    expect(getDocsPage("stoplight", "openapi.json")).toContain('apiDescriptionUrl="openapi.json"');
-    expect(getDocsPage("rapidoc", "openapi.json")).toContain('spec-url="openapi.json"');
+    expect(getDocsPage("stoplight", "openapi.json")).toContain('apiDescriptionUrl="/openapi.json"');
+    expect(getDocsPage("rapidoc", "openapi.json")).toContain('spec-url="/openapi.json"');
+  });
+
+  it("resolves framework-specific template paths", () => {
+    expect(getDocsPageTemplatePath("next", "scalar")).toContain(
+      "/templates/init/ui/nextjs/scalar.tsx",
+    );
+    expect(getDocsPageTemplatePath("tanstack", "scalar")).toContain(
+      "/templates/init/ui/tanstack/scalar.tsx",
+    );
+    expect(getDocsPageTemplatePath("react-router", "scalar")).toContain(
+      "/templates/init/ui/reactrouter/scalar.tsx",
+    );
   });
 
   it("returns empty install flags for non-swagger registry entries", () => {

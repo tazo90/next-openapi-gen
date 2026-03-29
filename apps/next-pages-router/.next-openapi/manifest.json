@@ -1,0 +1,20 @@
+{
+  "configPath": "/Users/mhvdijk/Code/next-openapi-gen/apps/next-pages-router/next.openapi.json",
+  "outputFile": "/Users/mhvdijk/Code/next-openapi-gen/apps/next-pages-router/public/openapi.json",
+  "diagnostics": [],
+  "performance": {
+    "prepareTemplateMs": 0.05041699999992488,
+    "loadCustomFragmentsMs": 0.00041699999997035775,
+    "prepareDocumentMs": 0.05083399999989524,
+    "scanRouteFilesMs": 0.881249999999909,
+    "processRouteFilesMs": 35.35041699999988,
+    "buildOperationsMs": 56.216874999999845,
+    "scanRoutesMs": 92.44854199999963,
+    "sortAndMergePathsMs": 2.3336669999998776,
+    "buildPathsMs": 2.3336669999998776,
+    "defaultComponentsAndErrorsMs": 0.0019579999998313724,
+    "mergeSchemasMs": 0.23458400000004076,
+    "finalizeDocumentMs": 1.5034170000001268,
+    "totalMs": 99.47499999999991
+  }
+}

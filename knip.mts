@@ -16,7 +16,12 @@ const config: KnipConfig = {
     "apps/next-app-scalar/package.json": ["devDependencies"],
     "apps/next-app-typescript/package.json": ["devDependencies"],
     "apps/next-app-zod/package.json": ["devDependencies"],
+    "apps/next-app-adapter/package.json": ["devDependencies"],
+    "apps/next-app-next-config/package.json": ["devDependencies"],
+    "apps/next-app-ts-config/package.json": ["devDependencies"],
     "apps/next-pages-router/package.json": ["devDependencies"],
+    "apps/react-router-app/package.json": ["devDependencies"],
+    "apps/tanstack-app/package.json": ["devDependencies"],
   },
   ignoreUnresolved: ["next"],
   workspaces: {

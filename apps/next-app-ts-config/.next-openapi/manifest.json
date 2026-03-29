@@ -1,0 +1,20 @@
+{
+  "configPath": "/Users/mhvdijk/Code/next-openapi-gen/apps/next-app-ts-config/next-openapi.config.ts",
+  "outputFile": "/Users/mhvdijk/Code/next-openapi-gen/apps/next-app-ts-config/public/openapi.json",
+  "diagnostics": [],
+  "performance": {
+    "prepareTemplateMs": 0.044957999999951426,
+    "loadCustomFragmentsMs": 0.00041699999997035775,
+    "prepareDocumentMs": 0.04537499999992178,
+    "scanRouteFilesMs": 0.23658399999999347,
+    "processRouteFilesMs": 37.47195799999997,
+    "buildOperationsMs": 19.982458000000065,
+    "scanRoutesMs": 57.69100000000003,
+    "sortAndMergePathsMs": 0.060417000000029475,
+    "buildPathsMs": 0.060417000000029475,
+    "defaultComponentsAndErrorsMs": 0.005583000000001448,
+    "mergeSchemasMs": 0.169667000000004,
+    "finalizeDocumentMs": 0.6832090000000335,
+    "totalMs": 58.89470800000004
+  }
+}

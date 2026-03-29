@@ -1,6 +1,5 @@
 import ora from "ora";
 
-import { GENERATE_DEFAULTS } from "../constants.js";
 import { generateProject } from "../../core/generate.js";
 import { watchProject } from "../../core/watch.js";
 
@@ -11,7 +10,7 @@ export type GenerateOptions = {
 };
 
 export async function generate(options: GenerateOptions): Promise<void> {
-  const configPath = options.config ?? options.template ?? GENERATE_DEFAULTS.template;
+  const configPath = options.config ?? options.template;
   const spinner = ora("Generating OpenAPI specification...\n").start();
   const result = await generateProject({
     configPath,

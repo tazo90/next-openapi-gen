@@ -15,6 +15,6 @@
     "check": "pnpm format:check"
   },
   "peerDependencies": {
-    "next": "catalog:"
+    "next": "catalog:nextjs"
   }
 }

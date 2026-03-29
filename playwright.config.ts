@@ -4,21 +4,33 @@ import { getE2EAppConfig } from "./tests/e2e/apps";
 
 const app = getE2EAppConfig();
 const baseURL = `http://localhost:${app.port}`;
+const readyURL = `${baseURL}${app.docsPath}`;
+
+function createAssertOpenApiFileCommand() {
+  return `node -e 'if (!require("node:fs").existsSync(${JSON.stringify(app.openApiFile)})) { throw new Error(${JSON.stringify(`Expected generated OpenAPI file at ${app.openApiFile}.`)}); }'`;
+}
 
 function createWebServerCommand() {
   const deleteOpenApiFileCommand = `node -e 'require("node:fs").rmSync(${JSON.stringify(app.openApiFile)}, { force: true });'`;
-  const generateOpenApiCommand = `pnpm --dir ${app.appDir} exec next-openapi-gen generate`;
-  const assertOpenApiFileCommand = `node -e 'if (!require("node:fs").existsSync(${JSON.stringify(app.openApiFile)})) { throw new Error(${JSON.stringify(`Expected generated OpenAPI file at ${app.openApiFile}.`)}); }'`;
-  const buildAppCommand = `pnpm --dir ${app.appDir} exec next build`;
-  const startAppCommand = `pnpm --dir ${app.appDir} exec next start --hostname localhost --port ${app.port}`;
+  const commands = [deleteOpenApiFileCommand];
 
-  return [
-    deleteOpenApiFileCommand,
-    generateOpenApiCommand,
-    assertOpenApiFileCommand,
-    buildAppCommand,
-    startAppCommand,
-  ].join(" && ");
+  if (app.generateCommand) {
+    commands.push(app.generateCommand);
+  }
+
+  if ((app.openApiReadyStage ?? "generate") === "generate") {
+    commands.push(createAssertOpenApiFileCommand());
+  }
+
+  commands.push(app.buildCommand);
+
+  if ((app.openApiReadyStage ?? "generate") === "build") {
+    commands.push(createAssertOpenApiFileCommand());
+  }
+
+  commands.push(app.startCommand);
+
+  return commands.join(" && ");
 }
 
 export default defineConfig({
@@ -39,7 +51,7 @@ export default defineConfig({
   ],
   webServer: {
     command: createWebServerCommand(),
-    url: baseURL,
+    url: readyURL,
     reuseExistingServer: false,
   },
 });

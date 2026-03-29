@@ -1,0 +1,62 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "TanStack Router API",
+    "version": "1.0.0",
+    "description": "OpenAPI document generated from TanStack file routes."
+  },
+  "framework": {
+    "kind": "tanstack"
+  },
+  "defaultResponseSet": "common",
+  "responseSets": {
+    "common": ["400", "500"],
+    "auth": ["401", "403"]
+  },
+  "errorConfig": {
+    "template": {
+      "type": "object",
+      "properties": {
+        "message": {
+          "type": "string",
+          "example": "{{ERROR_MESSAGE}}"
+        }
+      }
+    },
+    "codes": {
+      "400": {
+        "description": "Bad Request",
+        "variables": {
+          "ERROR_MESSAGE": "Invalid request"
+        }
+      },
+      "401": {
+        "description": "Unauthorized",
+        "variables": {
+          "ERROR_MESSAGE": "Authentication required"
+        }
+      },
+      "403": {
+        "description": "Forbidden",
+        "variables": {
+          "ERROR_MESSAGE": "Access denied"
+        }
+      },
+      "500": {
+        "description": "Internal Server Error",
+        "variables": {
+          "ERROR_MESSAGE": "Unexpected error"
+        }
+      }
+    }
+  },
+  "apiDir": "./src/routes/api",
+  "schemaDir": "./src",
+  "schemaType": "typescript",
+  "docsUrl": "api-docs",
+  "ui": "scalar",
+  "outputDir": "./public",
+  "outputFile": "openapi.json",
+  "includeOpenApiRoutes": true,
+  "debug": false
+}

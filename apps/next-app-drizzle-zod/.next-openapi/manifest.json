@@ -1,0 +1,28 @@
+{
+  "configPath": "/Users/mhvdijk/Code/next-openapi-gen/apps/next-app-drizzle-zod/next.openapi.json",
+  "outputFile": "/Users/mhvdijk/Code/next-openapi-gen/apps/next-app-drizzle-zod/public/openapi.json",
+  "diagnostics": [
+    {
+      "code": "response-inference-unresolved",
+      "severity": "warning",
+      "message": "Could not fully infer a response schema from a return statement. Add an explicit @response tag to make the output deterministic.",
+      "filePath": "/Users/mhvdijk/Code/next-openapi-gen/apps/next-app-drizzle-zod/src/app/api/posts/[id]/route.ts",
+      "routePath": "/posts/{id}"
+    }
+  ],
+  "performance": {
+    "prepareTemplateMs": 0.06454099999996288,
+    "loadCustomFragmentsMs": 0.00045799999998052954,
+    "prepareDocumentMs": 0.06499899999994341,
+    "scanRouteFilesMs": 0.23633399999994253,
+    "processRouteFilesMs": 6859.942375,
+    "buildOperationsMs": 45.203790999999,
+    "scanRoutesMs": 6905.382499999999,
+    "sortAndMergePathsMs": 0.6213330000000497,
+    "buildPathsMs": 0.6213330000000497,
+    "defaultComponentsAndErrorsMs": 0.1536660000001575,
+    "mergeSchemasMs": 0.1604170000000522,
+    "finalizeDocumentMs": 1.0510420000000522,
+    "totalMs": 6907.6465419999995
+  }
+}

@@ -1,15 +1,16 @@
 import { describe, expect, it, vi } from "vitest";
 
 import {
+  CLI_FRAMEWORK_CHOICES,
   CLI_NAME,
   CLI_SCHEMA_CHOICES,
   GENERATE_CONFIG_OPTION_DESCRIPTION,
   getCliVersion,
   GENERATE_COMMAND_DESCRIPTION,
-  GENERATE_DEFAULTS,
   GENERATE_WATCH_OPTION_DESCRIPTION,
   INIT_COMMAND_DESCRIPTION,
   INIT_DEFAULTS,
+  INIT_FRAMEWORK_OPTION_DESCRIPTION,
 } from "@next-openapi-gen/cli/constants.js";
 import { buildProgram } from "@next-openapi-gen/cli/program.js";
 import { UI_TYPES_WITH_NONE } from "@next-openapi-gen/init/ui-registry.js";
@@ -24,13 +25,14 @@ describe("CLI program", () => {
     expect(commandNames).toEqual(["init", "generate"]);
     expect(initCommand?.opts()).toEqual({
       ui: "scalar",
+      framework: "next",
       docsUrl: "api-docs",
       schema: "zod",
       output: "next.openapi.json",
     });
     expect(generateCommand?.opts()).toEqual({
       config: undefined,
-      template: "next.openapi.json",
+      template: undefined,
       watch: false,
     });
   });
@@ -41,6 +43,7 @@ describe("CLI program", () => {
     const generateCommand = program.commands.find((command) => command.name() === "generate");
     const initOptions = initCommand?.options ?? [];
     const generateOptions = generateCommand?.options ?? [];
+    const frameworkOption = initOptions.find((option) => option.attributeName() === "framework");
     const uiOption = initOptions.find((option) => option.attributeName() === "ui");
     const schemaOption = initOptions.find((option) => option.attributeName() === "schema");
     const docsUrlOption = initOptions.find((option) => option.attributeName() === "docsUrl");
@@ -51,6 +54,9 @@ describe("CLI program", () => {
 
     expect(initCommand?.description()).toBe(INIT_COMMAND_DESCRIPTION);
     expect(generateCommand?.description()).toBe(GENERATE_COMMAND_DESCRIPTION);
+    expect(frameworkOption?.flags).toBe("-f, --framework <name>");
+    expect(frameworkOption?.argChoices).toEqual([...CLI_FRAMEWORK_CHOICES]);
+    expect(frameworkOption?.defaultValue).toBe(INIT_DEFAULTS.framework);
     expect(uiOption?.flags).toBe("-i, --ui <type>");
     expect(uiOption?.argChoices).toEqual([...UI_TYPES_WITH_NONE]);
     expect(uiOption?.defaultValue).toBe(INIT_DEFAULTS.ui);
@@ -63,7 +69,7 @@ describe("CLI program", () => {
     expect(outputOption?.defaultValue).toBe(INIT_DEFAULTS.output);
     expect(configOption?.flags).toBe("-c, --config <file>");
     expect(templateOption?.flags).toBe("-t, --template <file>");
-    expect(templateOption?.defaultValue).toBe(GENERATE_DEFAULTS.template);
+    expect(templateOption?.defaultValue).toBeUndefined();
     expect(watchOption?.flags).toBe("-w, --watch");
   });
 
@@ -80,6 +86,8 @@ describe("CLI program", () => {
     await program.parseAsync(
       [
         "init",
+        "--framework",
+        "react-router",
         "--ui",
         "rapidoc",
         "--docs-url",
@@ -113,6 +121,7 @@ describe("CLI program", () => {
       1,
       {
         docsUrl: INIT_DEFAULTS.docsUrl,
+        framework: INIT_DEFAULTS.framework,
         output: INIT_DEFAULTS.output,
         schema: INIT_DEFAULTS.schema,
         ui: "none",
@@ -123,6 +132,7 @@ describe("CLI program", () => {
       2,
       {
         docsUrl: "internal/docs",
+        framework: "react-router",
         output: "config/spec.json",
         schema: "typescript",
         ui: "rapidoc",
@@ -158,8 +168,10 @@ describe("CLI program", () => {
     expect(helpText).toContain(INIT_COMMAND_DESCRIPTION);
     expect(helpText).toContain(GENERATE_COMMAND_DESCRIPTION);
     expect(initHelpText).toContain("--docs-url <url>");
+    expect(initHelpText).toContain("--framework <name>");
     expect(initHelpText).toContain("--schema <schemaType>");
     expect(initHelpText).toContain("--output <file>");
+    expect(initHelpText).toContain(INIT_FRAMEWORK_OPTION_DESCRIPTION);
     expect(generateHelpText).toContain("--template <file>");
     expect(generateHelpText).toContain("--config <file>");
     expect(generateHelpText).toContain("--watch");

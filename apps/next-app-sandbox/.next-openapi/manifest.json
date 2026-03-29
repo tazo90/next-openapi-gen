@@ -1,0 +1,28 @@
+{
+  "configPath": "/Users/mhvdijk/Code/next-openapi-gen/apps/next-app-sandbox/next.openapi.json",
+  "outputFile": "/Users/mhvdijk/Code/next-openapi-gen/apps/next-app-sandbox/public/openapi.json",
+  "diagnostics": [
+    {
+      "code": "response-inference-unresolved",
+      "severity": "warning",
+      "message": "Could not fully infer a response schema from a return statement. Add an explicit @response tag to make the output deterministic.",
+      "filePath": "/Users/mhvdijk/Code/next-openapi-gen/apps/next-app-sandbox/src/app/api/users/[id]/route.ts",
+      "routePath": "/users/{id}"
+    }
+  ],
+  "performance": {
+    "prepareTemplateMs": 0.17495900000005804,
+    "loadCustomFragmentsMs": 0.0017909999999119464,
+    "prepareDocumentMs": 0.17674999999997,
+    "scanRouteFilesMs": 0.7745409999999993,
+    "processRouteFilesMs": 6930.230207999998,
+    "buildOperationsMs": 66.9979170000006,
+    "scanRoutesMs": 6998.0026659999985,
+    "sortAndMergePathsMs": 0.6277499999996508,
+    "buildPathsMs": 0.6277499999996508,
+    "defaultComponentsAndErrorsMs": 0.11616699999922275,
+    "mergeSchemasMs": 0.2202500000003056,
+    "finalizeDocumentMs": 1.7296660000001793,
+    "totalMs": 7001.557667
+  }
+}

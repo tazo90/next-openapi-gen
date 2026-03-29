@@ -1,19 +1,17 @@
 import {
-  DEFAULT_API_DIR,
   DEFAULT_DEBUG,
   DEFAULT_DIAGNOSTICS_ENABLED,
   DEFAULT_DOCS_URL,
   DEFAULT_GENERATED_OPENAPI_FILENAME,
-  DEFAULT_INCLUDE_OPENAPI_ROUTES,
   DEFAULT_INIT_SCHEMA_TYPE,
   DEFAULT_OUTPUT_DIR,
-  DEFAULT_ROUTER_TYPE,
-  DEFAULT_SCHEMA_DIR,
   DEFAULT_UI,
 } from "../config/defaults.js";
-import { FrameworkKind, type OpenApiTemplate } from "../shared/types.js";
+import type { OpenApiTemplate } from "../shared/types.js";
 
-const openapiTemplate = {
+import { getInitFrameworkTemplateOverrides, type InitFramework } from "./framework.js";
+
+const baseOpenApiTemplate = {
   openapi: "3.0.0",
   info: {
     title: "API Documentation",
@@ -100,28 +98,26 @@ const openapiTemplate = {
       },
     },
   },
-  apiDir: DEFAULT_API_DIR,
-  routerType: DEFAULT_ROUTER_TYPE,
-  schemaDir: DEFAULT_SCHEMA_DIR,
   schemaType: DEFAULT_INIT_SCHEMA_TYPE, // or "typescript" or ["zod", "typescript"]
   schemaFiles: [], // Optional: ["./openapi-models.yaml", "./schemas.json"]
   docsUrl: DEFAULT_DOCS_URL,
   ui: DEFAULT_UI,
   outputFile: DEFAULT_GENERATED_OPENAPI_FILENAME,
   outputDir: DEFAULT_OUTPUT_DIR,
-  framework: {
-    kind: FrameworkKind.Nextjs,
-    router: DEFAULT_ROUTER_TYPE,
-  },
-  next: {
-    adapterPath: undefined,
-  },
   diagnostics: {
     enabled: DEFAULT_DIAGNOSTICS_ENABLED,
   },
-  includeOpenApiRoutes: DEFAULT_INCLUDE_OPENAPI_ROUTES,
   ignoreRoutes: [],
   debug: DEFAULT_DEBUG,
 } satisfies OpenApiTemplate;
+
+export function createOpenApiTemplate(framework: InitFramework = "next"): OpenApiTemplate {
+  return {
+    ...baseOpenApiTemplate,
+    ...getInitFrameworkTemplateOverrides(framework),
+  };
+}
+
+const openapiTemplate = createOpenApiTemplate();
 
 export default openapiTemplate;

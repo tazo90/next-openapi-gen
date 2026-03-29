@@ -1,4 +1,5 @@
 import { DEFAULT_UI } from "../config/defaults.js";
+import type { InitFramework } from "./framework.js";
 import type { PackageManager } from "./package-manager.js";
 import { renderUiTemplate, resolveUiTemplatePath } from "./ui-template.js";
 import type { UiType } from "./types.js";
@@ -68,11 +69,25 @@ function getUiRegistryEntry(ui: UiType | string): UiRegistryEntry {
 }
 
 export function getDocsPage(ui: UiType | string, outputFile: string): string {
-  return renderUiTemplate(getUiRegistryEntry(ui).templateFile, { outputFile });
+  return renderUiTemplate("next", getUiRegistryEntry(ui).templateFile, {
+    outputFile,
+    routePath: "/api-docs",
+  });
 }
 
-export function getDocsPageTemplatePath(ui: UiType | string): string {
-  return resolveUiTemplatePath(getUiRegistryEntry(ui).templateFile);
+export function renderFrameworkDocsPage(
+  framework: InitFramework,
+  ui: UiType | string,
+  options: {
+    outputFile: string;
+    routePath: string;
+  },
+): string {
+  return renderUiTemplate(framework, getUiRegistryEntry(ui).templateFile, options);
+}
+
+export function getDocsPageTemplatePath(framework: InitFramework, ui: UiType | string): string {
+  return resolveUiTemplatePath(framework, getUiRegistryEntry(ui).templateFile);
 }
 
 export function getDocsPageDependencies(ui: UiType | string): string {

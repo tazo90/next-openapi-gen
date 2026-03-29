@@ -234,6 +234,11 @@ jobs:
           - next-app-drizzle-zod
           - next-pages-router
           - next-app-mixed-schemas
+          - tanstack-app
+          - react-router-app
+          - next-app-adapter
+          - next-app-next-config
+          - next-app-ts-config
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4

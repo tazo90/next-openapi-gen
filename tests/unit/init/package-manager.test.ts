@@ -27,14 +27,32 @@ describe("package manager helpers", () => {
     expect(await getPackageManager()).toBe("yarn");
   });
 
-  it("falls back to npm and reports missing dependencies when package.json cannot be read", async () => {
-    const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-pm-npm-"));
+  it("falls back to pnpm and reports missing dependencies when package.json cannot be read", async () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-pm-pnpm-"));
     roots.push(root);
 
     process.chdir(root);
 
-    expect(await getPackageManager()).toBe("npm");
+    expect(await getPackageManager()).toBe("pnpm");
     expect(await hasDependency("zod")).toBe(false);
+  });
+
+  it("prefers the packageManager field when present", async () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-pm-package-manager-"));
+    const nestedRoot = path.join(root, "apps", "example");
+    roots.push(root);
+
+    fs.mkdirSync(nestedRoot, { recursive: true });
+    fs.writeFileSync(
+      path.join(root, "package.json"),
+      JSON.stringify({
+        packageManager: "pnpm@10.27.0",
+      }),
+    );
+
+    process.chdir(nestedRoot);
+
+    expect(await getPackageManager()).toBe("pnpm");
   });
 
   it("finds dependencies in both dependency sections", async () => {

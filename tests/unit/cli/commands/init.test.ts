@@ -57,6 +57,7 @@ describe("init command", () => {
       process.chdir(project.root);
       writeJsonFile(path.join(project.root, "package.json"), {
         name: "fixture-app",
+        packageManager: "pnpm@10.27.0",
         version: "1.0.0",
       });
       fs.writeFileSync(path.join(project.root, "pnpm-lock.yaml"), "lockfileVersion: '9.0'");
@@ -67,7 +68,16 @@ describe("init command", () => {
 
       const template = JSON.parse(
         fs.readFileSync(path.join(project.root, "next.openapi.json"), "utf8"),
-      ) as { docsUrl: string; ui: string; schemaType: string; outputFile: string };
+      ) as {
+        docsUrl: string;
+        framework: {
+          kind: string;
+          router: string;
+        };
+        ui: string;
+        schemaType: string;
+        outputFile: string;
+      };
       const docsPage = fs.readFileSync(
         path.join(project.root, "src", "app", "api-docs", "page.tsx"),
         "utf8",
@@ -75,11 +85,16 @@ describe("init command", () => {
 
       expect(template).toMatchObject({
         docsUrl: "api-docs",
+        framework: {
+          kind: "nextjs",
+          router: "app",
+        },
         ui: "scalar",
         schemaType: "zod",
         outputFile: "openapi.json",
       });
       expect(docsPage).toContain("@scalar/api-reference-react");
+      expect(docsPage).toContain("export default function ApiDocsPage()");
       expect(docsPage).toContain('url: "/openapi.json"');
       expect(execMock).toHaveBeenCalledTimes(2);
       expect(execMock).toHaveBeenNthCalledWith(
@@ -111,6 +126,7 @@ describe("init command", () => {
       fs.mkdirSync(path.join(project.root, "config"), { recursive: true });
       writeJsonFile(path.join(project.root, "package.json"), {
         name: "fixture-app",
+        packageManager: "pnpm@10.27.0",
         version: "1.0.0",
         devDependencies: {
           typescript: "^5.9.0",
@@ -185,6 +201,7 @@ describe("init command", () => {
       fs.mkdirSync(path.join(project.root, "config"), { recursive: true });
       writeJsonFile(path.join(project.root, "package.json"), {
         name: "fixture-app",
+        packageManager: "pnpm@10.27.0",
         version: "1.0.0",
       });
 
@@ -210,8 +227,128 @@ describe("init command", () => {
         ui: "redoc",
       });
       expect(docsPage).toContain("RedocStandalone");
-      expect(execMock).toHaveBeenNthCalledWith(1, "npm install redoc ", expect.any(Function));
-      expect(execMock).toHaveBeenNthCalledWith(2, "npm install zod", expect.any(Function));
+      expect(execMock).toHaveBeenNthCalledWith(1, "pnpm add redoc ", expect.any(Function));
+      expect(execMock).toHaveBeenNthCalledWith(2, "pnpm add zod", expect.any(Function));
+      expect(spinner.fail).not.toHaveBeenCalled();
+    } finally {
+      project.cleanup();
+    }
+  });
+
+  it("writes TanStack-specific template defaults and route files", async () => {
+    const project = createTempProject("nxog-init-tanstack-");
+    const spinner = {
+      start: vi.fn(),
+      succeed: vi.fn(),
+      fail: vi.fn(),
+    };
+    const execMock = vi.fn((command: string, callback: (...args: unknown[]) => void) => {
+      callback(null, "", "");
+      return {} as never;
+    });
+
+    try {
+      process.chdir(project.root);
+      writeJsonFile(path.join(project.root, "package.json"), {
+        name: "fixture-app",
+        packageManager: "pnpm@10.27.0",
+        version: "1.0.0",
+      });
+
+      const { init } = await loadInitModule(execMock, spinner);
+
+      await init({
+        framework: "tanstack",
+        ui: "scalar",
+      });
+
+      const template = JSON.parse(
+        fs.readFileSync(path.join(project.root, "next.openapi.json"), "utf8"),
+      ) as {
+        apiDir: string;
+        framework: {
+          kind: string;
+        };
+      };
+      const docsPage = fs.readFileSync(
+        path.join(project.root, "src", "routes", "api-docs.tsx"),
+        "utf8",
+      );
+
+      expect(template).toMatchObject({
+        apiDir: "./src/routes/api",
+        framework: {
+          kind: "tanstack",
+        },
+      });
+      expect(docsPage).toContain('createFileRoute("/api-docs")');
+      expect(docsPage).toContain('url: "/openapi.json"');
+      expect(spinner.fail).not.toHaveBeenCalled();
+    } finally {
+      project.cleanup();
+    }
+  });
+
+  it("writes React Router docs routes for the requested framework", async () => {
+    const project = createTempProject("nxog-init-react-router-");
+    const spinner = {
+      start: vi.fn(),
+      succeed: vi.fn(),
+      fail: vi.fn(),
+    };
+    const execMock = vi.fn((command: string, callback: (...args: unknown[]) => void) => {
+      callback(null, "", "");
+      return {} as never;
+    });
+
+    try {
+      process.chdir(project.root);
+      writeJsonFile(path.join(project.root, "package.json"), {
+        name: "fixture-app",
+        packageManager: "pnpm@10.27.0",
+        version: "1.0.0",
+      });
+
+      const { init } = await loadInitModule(execMock, spinner);
+
+      await init({
+        docsUrl: "internal/reference",
+        framework: "react-router",
+        ui: "swagger",
+      });
+
+      const template = JSON.parse(
+        fs.readFileSync(path.join(project.root, "next.openapi.json"), "utf8"),
+      ) as {
+        apiDir: string;
+        framework: {
+          kind: string;
+        };
+      };
+      const docsPage = fs.readFileSync(
+        path.join(project.root, "src", "routes", "internal.reference.tsx"),
+        "utf8",
+      );
+
+      expect(template).toMatchObject({
+        apiDir: "./src/routes/api",
+        framework: {
+          kind: "reactrouter",
+        },
+      });
+      expect(docsPage).toContain("export default function ApiDocsPage()");
+      expect(docsPage).toContain('<SwaggerUI url="/openapi.json" />');
+      expect(execMock).toHaveBeenNthCalledWith(
+        1,
+        "pnpm add swagger-ui swagger-ui-react --no-strict-peer-dependencies",
+        expect.any(Function),
+      );
+      expect(execMock).toHaveBeenNthCalledWith(
+        2,
+        "pnpm add -D @types/swagger-ui-react --no-strict-peer-dependencies",
+        expect.any(Function),
+      );
+      expect(execMock).toHaveBeenNthCalledWith(3, "pnpm add zod", expect.any(Function));
       expect(spinner.fail).not.toHaveBeenCalled();
     } finally {
       project.cleanup();

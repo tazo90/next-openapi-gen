@@ -13,11 +13,23 @@ describe("ui template helpers", () => {
   });
 
   it("renders built-in templates with the requested output file", () => {
-    expect(renderUiTemplate("scalar.tsx", { outputFile: "openapi.json" })).toContain(
-      'url: "/openapi.json"',
-    );
-    expect(renderUiTemplate("rapidoc.tsx", { outputFile: "openapi.json" })).toContain(
-      'spec-url="openapi.json"',
-    );
+    expect(
+      renderUiTemplate("next", "scalar.tsx", {
+        outputFile: "openapi.json",
+        routePath: "/api-docs",
+      }),
+    ).toContain('url: "/openapi.json"');
+    expect(
+      renderUiTemplate("tanstack", "rapidoc.tsx", {
+        outputFile: "openapi.json",
+        routePath: "/api-docs",
+      }),
+    ).toContain('createFileRoute("/api-docs")');
+    expect(
+      renderUiTemplate("tanstack", "rapidoc.tsx", {
+        outputFile: "openapi.json",
+        routePath: "/api-docs",
+      }),
+    ).toContain('spec-url="/openapi.json"');
   });
 });

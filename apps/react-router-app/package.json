@@ -1,0 +1,33 @@
+{
+  "name": "react-router-app",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite dev",
+    "build": "vite build",
+    "generate": "pnpm exec next-openapi-gen generate",
+    "start": "vite preview",
+    "lint": "oxlint --config ../../packages/oxlint-config/base.json . --ignore-path ../../.gitignore --deny-warnings",
+    "format": "oxfmt --config ../../packages/oxfmt-config/oxfmt.json --ignore-path ../../.gitignore .",
+    "format:check": "oxfmt --config ../../packages/oxfmt-config/oxfmt.json --ignore-path ../../.gitignore --check .",
+    "check": "pnpm format:check && pnpm lint"
+  },
+  "dependencies": {
+    "@scalar/api-reference-react": "catalog:",
+    "react": "catalog:react-router",
+    "react-dom": "catalog:react-router",
+    "react-router": "catalog:react-router"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "@types/react": "catalog:react-router",
+    "@types/react-dom": "catalog:react-router",
+    "@vitejs/plugin-react": "catalog:react-router",
+    "ajv": "catalog:",
+    "next-openapi-gen": "workspace:*",
+    "tailwindcss": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:react-router"
+  }
+}
