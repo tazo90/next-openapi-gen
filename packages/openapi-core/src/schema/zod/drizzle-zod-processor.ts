@@ -57,7 +57,9 @@ export class DrizzleZodProcessor {
           // The value is typically an arrow function: (schema) => schema.field.method()
           if (t.isObjectProperty(prop) && t.isArrowFunctionExpression(prop.value)) {
             const arrowFunc = prop.value;
-            const fieldSchema = this.extractFieldSchema(arrowFunc.body);
+            const firstParam = arrowFunc.params[0];
+            const parameterName = t.isIdentifier(firstParam) ? firstParam.name : null;
+            const fieldSchema = this.extractFieldSchema(arrowFunc.body, key, parameterName);
 
             if (fieldSchema) {
               properties[key] = fieldSchema;
@@ -100,9 +102,21 @@ export class DrizzleZodProcessor {
    * Handles patterns like:
    * - schema.field
    * - schema.field.min(1)
+   * - schema.min(1)
    * - schema.field.min(1).max(100).email()
+   * - schema.min(1).max(100).email()
    */
-  private static extractFieldSchema(node: t.Node): OpenApiSchema | null {
+  private static extractFieldSchema(
+    node: t.Node,
+    fieldKey: string,
+    parameterName: string | null,
+  ): OpenApiSchema | null {
+    // Handle drizzle-zod callbacks where the parameter is already the field schema:
+    // title: (schema) => schema.min(5).describe("Post title")
+    if (parameterName && t.isIdentifier(node, { name: parameterName })) {
+      return this.mapFieldTypeToOpenApi(fieldKey);
+    }
+
     // Handle member expressions like: schema.field
     if (t.isMemberExpression(node)) {
       if (t.isIdentifier(node.property)) {
@@ -115,6 +129,8 @@ export class DrizzleZodProcessor {
     if (t.isCallExpression(node)) {
       const baseSchema = this.extractFieldSchema(
         t.isMemberExpression(node.callee) ? node.callee.object : node,
+        fieldKey,
+        parameterName,
       );
 
       if (baseSchema && t.isMemberExpression(node.callee)) {

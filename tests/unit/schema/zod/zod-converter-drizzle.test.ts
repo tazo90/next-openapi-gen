@@ -40,4 +40,126 @@ describe("ZodSchemaConverter drizzle-zod support", () => {
     expect(envelopeResult?.properties).toHaveProperty("data");
     expect(converter.factoryCache.size).toBeGreaterThan(0);
   });
+
+  it("converts drizzle-zod schemas used by the example app", () => {
+    const converter = new ZodSchemaConverter("apps/next-app-drizzle-zod/src/schemas");
+
+    const createSchema = converter.convertZodSchemaToOpenApi("CreatePostSchema");
+    const updateSchema = converter.convertZodSchemaToOpenApi("UpdatePostSchema");
+    const responseSchema = converter.convertZodSchemaToOpenApi("PostResponseSchema");
+
+    expect(createSchema).toMatchObject({
+      type: "object",
+      properties: {
+        title: {
+          type: "string",
+          minLength: 5,
+          maxLength: 255,
+          description: "Post title",
+        },
+        slug: {
+          type: "string",
+          minLength: 3,
+          maxLength: 255,
+          pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+          description: "URL-friendly slug",
+        },
+        excerpt: {
+          type: "string",
+          maxLength: 500,
+          description: "Short excerpt of the post",
+        },
+        content: {
+          type: "string",
+          minLength: 10,
+          description: "Post content in markdown",
+        },
+        published: {
+          type: "boolean",
+          description: "Whether the post is published",
+        },
+        authorId: {
+          type: "integer",
+          minimum: 0,
+          exclusiveMinimum: true,
+          description: "ID of the post author",
+        },
+      },
+      required: ["title", "slug", "content", "authorId"],
+    });
+
+    expect(updateSchema).toMatchObject({
+      type: "object",
+      properties: {
+        title: {
+          type: "string",
+          minLength: 5,
+          maxLength: 255,
+          description: "Post title",
+        },
+        slug: {
+          type: "string",
+          pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+          description: "URL-friendly slug",
+        },
+        excerpt: {
+          type: "string",
+          maxLength: 500,
+          description: "Short excerpt",
+        },
+        content: {
+          type: "string",
+          minLength: 10,
+          description: "Post content",
+        },
+        published: {
+          type: "boolean",
+          description: "Publication status",
+        },
+      },
+    });
+    expect(updateSchema?.required).toEqual([]);
+    expect(updateSchema?.properties).not.toHaveProperty("id");
+    expect(updateSchema?.properties).not.toHaveProperty("authorId");
+
+    expect(responseSchema).toMatchObject({
+      type: "object",
+      properties: {
+        title: {
+          type: "string",
+          description: "Post title",
+        },
+        slug: {
+          type: "string",
+          description: "URL-friendly slug",
+        },
+        excerpt: {
+          type: "string",
+          description: "Post excerpt",
+        },
+        content: {
+          type: "string",
+          description: "Full post content",
+        },
+        published: {
+          type: "boolean",
+          description: "Publication status",
+        },
+        viewCount: {
+          type: "integer",
+          description: "Number of views",
+        },
+        createdAt: {
+          type: "string",
+          format: "date-time",
+          description: "Creation timestamp",
+        },
+        updatedAt: {
+          type: "string",
+          format: "date-time",
+          description: "Last update timestamp",
+        },
+      },
+    });
+  });
 });

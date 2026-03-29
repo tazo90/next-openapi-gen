@@ -34,11 +34,11 @@ describe("DrizzleZodProcessor", () => {
         import { createInsertSchema } from "drizzle-zod";
 
         const schema = createInsertSchema(table, {
-          title: (schema) => schema.title.min(5).max(255).describe("Post title"),
-          email: (schema) => schema.email.email(),
-          price: (schema) => schema.price.positive(),
-          excerpt: (schema) => schema.excerpt.optional(),
-          createdAt: (schema) => schema.createdAt,
+          title: (schema) => schema.min(5).max(255).describe("Post title"),
+          email: (schema) => schema.email(),
+          price: (schema) => schema.positive(),
+          excerpt: (schema) => schema.optional(),
+          createdAt: (schema) => schema,
         });
       `,
       "createInsertSchema",

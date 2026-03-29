@@ -11,18 +11,18 @@
     }
   ],
   "performance": {
-    "prepareTemplateMs": 0.06566699999996217,
-    "loadCustomFragmentsMs": 0.0003329999999550637,
-    "prepareDocumentMs": 0.06599999999991724,
-    "scanRouteFilesMs": 0.2534579999999096,
-    "processRouteFilesMs": 3011.877001,
-    "buildOperationsMs": 12.469417000000249,
-    "scanRoutesMs": 3024.599876,
-    "sortAndMergePathsMs": 0.676499999999578,
-    "buildPathsMs": 0.676499999999578,
-    "defaultComponentsAndErrorsMs": 0.1573750000002292,
-    "mergeSchemasMs": 0.17537499999980355,
-    "finalizeDocumentMs": 0.9886249999999563,
-    "totalMs": 3026.866125
+    "prepareTemplateMs": 0.07541600000001836,
+    "loadCustomFragmentsMs": 0.0003749999999627107,
+    "prepareDocumentMs": 0.07579099999998107,
+    "scanRouteFilesMs": 0.26904100000001563,
+    "processRouteFilesMs": 2607.84625,
+    "buildOperationsMs": 12.388083000000279,
+    "scanRoutesMs": 2620.5033740000003,
+    "sortAndMergePathsMs": 0.5857080000000678,
+    "buildPathsMs": 0.5857080000000678,
+    "defaultComponentsAndErrorsMs": 0.13812499999994543,
+    "mergeSchemasMs": 0.1639589999999771,
+    "finalizeDocumentMs": 1.0876250000001164,
+    "totalMs": 2622.766083
   }
 }

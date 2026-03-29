@@ -1174,6 +1174,30 @@ export class ZodSchemaConverter {
 
     // Apply the current method
     switch (methodName) {
+      case "omit":
+        if (node.arguments.length > 0 && t.isObjectExpression(node.arguments[0])) {
+          node.arguments[0].properties.forEach((prop) => {
+            if (
+              t.isObjectProperty(prop) &&
+              t.isBooleanLiteral(prop.value) &&
+              prop.value.value === true
+            ) {
+              const key = t.isIdentifier(prop.key)
+                ? prop.key.name
+                : t.isStringLiteral(prop.key)
+                  ? prop.key.value
+                  : null;
+
+              if (key && schema.properties) {
+                delete schema.properties[key];
+                if (schema.required) {
+                  schema.required = schema.required.filter((requiredKey) => requiredKey !== key);
+                }
+              }
+            }
+          });
+        }
+        break;
       case "optional":
         // optional means T | undefined — not in required array, no nullable flag
         // Required array exclusion is handled by hasOptionalMethod() in processZodObject()
