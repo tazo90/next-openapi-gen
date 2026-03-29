@@ -1,0 +1,62 @@
+import fs from "node:fs";
+
+import { afterEach, describe, expect, it, vi } from "vitest";
+
+import { runGenerationOrchestrator } from "@next-openapi-gen/core/orchestrator.js";
+import { normalizeOpenApiConfig } from "@next-openapi-gen/config/normalize.js";
+
+import {
+  createTempProject,
+  writeAppRoute,
+  writeOpenApiTemplate,
+} from "../../helpers/test-project.js";
+
+describe("runGenerationOrchestrator", () => {
+  const previousCwd = process.cwd();
+
+  afterEach(() => {
+    process.chdir(previousCwd);
+  });
+
+  it("runs generation hooks and finalizes the document", () => {
+    const project = createTempProject("nxog-orchestrator-");
+
+    try {
+      const templatePath = writeOpenApiTemplate(project.root);
+      writeAppRoute(
+        project.root,
+        ["users"],
+        `/**
+ * @openapi
+ */
+export async function GET() {}
+`,
+      );
+      process.chdir(project.root);
+
+      const template = JSON.parse(fs.readFileSync(templatePath, "utf8"));
+      const config = normalizeOpenApiConfig(template);
+      const configLoaded = vi.fn();
+      const routesDiscovered = vi.fn();
+      const documentBuilt = vi.fn();
+
+      const result = runGenerationOrchestrator({
+        config,
+        template,
+        hooks: {
+          configLoaded,
+          routesDiscovered,
+          documentBuilt,
+        },
+      });
+
+      expect(result.document.openapi).toBe("3.0.0");
+      expect(result.document.paths).toHaveProperty("/users");
+      expect(configLoaded).toHaveBeenCalledWith({ config });
+      expect(routesDiscovered).toHaveBeenCalledOnce();
+      expect(documentBuilt).toHaveBeenCalledOnce();
+    } finally {
+      project.cleanup();
+    }
+  });
+});

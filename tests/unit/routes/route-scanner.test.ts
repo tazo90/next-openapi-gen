@@ -5,7 +5,7 @@ import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { scanRouteFiles } from "@next-openapi-gen/routes/route-scanner.js";
-import type { FrameworkAdapter } from "@next-openapi-gen/frameworks/types.js";
+import type { FrameworkSource } from "@next-openapi-gen/frameworks/types.js";
 
 function createTempDir() {
   return fs.mkdtempSync(path.join(os.tmpdir(), "nxog-route-scanner-"));
@@ -19,7 +19,7 @@ describe("scanRouteFiles", () => {
     roots.splice(0).forEach((root) => fs.rmSync(root, { recursive: true, force: true }));
   });
 
-  it("recursively scans directories and only processes adapter-matching files once", () => {
+  it("recursively scans directories and only processes source-matching files once", () => {
     const root = createTempDir();
     roots.push(root);
 
@@ -29,11 +29,11 @@ describe("scanRouteFiles", () => {
     fs.writeFileSync(path.join(root, "users", "route.tsx"), "");
     fs.writeFileSync(path.join(root, "admin", "index.ts"), "");
 
-    const adapter = {
+    const source = {
       shouldProcessFile(fileName: string) {
         return fileName === "route.ts" || fileName === "route.tsx";
       },
-    } as FrameworkAdapter;
+    } as FrameworkSource;
 
     const state = {
       directoryCache: {},
@@ -43,11 +43,11 @@ describe("scanRouteFiles", () => {
 
     const visited: string[] = [];
 
-    scanRouteFiles(root, adapter, state, (filePath) => {
+    scanRouteFiles(root, source, state, (filePath) => {
       visited.push(filePath);
     });
 
-    scanRouteFiles(root, adapter, state, (filePath) => {
+    scanRouteFiles(root, source, state, (filePath) => {
       visited.push(filePath);
     });
 
@@ -62,9 +62,9 @@ describe("scanRouteFiles", () => {
     fs.mkdirSync(path.join(root, "users"), { recursive: true });
     fs.writeFileSync(path.join(root, "users", "route.ts"), "");
 
-    const adapter = {
+    const source = {
       shouldProcessFile: (fileName: string) => fileName === "route.ts",
-    } as FrameworkAdapter;
+    } as FrameworkSource;
 
     const state = {
       directoryCache: {},
@@ -75,8 +75,8 @@ describe("scanRouteFiles", () => {
     const readdirSpy = vi.spyOn(fs, "readdirSync");
     const statSpy = vi.spyOn(fs, "statSync");
 
-    scanRouteFiles(root, adapter, state, () => {});
-    scanRouteFiles(root, adapter, state, () => {});
+    scanRouteFiles(root, source, state, () => {});
+    scanRouteFiles(root, source, state, () => {});
 
     expect(readdirSpy).toHaveBeenCalledTimes(2);
     expect(statSpy).toHaveBeenCalledTimes(2);

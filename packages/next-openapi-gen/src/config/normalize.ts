@@ -1,5 +1,7 @@
 import type {
   FrameworkConfig,
+  FrameworkKind,
+  LegacyFrameworkKind,
   OpenApiConfig,
   OpenApiVersion,
   OpenApiTemplate,
@@ -7,6 +9,7 @@ import type {
   RouterType,
   SchemaType,
 } from "../shared/types.js";
+import { FrameworkKind as ResolvedFrameworkKind } from "../shared/types.js";
 import {
   DEFAULT_API_DIR,
   DEFAULT_DEBUG,
@@ -49,25 +52,62 @@ function normalizeOpenApiVersion(template: Pick<OpenApiTemplate, "openapi">): Op
   return DEFAULT_OPENAPI_VERSION;
 }
 
+type RawFrameworkConfig = {
+  kind?: FrameworkKind | LegacyFrameworkKind | undefined;
+  router?: RouterType | undefined;
+  modulePath?: string | undefined;
+  adapterPath?: string | undefined;
+};
+
+function normalizeFrameworkKind(kind: RawFrameworkConfig["kind"]): FrameworkKind {
+  switch (kind) {
+    case ResolvedFrameworkKind.Nextjs:
+    case "next":
+      return ResolvedFrameworkKind.Nextjs;
+    case ResolvedFrameworkKind.Tanstack:
+    case "tanstack":
+      return ResolvedFrameworkKind.Tanstack;
+    case ResolvedFrameworkKind.ReactRouter:
+    case "react-router":
+      return ResolvedFrameworkKind.ReactRouter;
+    default:
+      return ResolvedFrameworkKind.Nextjs;
+  }
+}
+
 function normalizeFramework(
-  config: Pick<OpenApiTemplate, "framework" | "routerType" | "next">,
+  config: Pick<OpenApiTemplate, "routerType" | "next"> & {
+    framework?: RawFrameworkConfig | undefined;
+  },
   routerType: RouterType,
 ): FrameworkConfig {
   if (config.framework) {
-    if (config.framework.kind === "next") {
-      return {
-        ...config.framework,
-        router: config.framework.router || routerType,
-        adapterPath: config.framework.adapterPath || config.next?.adapterPath,
-      };
-    }
+    const frameworkKind = normalizeFrameworkKind(config.framework.kind);
 
-    return config.framework;
+    switch (frameworkKind) {
+      case ResolvedFrameworkKind.Nextjs:
+        return {
+          ...config.framework,
+          kind: frameworkKind,
+          router: config.framework.router || routerType,
+          modulePath:
+            config.framework.modulePath || config.framework.adapterPath || config.next?.adapterPath,
+          adapterPath: config.framework.adapterPath || config.next?.adapterPath,
+        };
+      case ResolvedFrameworkKind.Tanstack:
+      case ResolvedFrameworkKind.ReactRouter:
+        return {
+          ...config.framework,
+          kind: frameworkKind,
+          modulePath: config.framework.modulePath || config.framework.adapterPath,
+        };
+    }
   }
 
   return {
-    kind: "next",
+    kind: ResolvedFrameworkKind.Nextjs,
     router: routerType,
+    modulePath: config.next?.adapterPath,
     adapterPath: config.next?.adapterPath,
   };
 }

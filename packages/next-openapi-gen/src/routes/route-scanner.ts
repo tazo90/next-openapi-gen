@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 
-import type { FrameworkAdapter } from "../frameworks/types.js";
+import type { FrameworkSource } from "../frameworks/types.js";
 
 type ScanState = {
   directoryCache: Record<string, string[]>;
@@ -11,7 +11,7 @@ type ScanState = {
 
 export function scanRouteFiles(
   rootDir: string,
-  adapter: FrameworkAdapter,
+  source: FrameworkSource,
   state: ScanState,
   onFile: (filePath: string) => void,
 ): void {
@@ -30,11 +30,11 @@ export function scanRouteFiles(
     }
 
     if (stat.isDirectory()) {
-      scanRouteFiles(filePath, adapter, state, onFile);
+      scanRouteFiles(filePath, source, state, onFile);
       return;
     }
 
-    if (adapter.shouldProcessFile(file) && !state.processFileTracker[filePath]) {
+    if (source.shouldProcessFile(file) && !state.processFileTracker[filePath]) {
       onFile(filePath);
       state.processFileTracker[filePath] = true;
     }

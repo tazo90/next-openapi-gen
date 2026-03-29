@@ -3,9 +3,11 @@ import { describe, expect, it, vi } from "vitest";
 import {
   CLI_NAME,
   CLI_SCHEMA_CHOICES,
+  GENERATE_CONFIG_OPTION_DESCRIPTION,
   getCliVersion,
   GENERATE_COMMAND_DESCRIPTION,
   GENERATE_DEFAULTS,
+  GENERATE_WATCH_OPTION_DESCRIPTION,
   INIT_COMMAND_DESCRIPTION,
   INIT_DEFAULTS,
 } from "@next-openapi-gen/cli/constants.js";
@@ -27,7 +29,9 @@ describe("CLI program", () => {
       output: "next.openapi.json",
     });
     expect(generateCommand?.opts()).toEqual({
+      config: undefined,
       template: "next.openapi.json",
+      watch: false,
     });
   });
 
@@ -41,7 +45,9 @@ describe("CLI program", () => {
     const schemaOption = initOptions.find((option) => option.attributeName() === "schema");
     const docsUrlOption = initOptions.find((option) => option.attributeName() === "docsUrl");
     const outputOption = initOptions.find((option) => option.attributeName() === "output");
+    const configOption = generateOptions.find((option) => option.attributeName() === "config");
     const templateOption = generateOptions.find((option) => option.attributeName() === "template");
+    const watchOption = generateOptions.find((option) => option.attributeName() === "watch");
 
     expect(initCommand?.description()).toBe(INIT_COMMAND_DESCRIPTION);
     expect(generateCommand?.description()).toBe(GENERATE_COMMAND_DESCRIPTION);
@@ -55,8 +61,10 @@ describe("CLI program", () => {
     expect(docsUrlOption?.defaultValue).toBe(INIT_DEFAULTS.docsUrl);
     expect(outputOption?.flags).toBe("-o, --output <file>");
     expect(outputOption?.defaultValue).toBe(INIT_DEFAULTS.output);
+    expect(configOption?.flags).toBe("-c, --config <file>");
     expect(templateOption?.flags).toBe("-t, --template <file>");
     expect(templateOption?.defaultValue).toBe(GENERATE_DEFAULTS.template);
+    expect(watchOption?.flags).toBe("-w, --watch");
   });
 
   it("parses init and generate options through the public command surface", async () => {
@@ -83,7 +91,17 @@ describe("CLI program", () => {
       ],
       { from: "user" },
     );
-    await program.parseAsync(["generate", "--template", "config/spec.json"], { from: "user" });
+    await program.parseAsync(
+      [
+        "generate",
+        "--config",
+        "next-openapi.config.ts",
+        "--template",
+        "config/spec.json",
+        "--watch",
+      ],
+      { from: "user" },
+    );
 
     await expect(
       program.parseAsync(["init", "--ui", "unknown-ui"], {
@@ -114,7 +132,9 @@ describe("CLI program", () => {
     expect(actionSpy).toHaveBeenNthCalledWith(
       3,
       {
+        config: "next-openapi.config.ts",
         template: "config/spec.json",
+        watch: true,
       },
       expect.anything(),
     );
@@ -141,5 +161,9 @@ describe("CLI program", () => {
     expect(initHelpText).toContain("--schema <schemaType>");
     expect(initHelpText).toContain("--output <file>");
     expect(generateHelpText).toContain("--template <file>");
+    expect(generateHelpText).toContain("--config <file>");
+    expect(generateHelpText).toContain("--watch");
+    expect(generateHelpText).toContain(GENERATE_CONFIG_OPTION_DESCRIPTION);
+    expect(generateHelpText).toContain(GENERATE_WATCH_OPTION_DESCRIPTION);
   });
 });

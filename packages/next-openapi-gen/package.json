@@ -23,7 +23,7 @@
     "url": "git+ssh://git@github.com/tazo90/next-openapi-gen.git"
   },
   "bin": {
-    "next-openapi-gen": "./dist/index.js"
+    "next-openapi-gen": "./dist/cli.js"
   },
   "files": [
     "dist",
@@ -31,8 +31,27 @@
   ],
   "type": "module",
   "main": "dist/index.js",
-  "module": "dist/index.mjs",
+  "module": "dist/index.js",
   "typings": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./next": {
+      "types": "./dist/next/index.d.ts",
+      "default": "./dist/next/index.js"
+    },
+    "./react-router": {
+      "types": "./dist/react-router/index.d.ts",
+      "default": "./dist/react-router/index.js"
+    },
+    "./vite": {
+      "types": "./dist/vite/index.d.ts",
+      "default": "./dist/vite/index.js"
+    },
+    "./package.json": "./package.json"
+  },
   "publishConfig": {
     "access": "public"
   },
@@ -44,7 +63,7 @@
     "format:check": "oxfmt --config ../oxfmt-config/oxfmt.json --ignore-path ../../.gitignore --check .",
     "lint": "oxlint --config ../oxlint-config/base.json . --ignore-path ../../.gitignore --deny-warnings",
     "lint:fix": "oxlint --config ../oxlint-config/base.json . --ignore-path ../../.gitignore --fix --deny-warnings",
-    "test": "pnpm --dir ../.. exec vitest run --config vitest.config.ts tests/unit/cli tests/unit/commands tests/unit/generator tests/unit/init",
+    "test": "pnpm --dir ../.. test:unit && pnpm --dir ../.. test:integration",
     "test:coverage": "pnpm --dir ../.. exec vitest run --config vitest.config.ts --coverage",
     "release": "np --no-cleanup --no-tests",
     "version": "conventional-changelog -p angular -i ../../CHANGELOG.md -s -n ../../.changelogrc.cjs && git add ../../CHANGELOG.md"

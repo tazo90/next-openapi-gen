@@ -1,9 +1,10 @@
 import fs from "fs";
 
 import { normalizeOpenApiConfig } from "../config/normalize.js";
+import type { SharedGenerationRuntime } from "../core/runtime.js";
 import type { DiagnosticsCollector } from "../diagnostics/collector.js";
-import { createFrameworkAdapter } from "../frameworks/index.js";
-import type { FrameworkAdapter } from "../frameworks/types.js";
+import { createFrameworkSource } from "../frameworks/index.js";
+import type { FrameworkSource } from "../frameworks/types.js";
 import { SchemaProcessor } from "../schema/typescript/schema-processor.js";
 import { capitalize, extractPathParameters } from "../shared/utils.js";
 import { logger } from "../shared/logger.js";
@@ -25,7 +26,7 @@ export class RouteProcessor {
   private tagDefinitions: Record<string, OpenApiTagDefinition> = {};
   private schemaProcessor: SchemaProcessor;
   private config: ResolvedOpenApiConfig;
-  private adapter: FrameworkAdapter;
+  private source: FrameworkSource;
   private ignoreRouteMatchers: RegExp[];
   private diagnostics: DiagnosticsCollector | undefined;
   private responseProcessor: ResponseProcessor;
@@ -35,16 +36,26 @@ export class RouteProcessor {
   private statCache: Record<string, fs.Stats> = {};
   private processFileTracker: Record<string, boolean> = {};
 
-  constructor(config: OpenApiConfig | ResolvedOpenApiConfig, diagnostics?: DiagnosticsCollector) {
+  constructor(
+    config: OpenApiConfig | ResolvedOpenApiConfig,
+    diagnostics?: DiagnosticsCollector,
+    runtime?: SharedGenerationRuntime,
+  ) {
     this.config = normalizeOpenApiConfig(config);
     this.diagnostics = diagnostics;
+    if (runtime) {
+      this.directoryCache = runtime.routeScan.directoryCache;
+      this.statCache = runtime.routeScan.statCache;
+    }
     this.schemaProcessor = new SchemaProcessor(
       this.config.schemaDir,
       this.config.schemaBackends,
       this.config.schemaFiles,
       this.config.apiDir,
+      undefined,
+      runtime,
     );
-    this.adapter = createFrameworkAdapter(this.config);
+    this.source = createFrameworkSource(this.config);
     this.ignoreRouteMatchers = (this.config.ignoreRoutes || []).map((pattern) => {
       const regexPattern = pattern.replace(/\*/g, ".*").replace(/\//g, "\\/");
       return new RegExp(`^${regexPattern}$`);
@@ -96,7 +107,7 @@ export class RouteProcessor {
     const routePath =
       typeof routePathOrDataTypes === "string"
         ? routePathOrDataTypes
-        : this.adapter.getRoutePath(filePath);
+        : this.source.getRoutePath(filePath);
     const dataTypes =
       (typeof routePathOrDataTypes === "string" ? maybeDataTypes : routePathOrDataTypes) ||
       ({} as DataTypes);
@@ -142,14 +153,14 @@ export class RouteProcessor {
     logger.debug(`Scanning API routes in: ${dir}`);
     scanRouteFiles(
       dir,
-      this.adapter,
+      this.source,
       {
         directoryCache: this.directoryCache,
         statCache: this.statCache,
         processFileTracker: this.processFileTracker,
       },
       (filePath) => {
-        this.adapter
+        this.source
           .processFile(filePath)
           .forEach(({ method, filePath: routeFilePath, routePath, dataTypes }) => {
             this.registerRoute(method, routeFilePath, routePath, dataTypes);
@@ -159,7 +170,7 @@ export class RouteProcessor {
   }
 
   public scanRoutes(): void {
-    this.adapter.getScanRoots().forEach((rootDir) => {
+    this.source.getScanRoots().forEach((rootDir) => {
       if (fs.existsSync(rootDir)) {
         this.scanApiRoutes(rootDir);
       }
@@ -175,7 +186,7 @@ export class RouteProcessor {
     const normalizedRoutePath =
       discoveredRoutePath.includes("{") || discoveredRoutePath.startsWith("/")
         ? discoveredRoutePath
-        : this.adapter.getRoutePath(discoveredRoutePath);
+        : this.source.getRoutePath(discoveredRoutePath);
     const resolvedPathParamNames =
       pathParamNames.length > 0 ? pathParamNames : extractPathParameters(normalizedRoutePath);
 

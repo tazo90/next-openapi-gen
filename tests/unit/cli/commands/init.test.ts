@@ -3,7 +3,7 @@ import path from "node:path";
 
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { createTempProject, writeJsonFile } from "../../helpers/test-project.js";
+import { createTempProject, writeJsonFile } from "../../../helpers/test-project.js";
 
 type SpinnerMock = {
   start: ReturnType<typeof vi.fn>;
@@ -20,6 +20,7 @@ async function loadInitModule(
   vi.doUnmock("fs-extra");
   vi.doUnmock("child_process");
   vi.doUnmock("ora");
+  vi.doUnmock("@next-openapi-gen/init/create-docs-page.js");
   vi.doMock("child_process", () => ({
     exec: execMock,
   }));
@@ -151,18 +152,16 @@ describe("init command", () => {
       process.chdir(project.root);
 
       const { init } = await loadInitModule(execMock, spinner, () => {
-        vi.doMock("fs-extra", () => ({
-          default: {
-            writeJson: vi.fn(async () => {
-              throw new Error("disk full");
-            }),
-          },
+        vi.doMock("@next-openapi-gen/init/create-docs-page.js", () => ({
+          createDocsPage: vi.fn(async () => {
+            throw new Error("disk full");
+          }),
         }));
       });
 
       await init({});
 
-      expect(fs.existsSync(path.join(project.root, "next.openapi.json"))).toBe(false);
+      expect(fs.existsSync(path.join(project.root, "next.openapi.json"))).toBe(true);
       expect(execMock).not.toHaveBeenCalled();
     } finally {
       project.cleanup();

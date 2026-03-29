@@ -11,7 +11,7 @@ import {
   DEFAULT_SCHEMA_DIR,
   DEFAULT_UI,
 } from "../config/defaults.js";
-import type { OpenApiTemplate } from "../shared/types.js";
+import { FrameworkKind, type OpenApiTemplate } from "../shared/types.js";
 
 const openapiTemplate = {
   openapi: "3.0.0",
@@ -110,7 +110,7 @@ const openapiTemplate = {
   outputFile: DEFAULT_GENERATED_OPENAPI_FILENAME,
   outputDir: DEFAULT_OUTPUT_DIR,
   framework: {
-    kind: "next",
+    kind: FrameworkKind.Nextjs,
     router: DEFAULT_ROUTER_TYPE,
   },
   next: {

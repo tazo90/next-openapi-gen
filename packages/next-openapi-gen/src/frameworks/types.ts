@@ -7,7 +7,7 @@ export type DiscoveredRoute = {
   dataTypes: DataTypes;
 };
 
-export interface FrameworkAdapter {
+export interface FrameworkSource {
   readonly config: ResolvedOpenApiConfig;
   getScanRoots(): string[];
   shouldProcessFile(fileName: string): boolean;

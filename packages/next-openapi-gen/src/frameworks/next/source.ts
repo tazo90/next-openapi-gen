@@ -3,15 +3,15 @@ import path from "node:path";
 
 import { AppRouterStrategy } from "../../routes/app-router-strategy.js";
 import { PagesRouterStrategy } from "../../routes/pages-router-strategy.js";
-import type { ResolvedOpenApiConfig } from "../../shared/types.js";
-import type { FrameworkAdapter } from "../types.js";
+import { FrameworkKind, type ResolvedOpenApiConfig } from "../../shared/types.js";
+import type { FrameworkSource } from "../types.js";
 
-class NextFrameworkAdapter implements FrameworkAdapter {
+class NextFrameworkSource implements FrameworkSource {
   private readonly strategy;
 
   constructor(public readonly config: ResolvedOpenApiConfig) {
     this.strategy =
-      config.framework.kind === "next" && config.framework.router === "pages"
+      config.framework.kind === FrameworkKind.Nextjs && config.framework.router === "pages"
         ? new PagesRouterStrategy(config)
         : new AppRouterStrategy(config);
   }
@@ -45,7 +45,7 @@ class NextFrameworkAdapter implements FrameworkAdapter {
   }
 
   public processFile(filePath: string) {
-    const routes: ReturnType<FrameworkAdapter["processFile"]> = [];
+    const routes: ReturnType<FrameworkSource["processFile"]> = [];
 
     this.strategy.processFile(filePath, (method, processedFilePath, dataTypes) => {
       routes.push({
@@ -60,6 +60,6 @@ class NextFrameworkAdapter implements FrameworkAdapter {
   }
 }
 
-export function createNextFrameworkAdapter(config: ResolvedOpenApiConfig): NextFrameworkAdapter {
-  return new NextFrameworkAdapter(config);
+export function createNextFrameworkSource(config: ResolvedOpenApiConfig): NextFrameworkSource {
+  return new NextFrameworkSource(config);
 }

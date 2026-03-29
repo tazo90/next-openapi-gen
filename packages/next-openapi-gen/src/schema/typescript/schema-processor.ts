@@ -49,6 +49,7 @@ import type {
   SchemaType,
 } from "../../shared/types.js";
 import { logger } from "../../shared/logger.js";
+import type { SharedGenerationRuntime } from "../../core/runtime.js";
 
 type SchemaProcessorFileAccess = Pick<
   typeof fs,
@@ -59,6 +60,7 @@ const defaultFileAccess: SchemaProcessorFileAccess = fs;
 export { createTypeReferenceFromString, parseGenericTypeString, splitGenericTypeArguments };
 
 export class SchemaProcessor {
+  private sharedRuntime: SharedGenerationRuntime | undefined;
   private schemaDirs: string[];
   private typeDefinitions: Record<string, any> = {};
   private openapiDefinitions: Record<string, OpenAPIDefinition> = {};
@@ -89,10 +91,19 @@ export class SchemaProcessor {
     schemaFiles?: string[],
     apiDir?: string,
     fileAccess: SchemaProcessorFileAccess = defaultFileAccess,
+    runtime?: SharedGenerationRuntime,
   ) {
     this.schemaDirs = normalizeSchemaDirs(schemaDir).map((d) => path.resolve(d));
     this.schemaTypes = normalizeSchemaTypes(schemaType);
     this.fileAccess = fileAccess;
+    this.sharedRuntime = runtime;
+    if (runtime) {
+      this.directoryCache = runtime.schema.directoryCache;
+      this.statCache = runtime.schema.statCache;
+      this.fileASTCache = runtime.schema.fileASTCache;
+      this.schemaFiles = runtime.schema.schemaFiles;
+      this.schemaDefinitionIndex = runtime.schema.schemaDefinitionIndex;
+    }
     this.customSchemaProcessor = new CustomSchemaProcessor(
       schemaFiles && schemaFiles.length > 0 ? processCustomSchemaFiles(schemaFiles) : {},
     );
@@ -195,6 +206,9 @@ export class SchemaProcessor {
     }
 
     this.schemaFiles = [];
+    if (this.sharedRuntime) {
+      this.sharedRuntime.schema.schemaFiles = this.schemaFiles;
+    }
 
     for (const dir of this.schemaDirs) {
       if (!this.fileAccess.existsSync(dir)) {

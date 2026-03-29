@@ -13,11 +13,14 @@ export const CLI_DESCRIPTION =
   "Super fast and easy way to generate OpenAPI documentation for Next.js";
 export const INIT_COMMAND_DESCRIPTION = "Initialize an OpenAPI specification";
 export const GENERATE_COMMAND_DESCRIPTION = "Generate a specification based on API routes";
+export const GENERATE_CONFIG_OPTION_DESCRIPTION = "Specify the config file";
 export const INIT_UI_OPTION_DESCRIPTION = 'Specify the UI type, e.g., scalar. Use "none" for no UI';
 export const INIT_DOCS_URL_OPTION_DESCRIPTION = "Specify the docs URL";
 export const INIT_SCHEMA_OPTION_DESCRIPTION = "Specify the schema tool";
 export const INIT_OUTPUT_OPTION_DESCRIPTION = "Specify the output path for the OpenAPI template.";
 export const GENERATE_TEMPLATE_OPTION_DESCRIPTION = "Specify the OpenAPI template file";
+export const GENERATE_WATCH_OPTION_DESCRIPTION =
+  "Watch route and schema files and regenerate on changes";
 
 export const INIT_DEFAULTS = {
   docsUrl: DEFAULT_DOCS_URL,

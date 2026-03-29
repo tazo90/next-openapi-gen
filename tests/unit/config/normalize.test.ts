@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { normalizeOpenApiConfig } from "@next-openapi-gen/config/normalize.js";
+import { FrameworkKind } from "@next-openapi-gen/shared/types.js";
 
 describe("normalizeOpenApiConfig", () => {
   it("derives framework, version, schema backends, and next adapter settings", () => {
@@ -27,7 +28,8 @@ describe("normalizeOpenApiConfig", () => {
 
     expect(config.openapiVersion).toBe("3.2");
     expect(config.framework).toEqual({
-      kind: "next",
+      kind: FrameworkKind.Nextjs,
+      modulePath: "./adapter.ts",
       router: "app",
       adapterPath: "./adapter.ts",
     });
@@ -45,14 +47,14 @@ describe("normalizeOpenApiConfig", () => {
         description: "Fixture",
       },
       framework: {
-        kind: "tanstack",
+        kind: FrameworkKind.Tanstack,
       },
       schemaType: "typescript",
     } as never);
 
     expect(config.openapiVersion).toBe("4.0");
     expect(config.framework).toEqual({
-      kind: "tanstack",
+      kind: FrameworkKind.Tanstack,
     });
   });
 
@@ -66,7 +68,7 @@ describe("normalizeOpenApiConfig", () => {
       },
       routerType: "pages",
       framework: {
-        kind: "next",
+        kind: FrameworkKind.Nextjs,
       },
       next: {
         adapterPath: "./custom-adapter.ts",
@@ -74,9 +76,48 @@ describe("normalizeOpenApiConfig", () => {
     } as never);
 
     expect(config.framework).toEqual({
-      kind: "next",
+      kind: FrameworkKind.Nextjs,
+      modulePath: "./custom-adapter.ts",
       router: "pages",
       adapterPath: "./custom-adapter.ts",
+    });
+  });
+
+  it("preserves react-router framework configs and maps legacy adapterPath to modulePath", () => {
+    const config = normalizeOpenApiConfig({
+      openapi: "3.1.0",
+      info: {
+        title: "Fixture",
+        version: "1.0.0",
+        description: "Fixture",
+      },
+      framework: {
+        kind: FrameworkKind.ReactRouter,
+        adapterPath: "./framework-source.ts",
+      },
+    } as never);
+
+    expect(config.framework).toEqual({
+      kind: FrameworkKind.ReactRouter,
+      adapterPath: "./framework-source.ts",
+      modulePath: "./framework-source.ts",
+    });
+  });
+
+  it("accepts legacy framework string aliases and normalizes them to enum values", () => {
+    const config = normalizeOpenApiConfig({
+      info: {
+        title: "Fixture",
+        version: "1.0.0",
+      },
+      framework: {
+        kind: "react-router",
+      },
+    } as never);
+
+    expect(config.framework).toEqual({
+      kind: FrameworkKind.ReactRouter,
+      modulePath: undefined,
     });
   });
 

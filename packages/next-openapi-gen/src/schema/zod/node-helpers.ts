@@ -184,6 +184,11 @@ export function extractDescriptionFromArguments(node: t.CallExpression): string 
   ) {
     return node.arguments[0].value;
   }
+
+  if (t.isMemberExpression(node.callee) && t.isCallExpression(node.callee.object)) {
+    return extractDescriptionFromArguments(node.callee.object);
+  }
+
   return null;
 }
 
@@ -260,6 +265,15 @@ export function processZodPrimitiveNode(
   node: t.CallExpression,
   context: PrimitiveHelperContext,
 ): OpenApiSchema {
+  if (t.isMemberExpression(node.callee) && t.isCallExpression(node.callee.object)) {
+    const schema = processZodPrimitiveNode(node.callee.object, context);
+    const description = extractDescriptionFromArguments(node);
+    if (description) {
+      schema.description = description;
+    }
+    return schema;
+  }
+
   const zodCalleePath = getZodCalleePath(node);
   if (!zodCalleePath) {
     return { type: "string" };

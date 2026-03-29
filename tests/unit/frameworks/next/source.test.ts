@@ -3,11 +3,12 @@ import path from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-import { createNextFrameworkAdapter } from "@next-openapi-gen/frameworks/next/adapter.js";
+import { createNextFrameworkSource } from "@next-openapi-gen/frameworks/next/source.js";
+import { FrameworkKind } from "@next-openapi-gen/shared/types.js";
 
 import { createTempProject } from "../../../helpers/test-project.js";
 
-describe("NextFrameworkAdapter", () => {
+describe("NextFrameworkSource", () => {
   it("returns the configured api root and sibling app/api root when both exist", () => {
     const project = createTempProject("nxog-next-framework-");
 
@@ -18,7 +19,7 @@ describe("NextFrameworkAdapter", () => {
       process.chdir(project.root);
 
       try {
-        const adapter = createNextFrameworkAdapter({
+        const source = createNextFrameworkSource({
           apiDir: "./src/pages/api",
           routerType: "pages",
           schemaDir: "./src",
@@ -32,7 +33,7 @@ describe("NextFrameworkAdapter", () => {
           schemaBackends: ["typescript"],
           schemaFiles: [],
           framework: {
-            kind: "next",
+            kind: FrameworkKind.Nextjs,
             router: "pages",
           },
           next: {},
@@ -43,7 +44,7 @@ describe("NextFrameworkAdapter", () => {
           debug: false,
         });
 
-        expect(adapter.getScanRoots()).toEqual([
+        expect(source.getScanRoots()).toEqual([
           "./src/pages/api",
           fs.realpathSync(path.join(project.root, "src", "app", "api")),
         ]);

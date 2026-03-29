@@ -31,6 +31,21 @@ export function getTypeScriptProject(filePath: string): TypeScriptProject {
   return project;
 }
 
+export function invalidateTypeScriptProject(filePath: string): void {
+  const absoluteFilePath = path.resolve(filePath);
+  const configPath = ts.findConfigFile(
+    path.dirname(absoluteFilePath),
+    ts.sys.fileExists,
+    "tsconfig.json",
+  );
+  const cacheKey = configPath || absoluteFilePath;
+  projectCache.delete(cacheKey);
+}
+
+export function clearTypeScriptProjectCache(): void {
+  projectCache.clear();
+}
+
 export function resolveTypeScriptModule(importPath: string, fromFilePath: string): string | null {
   const project = getTypeScriptProject(fromFilePath);
   const resolutionHost = ts.createCompilerHost(project.compilerOptions, true);

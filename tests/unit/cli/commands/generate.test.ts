@@ -7,7 +7,7 @@ import {
   createTempProject,
   writeAppRoute,
   writeOpenApiTemplate,
-} from "../../helpers/test-project.js";
+} from "../../../helpers/test-project.js";
 
 async function loadGenerateModule(spinner: {
   start: ReturnType<typeof vi.fn>;
@@ -114,7 +114,7 @@ export async function GET() {}
       const { generate } = await loadGenerateModule(spinner);
 
       await expect(generate({ template: "missing.openapi.json" })).rejects.toThrow(
-        "Failed to read OpenAPI template",
+        "Config file not found",
       );
       expect(spinner.succeed).not.toHaveBeenCalled();
     } finally {

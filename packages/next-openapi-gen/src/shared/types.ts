@@ -8,22 +8,41 @@ export type DiagnosticSeverity = "info" | "warning" | "error";
 export type JsonPrimitive = string | number | boolean | null;
 export type JsonValue = JsonPrimitive | JsonValue[] | { [key: string]: JsonValue | undefined };
 
+export enum FrameworkKind {
+  Nextjs = "nextjs",
+  Tanstack = "tanstack",
+  ReactRouter = "reactrouter",
+}
+
+export type LegacyFrameworkKind = "next" | "tanstack" | "react-router";
+
 export type DiagnosticsConfig = {
   enabled?: boolean | undefined;
 };
 
 export type NextFrameworkConfig = {
-  kind: "next";
+  kind: FrameworkKind.Nextjs;
   router: RouterType;
+  modulePath?: string | undefined;
   adapterPath?: string | undefined;
 };
 
 export type TanstackFrameworkConfig = {
-  kind: "tanstack";
+  kind: FrameworkKind.Tanstack;
+  modulePath?: string | undefined;
   adapterPath?: string | undefined;
 };
 
-export type FrameworkConfig = NextFrameworkConfig | TanstackFrameworkConfig;
+export type ReactRouterFrameworkConfig = {
+  kind: FrameworkKind.ReactRouter;
+  modulePath?: string | undefined;
+  adapterPath?: string | undefined;
+};
+
+export type FrameworkConfig =
+  | NextFrameworkConfig
+  | TanstackFrameworkConfig
+  | ReactRouterFrameworkConfig;
 
 export type Diagnostic = {
   code: string;

@@ -4,9 +4,11 @@ import {
   CLI_DESCRIPTION,
   CLI_NAME,
   CLI_SCHEMA_CHOICES,
+  GENERATE_CONFIG_OPTION_DESCRIPTION,
   GENERATE_COMMAND_DESCRIPTION,
   GENERATE_DEFAULTS,
   GENERATE_TEMPLATE_OPTION_DESCRIPTION,
+  GENERATE_WATCH_OPTION_DESCRIPTION,
   getCliVersion,
   INIT_COMMAND_DESCRIPTION,
   INIT_DEFAULTS,
@@ -44,11 +46,13 @@ export function buildProgram() {
   program
     .command("generate")
     .description(GENERATE_COMMAND_DESCRIPTION)
+    .option("-c, --config <file>", GENERATE_CONFIG_OPTION_DESCRIPTION)
     .option(
       "-t, --template <file>",
       GENERATE_TEMPLATE_OPTION_DESCRIPTION,
       GENERATE_DEFAULTS.template,
     )
+    .option("-w, --watch", GENERATE_WATCH_OPTION_DESCRIPTION, false)
     .action(generate);
 
   return program;
