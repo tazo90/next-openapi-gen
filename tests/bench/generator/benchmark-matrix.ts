@@ -8,6 +8,7 @@ import {
   OpenApiGenerator,
   type GeneratorPerformanceProfile,
   type OpenApiDocument,
+  type OpenApiTemplate,
 } from "next-openapi-gen";
 
 import {
@@ -19,7 +20,7 @@ import {
 } from "../../helpers/test-project.js";
 
 export type BenchmarkOpenApiVersion = Extract<OpenApiVersion, "3.0" | "3.1" | "3.2">;
-export type BenchmarkSchemaFlavor = "typescript" | "zod" | "mixed" | "filtered";
+export type BenchmarkSchemaFlavor = "typescript" | "zod" | "drizzle-zod" | "mixed" | "filtered";
 export type BenchmarkPackageEntry = "." | "./next" | "./vite" | "./react-router";
 export type BenchmarkRouterKind = RouterType | "generic";
 export type BenchmarkMode = "cold" | "warm" | "profile";
@@ -34,6 +35,7 @@ export type BenchmarkScenario = {
   schemaFlavor: BenchmarkSchemaFlavor;
   openapiVersion: BenchmarkOpenApiVersion;
   modes: readonly BenchmarkMode[];
+  templateOverrides?: Partial<OpenApiTemplate>;
 };
 
 export type BenchProject = {
@@ -42,9 +44,17 @@ export type BenchProject = {
   templatePath: string;
 };
 
+type VersionedScenarioDefinition = Omit<BenchmarkScenario, "id" | "modes" | "openapiVersion"> & {
+  idPrefix: string;
+};
+
+const BENCHMARK_VERSIONS = ["3.0", "3.1", "3.2"] as const;
+const BENCHMARK_MODES = ["cold", "warm", "profile"] as const;
+
 const nextAppRouterCoreFlow = getProjectFixturePath("next", "app-router", "core-flow");
 const nextAppRouterIgnoreRoutes = getProjectFixturePath("next", "app-router", "ignore-routes");
 const nextAppRouterMixedSchemas = getProjectFixturePath("next", "app-router", "mixed-schemas");
+const nextAppRouterDrizzleZod = getProjectFixturePath("next", "app-router", "drizzle-zod-flow");
 const nextAppRouterZodOnlyCoverage = getProjectFixturePath(
   "next",
   "app-router",
@@ -56,116 +66,91 @@ const tanstackCoreFlow = getProjectFixturePath("tanstack", "core-flow");
 const reactRouterCoreFlow = getProjectFixturePath("react-router", "core-flow");
 
 export const BENCHMARK_SCENARIOS: readonly BenchmarkScenario[] = [
-  {
-    id: "next-app-core-3.0",
+  ...createVersionedScenarios({
+    idPrefix: "next-app-core",
     fixturePath: nextAppRouterCoreFlow,
     fixtureName: "next/app-router/core-flow",
     packageEntry: "./next",
     frameworkKind: FrameworkKind.Nextjs,
     router: "app",
     schemaFlavor: "typescript",
-    openapiVersion: "3.0",
-    modes: ["cold", "warm", "profile"],
-  },
-  {
-    id: "next-app-core-3.1",
-    fixturePath: nextAppRouterCoreFlow,
-    fixtureName: "next/app-router/core-flow",
-    packageEntry: "./next",
-    frameworkKind: FrameworkKind.Nextjs,
-    router: "app",
-    schemaFlavor: "typescript",
-    openapiVersion: "3.1",
-    modes: ["cold", "profile"],
-  },
-  {
-    id: "next-app-core-3.2",
-    fixturePath: nextAppRouterCoreFlow,
-    fixtureName: "next/app-router/core-flow",
-    packageEntry: "./next",
-    frameworkKind: FrameworkKind.Nextjs,
-    router: "app",
-    schemaFlavor: "typescript",
-    openapiVersion: "3.2",
-    modes: ["cold", "profile"],
-  },
-  {
-    id: "next-pages-core-3.0",
+  }),
+  ...createVersionedScenarios({
+    idPrefix: "next-pages-core",
     fixturePath: nextPagesRouterCoreFlow,
     fixtureName: "next/pages-router/core-flow",
     packageEntry: "./next",
     frameworkKind: FrameworkKind.Nextjs,
     router: "pages",
     schemaFlavor: "typescript",
-    openapiVersion: "3.0",
-    modes: ["cold", "warm", "profile"],
-  },
-  {
-    id: "next-pages-zod-3.2",
+  }),
+  ...createVersionedScenarios({
+    idPrefix: "next-pages-zod",
     fixturePath: nextPagesRouterZodFlow,
     fixtureName: "next/pages-router/zod-flow",
     packageEntry: "./next",
     frameworkKind: FrameworkKind.Nextjs,
     router: "pages",
     schemaFlavor: "zod",
-    openapiVersion: "3.2",
-    modes: ["cold", "profile"],
-  },
-  {
-    id: "next-app-mixed-3.1",
+  }),
+  ...createVersionedScenarios({
+    idPrefix: "next-app-mixed",
     fixturePath: nextAppRouterMixedSchemas,
     fixtureName: "next/app-router/mixed-schemas",
     packageEntry: "./next",
     frameworkKind: FrameworkKind.Nextjs,
     router: "app",
     schemaFlavor: "mixed",
-    openapiVersion: "3.1",
-    modes: ["cold", "profile"],
-  },
-  {
-    id: "next-app-zod-3.2",
+  }),
+  ...createVersionedScenarios({
+    idPrefix: "next-app-zod",
     fixturePath: nextAppRouterZodOnlyCoverage,
     fixtureName: "next/app-router/zod-only-coverage",
     packageEntry: "./next",
     frameworkKind: FrameworkKind.Nextjs,
     router: "app",
     schemaFlavor: "zod",
-    openapiVersion: "3.2",
-    modes: ["cold", "profile"],
-  },
-  {
-    id: "next-app-ignore-3.0",
+  }),
+  ...createVersionedScenarios({
+    idPrefix: "next-app-drizzle-zod",
+    fixturePath: nextAppRouterDrizzleZod,
+    fixtureName: "next/app-router/drizzle-zod-flow",
+    packageEntry: "./next",
+    frameworkKind: FrameworkKind.Nextjs,
+    router: "app",
+    schemaFlavor: "drizzle-zod",
+  }),
+  ...createVersionedScenarios({
+    idPrefix: "next-app-ignore",
     fixturePath: nextAppRouterIgnoreRoutes,
     fixtureName: "next/app-router/ignore-routes",
     packageEntry: "./next",
     frameworkKind: FrameworkKind.Nextjs,
     router: "app",
     schemaFlavor: "filtered",
-    openapiVersion: "3.0",
-    modes: ["cold", "profile"],
-  },
-  {
-    id: "tanstack-core-3.0",
+    templateOverrides: {
+      ignoreRoutes: ["/admin/*", "/debug", "/public/info"],
+      includeOpenApiRoutes: true,
+    },
+  }),
+  ...createVersionedScenarios({
+    idPrefix: "tanstack-core",
     fixturePath: tanstackCoreFlow,
     fixtureName: "tanstack/core-flow",
     packageEntry: "./vite",
     frameworkKind: FrameworkKind.Tanstack,
     router: "generic",
     schemaFlavor: "typescript",
-    openapiVersion: "3.0",
-    modes: ["cold", "warm", "profile"],
-  },
-  {
-    id: "react-router-core-3.0",
+  }),
+  ...createVersionedScenarios({
+    idPrefix: "react-router-core",
     fixturePath: reactRouterCoreFlow,
     fixtureName: "react-router/core-flow",
     packageEntry: "./react-router",
     frameworkKind: FrameworkKind.ReactRouter,
     router: "generic",
     schemaFlavor: "typescript",
-    openapiVersion: "3.0",
-    modes: ["cold", "warm", "profile"],
-  },
+  }),
 ] as const;
 
 export function getBenchmarkScenarios(mode: BenchmarkMode): BenchmarkScenario[] {
@@ -179,7 +164,11 @@ export function createBenchProjects(
 
   scenarios.forEach((scenario) => {
     const project = copyProjectFixture(scenario.fixturePath);
-    const templatePath = materializeTemplateVariant(project.root, scenario.openapiVersion);
+    const templatePath = materializeTemplateVariant(
+      project.root,
+      scenario.openapiVersion,
+      scenario.templateOverrides,
+    );
     projects.set(scenario.id, {
       scenario,
       project,
@@ -255,4 +244,15 @@ function assertSpecHasPaths(spec: OpenApiDocument, scenarioId: string): void {
   if (!spec.paths || Object.keys(spec.paths).length === 0) {
     throw new Error(`Expected generated spec to include paths for scenario "${scenarioId}".`);
   }
+}
+
+function createVersionedScenarios(
+  definition: VersionedScenarioDefinition,
+): readonly BenchmarkScenario[] {
+  return BENCHMARK_VERSIONS.map((openapiVersion) => ({
+    ...definition,
+    id: `${definition.idPrefix}-${openapiVersion}`,
+    openapiVersion,
+    modes: BENCHMARK_MODES,
+  }));
 }

@@ -324,7 +324,14 @@ describe("AppRouterStrategy", () => {
   it("adds inferred response types when the checker does not provide one", () => {
     strategy = new AppRouterStrategy(baseConfig);
 
-    const ast = parseTypeScriptFile(`
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-app-router-generic-"));
+    roots.push(root);
+    const routeFile = path.join(root, "route.ts");
+    fs.writeFileSync(
+      routeFile,
+      `
+      import { NextResponse } from "next/server";
+
       type ApiEnvelope<T> = {
         data: T;
       };
@@ -333,17 +340,22 @@ describe("AppRouterStrategy", () => {
         id: number;
       };
 
+      /**
+       * Get wrapped post
+       * @openapi
+       */
       export async function GET(): Promise<NextResponse<ApiEnvelope<Post>>> {
         return NextResponse.json({ data: { id: 1 } });
       }
-    `);
-    const declaration = ast.program.body.find((node) =>
-      t.isExportNamedDeclaration(node),
-    )?.declaration;
+      `,
+    );
 
-    expect(declaration).toBeDefined();
-    // @ts-expect-error exercising a focused private helper for the inferred response branch
-    expect(strategy.inferHandlerDataTypes({}, declaration, "/tmp/missing-route.ts", "GET")).toEqual(
+    const addRoute = vi.fn();
+    strategy.processFile(routeFile, addRoute);
+
+    expect(addRoute).toHaveBeenCalledWith(
+      "GET",
+      routeFile,
       expect.objectContaining({
         responseType: "ApiEnvelope<Post>",
       }),

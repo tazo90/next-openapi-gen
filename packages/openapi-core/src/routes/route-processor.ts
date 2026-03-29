@@ -2,6 +2,7 @@ import fs from "fs";
 
 import { normalizeOpenApiConfig } from "../config/normalize.js";
 import type { FrameworkSourceFactory } from "../core/adapters.js";
+import { measurePerformance, type GenerationPerformanceProfile } from "../core/performance.js";
 import type { SharedGenerationRuntime } from "../core/runtime.js";
 import type { DiagnosticsCollector } from "../diagnostics/collector.js";
 import type { FrameworkSource } from "../frameworks/types.js";
@@ -37,6 +38,7 @@ export class RouteProcessor {
   private diagnostics: DiagnosticsCollector | undefined;
   private responseProcessor: ResponseProcessor;
   private operationProcessor: OperationProcessor;
+  private performanceProfile: GenerationPerformanceProfile | undefined;
 
   private directoryCache: Record<string, string[]> = {};
   private statCache: Record<string, fs.Stats> = {};
@@ -47,9 +49,11 @@ export class RouteProcessor {
     diagnostics?: DiagnosticsCollector,
     runtime?: SharedGenerationRuntime,
     createFrameworkSource?: FrameworkSourceFactory,
+    performanceProfile?: GenerationPerformanceProfile,
   ) {
     this.config = normalizeOpenApiConfig(config);
     this.diagnostics = diagnostics;
+    this.performanceProfile = performanceProfile;
     if (runtime) {
       this.directoryCache = runtime.routeScan.directoryCache;
       this.statCache = runtime.routeScan.statCache;
@@ -62,13 +66,20 @@ export class RouteProcessor {
       undefined,
       runtime,
     );
-    this.source = (createFrameworkSource ?? missingFrameworkSourceFactory)(this.config);
+    this.source = (createFrameworkSource ?? missingFrameworkSourceFactory)(
+      this.config,
+      this.performanceProfile,
+    );
     this.ignoreRouteMatchers = (this.config.ignoreRoutes || []).map((pattern) => {
       const regexPattern = pattern.replace(/\*/g, ".*").replace(/\//g, "\\/");
       return new RegExp(`^${regexPattern}$`);
     });
     this.responseProcessor = new ResponseProcessor(this.config, this.schemaProcessor);
-    this.operationProcessor = new OperationProcessor(this.schemaProcessor, this.responseProcessor);
+    this.operationProcessor = new OperationProcessor(
+      this.schemaProcessor,
+      this.responseProcessor,
+      this.performanceProfile,
+    );
   }
 
   private processResponsesFromConfig(
@@ -95,6 +106,14 @@ export class RouteProcessor {
     }
 
     // Check if route matches any ignore patterns
+    if (this.ignoreRouteMatchers.length === 0) {
+      return false;
+    }
+
+    return this.ignoreRouteMatchers.some((regex) => regex.test(routePath));
+  }
+
+  private shouldIgnoreRoutePath(routePath: string): boolean {
     if (this.ignoreRouteMatchers.length === 0) {
       return false;
     }
@@ -167,13 +186,38 @@ export class RouteProcessor {
     let buildOperationsMs = 0;
 
     filePaths.forEach((filePath) => {
+      const routePath = measurePerformance(this.performanceProfile, "deriveRoutePathMs", () =>
+        this.source.getRoutePath(filePath),
+      );
+      const shouldSkipCandidate = measurePerformance(
+        this.performanceProfile,
+        "filterRouteCandidatesMs",
+        () => this.shouldIgnoreRoutePath(routePath),
+      );
+      if (shouldSkipCandidate) {
+        logger.debug(`Ignoring route candidate before analysis: ${routePath}`);
+        return;
+      }
+
+      const shouldAnalyzeFile = measurePerformance(
+        this.performanceProfile,
+        "sourcePrecheckMs",
+        () => this.source.precheckFile(filePath),
+      );
+      if (!shouldAnalyzeFile) {
+        logger.debug(`Skipping route candidate after precheck: ${routePath}`);
+        return;
+      }
+
       let phaseStartedAt = performance.now();
-      const discoveredRoutes = this.source.processFile(filePath);
+      const discoveredRoutes = this.source.processFile(filePath, routePath);
       processRouteFilesMs += performance.now() - phaseStartedAt;
 
       phaseStartedAt = performance.now();
       discoveredRoutes.forEach(({ method, filePath: routeFilePath, routePath, dataTypes }) => {
-        this.registerRoute(method, routeFilePath, routePath, dataTypes);
+        measurePerformance(this.performanceProfile, "registerRouteMs", () => {
+          this.registerRoute(method, routeFilePath, routePath, dataTypes);
+        });
       });
       buildOperationsMs += performance.now() - phaseStartedAt;
     });

@@ -65,6 +65,30 @@ describe.sequential("README-backed generator samples", () => {
           description: "Rate limit exceeded",
         },
       });
+      expect(spec.paths?.["/orders/{id}"]?.delete?.responses).toMatchObject({
+        200: {
+          description: "Successful response",
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+              },
+            },
+          },
+        },
+      });
+      expect(spec.paths?.["/users/{id}"]?.delete?.responses).toMatchObject({
+        200: {
+          description: "Successful response",
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+              },
+            },
+          },
+        },
+      });
       expect(spec.paths?.["/extended"]?.post?.requestBody?.description).toBe(
         "Extended schema with base and additional properties",
       );

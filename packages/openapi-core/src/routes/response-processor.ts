@@ -285,12 +285,6 @@ export class ResponseProcessor {
   }
 
   private ensureSchemaResolved(typeName: string): void {
-    if (this.schemaProcessor.hasResolvedSchema(typeName)) {
-      return;
-    }
-
-    this.schemaProcessor.getSchemaContent({
-      responseType: typeName,
-    });
+    this.schemaProcessor.ensureSchemaResolved(typeName, "response");
   }
 }

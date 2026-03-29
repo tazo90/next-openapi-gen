@@ -1,35 +1,33 @@
 {
   "configPath": "/Users/mhvdijk/Code/next-openapi-gen/apps/next-app-drizzle-zod/next.openapi.json",
   "outputFile": "/Users/mhvdijk/Code/next-openapi-gen/apps/next-app-drizzle-zod/public/openapi.json",
-  "diagnostics": [
-    {
-      "code": "response-inference-unresolved",
-      "severity": "warning",
-      "message": "Could not fully infer a response schema from a return statement. Add an explicit @response tag to make the output deterministic.",
-      "filePath": "/Users/mhvdijk/Code/next-openapi-gen/apps/next-app-drizzle-zod/src/app/api/authors/route.ts",
-      "routePath": "/authors"
-    },
-    {
-      "code": "response-inference-unresolved",
-      "severity": "warning",
-      "message": "Could not fully infer a response schema from a return statement. Add an explicit @response tag to make the output deterministic.",
-      "filePath": "/Users/mhvdijk/Code/next-openapi-gen/apps/next-app-drizzle-zod/src/app/api/posts/[id]/route.ts",
-      "routePath": "/posts/{id}"
-    }
-  ],
+  "diagnostics": [],
   "performance": {
-    "prepareTemplateMs": 0.07754099999999653,
+    "prepareTemplateMs": 0.06862499999999727,
     "loadCustomFragmentsMs": 0.00041699999997035775,
-    "prepareDocumentMs": 0.07795799999996689,
-    "scanRouteFilesMs": 0.3607079999999314,
-    "processRouteFilesMs": 42.00904300000025,
-    "buildOperationsMs": 2698.2274169999996,
-    "scanRoutesMs": 2740.597168,
-    "sortAndMergePathsMs": 0.663792000000285,
-    "buildPathsMs": 0.663792000000285,
-    "defaultComponentsAndErrorsMs": 0.15595800000028248,
-    "mergeSchemasMs": 0.2003749999998945,
-    "finalizeDocumentMs": 1.6330000000002656,
-    "totalMs": 2743.5592079999997
+    "prepareDocumentMs": 0.06904199999996763,
+    "scanRouteFilesMs": 0.39104200000008404,
+    "deriveRoutePathMs": 0.8462919999999485,
+    "filterRouteCandidatesMs": 0.028792000000407825,
+    "sourcePrecheckMs": 0.46120700000005854,
+    "readRouteFilesMs": 0.3322499999999309,
+    "parseRouteFilesMs": 34.170373999999356,
+    "analyzeRouteFilesMs": 8.02874899999972,
+    "typescriptResponseInferenceMs": 0,
+    "processRouteFilesMs": 42.38699999999983,
+    "registerRouteMs": 3351.045916,
+    "getSchemaContentMs": 3341.943583,
+    "createRequestParamsMs": 0.5207909999999174,
+    "createRequestBodyMs": 0,
+    "processResponsesMs": 2.0460409999996045,
+    "createResponseSchemaMs": 0,
+    "buildOperationsMs": 3351.0803329999994,
+    "sortAndMergePathsMs": 0.6675420000001395,
+    "buildPathsMs": 0.6675420000001395,
+    "defaultComponentsAndErrorsMs": 0.15820799999983137,
+    "mergeSchemasMs": 0.3182090000000244,
+    "finalizeDocumentMs": 1.884708000000046,
+    "totalMs": 3398.6173750000003,
+    "scanRoutesMs": 3393.8583749999993
   }
 }

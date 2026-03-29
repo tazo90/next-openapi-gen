@@ -284,7 +284,6 @@
           "locale"
         ]
       },
-      "string": {},
       "UploadDraft": {
         "type": "object",
         "properties": {

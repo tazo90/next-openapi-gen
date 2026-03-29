@@ -11,6 +11,7 @@ export interface FrameworkSource {
   readonly config: ResolvedOpenApiConfig;
   getScanRoots(): string[];
   shouldProcessFile(fileName: string): boolean;
+  precheckFile(filePath: string): boolean;
   getRoutePath(filePath: string): string;
-  processFile(filePath: string): DiscoveredRoute[];
+  processFile(filePath: string, routePath?: string): DiscoveredRoute[];
 }

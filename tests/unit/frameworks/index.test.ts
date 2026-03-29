@@ -23,7 +23,7 @@ describe("createDefaultGenerationAdapters", () => {
     };
 
     expect(adapters.createFrameworkSource(config as never)).toEqual({ name: "next-source" });
-    expect(createNextFrameworkSource).toHaveBeenCalledWith(config);
+    expect(createNextFrameworkSource).toHaveBeenCalledWith(config, undefined);
   });
 
   it("supports tanstack and react-router sources", () => {

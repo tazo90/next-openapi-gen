@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 
+import { measurePerformance, type GenerationPerformanceProfile } from "../../core/performance.js";
 import { traverse } from "../../shared/babel-traverse.js";
 import { extractJSDocComments, parseTypeScriptFile } from "../../shared/utils.js";
 import type { ResolvedOpenApiConfig } from "../../shared/types.js";
@@ -14,9 +15,12 @@ type GenericRouteSourceOptions = {
 };
 
 export class GenericRouteSource implements FrameworkSource {
+  private readonly fileContentCache = new Map<string, string>();
+
   constructor(
     public readonly config: ResolvedOpenApiConfig,
     private readonly options: GenericRouteSourceOptions = {},
+    private readonly performanceProfile?: GenerationPerformanceProfile,
   ) {}
 
   public getScanRoots(): string[] {
@@ -60,57 +64,85 @@ export class GenericRouteSource implements FrameworkSource {
     return relativePath || "/";
   }
 
-  public processFile(filePath: string) {
-    const content = fs.readFileSync(filePath, "utf-8");
-    const ast = parseTypeScriptFile(content);
+  public precheckFile(filePath: string): boolean {
+    const content = this.readFile(filePath);
+    if (this.config.includeOpenApiRoutes && !content.includes("@openapi")) {
+      return false;
+    }
+
+    return /export\s+(?:async\s+)?(?:function|const|let|var)\s+(GET|POST|PUT|PATCH|DELETE|loader|action)\b/.test(
+      content,
+    );
+  }
+
+  public processFile(filePath: string, routePath = this.getRoutePath(filePath)) {
+    const content = this.readFile(filePath);
+    const ast = measurePerformance(this.performanceProfile, "parseRouteFilesMs", () =>
+      parseTypeScriptFile(content),
+    );
     const routes: ReturnType<FrameworkSource["processFile"]> = [];
 
-    traverse(ast, {
-      ExportNamedDeclaration: (nodePath) => {
-        const declaration = nodePath.node.declaration;
-        if (!declaration) {
-          return;
-        }
+    measurePerformance(this.performanceProfile, "analyzeRouteFilesMs", () => {
+      traverse(ast, {
+        ExportNamedDeclaration: (nodePath) => {
+          const declaration = nodePath.node.declaration;
+          if (!declaration) {
+            return;
+          }
 
-        if ("declarations" in declaration && Array.isArray(declaration.declarations)) {
-          for (const item of declaration.declarations) {
-            if (item.type !== "VariableDeclarator" || item.id.type !== "Identifier") {
-              continue;
+          if ("declarations" in declaration && Array.isArray(declaration.declarations)) {
+            for (const item of declaration.declarations) {
+              if (item.type !== "VariableDeclarator" || item.id.type !== "Identifier") {
+                continue;
+              }
+
+              const exportName = item.id.name;
+              const method = normalizeExportMethod(exportName);
+              if (!method) {
+                continue;
+              }
+
+              routes.push({
+                method,
+                filePath,
+                routePath,
+                dataTypes: extractJSDocComments(nodePath, filePath),
+              });
             }
+            return;
+          }
 
-            const exportName = item.id.name;
-            const method = normalizeExportMethod(exportName);
+          if ("id" in declaration && declaration.id && declaration.id.type === "Identifier") {
+            const method = normalizeExportMethod(declaration.id.name);
             if (!method) {
-              continue;
+              return;
             }
 
             routes.push({
               method,
               filePath,
-              routePath: this.getRoutePath(filePath),
+              routePath,
               dataTypes: extractJSDocComments(nodePath, filePath),
             });
           }
-          return;
-        }
-
-        if ("id" in declaration && declaration.id && declaration.id.type === "Identifier") {
-          const method = normalizeExportMethod(declaration.id.name);
-          if (!method) {
-            return;
-          }
-
-          routes.push({
-            method,
-            filePath,
-            routePath: this.getRoutePath(filePath),
-            dataTypes: extractJSDocComments(nodePath, filePath),
-          });
-        }
-      },
+        },
+      });
     });
 
     return routes;
+  }
+
+  private readFile(filePath: string): string {
+    const cachedContent = this.fileContentCache.get(filePath);
+    if (cachedContent) {
+      return cachedContent;
+    }
+
+    const content = measurePerformance(this.performanceProfile, "readRouteFilesMs", () =>
+      fs.readFileSync(filePath, "utf-8"),
+    );
+    this.fileContentCache.set(filePath, content);
+    return content;
   }
 }
 

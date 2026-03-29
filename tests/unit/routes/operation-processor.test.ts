@@ -5,22 +5,36 @@ import { OperationProcessor } from "@workspace/openapi-core/routes/operation-pro
 describe("OperationProcessor", () => {
   it("builds mutation operations with auth, path params, and referenced request bodies", () => {
     const schemaProcessor = {
-      getSchemaContent: vi.fn().mockReturnValueOnce({
-        params: { properties: { search: { type: "string", required: true } } },
-        querystring: {},
-        pathParams: {},
-        body: {
-          properties: {
-            upload: {
-              contentMediaType: "image/png",
-              description: "Avatar upload",
-              type: "object",
+      getSchemaContent: vi.fn(({ bodyType }: { bodyType?: string }) =>
+        bodyType
+          ? {
+              params: {},
+              querystring: {},
+              pathParams: {},
+              body: {
+                properties: {
+                  upload: {
+                    contentMediaType: "image/png",
+                    description: "Avatar upload",
+                    type: "object",
+                  },
+                },
+                type: "object",
+              },
+              responses: {},
+            }
+          : {
+              params: { properties: { search: { type: "string", required: true } } },
+              querystring: {},
+              pathParams: {
+                properties: {
+                  id: { type: "string", required: true },
+                },
+              },
+              body: {},
+              responses: {},
             },
-          },
-          type: "object",
-        },
-        responses: {},
-      }),
+      ),
       createRequestParamsSchema: vi
         .fn()
         .mockReturnValueOnce([
@@ -33,6 +47,7 @@ describe("OperationProcessor", () => {
       detectContentType: vi.fn(() => "multipart/form-data"),
       createRequestBodySchema: vi.fn(),
       createResponseSchema: vi.fn(),
+      ensureSchemaResolved: vi.fn(),
     };
     const responseProcessor = {
       supportsRequestBody: vi.fn(() => true),
@@ -53,6 +68,8 @@ describe("OperationProcessor", () => {
         deprecated: true,
         summary: "Create user",
         description: "Creates a user",
+        paramsType: "SearchParams",
+        pathParamsType: "UserIdParams",
         bodyType: "UploadBody",
         bodyDescription: "Upload payload",
         contentType: "multipart/form-data",
@@ -102,13 +119,23 @@ describe("OperationProcessor", () => {
 
   it("uses explicit path params and falls back to generated responses for root routes", () => {
     const schemaProcessor = {
-      getSchemaContent: vi.fn().mockReturnValue({
-        params: undefined,
-        querystring: undefined,
-        pathParams: { properties: { slug: { type: "string", required: true } } },
-        body: { type: "object", properties: { name: { type: "string" } } },
-        responses: { type: "object", properties: { ok: { type: "boolean" } } },
-      }),
+      getSchemaContent: vi.fn(({ responseType }: { responseType?: string }) =>
+        responseType
+          ? {
+              params: undefined,
+              querystring: undefined,
+              pathParams: undefined,
+              body: undefined,
+              responses: { type: "object", properties: { ok: { type: "boolean" } } },
+            }
+          : {
+              params: undefined,
+              querystring: undefined,
+              pathParams: { properties: { slug: { type: "string", required: true } } },
+              body: undefined,
+              responses: undefined,
+            },
+      ),
       createRequestParamsSchema: vi.fn(() => [
         { in: "path", name: "slug", required: true, schema: { type: "string" } },
       ]),
@@ -122,6 +149,7 @@ describe("OperationProcessor", () => {
           description: "Fallback",
         },
       })),
+      ensureSchemaResolved: vi.fn(),
     };
     const responseProcessor = {
       supportsRequestBody: vi.fn(() => false),
@@ -133,6 +161,7 @@ describe("OperationProcessor", () => {
     const result = processor.processOperation("GET", "/", {
       tag: "",
       pathParamsType: "RootPathParams",
+      responseType: "RootResponse",
       responseDescription: "Fallback",
     });
 
@@ -174,6 +203,7 @@ describe("OperationProcessor", () => {
       createRequestBodySchema: vi.fn(),
       createResponseSchema: vi.fn(),
       getExampleForParam: vi.fn(() => "123"),
+      ensureSchemaResolved: vi.fn(),
     };
     const responseProcessor = {
       supportsRequestBody: vi.fn(() => false),
@@ -222,6 +252,7 @@ describe("OperationProcessor", () => {
       detectContentType: vi.fn(() => "application/json"),
       createRequestBodySchema: vi.fn(),
       createResponseSchema: vi.fn(),
+      ensureSchemaResolved: vi.fn(),
     };
     const responseProcessor = {
       supportsRequestBody: vi.fn(() => true),
@@ -244,6 +275,7 @@ describe("OperationProcessor", () => {
         description: "Creates a user",
         auth: "BearerAuth,ApiKeyAuth",
         deprecated: true,
+        paramsType: "UserQuery",
         bodyType: "CreateUserBody",
         bodyDescription: "Payload",
         contentType: "application/json",
@@ -282,17 +314,25 @@ describe("OperationProcessor", () => {
 
   it("falls back to generated tags, explicit path params schemas, and schema response creation", () => {
     const schemaProcessor = {
-      getSchemaContent: vi.fn(() => ({
-        params: undefined,
-        querystring: undefined,
-        pathParams: "ReportPathParams",
-        body: {
-          type: "object",
-        },
-        responses: {
-          type: "object",
-        },
-      })),
+      getSchemaContent: vi.fn(({ responseType }: { responseType?: string }) =>
+        responseType
+          ? {
+              params: undefined,
+              querystring: undefined,
+              pathParams: undefined,
+              body: undefined,
+              responses: {
+                type: "object",
+              },
+            }
+          : {
+              params: undefined,
+              querystring: undefined,
+              pathParams: "ReportPathParams",
+              body: undefined,
+              responses: undefined,
+            },
+      ),
       createRequestParamsSchema: vi.fn(() => [{ name: "teamId", in: "path" }]),
       createDefaultPathParamsSchema: vi.fn(),
       detectContentType: vi.fn(),
@@ -300,6 +340,7 @@ describe("OperationProcessor", () => {
       createResponseSchema: vi.fn(() => ({
         200: { description: "Generated response" },
       })),
+      ensureSchemaResolved: vi.fn(),
     };
     const responseProcessor = {
       supportsRequestBody: vi.fn(() => true),
@@ -309,13 +350,14 @@ describe("OperationProcessor", () => {
     const processor = new OperationProcessor(schemaProcessor as never, responseProcessor as never);
 
     const result = processor.processOperation("PUT", "/reports", {
-      bodyDescription: "Updated report",
+      pathParamsType: "ReportPathParams",
+      responseType: "ReportResponse",
     });
 
     expect(result.definition.operationId).toBe("put-reports");
     expect(result.definition.tags).toEqual(["Reports"]);
     expect(result.definition.parameters).toEqual([{ name: "teamId", in: "path" }]);
-    expect(result.definition.requestBody).toEqual({ description: "Body schema" });
+    expect(result.definition.requestBody).toBeUndefined();
     expect(result.definition.responses).toEqual({
       200: { description: "Generated response" },
     });
@@ -355,6 +397,7 @@ describe("OperationProcessor", () => {
         },
       })),
       createResponseSchema: vi.fn(),
+      ensureSchemaResolved: vi.fn(),
     };
     const responseProcessor = {
       supportsRequestBody: vi.fn(() => true),
@@ -382,11 +425,7 @@ describe("OperationProcessor", () => {
       },
     });
 
-    expect(schemaProcessor.getSchemaContent).toHaveBeenCalledWith(
-      expect.objectContaining({
-        querystringType: "SearchFilter",
-      }),
-    );
+    expect(schemaProcessor.ensureSchemaResolved).toHaveBeenCalledWith("SearchFilter", "params");
     expect(result.definition.parameters).toContainEqual({
       in: "querystring",
       name: "advancedQuery",

@@ -3,6 +3,9 @@ import type { DataTypes } from "../shared/types.js";
 export const HTTP_METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE"];
 
 export interface RouterStrategy {
+  /** Cheap precheck before full parsing and analysis */
+  precheckFile(filePath: string): boolean;
+
   /** Process a file and call addRoute for each discovered endpoint */
   processFile(
     filePath: string,

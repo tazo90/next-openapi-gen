@@ -16,22 +16,13 @@ import {
 } from "../generator/error-responses.js";
 import type { FrameworkSourceFactory } from "./adapters.js";
 import type { GeneratorHooks } from "./config/types.js";
+import {
+  createEmptyGenerationPerformanceProfile,
+  type GenerationPerformanceProfile,
+} from "./performance.js";
 import type { SharedGenerationRuntime } from "./runtime.js";
-
-export type OrchestratorPerformanceProfile = {
-  prepareTemplateMs: number;
-  loadCustomFragmentsMs: number;
-  prepareDocumentMs: number;
-  scanRouteFilesMs: number;
-  processRouteFilesMs: number;
-  buildOperationsMs: number;
+export type OrchestratorPerformanceProfile = GenerationPerformanceProfile & {
   scanRoutesMs: number;
-  sortAndMergePathsMs: number;
-  buildPathsMs: number;
-  defaultComponentsAndErrorsMs: number;
-  mergeSchemasMs: number;
-  finalizeDocumentMs: number;
-  totalMs: number;
 };
 
 export type OrchestratorResult = {
@@ -54,23 +45,18 @@ export function runGenerationOrchestrator({
   createFrameworkSource: FrameworkSourceFactory;
 }): OrchestratorResult {
   const diagnostics = new DiagnosticsCollector();
-  const routeProcessor = new RouteProcessor(config, diagnostics, runtime, createFrameworkSource);
-  const generationStartedAt = performance.now();
   const profile: OrchestratorPerformanceProfile = {
-    prepareTemplateMs: 0,
-    loadCustomFragmentsMs: 0,
-    prepareDocumentMs: 0,
-    scanRouteFilesMs: 0,
-    processRouteFilesMs: 0,
-    buildOperationsMs: 0,
+    ...createEmptyGenerationPerformanceProfile(),
     scanRoutesMs: 0,
-    sortAndMergePathsMs: 0,
-    buildPathsMs: 0,
-    defaultComponentsAndErrorsMs: 0,
-    mergeSchemasMs: 0,
-    finalizeDocumentMs: 0,
-    totalMs: 0,
   };
+  const routeProcessor = new RouteProcessor(
+    config,
+    diagnostics,
+    runtime,
+    createFrameworkSource,
+    profile,
+  );
+  const generationStartedAt = performance.now();
 
   hooks?.configLoaded?.({ config });
 

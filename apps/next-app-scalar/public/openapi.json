@@ -1304,7 +1304,6 @@
           }
         }
       },
-      "string": {},
       "UserIdParam": {
         "type": "object",
         "properties": {

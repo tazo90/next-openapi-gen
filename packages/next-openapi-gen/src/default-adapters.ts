@@ -6,14 +6,14 @@ import { createTanStackFrameworkSource } from "@workspace/openapi-framework-tans
 
 export function createDefaultGenerationAdapters(): GenerationAdapters {
   return {
-    createFrameworkSource(config) {
+    createFrameworkSource(config, performanceProfile) {
       switch (config.framework.kind) {
         case FrameworkKind.Nextjs:
-          return createNextFrameworkSource(config);
+          return createNextFrameworkSource(config, performanceProfile);
         case FrameworkKind.Tanstack:
-          return createTanStackFrameworkSource(config);
+          return createTanStackFrameworkSource(config, performanceProfile);
         case FrameworkKind.ReactRouter:
-          return createReactRouterFrameworkSource(config);
+          return createReactRouterFrameworkSource(config, performanceProfile);
       }
     },
     emitDocsArtifact: emitNextDocsArtifact,

@@ -1,3 +1,5 @@
+import type { GenerationPerformanceProfile } from "../core/performance.js";
+import { measurePerformance } from "../core/performance.js";
 import type { SchemaProcessor } from "../schema/typescript/schema-processor.js";
 import { createMultipartEncoding } from "../schema/typescript/helpers.js";
 import { capitalize, getOperationId } from "../shared/utils.js";
@@ -8,6 +10,7 @@ export class OperationProcessor {
   constructor(
     private readonly schemaProcessor: SchemaProcessor,
     private readonly responseProcessor: ResponseProcessor,
+    private readonly performanceProfile?: GenerationPerformanceProfile,
   ) {}
 
   public processOperation(
@@ -23,8 +26,15 @@ export class OperationProcessor {
     const { tag, summary, description, auth, deprecated, bodyDescription, responseDescription } =
       dataTypes;
 
-    const { params, querystring, pathParams, body, responses } =
-      this.schemaProcessor.getSchemaContent(dataTypes);
+    const { params, pathParams } =
+      dataTypes.paramsType || dataTypes.pathParamsType
+        ? measurePerformance(this.performanceProfile, "getSchemaContentMs", () =>
+            this.schemaProcessor.getSchemaContent({
+              paramsType: dataTypes.paramsType,
+              pathParamsType: dataTypes.pathParamsType,
+            }),
+          )
+        : { params: undefined, pathParams: undefined };
     const definition: RouteDefinition = {
       operationId,
       summary,
@@ -45,7 +55,11 @@ export class OperationProcessor {
     }
 
     if (params) {
-      definition.parameters = this.schemaProcessor.createRequestParamsSchema(params);
+      definition.parameters = measurePerformance(
+        this.performanceProfile,
+        "createRequestParamsMs",
+        () => this.schemaProcessor.createRequestParamsSchema(params),
+      );
     }
 
     if (dataTypes.inferredQueryParamNames?.length) {
@@ -74,19 +88,34 @@ export class OperationProcessor {
 
     if (pathParamNames.length > 0) {
       if (!pathParams) {
-        const defaultPathParams =
-          this.schemaProcessor.createDefaultPathParamsSchema(pathParamNames);
+        const defaultPathParams = measurePerformance(
+          this.performanceProfile,
+          "createRequestParamsMs",
+          () => this.schemaProcessor.createDefaultPathParamsSchema(pathParamNames),
+        );
         definition.parameters.push(...defaultPathParams);
       } else {
-        const moreParams = this.schemaProcessor.createRequestParamsSchema(pathParams, true);
+        const moreParams = measurePerformance(
+          this.performanceProfile,
+          "createRequestParamsMs",
+          () => this.schemaProcessor.createRequestParamsSchema(pathParams, true),
+        );
         definition.parameters.push(...moreParams);
       }
     } else if (pathParams) {
-      const moreParams = this.schemaProcessor.createRequestParamsSchema(pathParams, true);
+      const moreParams = measurePerformance(this.performanceProfile, "createRequestParamsMs", () =>
+        this.schemaProcessor.createRequestParamsSchema(pathParams, true),
+      );
       definition.parameters.push(...moreParams);
     }
 
-    const querystringParameter = this.createQuerystringParameter(dataTypes, querystring);
+    if (dataTypes.querystringType) {
+      measurePerformance(this.performanceProfile, "getSchemaContentMs", () => {
+        this.schemaProcessor.ensureSchemaResolved(dataTypes.querystringType!, "params");
+      });
+    }
+
+    const querystringParameter = this.createQuerystringParameter(dataTypes);
     if (querystringParameter) {
       definition.parameters.push(querystringParameter);
     }
@@ -98,7 +127,21 @@ export class OperationProcessor {
           dataTypes.contentType,
         );
         const multipartEncoding =
-          contentType === "multipart/form-data" ? createMultipartEncoding(body) : undefined;
+          contentType === "multipart/form-data"
+            ? measurePerformance(this.performanceProfile, "getSchemaContentMs", () =>
+                createMultipartEncoding(
+                  this.schemaProcessor.getSchemaContent({
+                    bodyType: dataTypes.bodyType,
+                  }).body,
+                ),
+              )
+            : undefined;
+
+        if (!multipartEncoding) {
+          measurePerformance(this.performanceProfile, "getSchemaContentMs", () => {
+            this.schemaProcessor.ensureSchemaResolved(dataTypes.bodyType!, "body");
+          });
+        }
 
         definition.requestBody = {
           content: {
@@ -115,21 +158,30 @@ export class OperationProcessor {
         if (bodyDescription) {
           definition.requestBody.description = bodyDescription;
         }
-      } else if (body && Object.keys(body).length > 0) {
-        definition.requestBody = this.schemaProcessor.createRequestBodySchema(
-          body,
-          bodyDescription,
-          dataTypes.contentType,
-          dataTypes.requestExamples,
-        );
       }
     }
 
-    definition.responses = this.responseProcessor.processResponses(dataTypes, method);
+    definition.responses = measurePerformance(this.performanceProfile, "processResponsesMs", () =>
+      this.responseProcessor.processResponses(dataTypes, method),
+    );
     if (Object.keys(definition.responses).length === 0) {
-      definition.responses = responses
-        ? this.schemaProcessor.createResponseSchema(responses, responseDescription)
-        : {};
+      const responses = dataTypes.responseType
+        ? measurePerformance(
+            this.performanceProfile,
+            "getSchemaContentMs",
+            () =>
+              this.schemaProcessor.getSchemaContent({
+                responseType: dataTypes.responseType,
+              }).responses,
+          )
+        : undefined;
+
+      definition.responses =
+        responses && Object.keys(responses).length > 0
+          ? measurePerformance(this.performanceProfile, "createResponseSchemaMs", () =>
+              this.schemaProcessor.createResponseSchema(responses, responseDescription),
+            )
+          : {};
     }
 
     return {
@@ -139,10 +191,7 @@ export class OperationProcessor {
     };
   }
 
-  private createQuerystringParameter(
-    dataTypes: DataTypes,
-    _querystring: ReturnType<SchemaProcessor["getSchemaContent"]>["querystring"],
-  ): ParamSchema | undefined {
+  private createQuerystringParameter(dataTypes: DataTypes): ParamSchema | undefined {
     if (!dataTypes.querystringType) {
       return undefined;
     }

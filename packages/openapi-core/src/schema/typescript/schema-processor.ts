@@ -937,6 +937,21 @@ export class SchemaProcessor {
     );
   }
 
+  public ensureSchemaResolved(typeName: string, contentType: ContentType = "response"): void {
+    let baseTypeName = typeName.trim();
+    while (baseTypeName.endsWith("[]")) {
+      baseTypeName = baseTypeName.slice(0, -2);
+    }
+
+    if (!baseTypeName || baseTypeName.startsWith("{") || baseTypeName.startsWith("[")) {
+      return;
+    }
+
+    if (!this.openapiDefinitions[baseTypeName]) {
+      this.findSchemaDefinition(baseTypeName, contentType);
+    }
+  }
+
   /**
    * Parse and resolve a generic type from a string like "MyApiSuccessResponseBody<LLMSResponse>"
    * @param genericTypeString - The generic type string to parse and resolve
