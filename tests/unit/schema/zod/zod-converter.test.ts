@@ -5,8 +5,8 @@ import path from "node:path";
 import * as t from "@babel/types";
 import { afterEach, describe, expect, it } from "vitest";
 
-import { parseTypeScriptFile } from "@next-openapi-gen/shared/utils.js";
-import { ZodSchemaConverter } from "@next-openapi-gen/schema/zod/zod-converter.js";
+import { parseTypeScriptFile } from "@workspace/openapi-core/shared/utils.js";
+import { ZodSchemaConverter } from "@workspace/openapi-core/schema/zod/zod-converter.js";
 
 function parseInitializer(expression: string): t.Expression {
   const ast = parseTypeScriptFile(`const schema = ${expression};`);

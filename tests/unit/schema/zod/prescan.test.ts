@@ -13,8 +13,8 @@ import {
   isZodSchemaNode,
   returnsZodSchemaNode,
   walkTypeScriptFiles,
-} from "@next-openapi-gen/schema/zod/prescan.js";
-import { parseTypeScriptFile } from "@next-openapi-gen/shared/utils.js";
+} from "@workspace/openapi-core/schema/zod/prescan.js";
+import { parseTypeScriptFile } from "@workspace/openapi-core/shared/utils.js";
 
 describe("Zod prescan helpers", () => {
   const roots: string[] = [];

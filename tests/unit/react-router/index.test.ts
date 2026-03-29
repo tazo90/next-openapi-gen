@@ -1,20 +1,25 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
-const { generateProject, watchProject } = vi.hoisted(() => ({
+const { generateProject, stopWatching, watchProject } = vi.hoisted(() => ({
   generateProject: vi.fn(),
-  watchProject: vi.fn(() => Promise.resolve(vi.fn())),
+  stopWatching: vi.fn(),
+  watchProject: vi.fn(() => Promise.resolve(stopWatching)),
 }));
 
-vi.mock("@next-openapi-gen/core/generate.js", () => ({
+vi.mock("@workspace/openapi-core/core/generate.js", () => ({
   generateProject,
 }));
-vi.mock("@next-openapi-gen/core/watch.js", () => ({
+vi.mock("@workspace/openapi-core/core/watch.js", () => ({
   watchProject,
 }));
 
-import { createReactRouterOpenApiPlugin } from "@next-openapi-gen/react-router/index.js";
+import { createReactRouterOpenApiPlugin } from "../../../packages/next-openapi-gen/src/react-router/index.ts";
 
 describe("createReactRouterOpenApiPlugin", () => {
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
   it("delegates to the Vite integration surface", async () => {
     const plugin = createReactRouterOpenApiPlugin({
       configPath: "next-openapi.config.ts",
@@ -23,11 +28,30 @@ describe("createReactRouterOpenApiPlugin", () => {
     await plugin.buildStart();
     await plugin.configureServer();
 
-    expect(generateProject).toHaveBeenCalledWith({
+    expect(generateProject).toHaveBeenCalledWith(
+      expect.objectContaining({
+        configPath: "next-openapi.config.ts",
+      }),
+    );
+    expect(watchProject).toHaveBeenCalledWith(
+      expect.objectContaining({
+        configPath: "next-openapi.config.ts",
+      }),
+    );
+
+    plugin.closeBundle();
+
+    expect(stopWatching).toHaveBeenCalledTimes(1);
+  });
+
+  it("skips watcher setup when watch is disabled", async () => {
+    const plugin = createReactRouterOpenApiPlugin({
       configPath: "next-openapi.config.ts",
+      watch: false,
     });
-    expect(watchProject).toHaveBeenCalledWith({
-      configPath: "next-openapi.config.ts",
-    });
+
+    await plugin.configureServer();
+
+    expect(watchProject).toHaveBeenCalledTimes(0);
   });
 });

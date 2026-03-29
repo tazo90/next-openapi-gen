@@ -3,10 +3,11 @@ import os from "node:os";
 import path from "node:path";
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { createDefaultGenerationAdapters } from "@workspace/openapi-cli";
 
-import { PagesRouterStrategy } from "@next-openapi-gen/routes/pages-router-strategy.js";
-import { RouteProcessor } from "@next-openapi-gen/routes/route-processor.js";
-import type { OpenApiConfig } from "@next-openapi-gen/shared/types.js";
+import { PagesRouterStrategy } from "@workspace/openapi-framework-next/routes/pages-router-strategy.js";
+import { RouteProcessor } from "@workspace/openapi-core/routes/route-processor.js";
+import type { OpenApiConfig } from "@workspace/openapi-core/shared/types.js";
 
 describe("PagesRouterStrategy", () => {
   let strategy: PagesRouterStrategy;
@@ -178,7 +179,13 @@ describe("PagesRouterStrategy", () => {
 
   describe("RouteProcessor interop", () => {
     it("uses the pages router strategy when routerType is pages", () => {
-      const routeProcessor = new RouteProcessor(pagesConfig);
+      const adapters = createDefaultGenerationAdapters();
+      const routeProcessor = new RouteProcessor(
+        pagesConfig,
+        undefined,
+        undefined,
+        adapters.createFrameworkSource,
+      );
 
       // @ts-expect-error exercising private integration point in focused unit test
       routeProcessor.addRouteToPaths("GET", "./pages/api/users/index.ts", {
@@ -252,5 +259,123 @@ describe("PagesRouterStrategy", () => {
     strategy.processFile(filePath, addRoute);
 
     expect(addRoute).not.toHaveBeenCalled();
+  });
+
+  it("ignores non-block comments and block comments after the export", () => {
+    strategy = new PagesRouterStrategy(pagesConfig);
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-pages-router-comment-types-"));
+    roots.push(root);
+    const filePath = path.join(root, "users.ts");
+    fs.writeFileSync(
+      filePath,
+      `
+      // @method POST
+      /**
+       * List users
+       * @method GET
+       */
+      export default async function handler() {}
+      /**
+       * Ignored trailing block
+       * @method DELETE
+       */
+      `,
+    );
+
+    const addRoute = vi.fn();
+    strategy.processFile(filePath, addRoute);
+
+    expect(addRoute).toHaveBeenCalledTimes(1);
+    expect(addRoute).toHaveBeenCalledWith(
+      "GET",
+      filePath,
+      expect.objectContaining({
+        summary: "List users",
+      }),
+    );
+  });
+
+  it("handles parser results without comments or export offsets", async () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-pages-router-mocked-no-comments-"));
+    roots.push(root);
+    const filePath = path.join(root, "users.ts");
+    fs.writeFileSync(filePath, "export default async function handler() {}");
+
+    vi.resetModules();
+    vi.doMock("@workspace/openapi-core/shared/utils.js", () => ({
+      parseJSDocBlock: vi.fn(),
+      parseTypeScriptFile: vi.fn(() => ({
+        comments: undefined,
+      })),
+    }));
+    vi.doMock("@workspace/openapi-core/shared/babel-traverse.js", () => ({
+      traverse: vi.fn((_ast, visitors) => {
+        visitors.ExportDefaultDeclaration?.({
+          node: {
+            start: undefined,
+          },
+        });
+      }),
+    }));
+
+    const { PagesRouterStrategy: MockedPagesRouterStrategy } =
+      await import("@workspace/openapi-framework-next/routes/pages-router-strategy.js");
+    const mockedStrategy = new MockedPagesRouterStrategy(pagesConfig);
+    const addRoute = vi.fn();
+
+    mockedStrategy.processFile(filePath, addRoute);
+
+    expect(addRoute).not.toHaveBeenCalled();
+    vi.doUnmock("@workspace/openapi-core/shared/utils.js");
+    vi.doUnmock("@workspace/openapi-core/shared/babel-traverse.js");
+    vi.resetModules();
+  });
+
+  it("treats missing comment end offsets as zero", async () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-pages-router-mocked-comment-end-"));
+    roots.push(root);
+    const filePath = path.join(root, "users.ts");
+    fs.writeFileSync(filePath, "export default async function handler() {}");
+
+    vi.resetModules();
+    const parseJSDocBlock = vi.fn(() => ({
+      method: "GET",
+    }));
+    vi.doMock("@workspace/openapi-core/shared/utils.js", () => ({
+      parseJSDocBlock,
+      parseTypeScriptFile: vi.fn(() => ({
+        comments: [
+          {
+            type: "CommentBlock",
+            end: undefined,
+            value: "@method GET",
+          },
+        ],
+      })),
+    }));
+    vi.doMock("@workspace/openapi-core/shared/babel-traverse.js", () => ({
+      traverse: vi.fn((_ast, visitors) => {
+        visitors.ExportDefaultDeclaration?.({
+          node: {
+            start: 1,
+          },
+        });
+      }),
+    }));
+
+    const { PagesRouterStrategy: MockedPagesRouterStrategy } =
+      await import("@workspace/openapi-framework-next/routes/pages-router-strategy.js");
+    const mockedStrategy = new MockedPagesRouterStrategy(pagesConfig);
+    const addRoute = vi.fn();
+
+    mockedStrategy.processFile(filePath, addRoute);
+
+    expect(parseJSDocBlock).toHaveBeenCalledWith("@method GET", filePath);
+    expect(addRoute).toHaveBeenCalledWith("GET", filePath, {
+      method: "GET",
+    });
+    vi.doUnmock("@workspace/openapi-core/shared/utils.js");
+    vi.doUnmock("@workspace/openapi-core/shared/babel-traverse.js");
+    vi.resetModules();
   });
 });

@@ -4,8 +4,8 @@ import path from "node:path";
 
 import { afterEach, describe, expect, it } from "vitest";
 
-import { createTanStackFrameworkSource } from "@next-openapi-gen/frameworks/tanstack/source.js";
-import { FrameworkKind } from "@next-openapi-gen/shared/types.js";
+import { createTanStackFrameworkSource } from "@workspace/openapi-framework-tanstack/frameworks/tanstack/source.js";
+import { FrameworkKind } from "@workspace/openapi-core/shared/types.js";
 
 describe("createTanStackFrameworkSource", () => {
   const tempDirs: string[] = [];

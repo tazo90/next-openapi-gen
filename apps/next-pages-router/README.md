@@ -77,7 +77,7 @@ This example is part of the repository pnpm workspace. Run `pnpm install` from t
 pnpm install
 
 # Generate OpenAPI documentation
-pnpm exec next-openapi-gen generate
+pnpm exec openapi-gen generate
 
 # Start the development server
 pnpm dev

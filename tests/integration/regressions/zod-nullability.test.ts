@@ -4,7 +4,7 @@ import path from "path";
 
 import { describe, expect, it } from "vitest";
 
-import { ZodSchemaConverter } from "@next-openapi-gen/schema/zod/zod-converter.js";
+import { ZodSchemaConverter } from "@workspace/openapi-core/schema/zod/zod-converter.js";
 
 function setup(schema: string) {
   const testDir = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-optional-nullable-"));

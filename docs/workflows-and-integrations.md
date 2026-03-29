@@ -146,7 +146,7 @@ Two common patterns work well:
 
 ### Local development
 
-- run `next-openapi-gen generate` whenever route contracts change
+- run `openapi-gen generate` whenever route contracts change
 - review `/api-docs` alongside your feature work
 
 ### CI

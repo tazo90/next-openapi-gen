@@ -1,9 +1,10 @@
 import fs from "node:fs";
 
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { createDefaultGenerationAdapters } from "@workspace/openapi-cli";
 
-import { runGenerationOrchestrator } from "@next-openapi-gen/core/orchestrator.js";
-import { normalizeOpenApiConfig } from "@next-openapi-gen/config/normalize.js";
+import { runGenerationOrchestrator } from "@workspace/openapi-core/core/orchestrator.js";
+import { normalizeOpenApiConfig } from "@workspace/openapi-core/config/normalize.js";
 
 import {
   createTempProject,
@@ -39,9 +40,11 @@ export async function GET() {}
       const configLoaded = vi.fn();
       const routesDiscovered = vi.fn();
       const documentBuilt = vi.fn();
+      const adapters = createDefaultGenerationAdapters();
 
       const result = runGenerationOrchestrator({
         config,
+        createFrameworkSource: adapters.createFrameworkSource,
         template,
         hooks: {
           configLoaded,

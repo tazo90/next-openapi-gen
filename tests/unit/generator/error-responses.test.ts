@@ -5,7 +5,7 @@ import {
   generateErrorResponsesFromConfig,
   guessHttpStatus,
   processTemplateVariables,
-} from "@next-openapi-gen/generator/error-responses.js";
+} from "@workspace/openapi-core/generator/error-responses.js";
 
 describe("generator error response helpers", () => {
   it("guesses HTTP statuses from explicit codes and error names", () => {

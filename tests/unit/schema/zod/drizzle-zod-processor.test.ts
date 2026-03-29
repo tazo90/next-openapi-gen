@@ -2,8 +2,8 @@ import traverse from "@babel/traverse";
 import * as t from "@babel/types";
 import { describe, expect, it } from "vitest";
 
-import { DrizzleZodProcessor } from "@next-openapi-gen/schema/zod/drizzle-zod-processor.js";
-import { parseTypeScriptFile } from "@next-openapi-gen/shared/utils.js";
+import { DrizzleZodProcessor } from "@workspace/openapi-core/schema/zod/drizzle-zod-processor.js";
+import { parseTypeScriptFile } from "@workspace/openapi-core/shared/utils.js";
 
 function processFirstDrizzleCall(code: string, calleeName: string) {
   const ast = parseTypeScriptFile(code);

@@ -16,7 +16,7 @@ import {
   normalizeSchemaTypes,
   parseGenericTypeString,
   splitGenericTypeArguments,
-} from "@next-openapi-gen/schema/typescript/helpers.js";
+} from "@workspace/openapi-core/schema/typescript/helpers.js";
 
 describe("TypeScript schema helpers", () => {
   it("parses and reconstructs generic type strings", () => {

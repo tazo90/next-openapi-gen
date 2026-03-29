@@ -2,10 +2,12 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
+import * as t from "@babel/types";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { AppRouterStrategy } from "@next-openapi-gen/routes/app-router-strategy.js";
-import type { OpenApiConfig } from "@next-openapi-gen/shared/types.js";
+import { AppRouterStrategy } from "@workspace/openapi-framework-next/routes/app-router-strategy.js";
+import { parseTypeScriptFile } from "@workspace/openapi-core/shared/utils.js";
+import type { OpenApiConfig } from "@workspace/openapi-core/shared/types.js";
 
 describe("AppRouterStrategy", () => {
   let strategy: AppRouterStrategy;
@@ -198,5 +200,134 @@ describe("AppRouterStrategy", () => {
         responseType: "ExplicitResponse",
       }),
     );
+  });
+
+  it("extracts annotated response types from handler signatures", () => {
+    strategy = new AppRouterStrategy(baseConfig);
+
+    const ast = parseTypeScriptFile(`
+      namespace Models {
+        export type Post = {
+          id: number;
+        };
+      }
+
+      export async function GET(): Promise<NextResponse<Models.Post[]>> {
+        return NextResponse.json([]);
+      }
+    `);
+    const declaration = ast.program.body.find((node) =>
+      t.isExportNamedDeclaration(node),
+    )?.declaration;
+
+    expect(declaration).toBeDefined();
+    // @ts-expect-error exercising a focused private helper for annotation coverage
+    expect(strategy.inferResponseTypeFromHandler(declaration)).toBe("Post[]");
+  });
+
+  it("returns an empty response type for unsupported annotations or handler nodes", () => {
+    strategy = new AppRouterStrategy(baseConfig);
+
+    const typedAst = parseTypeScriptFile(`
+      export const GET = async (): Promise<NextResponse<string>> => {
+        return NextResponse.json("ok");
+      };
+    `);
+    const typedDeclaration = typedAst.program.body.find((node) =>
+      t.isExportNamedDeclaration(node),
+    )?.declaration;
+
+    expect(typedDeclaration).toBeDefined();
+    if (!typedDeclaration || !t.isVariableDeclaration(typedDeclaration)) {
+      throw new Error("Expected a variable declaration");
+    }
+
+    // @ts-expect-error exercising a focused private helper for unsupported type coverage
+    expect(strategy.inferResponseTypeFromHandler(typedDeclaration.declarations[0])).toBe("");
+    // @ts-expect-error exercising the non-function fallback path
+    expect(strategy.inferResponseTypeFromHandler(t.identifier("GET"))).toBe("");
+  });
+
+  it("adds inferred response types when the checker does not provide one", () => {
+    strategy = new AppRouterStrategy(baseConfig);
+
+    const ast = parseTypeScriptFile(`
+      type ApiEnvelope<T> = {
+        data: T;
+      };
+
+      type Post = {
+        id: number;
+      };
+
+      export async function GET(): Promise<NextResponse<ApiEnvelope<Post>>> {
+        return NextResponse.json({ data: { id: 1 } });
+      }
+    `);
+    const declaration = ast.program.body.find((node) =>
+      t.isExportNamedDeclaration(node),
+    )?.declaration;
+
+    expect(declaration).toBeDefined();
+    // @ts-expect-error exercising a focused private helper for the inferred response branch
+    expect(strategy.inferHandlerDataTypes({}, declaration, "/tmp/missing-route.ts", "GET")).toEqual(
+      expect.objectContaining({
+        responseType: "ApiEnvelope<Post>",
+      }),
+    );
+  });
+
+  it("returns an empty response type for non-reference return annotations", () => {
+    strategy = new AppRouterStrategy(baseConfig);
+
+    const ast = parseTypeScriptFile(`
+      export function GET(): string {
+        return "ok";
+      }
+    `);
+    const declaration = ast.program.body.find((node) =>
+      t.isExportNamedDeclaration(node),
+    )?.declaration;
+
+    expect(declaration).toBeDefined();
+    // @ts-expect-error exercising a focused private helper for non-reference annotations
+    expect(strategy.inferResponseTypeFromHandler(declaration)).toBe("");
+  });
+
+  it("ignores exported declarations that are not HTTP handlers", () => {
+    strategy = new AppRouterStrategy(baseConfig);
+
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-app-router-non-handlers-"));
+    roots.push(root);
+    const routeFile = path.join(root, "route.ts");
+    fs.writeFileSync(
+      routeFile,
+      `
+      export async function loader() {}
+      export const [GET] = [async () => new Response(null)];
+      `,
+    );
+
+    const addRoute = vi.fn();
+    strategy.processFile(routeFile, addRoute);
+
+    expect(addRoute).not.toHaveBeenCalled();
+  });
+
+  it("returns an empty response type for unparameterized NextResponse annotations", () => {
+    strategy = new AppRouterStrategy(baseConfig);
+
+    const ast = parseTypeScriptFile(`
+      export function GET(): NextResponse {
+        return new NextResponse();
+      }
+    `);
+    const declaration = ast.program.body.find((node) =>
+      t.isExportNamedDeclaration(node),
+    )?.declaration;
+
+    expect(declaration).toBeDefined();
+    // @ts-expect-error exercising the empty-type-parameter branch
+    expect(strategy.inferResponseTypeFromHandler(declaration)).toBe("");
   });
 });

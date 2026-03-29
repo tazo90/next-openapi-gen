@@ -1,11 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { createDefaultGenerationAdapters } from "@workspace/openapi-cli";
 
-import { RouteProcessor } from "@next-openapi-gen/routes/route-processor.js";
-import type { DataTypes, OpenApiConfig } from "@next-openapi-gen/shared/types.js";
+import { RouteProcessor } from "@workspace/openapi-core/routes/route-processor.js";
+import type { DataTypes, OpenApiConfig } from "@workspace/openapi-core/shared/types.js";
 
 describe("RouteProcessor", () => {
   let routeProcessor: RouteProcessor;
   let baseConfig: OpenApiConfig;
+  const adapters = createDefaultGenerationAdapters();
 
   beforeEach(() => {
     baseConfig = {
@@ -23,17 +25,27 @@ describe("RouteProcessor", () => {
 
   describe("shouldIgnoreRoute", () => {
     it("ignores routes marked with @ignore", () => {
-      routeProcessor = new RouteProcessor(baseConfig);
+      routeProcessor = new RouteProcessor(
+        baseConfig,
+        undefined,
+        undefined,
+        adapters.createFrameworkSource,
+      );
 
       // @ts-expect-error exercising private method in focused unit test
       expect(routeProcessor.shouldIgnoreRoute("/api/users", { isIgnored: true })).toBe(true);
     });
 
     it("matches exact and wildcard ignore patterns", () => {
-      routeProcessor = new RouteProcessor({
-        ...baseConfig,
-        ignoreRoutes: ["/api/internal", "/api/private/*", "/admin/*/temp"],
-      });
+      routeProcessor = new RouteProcessor(
+        {
+          ...baseConfig,
+          ignoreRoutes: ["/api/internal", "/api/private/*", "/admin/*/temp"],
+        },
+        undefined,
+        undefined,
+        adapters.createFrameworkSource,
+      );
 
       const dataTypes: DataTypes = {};
 
@@ -48,17 +60,27 @@ describe("RouteProcessor", () => {
     });
 
     it("returns false when ignoreRoutes are omitted", () => {
-      routeProcessor = new RouteProcessor(baseConfig);
+      routeProcessor = new RouteProcessor(
+        baseConfig,
+        undefined,
+        undefined,
+        adapters.createFrameworkSource,
+      );
 
       // @ts-expect-error exercising private method in focused unit test
       expect(routeProcessor.shouldIgnoreRoute("/api/users", {})).toBe(false);
     });
 
     it("handles path parameters in patterns", () => {
-      routeProcessor = new RouteProcessor({
-        ...baseConfig,
-        ignoreRoutes: ["/api/users/{id}/internal", "/api/*/internal/*"],
-      });
+      routeProcessor = new RouteProcessor(
+        {
+          ...baseConfig,
+          ignoreRoutes: ["/api/users/{id}/internal", "/api/*/internal/*"],
+        },
+        undefined,
+        undefined,
+        adapters.createFrameworkSource,
+      );
 
       // @ts-expect-error exercising private method in focused unit test
       expect(routeProcessor.shouldIgnoreRoute("/api/users/{id}/internal", {})).toBe(true);
@@ -69,7 +91,12 @@ describe("RouteProcessor", () => {
 
   describe("orchestration helpers", () => {
     it("delegates response processing to the shared response processor", () => {
-      routeProcessor = new RouteProcessor(baseConfig);
+      routeProcessor = new RouteProcessor(
+        baseConfig,
+        undefined,
+        undefined,
+        adapters.createFrameworkSource,
+      );
 
       expect(
         // @ts-expect-error exercising private helper in focused unit test
@@ -87,10 +114,15 @@ describe("RouteProcessor", () => {
     });
 
     it("skips non-openapi routes when includeOpenApiRoutes is enabled", () => {
-      routeProcessor = new RouteProcessor({
-        ...baseConfig,
-        includeOpenApiRoutes: true,
-      });
+      routeProcessor = new RouteProcessor(
+        {
+          ...baseConfig,
+          includeOpenApiRoutes: true,
+        },
+        undefined,
+        undefined,
+        adapters.createFrameworkSource,
+      );
 
       // @ts-expect-error exercising private integration point in focused unit test
       routeProcessor.registerRoute("GET", "./src/app/api/users/route.ts", "/users", {
@@ -101,7 +133,12 @@ describe("RouteProcessor", () => {
     });
 
     it("sorts paths by tag name and then by path depth", () => {
-      routeProcessor = new RouteProcessor(baseConfig);
+      routeProcessor = new RouteProcessor(
+        baseConfig,
+        undefined,
+        undefined,
+        adapters.createFrameworkSource,
+      );
 
       // @ts-expect-error exercising private integration point in focused unit test
       routeProcessor.addRouteToPaths("GET", "/users", { tag: "Users" }, []);
@@ -118,7 +155,12 @@ describe("RouteProcessor", () => {
     });
 
     it("only scans existing source roots", () => {
-      routeProcessor = new RouteProcessor(baseConfig);
+      routeProcessor = new RouteProcessor(
+        baseConfig,
+        undefined,
+        undefined,
+        adapters.createFrameworkSource,
+      );
       const scanApiRoutesSpy = vi.spyOn(routeProcessor, "scanApiRoutes").mockImplementation(() => ({
         scanRouteFilesMs: 0,
         processRouteFilesMs: 0,

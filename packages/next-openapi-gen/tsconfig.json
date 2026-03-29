@@ -1,6 +1,7 @@
 {
   "extends": "../typescript-config/base.json",
   "compilerOptions": {
+    "incremental": false,
     "lib": ["ES2024"],
     "outDir": "./dist",
     "rootDir": "./src",

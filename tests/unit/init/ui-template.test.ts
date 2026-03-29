@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { normalizeRapidocTemplate } from "@next-openapi-gen/init/rapidoc-template.js";
-import { renderUiTemplate } from "@next-openapi-gen/init/ui-template.js";
+import { normalizeRapidocTemplate } from "@workspace/openapi-init/init/rapidoc-template.js";
+import { renderUiTemplate } from "@workspace/openapi-init/init/ui-template.js";
 
 describe("ui template helpers", () => {
   it("normalizes the Rapidoc component tags", () => {

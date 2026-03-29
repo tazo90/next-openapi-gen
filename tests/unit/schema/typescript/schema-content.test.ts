@@ -7,7 +7,7 @@ import {
   createRequestParamsSchema,
   createResponseSchema,
   getSchemaContent,
-} from "@next-openapi-gen/schema/typescript/schema-content.js";
+} from "@workspace/openapi-core/schema/typescript/schema-content.js";
 
 describe("TypeScript schema content helpers", () => {
   it("creates response maps for refs and inline schemas", () => {

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { ZodSchemaProcessor } from "@next-openapi-gen/schema/zod/zod-schema-processor.js";
+import { ZodSchemaProcessor } from "@workspace/openapi-core/schema/zod/zod-schema-processor.js";
 
 describe("ZodSchemaProcessor", () => {
   it("delegates schema resolution and exposes the underlying converter", () => {

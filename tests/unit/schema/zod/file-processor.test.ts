@@ -8,7 +8,7 @@ import {
   collectRouteFilesInDirectory,
   collectZodRouteFiles,
   processZodSchemaFilesInDirectory,
-} from "@next-openapi-gen/schema/zod/file-processor.js";
+} from "@workspace/openapi-core/schema/zod/file-processor.js";
 
 describe("zod file processor helpers", () => {
   const roots: string[] = [];

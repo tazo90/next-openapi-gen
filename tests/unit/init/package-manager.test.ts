@@ -4,7 +4,7 @@ import path from "node:path";
 
 import { afterEach, describe, expect, it } from "vitest";
 
-import { getPackageManager, hasDependency } from "@next-openapi-gen/init/package-manager.js";
+import { getPackageManager, hasDependency } from "@workspace/openapi-init/init/package-manager.js";
 
 describe("package manager helpers", () => {
   const previousCwd = process.cwd();

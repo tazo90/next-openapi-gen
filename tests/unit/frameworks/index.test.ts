@@ -1,19 +1,20 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { FrameworkKind } from "@next-openapi-gen/shared/types.js";
+import { FrameworkKind } from "@workspace/openapi-core/shared/types.js";
 
 const { createNextFrameworkSource } = vi.hoisted(() => ({
   createNextFrameworkSource: vi.fn(() => ({ name: "next-source" })),
 }));
 
-vi.mock("@next-openapi-gen/frameworks/next/source.js", () => ({
+vi.mock("@workspace/openapi-framework-next/frameworks/next/source.js", () => ({
   createNextFrameworkSource,
 }));
 
-import { createFrameworkSource } from "@next-openapi-gen/frameworks/index.js";
+import { createDefaultGenerationAdapters } from "@workspace/openapi-cli";
 
-describe("createFrameworkSource", () => {
+describe("createDefaultGenerationAdapters", () => {
   it("delegates next configs to the Next source", () => {
+    const adapters = createDefaultGenerationAdapters();
     const config = {
       framework: {
         kind: FrameworkKind.Nextjs,
@@ -21,13 +22,15 @@ describe("createFrameworkSource", () => {
       },
     };
 
-    expect(createFrameworkSource(config as never)).toEqual({ name: "next-source" });
+    expect(adapters.createFrameworkSource(config as never)).toEqual({ name: "next-source" });
     expect(createNextFrameworkSource).toHaveBeenCalledWith(config);
   });
 
   it("supports tanstack and react-router sources", () => {
+    const adapters = createDefaultGenerationAdapters();
+
     expect(
-      createFrameworkSource({
+      adapters.createFrameworkSource({
         apiDir: "./src/routes/api",
         schemaDir: "./src",
         outputDir: "./public",
@@ -51,7 +54,7 @@ describe("createFrameworkSource", () => {
     ).toBeTruthy();
 
     expect(
-      createFrameworkSource({
+      adapters.createFrameworkSource({
         apiDir: "./app/routes",
         schemaDir: "./app",
         outputDir: "./public",

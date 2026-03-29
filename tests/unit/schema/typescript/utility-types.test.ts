@@ -5,8 +5,8 @@ import path from "node:path";
 import * as t from "@babel/types";
 import { afterEach, describe, expect, it } from "vitest";
 
-import { resolveUtilityTypeReference } from "@next-openapi-gen/schema/typescript/utility-types.js";
-import { parseTypeScriptFile } from "@next-openapi-gen/shared/utils.js";
+import { resolveUtilityTypeReference } from "@workspace/openapi-core/schema/typescript/utility-types.js";
+import { parseTypeScriptFile } from "@workspace/openapi-core/shared/utils.js";
 
 function createContext(overrides: Record<string, any> = {}) {
   return {

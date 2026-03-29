@@ -30,7 +30,7 @@ yarn add --dev next-openapi-gen
 Initialize the project:
 
 ```bash
-pnpm exec next-openapi-gen init
+pnpm exec openapi-gen init
 ```
 
 This creates:
@@ -42,7 +42,7 @@ This creates:
 Then generate the spec:
 
 ```bash
-pnpm exec next-openapi-gen generate
+pnpm exec openapi-gen generate
 ```
 
 By default this writes `public/openapi.json`.
@@ -55,7 +55,7 @@ A typical setup is:
 
 1. Add or update route JSDoc metadata.
 2. Update your Zod schemas, TypeScript types, or reusable OpenAPI fragments.
-3. Run `pnpm exec next-openapi-gen generate`.
+3. Run `pnpm exec openapi-gen generate`.
 4. Review the generated spec or open `/api-docs`.
 
 If you want the spec to stay fresh during development or CI, add a script such
@@ -64,7 +64,7 @@ as:
 ```json
 {
   "scripts": {
-    "openapi:generate": "next-openapi-gen generate"
+    "openapi:generate": "openapi-gen generate"
   }
 }
 ```
@@ -95,6 +95,12 @@ this:
   "debug": false
 }
 ```
+
+During the CLI rename transition, config discovery also accepts
+`openapi-gen.config.ts`, `openapi-gen.config.js`, and
+`openapi-gen.config.json`. The legacy `next-openapi.config.*` and
+`next.openapi.json` names still work, and `init` keeps writing
+`next.openapi.json` by default for backwards compatibility.
 
 ## Important options
 

@@ -23,7 +23,8 @@
     "url": "git+ssh://git@github.com/tazo90/next-openapi-gen.git"
   },
   "bin": {
-    "next-openapi-gen": "./dist/cli.js"
+    "next-openapi-gen": "./dist/cli.js",
+    "openapi-gen": "./dist/cli.js"
   },
   "files": [
     "dist",
@@ -57,14 +58,14 @@
   },
   "scripts": {
     "check": "pnpm format:check && pnpm lint",
-    "clean": "rm -rf dist coverage tsconfig.tsbuildinfo",
-    "build": "pnpm clean && tsc",
+    "clean": "rm -rf dist coverage templates tsconfig.tsbuildinfo",
+    "build": "pnpm clean && tsup --config tsup.config.ts && cp -R ../openapi-init/templates ./templates",
     "format": "oxfmt --config ../oxfmt-config/oxfmt.json --ignore-path ../../.gitignore .",
     "format:check": "oxfmt --config ../oxfmt-config/oxfmt.json --ignore-path ../../.gitignore --check .",
     "lint": "oxlint --config ../oxlint-config/base.json . --ignore-path ../../.gitignore --deny-warnings",
     "lint:fix": "oxlint --config ../oxlint-config/base.json . --ignore-path ../../.gitignore --fix --deny-warnings",
     "test": "pnpm --dir ../.. test:unit && pnpm --dir ../.. test:integration",
-    "test:coverage": "pnpm --dir ../.. exec vitest run --config vitest.config.ts --coverage",
+    "test:coverage": "pnpm --dir ../.. test:coverage:next-openapi-gen",
     "release": "np --no-cleanup --no-tests",
     "version": "conventional-changelog -p angular -i ../../CHANGELOG.md -s -n ../../.changelogrc.cjs && git add ../../CHANGELOG.md"
   },
@@ -75,18 +76,25 @@
     "commander": "catalog:",
     "fs-extra": "catalog:",
     "js-yaml": "catalog:",
-    "ora": "catalog:"
+    "ora": "catalog:",
+    "typescript": "catalog:"
   },
   "devDependencies": {
     "@types/babel__traverse": "catalog:",
     "@types/fs-extra": "catalog:",
     "@types/js-yaml": "catalog:",
     "@types/node": "catalog:",
+    "@workspace/openapi-cli": "workspace:*",
+    "@workspace/openapi-core": "workspace:*",
+    "@workspace/openapi-framework-next": "workspace:*",
+    "@workspace/openapi-framework-react-router": "workspace:*",
+    "@workspace/openapi-framework-tanstack": "workspace:*",
+    "@workspace/openapi-init": "workspace:*",
     "conventional-changelog-cli": "catalog:",
     "np": "catalog:",
     "oxfmt": "catalog:",
     "oxlint": "catalog:",
-    "typescript": "catalog:"
+    "tsup": "catalog:"
   },
   "engines": {
     "node": ">=24.0.0"

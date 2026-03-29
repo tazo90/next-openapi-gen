@@ -5,13 +5,11 @@ import { fileURLToPath } from "node:url";
 
 import {
   OpenApiGenerator,
+  type Diagnostic,
   type GeneratorPerformanceProfile,
-} from "@next-openapi-gen/generator/openapi-generator.js";
-import type {
-  Diagnostic,
-  OpenApiDocument,
-  OpenApiTemplate,
-} from "@next-openapi-gen/shared/types.js";
+  type OpenApiDocument,
+  type OpenApiTemplate,
+} from "next-openapi-gen";
 
 const helpersDir = path.dirname(fileURLToPath(import.meta.url));
 const testsDir = path.resolve(helpersDir, "..");

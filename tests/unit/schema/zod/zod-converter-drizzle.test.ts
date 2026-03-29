@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ZodSchemaConverter } from "@next-openapi-gen/schema/zod/zod-converter.js";
+import { ZodSchemaConverter } from "@workspace/openapi-core/schema/zod/zod-converter.js";
 
 describe("ZodSchemaConverter drizzle-zod support", () => {
   it("expands factory-generated pagination schemas", () => {

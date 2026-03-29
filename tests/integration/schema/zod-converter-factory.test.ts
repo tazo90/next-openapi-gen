@@ -2,7 +2,7 @@ import path from "path";
 
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { ZodSchemaConverter } from "@next-openapi-gen/schema/zod/zod-converter.js";
+import { ZodSchemaConverter } from "@workspace/openapi-core/schema/zod/zod-converter.js";
 
 describe("Zod factory functions", () => {
   let converter: ZodSchemaConverter;

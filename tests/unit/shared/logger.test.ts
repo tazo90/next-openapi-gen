@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { logger } from "@next-openapi-gen/shared/logger.js";
+import { logger } from "@workspace/openapi-core/shared/logger.js";
 
 const OriginalError = globalThis.Error;
 

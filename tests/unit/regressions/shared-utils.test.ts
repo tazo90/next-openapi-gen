@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import traverseModule from "@babel/traverse";
 
-import { extractJSDocComments, parseTypeScriptFile } from "@next-openapi-gen/shared/utils.js";
+import { extractJSDocComments, parseTypeScriptFile } from "@workspace/openapi-core/shared/utils.js";
 
 const traverse = traverseModule.default || traverseModule;
 

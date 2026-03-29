@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { normalizeOpenApiConfig } from "@next-openapi-gen/config/normalize.js";
-import { FrameworkKind } from "@next-openapi-gen/shared/types.js";
+import { normalizeOpenApiConfig } from "@workspace/openapi-core/config/normalize.js";
+import { FrameworkKind } from "@workspace/openapi-core/shared/types.js";
 
 describe("normalizeOpenApiConfig", () => {
   it("derives framework, version, schema backends, and next adapter settings", () => {

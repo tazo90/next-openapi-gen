@@ -301,7 +301,7 @@ pnpm build
 
 # Run an example app against the workspace package
 cd apps/next-app-zod
-pnpm exec next-openapi-gen generate
+pnpm exec openapi-gen generate
 pnpm dev
 ```
 
@@ -315,8 +315,8 @@ pnpm link --global
 # In another Next.js project
 cd /path/to/your/nextjs/app
 pnpm link --global next-openapi-gen
-next-openapi-gen init
-next-openapi-gen generate
+openapi-gen init
+openapi-gen generate
 
 # Unlink when done
 pnpm unlink --global next-openapi-gen

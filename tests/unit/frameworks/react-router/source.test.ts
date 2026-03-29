@@ -4,8 +4,8 @@ import path from "node:path";
 
 import { afterEach, describe, expect, it } from "vitest";
 
-import { createReactRouterFrameworkSource } from "@next-openapi-gen/frameworks/react-router/source.js";
-import { FrameworkKind } from "@next-openapi-gen/shared/types.js";
+import { createReactRouterFrameworkSource } from "@workspace/openapi-framework-react-router/frameworks/react-router/source.js";
+import { FrameworkKind } from "@workspace/openapi-core/shared/types.js";
 
 describe("createReactRouterFrameworkSource", () => {
   const tempDirs: string[] = [];

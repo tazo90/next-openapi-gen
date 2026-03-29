@@ -9,6 +9,9 @@
     "//#test:integration": {
       "outputs": []
     },
+    "test:coverage": {
+      "outputs": []
+    },
     "//#test:unit": {
       "outputs": []
     },

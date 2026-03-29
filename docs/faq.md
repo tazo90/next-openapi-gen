@@ -86,7 +86,7 @@ metadata is still the safest option when output needs to be predictable.
 The simplest workflow is:
 
 1. update routes and schemas
-2. run `next-openapi-gen generate`
+2. run `openapi-gen generate`
 3. review the spec or `/api-docs`
 4. add generation to CI if the spec is part of your release contract
 

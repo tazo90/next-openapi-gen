@@ -4,7 +4,7 @@ import path from "node:path";
 
 import { afterEach, describe, expect, it } from "vitest";
 
-import { inferResponsesForExport } from "@next-openapi-gen/routes/typescript-response-inference.js";
+import { inferResponsesForExport } from "@workspace/openapi-core/routes/typescript-response-inference.js";
 
 describe("TypeScript response inference", () => {
   const roots: string[] = [];

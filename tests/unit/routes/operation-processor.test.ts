@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { OperationProcessor } from "@next-openapi-gen/routes/operation-processor.js";
+import { OperationProcessor } from "@workspace/openapi-core/routes/operation-processor.js";
 
 describe("OperationProcessor", () => {
   it("builds mutation operations with auth, path params, and referenced request bodies", () => {

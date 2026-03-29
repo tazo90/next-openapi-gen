@@ -13,7 +13,7 @@ async function loadInstallDependenciesModule(
   vi.doMock("node:child_process", () => ({
     exec: execMock,
   }));
-  vi.doMock("@next-openapi-gen/init/ui-registry.js", () => ({
+  vi.doMock("@workspace/openapi-init/init/ui-registry.js", () => ({
     getDocsPageDependencies: vi.fn((ui: string) =>
       ui === "swagger" ? "swagger-ui swagger-ui-react" : "",
     ),
@@ -24,12 +24,12 @@ async function loadInstallDependenciesModule(
       ui === "swagger" && manager === "npm" ? "--legacy-peer-deps" : "",
     ),
   }));
-  vi.doMock("@next-openapi-gen/init/package-manager.js", () => ({
+  vi.doMock("@workspace/openapi-init/init/package-manager.js", () => ({
     getPackageManager: vi.fn(async () => packageManager),
     hasDependency,
   }));
 
-  return import("@next-openapi-gen/init/install-dependencies.js");
+  return import("@workspace/openapi-init/init/install-dependencies.js");
 }
 
 describe("installDependencies", () => {

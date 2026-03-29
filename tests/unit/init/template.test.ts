@@ -6,7 +6,7 @@ import {
   extendOpenApiTemplate,
   getErrorMessage,
   getOutputPath,
-} from "@next-openapi-gen/init/template.js";
+} from "@workspace/openapi-init/init/template.js";
 
 describe("init template helpers", () => {
   it("merges init options into the template in place", () => {

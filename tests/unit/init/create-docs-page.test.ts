@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import {
   createDocsPage,
   getDocsPageRelativePath,
-} from "@next-openapi-gen/init/create-docs-page.js";
+} from "@workspace/openapi-init/init/create-docs-page.js";
 
 import { createTempProject } from "../../helpers/test-project.js";
 

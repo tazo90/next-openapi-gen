@@ -2,8 +2,10 @@ import fs from "node:fs";
 
 import { describe, expect, it } from "vitest";
 
-import openapiTemplate, { createOpenApiTemplate } from "@next-openapi-gen/init/openapi-template.js";
-import { INIT_FRAMEWORKS } from "@next-openapi-gen/init/types.js";
+import openapiTemplate, {
+  createOpenApiTemplate,
+} from "@workspace/openapi-init/init/openapi-template.js";
+import { INIT_FRAMEWORKS } from "@workspace/openapi-init/init/types.js";
 import {
   getDocsPage,
   getDocsPageDependencies,
@@ -13,8 +15,7 @@ import {
   UI_REGISTRY,
   UI_TYPES,
   UI_TYPES_WITH_NONE,
-} from "@next-openapi-gen/init/ui-registry.js";
-import openapiTemplateSource from "../../../packages/next-openapi-gen/src/init/openapi-template.ts";
+} from "@workspace/openapi-init/init/ui-registry.js";
 
 describe("OpenAPI init defaults", () => {
   it("keeps the default template aligned with the CLI defaults", () => {
@@ -26,7 +27,7 @@ describe("OpenAPI init defaults", () => {
       outputDir: "./public",
       schemaType: "zod",
     });
-    expect(openapiTemplateSource).toMatchObject({
+    expect(openapiTemplate).toMatchObject({
       defaultResponseSet: "common",
       responseSets: {
         common: ["400", "500"],

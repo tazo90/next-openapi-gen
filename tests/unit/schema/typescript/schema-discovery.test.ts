@@ -10,8 +10,8 @@ import {
   collectImports,
   collectTypeDefinitions,
   resolveImportPath,
-} from "@next-openapi-gen/schema/typescript/schema-discovery.js";
-import { parseTypeScriptFile } from "@next-openapi-gen/shared/utils.js";
+} from "@workspace/openapi-core/schema/typescript/schema-discovery.js";
+import { parseTypeScriptFile } from "@workspace/openapi-core/shared/utils.js";
 
 describe("TypeScript schema discovery helpers", () => {
   const roots: string[] = [];

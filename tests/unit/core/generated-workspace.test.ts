@@ -2,7 +2,7 @@ import path from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-import { resolveGeneratedWorkspaceDir } from "@next-openapi-gen/core/generated-workspace.js";
+import { resolveGeneratedWorkspaceDir } from "@workspace/openapi-core/core/generated-workspace.js";
 
 describe("resolveGeneratedWorkspaceDir", () => {
   it("defaults to the hidden generated workspace directory", () => {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { DiagnosticsCollector } from "@next-openapi-gen/diagnostics/collector.js";
+import { DiagnosticsCollector } from "@workspace/openapi-core/diagnostics/collector.js";
 
 describe("DiagnosticsCollector", () => {
   it("stores diagnostics for later reporting", () => {

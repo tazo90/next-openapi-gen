@@ -12,7 +12,7 @@ import {
   parseResponseTag,
   parseTypeScriptFile,
   performAuthPresetReplacements,
-} from "@next-openapi-gen/shared/utils.js";
+} from "@workspace/openapi-core/shared/utils.js";
 
 const traverse = traverseModule.default || traverseModule;
 

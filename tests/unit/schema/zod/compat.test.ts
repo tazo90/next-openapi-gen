@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ZOD_IMPORT_PATHS, isZodImportPath } from "@next-openapi-gen/schema/zod/compat.js";
+import { ZOD_IMPORT_PATHS, isZodImportPath } from "@workspace/openapi-core/schema/zod/compat.js";
 
 describe("zod compat helpers", () => {
   it("recognizes supported zod import paths", () => {

@@ -2,8 +2,8 @@ import path from "path";
 
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { SchemaProcessor } from "@next-openapi-gen/schema/typescript/schema-processor.js";
-import { ZodSchemaConverter } from "@next-openapi-gen/schema/zod/zod-converter.js";
+import { SchemaProcessor } from "@workspace/openapi-core/schema/typescript/schema-processor.js";
+import { ZodSchemaConverter } from "@workspace/openapi-core/schema/zod/zod-converter.js";
 
 describe("TypeScript and Zod regression scenarios", () => {
   describe("TypeScript fixtures", () => {

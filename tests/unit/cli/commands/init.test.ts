@@ -20,7 +20,8 @@ async function loadInitModule(
   vi.doUnmock("fs-extra");
   vi.doUnmock("child_process");
   vi.doUnmock("ora");
-  vi.doUnmock("@next-openapi-gen/init/create-docs-page.js");
+  vi.doUnmock("@workspace/openapi-init");
+  vi.doUnmock("@workspace/openapi-init/init/create-docs-page.js");
   vi.doMock("child_process", () => ({
     exec: execMock,
   }));
@@ -29,7 +30,7 @@ async function loadInitModule(
   }));
   setupMocks?.();
 
-  return import("@next-openapi-gen/cli/commands/init.js");
+  return import("@workspace/openapi-cli/cli/commands/init.js");
 }
 
 describe("init command", () => {
@@ -168,7 +169,7 @@ describe("init command", () => {
       process.chdir(project.root);
 
       const { init } = await loadInitModule(execMock, spinner, () => {
-        vi.doMock("@next-openapi-gen/init/create-docs-page.js", () => ({
+        vi.doMock("@workspace/openapi-init/init/create-docs-page.js", () => ({
           createDocsPage: vi.fn(async () => {
             throw new Error("disk full");
           }),
@@ -287,6 +288,44 @@ describe("init command", () => {
     } finally {
       project.cleanup();
     }
+  });
+
+  it("falls back to default docs and schema values when the template omits them", async () => {
+    const spinner = {
+      start: vi.fn(),
+      succeed: vi.fn(),
+      fail: vi.fn(),
+    };
+    const execMock = vi.fn((command: string, callback: (...args: unknown[]) => void) => {
+      callback(null, "", "");
+      return {} as never;
+    });
+    const createDocsPage = vi.fn(async () => "src/app/api-docs/page.tsx");
+    const installDependencies = vi.fn(async () => undefined);
+
+    const { init } = await loadInitModule(execMock, spinner, () => {
+      vi.doMock("@workspace/openapi-init", () => ({
+        createDocsPage,
+        createOpenApiTemplate: vi.fn(() => ({
+          docsUrl: undefined,
+          outputFile: undefined,
+          ui: undefined,
+        })),
+        extendOpenApiTemplate: vi.fn(),
+        getErrorMessage: vi.fn((error: unknown) => String(error)),
+        getOutputPath: vi.fn(() => "/tmp/fallback-openapi.json"),
+        installDependencies,
+      }));
+    });
+
+    await init({});
+
+    expect(createDocsPage).toHaveBeenCalledWith({
+      docsUrl: "api-docs",
+      outputFile: "openapi.json",
+      ui: "scalar",
+    });
+    expect(installDependencies).toHaveBeenCalledWith("scalar", "zod", expect.anything());
   });
 
   it("writes React Router docs routes for the requested framework", async () => {

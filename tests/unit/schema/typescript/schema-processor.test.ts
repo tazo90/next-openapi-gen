@@ -2,11 +2,11 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
-import { parseTypeScriptFile } from "@next-openapi-gen/shared/utils.js";
+import { parseTypeScriptFile } from "@workspace/openapi-core/shared/utils.js";
 import * as t from "@babel/types";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { SchemaProcessor } from "@next-openapi-gen/schema/typescript/schema-processor.js";
+import { SchemaProcessor } from "@workspace/openapi-core/schema/typescript/schema-processor.js";
 
 describe("SchemaProcessor", () => {
   const roots: string[] = [];

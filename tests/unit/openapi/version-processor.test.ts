@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { createDocumentFromTemplate } from "@next-openapi-gen/openapi/document.js";
-import { getOpenApiVersionProcessor } from "@next-openapi-gen/openapi/version-processor.js";
+import { createDocumentFromTemplate } from "@workspace/openapi-core/openapi/document.js";
+import { getOpenApiVersionProcessor } from "@workspace/openapi-core/openapi/version-processor.js";
 
 describe("OpenAPI version processor", () => {
   it("finalizes public specs without leaking generator config", () => {

@@ -10,8 +10,8 @@ import {
   parseGenericTypeString,
   SchemaProcessor,
   splitGenericTypeArguments,
-} from "@next-openapi-gen/schema/typescript/schema-processor.js";
-import { parseTypeScriptFile } from "@next-openapi-gen/shared/utils.js";
+} from "@workspace/openapi-core/schema/typescript/schema-processor.js";
+import { parseTypeScriptFile } from "@workspace/openapi-core/shared/utils.js";
 
 describe("SchemaProcessor helper seams", () => {
   const roots: string[] = [];

@@ -3,8 +3,7 @@ import path from "node:path";
 
 import { afterEach, describe, expect, it } from "vitest";
 
-import { FrameworkKind } from "@next-openapi-gen/shared/types.js";
-import { generateProject } from "@next-openapi-gen/core/generate.js";
+import { FrameworkKind, generateProject } from "next-openapi-gen";
 
 import { createTempProject, writeAppRoute, writeJsonFile } from "../../helpers/test-project.js";
 

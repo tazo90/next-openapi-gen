@@ -43,14 +43,19 @@ yarn add --dev next-openapi-gen
 
 ```bash
 # Creates next.openapi.json and a docs page (Scalar by default)
-pnpm exec next-openapi-gen init
+pnpm exec openapi-gen init
 
 # Scans your routes and writes the spec
-pnpm exec next-openapi-gen generate
+pnpm exec openapi-gen generate
 ```
 
 > [!TIP]
 > Use `--ui none` during `init` if you only want the generated OpenAPI file.
+>
+> The package name is still `next-openapi-gen` during the transition. Config
+> discovery also accepts the new `openapi-gen.config.ts` and
+> `openapi-gen.config.json` aliases, while `next-openapi.config.*` and
+> `next.openapi.json` continue to work with deprecation warnings.
 
 Need the full setup flow, config walkthrough, or production notes? See
 [docs/getting-started.md](./docs/getting-started.md).
@@ -265,7 +270,7 @@ Use the checked-in examples to evaluate the tool in realistic setups:
 ```bash
 pnpm install
 cd apps/next-app-zod
-pnpm exec next-openapi-gen generate
+pnpm exec openapi-gen generate
 pnpm dev
 ```
 
@@ -309,8 +314,8 @@ Use these deeper references when you need more than the quick start:
 ## CLI
 
 ```bash
-pnpm exec next-openapi-gen init
-pnpm exec next-openapi-gen generate
+pnpm exec openapi-gen init
+pnpm exec openapi-gen generate
 ```
 
 ### `init` options

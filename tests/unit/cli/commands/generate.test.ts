@@ -9,17 +9,21 @@ import {
   writeOpenApiTemplate,
 } from "../../../helpers/test-project.js";
 
-async function loadGenerateModule(spinner: {
-  start: ReturnType<typeof vi.fn>;
-  succeed: ReturnType<typeof vi.fn>;
-  fail?: ReturnType<typeof vi.fn>;
-}) {
+async function loadGenerateModule(
+  spinner: {
+    start: ReturnType<typeof vi.fn>;
+    succeed: ReturnType<typeof vi.fn>;
+    fail?: ReturnType<typeof vi.fn>;
+  },
+  setupMocks?: () => void,
+) {
   vi.resetModules();
   vi.doMock("ora", () => ({
     default: vi.fn(() => spinner),
   }));
+  setupMocks?.();
 
-  return import("@next-openapi-gen/cli/commands/generate.js");
+  return import("@workspace/openapi-cli/cli/commands/generate.js");
 }
 
 describe("generate command", () => {
@@ -180,5 +184,41 @@ export async function GET() {}`,
     } finally {
       project.cleanup();
     }
+  });
+
+  it("starts the watcher when watch mode is enabled", async () => {
+    const spinner = {
+      start: vi.fn().mockReturnThis(),
+      succeed: vi.fn(),
+      info: vi.fn(),
+    };
+    const generateProject = vi.fn(async () => ({
+      artifacts: [],
+      outputFile: "/tmp/openapi.json",
+    }));
+    const watchProject = vi.fn(async () => vi.fn());
+
+    const { generate } = await loadGenerateModule(spinner, () => {
+      vi.doMock("@workspace/openapi-core", () => ({
+        generateProject,
+        watchProject,
+      }));
+    });
+
+    await generate({
+      config: "openapi-gen.config.ts",
+      watch: true,
+    });
+
+    expect(generateProject).toHaveBeenCalledWith(
+      expect.objectContaining({
+        configPath: "openapi-gen.config.ts",
+      }),
+    );
+    expect(watchProject).toHaveBeenCalledWith(
+      expect.objectContaining({
+        configPath: "openapi-gen.config.ts",
+      }),
+    );
   });
 });

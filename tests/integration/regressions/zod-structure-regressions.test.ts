@@ -5,8 +5,8 @@ import path from "path";
 
 import { describe, expect, it } from "vitest";
 
-import { ZodSchemaConverter } from "@next-openapi-gen/schema/zod/zod-converter.js";
-import { extractJSDocComments, parseTypeScriptFile } from "@next-openapi-gen/shared/utils.js";
+import { ZodSchemaConverter } from "@workspace/openapi-core/schema/zod/zod-converter.js";
+import { extractJSDocComments, parseTypeScriptFile } from "@workspace/openapi-core/shared/utils.js";
 
 const traverse = traverseModule.default || traverseModule;
 

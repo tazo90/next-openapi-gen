@@ -46,14 +46,14 @@ describe("watchProject", () => {
     });
     const generateFromLoadedConfig = vi.fn().mockResolvedValue(undefined);
 
-    vi.doMock("@next-openapi-gen/core/config/load-config.js", () => ({
+    vi.doMock("@workspace/openapi-core/core/config/load-config.js", () => ({
       loadConfig,
     }));
-    vi.doMock("@next-openapi-gen/core/generate.js", () => ({
+    vi.doMock("@workspace/openapi-core/core/generate.js", () => ({
       generateFromLoadedConfig,
     }));
 
-    const { watchProject } = await import("@next-openapi-gen/core/watch.js");
+    const { watchProject } = await import("@workspace/openapi-core/core/watch.js");
 
     const stopWatching = await watchProject({
       cwd: tempDir,

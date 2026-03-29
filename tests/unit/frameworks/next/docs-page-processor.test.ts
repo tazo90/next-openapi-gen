@@ -4,7 +4,11 @@ import path from "node:path";
 
 import { afterEach, describe, expect, it } from "vitest";
 
-import { createNextDocsPage } from "@next-openapi-gen/frameworks/next/docs-page-processor.js";
+import {
+  createNextDocsPage,
+  emitNextDocsArtifact,
+} from "@workspace/openapi-framework-next/frameworks/next/docs-page-processor.js";
+import { FrameworkKind } from "@workspace/openapi-core/shared/types.js";
 
 describe("createNextDocsPage", () => {
   const previousCwd = process.cwd();
@@ -47,5 +51,131 @@ describe("createNextDocsPage", () => {
 
     await expect(createNextDocsPage("api-docs", "none", "openapi.json")).resolves.toBeNull();
     expect(fs.existsSync(path.join(root, "app", "api-docs", "page.tsx"))).toBe(false);
+  });
+
+  it("emits a docs artifact for enabled Next configs", async () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-docs-artifact-next-"));
+    roots.push(root);
+    process.chdir(root);
+
+    const artifact = await emitNextDocsArtifact({
+      loadedConfig: {
+        config: {
+          docs: {
+            enabled: true,
+          },
+          docsUrl: "developer/reference",
+          framework: {
+            kind: FrameworkKind.Nextjs,
+            router: "app",
+          },
+          outputFile: "openapi.json",
+          ui: "scalar",
+        },
+        configPath: path.join(root, "next-openapi.config.ts"),
+      },
+      outputFile: "openapi.json",
+    });
+
+    expect(artifact).toEqual(
+      expect.objectContaining({
+        kind: "docs",
+      }),
+    );
+  });
+
+  it("returns null when docs generation is disabled", async () => {
+    const artifact = await emitNextDocsArtifact({
+      loadedConfig: {
+        config: {
+          docs: {
+            enabled: false,
+          },
+          framework: {
+            kind: FrameworkKind.Nextjs,
+            router: "app",
+          },
+        },
+        configPath: "/tmp/next-openapi.config.ts",
+      },
+      outputFile: "openapi.json",
+    });
+
+    expect(artifact).toBeNull();
+  });
+
+  it("returns null for non-Next frameworks", async () => {
+    const artifact = await emitNextDocsArtifact({
+      loadedConfig: {
+        config: {
+          docs: {
+            enabled: true,
+          },
+          framework: {
+            kind: FrameworkKind.Tanstack,
+            router: "file-based",
+          },
+        },
+        configPath: "/tmp/openapi-gen.config.ts",
+      },
+      outputFile: "openapi.json",
+    });
+
+    expect(artifact).toBeNull();
+  });
+
+  it("returns null when the docs page helper does not create a page", async () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-docs-artifact-none-"));
+    roots.push(root);
+    process.chdir(root);
+
+    const artifact = await emitNextDocsArtifact({
+      loadedConfig: {
+        config: {
+          docs: {
+            enabled: true,
+          },
+          docsUrl: "api-docs",
+          framework: {
+            kind: FrameworkKind.Nextjs,
+            router: "app",
+          },
+          ui: "none",
+        },
+        configPath: path.join(root, "next-openapi.config.ts"),
+      },
+      outputFile: "openapi.json",
+    });
+
+    expect(artifact).toBeNull();
+  });
+
+  it("uses default docs settings when config values are omitted", async () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-docs-artifact-defaults-"));
+    roots.push(root);
+    process.chdir(root);
+
+    const artifact = await emitNextDocsArtifact({
+      loadedConfig: {
+        config: {
+          docs: {
+            enabled: true,
+          },
+          framework: {
+            kind: FrameworkKind.Nextjs,
+            router: "app",
+          },
+        },
+        configPath: path.join(root, "openapi-gen.config.ts"),
+      },
+      outputFile: "openapi.json",
+    });
+
+    expect(artifact).toEqual(
+      expect.objectContaining({
+        kind: "docs",
+        path: fs.realpathSync(path.join(root, "app", "api-docs", "page.tsx")),
+      }),
+    );
   });
 });

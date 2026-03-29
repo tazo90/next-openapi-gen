@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { processImports } from "@next-openapi-gen/schema/zod/import-processor.js";
-import { parseTypeScriptFile } from "@next-openapi-gen/shared/utils.js";
+import { processImports } from "@workspace/openapi-core/schema/zod/import-processor.js";
+import { parseTypeScriptFile } from "@workspace/openapi-core/shared/utils.js";
 
 describe("processImports", () => {
   it("collects imported modules and drizzle-zod aliases", () => {

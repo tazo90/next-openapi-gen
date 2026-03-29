@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { extractTypeFromComment } from "@next-openapi-gen/shared/utils.js";
+import { extractTypeFromComment } from "@workspace/openapi-core/shared/utils.js";
 
 describe("Array response annotation parsing", () => {
   it("extracts array and generic response/body types from comments", () => {

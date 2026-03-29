@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { comparePathDefinitions, sortPathDefinitions } from "@next-openapi-gen/routes/path-sort.js";
+import {
+  comparePathDefinitions,
+  sortPathDefinitions,
+} from "@workspace/openapi-core/routes/path-sort.js";
 
 describe("route path sorting helpers", () => {
   it("sorts paths by primary tag and then by path depth", () => {

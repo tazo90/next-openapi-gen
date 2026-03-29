@@ -1,9 +1,10 @@
 import path from "path";
 
 import { describe, expect, it } from "vitest";
+import { createDefaultGenerationAdapters } from "@workspace/openapi-cli";
 
-import { RouteProcessor } from "@next-openapi-gen/routes/route-processor.js";
-import type { OpenApiConfig } from "@next-openapi-gen/shared/types.js";
+import { RouteProcessor } from "@workspace/openapi-core/routes/route-processor.js";
+import type { OpenApiConfig } from "@workspace/openapi-core/shared/types.js";
 import { copyProjectFixture, getProjectFixturePath } from "../../helpers/test-project.js";
 
 describe("Ignore routes integration", () => {
@@ -65,18 +66,24 @@ describe("Ignore routes integration", () => {
 
 function scanFixtureRoutes(projectRoot: string, overrides: Partial<OpenApiConfig> = {}) {
   const apiDir = path.join(projectRoot, "src", "app", "api");
-  const routeProcessor = new RouteProcessor({
-    apiDir,
-    schemaDir: path.join(projectRoot, "src"),
-    docsUrl: "api-docs",
-    ui: "scalar",
-    outputFile: "openapi.json",
-    outputDir: path.join(projectRoot, "public"),
-    includeOpenApiRoutes: false,
-    schemaType: "typescript",
-    debug: false,
-    ...overrides,
-  });
+  const adapters = createDefaultGenerationAdapters();
+  const routeProcessor = new RouteProcessor(
+    {
+      apiDir,
+      schemaDir: path.join(projectRoot, "src"),
+      docsUrl: "api-docs",
+      ui: "scalar",
+      outputFile: "openapi.json",
+      outputDir: path.join(projectRoot, "public"),
+      includeOpenApiRoutes: false,
+      schemaType: "typescript",
+      debug: false,
+      ...overrides,
+    },
+    undefined,
+    undefined,
+    adapters.createFrameworkSource,
+  );
 
   routeProcessor.scanApiRoutes(apiDir);
 

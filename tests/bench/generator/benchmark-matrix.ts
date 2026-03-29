@@ -1,12 +1,14 @@
-import { OpenApiGenerator } from "@next-openapi-gen/generator/openapi-generator.js";
-import { createSharedGenerationRuntime } from "@next-openapi-gen/core/runtime.js";
+import { createSharedGenerationRuntime } from "@workspace/openapi-core/core/runtime.js";
 import {
   FrameworkKind,
   type OpenApiVersion,
   type RouterType,
-} from "@next-openapi-gen/shared/types.js";
-import type { OpenApiDocument } from "@next-openapi-gen/shared/types.js";
-import type { GeneratorPerformanceProfile } from "@next-openapi-gen/generator/openapi-generator.js";
+} from "@workspace/openapi-core/shared/types.js";
+import {
+  OpenApiGenerator,
+  type GeneratorPerformanceProfile,
+  type OpenApiDocument,
+} from "next-openapi-gen";
 
 import {
   copyProjectFixture,

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { ResponseProcessor } from "@next-openapi-gen/routes/response-processor.js";
+import { ResponseProcessor } from "@workspace/openapi-core/routes/response-processor.js";
 
 describe("ResponseProcessor", () => {
   it("omits content for 204 responses and DELETE defaults", () => {

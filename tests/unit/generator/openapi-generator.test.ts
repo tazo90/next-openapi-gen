@@ -3,7 +3,7 @@ import path from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-import { OpenApiGenerator } from "@next-openapi-gen/generator/openapi-generator.js";
+import { OpenApiGenerator } from "next-openapi-gen";
 
 import { createTempProject, writeOpenApiTemplate } from "../../helpers/test-project.js";
 

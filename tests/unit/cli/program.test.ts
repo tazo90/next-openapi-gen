@@ -11,9 +11,9 @@ import {
   INIT_COMMAND_DESCRIPTION,
   INIT_DEFAULTS,
   INIT_FRAMEWORK_OPTION_DESCRIPTION,
-} from "@next-openapi-gen/cli/constants.js";
-import { buildProgram } from "@next-openapi-gen/cli/program.js";
-import { UI_TYPES_WITH_NONE } from "@next-openapi-gen/init/ui-registry.js";
+  buildProgram,
+} from "@workspace/openapi-cli";
+import { UI_TYPES_WITH_NONE } from "@workspace/openapi-init/init/ui-registry.js";
 
 describe("CLI program", () => {
   it("registers the init and generate commands with the expected defaults", () => {

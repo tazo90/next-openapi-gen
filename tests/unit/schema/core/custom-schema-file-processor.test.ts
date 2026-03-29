@@ -4,7 +4,7 @@ import path from "node:path";
 
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { processCustomSchemaFiles } from "@next-openapi-gen/schema/core/custom-schema-file-processor.js";
+import { processCustomSchemaFiles } from "@workspace/openapi-core/schema/core/custom-schema-file-processor.js";
 
 describe("processCustomSchemaFiles", () => {
   const roots: string[] = [];

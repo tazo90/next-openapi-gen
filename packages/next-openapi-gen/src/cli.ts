@@ -1,5 +1,5 @@
 #!/usr/bin/env node
 
-import { buildProgram } from "./cli/program.js";
+import { runCli } from "@workspace/openapi-cli";
 
-buildProgram().parse(process.argv);
+runCli(process.argv);

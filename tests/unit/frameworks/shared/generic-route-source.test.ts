@@ -4,8 +4,8 @@ import path from "node:path";
 
 import { afterEach, describe, expect, it } from "vitest";
 
-import { GenericRouteSource } from "@next-openapi-gen/frameworks/shared/generic-route-source.js";
-import { FrameworkKind } from "@next-openapi-gen/shared/types.js";
+import { GenericRouteSource } from "@workspace/openapi-core/frameworks/shared/generic-route-source.js";
+import { FrameworkKind } from "@workspace/openapi-core/shared/types.js";
 
 describe("GenericRouteSource", () => {
   const tempDirs: string[] = [];

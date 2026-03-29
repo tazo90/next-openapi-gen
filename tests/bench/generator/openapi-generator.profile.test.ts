@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
-import type { GeneratorPerformanceProfile } from "@next-openapi-gen/generator/openapi-generator.js";
+import type { GeneratorPerformanceProfile } from "next-openapi-gen";
 
 import {
   cleanupBenchProjects,

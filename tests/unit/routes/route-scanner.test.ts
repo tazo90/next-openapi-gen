@@ -4,8 +4,8 @@ import path from "node:path";
 
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { scanRouteFiles } from "@next-openapi-gen/routes/route-scanner.js";
-import type { FrameworkSource } from "@next-openapi-gen/frameworks/types.js";
+import { scanRouteFiles } from "@workspace/openapi-core/routes/route-scanner.js";
+import type { FrameworkSource } from "@workspace/openapi-core/frameworks/types.js";
 
 function createTempDir() {
   return fs.mkdtempSync(path.join(os.tmpdir(), "nxog-route-scanner-"));

@@ -4,8 +4,8 @@ import { describe, expect, it } from "vitest";
 import {
   extractFunctionParameters,
   extractFunctionReturnType,
-} from "@next-openapi-gen/schema/typescript/function-nodes.js";
-import { parseTypeScriptFile } from "@next-openapi-gen/shared/utils.js";
+} from "@workspace/openapi-core/schema/typescript/function-nodes.js";
+import { parseTypeScriptFile } from "@workspace/openapi-core/shared/utils.js";
 
 describe("TypeScript function node helpers", () => {
   it("extracts return types and parameters from supported function shapes", () => {

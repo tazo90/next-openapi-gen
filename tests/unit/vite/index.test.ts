@@ -1,18 +1,19 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-const { generateProject, watchProject } = vi.hoisted(() => ({
+const { generateProject, stopWatching, watchProject } = vi.hoisted(() => ({
   generateProject: vi.fn(),
-  watchProject: vi.fn(() => Promise.resolve(vi.fn())),
+  stopWatching: vi.fn(),
+  watchProject: vi.fn(() => Promise.resolve(stopWatching)),
 }));
 
-vi.mock("@next-openapi-gen/core/generate.js", () => ({
+vi.mock("@workspace/openapi-core/core/generate.js", () => ({
   generateProject,
 }));
-vi.mock("@next-openapi-gen/core/watch.js", () => ({
+vi.mock("@workspace/openapi-core/core/watch.js", () => ({
   watchProject,
 }));
 
-import { createViteOpenApiPlugin } from "@next-openapi-gen/vite/index.js";
+import { createViteOpenApiPlugin } from "../../../packages/next-openapi-gen/src/vite/index.ts";
 
 describe("createViteOpenApiPlugin", () => {
   afterEach(() => {
@@ -27,12 +28,20 @@ describe("createViteOpenApiPlugin", () => {
     await plugin.buildStart();
     await plugin.configureServer();
 
-    expect(generateProject).toHaveBeenCalledWith({
-      configPath: "next-openapi.config.ts",
-    });
-    expect(watchProject).toHaveBeenCalledWith({
-      configPath: "next-openapi.config.ts",
-    });
+    expect(generateProject).toHaveBeenCalledWith(
+      expect.objectContaining({
+        configPath: "next-openapi.config.ts",
+      }),
+    );
+    expect(watchProject).toHaveBeenCalledWith(
+      expect.objectContaining({
+        configPath: "next-openapi.config.ts",
+      }),
+    );
+
+    plugin.closeBundle();
+
+    expect(stopWatching).toHaveBeenCalledTimes(1);
   });
 
   it("skips watcher setup when watch is disabled", async () => {

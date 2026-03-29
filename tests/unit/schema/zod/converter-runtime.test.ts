@@ -11,8 +11,8 @@ import {
   parseFileWithCache,
   resolveImportPath,
   substituteParameters,
-} from "@next-openapi-gen/schema/zod/converter-runtime.js";
-import { parseTypeScriptFile } from "@next-openapi-gen/shared/utils.js";
+} from "@workspace/openapi-core/schema/zod/converter-runtime.js";
+import { parseTypeScriptFile } from "@workspace/openapi-core/shared/utils.js";
 
 function getFirstInitializer(source: string): t.Expression {
   const ast = parseTypeScriptFile(`const schema = ${source};`);
