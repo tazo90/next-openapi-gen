@@ -73,6 +73,20 @@ describe("TypeScript schema content helpers", () => {
           next: {
             allOf: [{ $ref: "#/components/schemas/SafeRedirectPathSchema" }],
           },
+          filter: {
+            type: "object",
+            properties: {
+              status: {
+                type: "string",
+              },
+            },
+          },
+          search: {
+            type: "string",
+            style: "form",
+            explode: false,
+            allowReserved: true,
+          },
         },
         required: ["provider"],
       }),
@@ -92,6 +106,32 @@ describe("TypeScript schema content helpers", () => {
           allOf: [{ $ref: "#/components/schemas/SafeRedirectPathSchema" }],
         },
         required: false,
+      },
+      {
+        in: "query",
+        name: "filter",
+        schema: {
+          type: "object",
+          properties: {
+            status: {
+              type: "string",
+            },
+          },
+        },
+        required: false,
+        style: "deepObject",
+        explode: true,
+      },
+      {
+        in: "query",
+        name: "search",
+        schema: {
+          type: "string",
+        },
+        required: false,
+        style: "form",
+        explode: false,
+        allowReserved: true,
       },
     ]);
     expect(createRequestBodySchema({ type: "string" })).toEqual({
@@ -129,6 +169,11 @@ describe("TypeScript schema content helpers", () => {
               },
             },
           },
+          encoding: {
+            avatarFile: {
+              contentType: "application/octet-stream",
+            },
+          },
         },
       },
     });
@@ -160,6 +205,7 @@ describe("TypeScript schema content helpers", () => {
         {
           tag: { type: "string" },
           paramsType: "Query",
+          querystringType: "AdvancedQuery",
           pathParamsType: "Path",
           bodyType: "Body[][]",
           responseType: "Response[]",
@@ -173,11 +219,13 @@ describe("TypeScript schema content helpers", () => {
     ).toEqual({
       tag: { type: "string" },
       params: { type: "object", title: "Query" },
+      querystring: { type: "object", title: "AdvancedQuery" },
       pathParams: { type: "object", title: "Path" },
       body: { type: "object", title: "Body" },
       responses: { type: "object", title: "Response" },
     });
     expect(findSchemaDefinition).toHaveBeenCalledWith("Query", "params");
+    expect(findSchemaDefinition).toHaveBeenCalledWith("AdvancedQuery", "params");
     expect(findSchemaDefinition).toHaveBeenCalledWith("Path", "pathParams");
     expect(findSchemaDefinition).toHaveBeenCalledWith("Body", "body");
     expect(findSchemaDefinition).toHaveBeenCalledWith("Response", "response");

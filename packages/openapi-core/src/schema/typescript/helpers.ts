@@ -3,6 +3,7 @@ import * as t from "@babel/types";
 import type {
   ContentType,
   OpenAPIDefinition,
+  OpenApiMediaTypeDefinition,
   PropertyOptions,
   SchemaType,
 } from "../../shared/types.js";
@@ -211,6 +212,48 @@ export function createFormDataSchema(body: OpenAPIDefinition): OpenAPIDefinition
     ...body,
     properties: formDataProperties,
   };
+}
+
+export function createMultipartEncoding(
+  body: OpenAPIDefinition | undefined,
+): OpenApiMediaTypeDefinition["encoding"] | undefined {
+  if (!body?.properties) {
+    return undefined;
+  }
+
+  const encoding = Object.fromEntries(
+    Object.entries(body.properties)
+      .map(([name, value]) => {
+        const contentType = getMultipartPartContentType(name, value);
+        return contentType ? [name, { contentType }] : null;
+      })
+      .filter((entry): entry is [string, { contentType: string }] => entry !== null),
+  );
+
+  return Object.keys(encoding).length > 0 ? encoding : undefined;
+}
+
+function getMultipartPartContentType(
+  propertyName: string,
+  value: OpenAPIDefinition,
+): string | undefined {
+  if (typeof value.contentMediaType === "string") {
+    return value.contentMediaType;
+  }
+
+  if (value.type === "string" && value.format === "binary") {
+    return "application/octet-stream";
+  }
+
+  if (
+    value.type === "object" &&
+    (propertyName.toLowerCase().includes("file") ||
+      value.description?.toLowerCase().includes("file"))
+  ) {
+    return "application/octet-stream";
+  }
+
+  return undefined;
 }
 
 export function isDateString(node: any): boolean {

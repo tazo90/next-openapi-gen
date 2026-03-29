@@ -9,6 +9,16 @@ import type {
 } from "../shared/types.js";
 
 const MUTATION_HTTP_METHODS = ["PATCH", "POST", "PUT"];
+const DEFAULT_ERROR_DESCRIPTIONS: Record<string, string> = {
+  400: "Bad Request",
+  401: "Unauthorized",
+  403: "Forbidden",
+  404: "Not Found",
+  409: "Conflict",
+  422: "Unprocessable Entity",
+  429: "Too Many Requests",
+  500: "Internal Server Error",
+};
 
 export class ResponseProcessor {
   constructor(
@@ -101,7 +111,7 @@ export class ResponseProcessor {
         const customDescription = descriptionParts.join(":").trim();
 
         if (ref) {
-          this.schemaProcessor.getSchemaContent({ responseType: ref });
+          this.ensureSchemaResolved(ref);
 
           if (code === "204") {
             responses[code] = {
@@ -159,17 +169,7 @@ export class ResponseProcessor {
   }
 
   private getDefaultErrorDescription(code: string): string {
-    const defaults: Record<string, string> = {
-      400: "Bad Request",
-      401: "Unauthorized",
-      403: "Forbidden",
-      404: "Not Found",
-      409: "Conflict",
-      422: "Unprocessable Entity",
-      429: "Too Many Requests",
-      500: "Internal Server Error",
-    };
-    return defaults[code] || `HTTP ${code}`;
+    return DEFAULT_ERROR_DESCRIPTIONS[code] || `HTTP ${code}`;
   }
 
   private createTypedResponse(
@@ -279,10 +279,18 @@ export class ResponseProcessor {
       return this.schemaProcessor.resolveTypeExpression(typeName);
     }
 
+    this.ensureSchemaResolved(typeName);
+
+    return { $ref: `#/components/schemas/${typeName}` };
+  }
+
+  private ensureSchemaResolved(typeName: string): void {
+    if (this.schemaProcessor.hasResolvedSchema(typeName)) {
+      return;
+    }
+
     this.schemaProcessor.getSchemaContent({
       responseType: typeName,
     });
-
-    return { $ref: `#/components/schemas/${typeName}` };
   }
 }

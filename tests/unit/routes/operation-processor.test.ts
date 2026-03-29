@@ -5,15 +5,22 @@ import { OperationProcessor } from "@workspace/openapi-core/routes/operation-pro
 describe("OperationProcessor", () => {
   it("builds mutation operations with auth, path params, and referenced request bodies", () => {
     const schemaProcessor = {
-      getSchemaContent: vi
-        .fn()
-        .mockReturnValueOnce({
-          params: { properties: { search: { type: "string", required: true } } },
-          pathParams: {},
-          body: {},
-          responses: {},
-        })
-        .mockReturnValueOnce({}),
+      getSchemaContent: vi.fn().mockReturnValueOnce({
+        params: { properties: { search: { type: "string", required: true } } },
+        querystring: {},
+        pathParams: {},
+        body: {
+          properties: {
+            upload: {
+              contentMediaType: "image/png",
+              description: "Avatar upload",
+              type: "object",
+            },
+          },
+          type: "object",
+        },
+        responses: {},
+      }),
       createRequestParamsSchema: vi
         .fn()
         .mockReturnValueOnce([
@@ -72,6 +79,11 @@ describe("OperationProcessor", () => {
           content: {
             "multipart/form-data": {
               schema: { $ref: "#/components/schemas/UploadBody" },
+              encoding: {
+                upload: {
+                  contentType: "image/png",
+                },
+              },
             },
           },
         },
@@ -92,6 +104,7 @@ describe("OperationProcessor", () => {
     const schemaProcessor = {
       getSchemaContent: vi.fn().mockReturnValue({
         params: undefined,
+        querystring: undefined,
         pathParams: { properties: { slug: { type: "string", required: true } } },
         body: { type: "object", properties: { name: { type: "string" } } },
         responses: { type: "object", properties: { ok: { type: "boolean" } } },
@@ -150,6 +163,7 @@ describe("OperationProcessor", () => {
     const schemaProcessor = {
       getSchemaContent: vi.fn(() => ({
         params: undefined,
+        querystring: undefined,
         pathParams: undefined,
         body: undefined,
         responses: {},
@@ -192,15 +206,13 @@ describe("OperationProcessor", () => {
 describe("OperationProcessor", () => {
   it("builds operation metadata, auth, parameters, request bodies, and responses", () => {
     const schemaProcessor = {
-      getSchemaContent: vi
-        .fn()
-        .mockReturnValueOnce({
-          params: "UserQuery",
-          pathParams: undefined,
-          body: undefined,
-          responses: undefined,
-        })
-        .mockReturnValueOnce({}),
+      getSchemaContent: vi.fn().mockReturnValueOnce({
+        params: "UserQuery",
+        querystring: undefined,
+        pathParams: undefined,
+        body: undefined,
+        responses: undefined,
+      }),
       createRequestParamsSchema: vi
         .fn()
         .mockReturnValueOnce([{ name: "limit", in: "query", schema: { type: "number" } }]),
@@ -272,6 +284,7 @@ describe("OperationProcessor", () => {
     const schemaProcessor = {
       getSchemaContent: vi.fn(() => ({
         params: undefined,
+        querystring: undefined,
         pathParams: "ReportPathParams",
         body: {
           type: "object",
@@ -312,6 +325,14 @@ describe("OperationProcessor", () => {
     const schemaProcessor = {
       getSchemaContent: vi.fn(() => ({
         params: undefined,
+        querystring: {
+          type: "object",
+          properties: {
+            status: {
+              type: "string",
+            },
+          },
+        },
         pathParams: undefined,
         body: {
           type: "object",
@@ -361,9 +382,11 @@ describe("OperationProcessor", () => {
       },
     });
 
-    expect(schemaProcessor.getSchemaContent).toHaveBeenCalledWith({
-      paramsType: "SearchFilter",
-    });
+    expect(schemaProcessor.getSchemaContent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        querystringType: "SearchFilter",
+      }),
+    );
     expect(result.definition.parameters).toContainEqual({
       in: "querystring",
       name: "advancedQuery",

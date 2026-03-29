@@ -3,18 +3,18 @@
   "outputFile": "/Users/mhvdijk/Code/next-openapi-gen/apps/next-app-swagger/public/openapi.json",
   "diagnostics": [],
   "performance": {
-    "prepareTemplateMs": 0.06429099999991195,
+    "prepareTemplateMs": 0.06758400000001075,
     "loadCustomFragmentsMs": 0.00041699999997035775,
-    "prepareDocumentMs": 0.0647079999998823,
-    "scanRouteFilesMs": 0.7566249999999854,
-    "processRouteFilesMs": 72.45616600000017,
-    "buildOperationsMs": 73.06937499999992,
-    "scanRoutesMs": 146.28216600000007,
-    "sortAndMergePathsMs": 0.612583000000086,
-    "buildPathsMs": 0.612583000000086,
-    "defaultComponentsAndErrorsMs": 0.12608299999999417,
-    "mergeSchemasMs": 0.22579100000007202,
-    "finalizeDocumentMs": 3.353207999999995,
-    "totalMs": 150.94708300000002
+    "prepareDocumentMs": 0.0680009999999811,
+    "scanRouteFilesMs": 1.4895830000000387,
+    "processRouteFilesMs": 29.353458999999816,
+    "buildOperationsMs": 83.16554100000008,
+    "scanRoutesMs": 114.00858299999993,
+    "sortAndMergePathsMs": 0.6260829999999942,
+    "buildPathsMs": 0.6260829999999942,
+    "defaultComponentsAndErrorsMs": 0.1283329999999978,
+    "mergeSchemasMs": 0.2207499999999527,
+    "finalizeDocumentMs": 3.161375000000021,
+    "totalMs": 118.79316699999993
   }
 }

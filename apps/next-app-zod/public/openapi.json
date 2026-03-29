@@ -5,10 +5,22 @@
     "version": "1.0.0",
     "description": "This is the OpenAPI specification for your project."
   },
+  "$self": "https://example.com/openapi/next-app-zod.json",
+  "jsonSchemaDialect": "https://spec.openapis.org/oas/3.2/dialect/2025-09-17",
+  "externalDocs": {
+    "description": "OpenAPI version guide",
+    "url": "https://example.com/docs/openapi-version-guide"
+  },
   "servers": [
     {
       "url": "http://localhost:3000/api",
-      "description": "Local development server"
+      "description": "Local development server",
+      "name": "local"
+    }
+  ],
+  "security": [
+    {
+      "BearerAuth": []
     }
   ],
   "components": {
@@ -1834,7 +1846,7 @@
                 "error": {
                   "type": "string",
                   "examples": [
-                    "Unathorized"
+                    "Unauthorized"
                   ]
                 }
               }
@@ -2758,6 +2770,11 @@
             "multipart/form-data": {
               "schema": {
                 "$ref": "#/components/schemas/UploadFormDataSchema"
+              },
+              "encoding": {
+                "file": {
+                  "contentType": "application/octet-stream"
+                }
               }
             }
           },
@@ -2811,7 +2828,9 @@
                   "type": "string"
                 }
               }
-            }
+            },
+            "style": "deepObject",
+            "explode": true
           }
         ],
         "responses": {

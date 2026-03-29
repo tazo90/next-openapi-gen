@@ -1,7 +1,90 @@
 # Workflows And Integrations
 
 This guide focuses on the common ways teams adopt `next-openapi-gen` in real
-projects.
+projects, from framework integration to schema migration and downstream OpenAPI
+usage.
+
+## Choose the integration that matches your app
+
+The CLI works everywhere. Add a framework-specific integration when you want
+generation to happen as part of local dev or build hooks.
+
+- `CLI only`: best for explicit generation in scripts, CI, or ad hoc local
+  runs. Use `openapi-gen generate` or `openapi-gen generate --watch`.
+- `next-openapi-gen/next`: best for Next.js-specific build integration.
+  `createNextOpenApiAdapter()` generates on build completion.
+- `next-openapi-gen/vite`: best for TanStack Router and other Vite-based
+  workflows. It generates on build start and watches during dev unless
+  `watch: false`.
+- `next-openapi-gen/react-router`: best for React Router projects that want a
+  framework-specific plugin import. It uses the React Router framework adapters
+  directly.
+
+### Next.js
+
+Use the CLI-only flow when you want the least magic. Add the Next adapter when
+you want generation attached to the build lifecycle.
+
+Adapter file example:
+
+```js
+import { createNextOpenApiAdapter } from "next-openapi-gen/next";
+
+export default createNextOpenApiAdapter();
+```
+
+`withNextOpenApi()` is available as a config wrapper, but today it returns the
+config you pass in unchanged. It is safe to use as a compatibility wrapper, but
+it does not trigger generation by itself.
+
+### TanStack Router
+
+The public Vite entrypoint is the standard integration path:
+
+```ts
+import { tanstackStart } from "@tanstack/react-start/plugin/vite";
+import react from "@vitejs/plugin-react";
+import { createViteOpenApiPlugin } from "next-openapi-gen/vite";
+import { defineConfig } from "vite";
+
+export default defineConfig({
+  plugins: [tanstackStart(), createViteOpenApiPlugin(), react()],
+});
+```
+
+This works well when you want automatic regeneration during local development
+without adding a separate watch script.
+
+### React Router
+
+React Router has its own public entrypoint:
+
+```ts
+import react from "@vitejs/plugin-react";
+import { createReactRouterOpenApiPlugin } from "next-openapi-gen/react-router";
+import { defineConfig } from "vite";
+
+export default defineConfig({
+  plugins: [createReactRouterOpenApiPlugin(), react()],
+});
+```
+
+If your React Router app already standardizes on the shared Vite integration
+surface, the checked-in example app shows that path too.
+
+### Route scanning only vs framework hooks
+
+Prefer CLI-only generation when:
+
+- you want a simple `generate` step in CI
+- your team prefers explicit regeneration over build hooks
+- you commit generated specs and want easy diffs
+
+Prefer plugin or adapter integration when:
+
+- you want the spec refreshed automatically during local development
+- you want generation tied to build events
+- your framework already centralizes automation in `next.config.*` or `vite.config.*`
 
 ## Choose the workflow that matches your codebase
 
@@ -101,7 +184,7 @@ This pattern is especially useful when:
 See [../apps/next-app-drizzle-zod](../apps/next-app-drizzle-zod) for the full
 example.
 
-## App Router and Pages Router
+## Next.js router choices
 
 Both Next.js routing models are supported.
 
@@ -146,8 +229,10 @@ Two common patterns work well:
 
 ### Local development
 
-- run `openapi-gen generate` whenever route contracts change
+- run `openapi-gen generate --watch` when you want an explicit watcher
 - review `/api-docs` alongside your feature work
+- prefer the framework plugin or adapter when you want watch behavior attached
+  to the dev server
 
 ### CI
 
@@ -155,6 +240,7 @@ Two common patterns work well:
 - fail the build if generation breaks
 - optionally compare the generated output when the spec is committed as an
   artifact
+- prefer the explicit CLI command in CI even if local development uses a plugin
 
 The repository itself backs this quality story with lint, build, unit,
 integration, coverage, and E2E workflows. See
@@ -173,10 +259,18 @@ Choose an example app based on your use case:
   migration story
 - [../apps/next-app-drizzle-zod](../apps/next-app-drizzle-zod) for a
   database-backed example
+- [../apps/next-app-sandbox](../apps/next-app-sandbox) for edge-case route and
+  exclusion coverage
 - [../apps/next-pages-router](../apps/next-pages-router) for legacy router
   support
+- [../apps/tanstack-app](../apps/tanstack-app) for TanStack Router parity
+- [../apps/react-router-app](../apps/react-router-app) for React Router parity
+- [../apps/next-app-next-config](../apps/next-app-next-config),
+  [../apps/next-app-ts-config](../apps/next-app-ts-config), and
+  [../apps/next-app-adapter](../apps/next-app-adapter) for config and adapter
+  integration paths
 
-For the longer-term plan that expands what each example app demonstrates, see
+For the broader coverage map that shows what each example is meant to prove, see
 [example-app-coverage-plan](./example-app-coverage-plan.md).
 
 ## Related guides

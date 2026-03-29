@@ -5,6 +5,15 @@
     "version": "1.0.0",
     "description": "Fixture for generator integration tests"
   },
+  "externalDocs": {
+    "description": "Core flow fixture guide",
+    "url": "https://example.com/docs/core-flow"
+  },
+  "security": [
+    {
+      "BearerAuth": []
+    }
+  ],
   "components": {
     "securitySchemes": {
       "BearerAuth": {

@@ -185,6 +185,7 @@ describe("SchemaProcessor", () => {
     expect(content).toEqual({
       tag: { type: "string" },
       params: { type: "object", title: "QueryParams" },
+      querystring: {},
       pathParams: { type: "object", title: "UserPathParams" },
       body: { type: "object", title: "CreateUserBody" },
       responses: { type: "object", title: "CreateUserResponse" },

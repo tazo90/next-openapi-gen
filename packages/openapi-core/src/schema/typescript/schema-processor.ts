@@ -74,6 +74,7 @@ export class SchemaProcessor {
   private schemaDefinitionIndex: Record<string, string[]> = {};
   private fileASTCache: Map<string, t.File> = new Map();
   private processingTypes: Set<string> = new Set();
+  private inlineTypeCache: Map<string, OpenAPIDefinition> = new Map();
 
   private zodSchemaConverter: ZodSchemaConverter | null = null;
   private zodSchemaProcessor: ZodSchemaProcessor | null = null;
@@ -872,10 +873,24 @@ export class SchemaProcessor {
     return createResponseSchema(responses, description);
   }
 
+  public hasResolvedSchema(typeName: string): boolean {
+    let baseTypeName = typeName.trim();
+    while (baseTypeName.endsWith("[]")) {
+      baseTypeName = baseTypeName.slice(0, -2);
+    }
+
+    return Boolean(this.openapiDefinitions[baseTypeName]);
+  }
+
   public resolveTypeExpression(typeExpression: string): OpenAPIDefinition {
     const trimmedExpression = typeExpression.trim();
     if (!trimmedExpression) {
       return { type: "object" };
+    }
+
+    const cachedDefinition = this.inlineTypeCache.get(trimmedExpression);
+    if (cachedDefinition) {
+      return cachedDefinition;
     }
 
     try {
@@ -885,7 +900,9 @@ export class SchemaProcessor {
       );
 
       if (declaration && t.isTSTypeAliasDeclaration(declaration)) {
-        return this.resolveTSNodeType(declaration.typeAnnotation);
+        const resolvedType = this.resolveTSNodeType(declaration.typeAnnotation);
+        this.inlineTypeCache.set(trimmedExpression, resolvedType);
+        return resolvedType;
       }
     } catch {
       // Fall through to object below when the inline expression cannot be parsed.
@@ -894,15 +911,23 @@ export class SchemaProcessor {
     return { type: "object" };
   }
 
-  public getSchemaContent({ tag, paramsType, pathParamsType, bodyType, responseType }: any): {
+  public getSchemaContent({
+    tag,
+    paramsType,
+    querystringType,
+    pathParamsType,
+    bodyType,
+    responseType,
+  }: any): {
     tag: OpenAPIDefinition;
     params: OpenAPIDefinition;
+    querystring: OpenAPIDefinition;
     pathParams: OpenAPIDefinition;
     body: OpenAPIDefinition;
     responses: OpenAPIDefinition;
   } {
     return getSchemaContent(
-      { tag, paramsType, pathParamsType, bodyType, responseType },
+      { tag, paramsType, querystringType, pathParamsType, bodyType, responseType },
       {
         openapiDefinitions: this.openapiDefinitions,
         schemaTypes: this.schemaTypes,

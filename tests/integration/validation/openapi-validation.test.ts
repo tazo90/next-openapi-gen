@@ -37,6 +37,58 @@ describe("OpenAPI document validation", () => {
     },
   );
 
+  it("preserves 3.0 template metadata in the validated core-flow fixture", async () => {
+    const { project, spec } = generateFixtureSpec({
+      fixturePath: appRouterCoreFixture,
+      openapiVersion: "3.0",
+    });
+
+    try {
+      await expectValidSpec(spec);
+      expect(spec.externalDocs).toMatchObject({
+        url: "https://example.com/docs/core-flow",
+      });
+      expect(spec.security).toEqual([{ BearerAuth: [] }]);
+    } finally {
+      project.cleanup();
+    }
+  });
+
+  it("preserves 3.1 template metadata in the validated core-flow fixture", async () => {
+    const { project, spec } = generateFixtureSpec({
+      fixturePath: appRouterCoreFixture,
+      openapiVersion: "3.1",
+    });
+
+    try {
+      await expectValidSpec(spec);
+      expect(spec.jsonSchemaDialect).toBe("https://spec.openapis.org/oas/3.1/dialect/base");
+      expect(spec.externalDocs).toMatchObject({
+        url: "https://example.com/docs/core-flow",
+      });
+    } finally {
+      project.cleanup();
+    }
+  });
+
+  it("preserves 3.2 template metadata in the validated core-flow fixture", async () => {
+    const { project, spec } = generateFixtureSpec({
+      fixturePath: appRouterCoreFixture,
+      openapiVersion: "3.2",
+    });
+
+    try {
+      await expectValidSpec(spec);
+      expect(spec.$self).toBe("https://example.com/fixtures/core-flow/openapi.json");
+      expect(spec.jsonSchemaDialect).toBe("https://spec.openapis.org/oas/3.2/dialect/2025-09-17");
+      expect(spec.servers?.[0]).toMatchObject({
+        name: "production",
+      });
+    } finally {
+      project.cleanup();
+    }
+  });
+
   it.each(["3.0", "3.1", "3.2"] as const)(
     "validates generated Zod-heavy fixture for OpenAPI %s",
     async (openapiVersion) => {

@@ -112,6 +112,15 @@ export class AppRouterStrategy implements RouterStrategy {
       };
     }
 
+    const inferredResponseType = this.inferResponseTypeFromHandler(handlerNode);
+    if (inferredResponseType && !this.requiresTypeScriptResponseInference(handlerNode)) {
+      return {
+        ...dataTypes,
+        responseType: inferredResponseType,
+        ...(inferredQueryParamNames.length > 0 ? { inferredQueryParamNames } : {}),
+      };
+    }
+
     const checkerResponses = inferResponsesForExport(filePath, exportName);
     if (checkerResponses.responses.length > 0) {
       return {
@@ -122,7 +131,6 @@ export class AppRouterStrategy implements RouterStrategy {
       };
     }
 
-    const inferredResponseType = this.inferResponseTypeFromHandler(handlerNode);
     if (!inferredResponseType) {
       return {
         ...dataTypes,
@@ -139,38 +147,57 @@ export class AppRouterStrategy implements RouterStrategy {
   }
 
   private inferQueryParamsFromHandler(handlerNode: t.Node): string[] {
-    const functionLike =
-      t.isFunctionDeclaration(handlerNode) || t.isFunctionExpression(handlerNode)
-        ? handlerNode
-        : t.isVariableDeclarator(handlerNode) && t.isArrowFunctionExpression(handlerNode.init)
-          ? handlerNode.init
-          : null;
+    const functionLike = this.getFunctionLikeNode(handlerNode);
 
-    if (!functionLike || !functionLike.body || !t.isBlockStatement(functionLike.body)) {
+    if (!functionLike || !functionLike.body) {
       return [];
     }
 
     const queryParamNames = new Set<string>();
-    const syntheticStatement = t.isFunctionDeclaration(functionLike)
-      ? t.cloneNode(functionLike, true)
-      : t.variableDeclaration("const", [
-          t.variableDeclarator(
-            t.identifier("__handler"),
-            t.cloneNode(functionLike, true) as t.ArrowFunctionExpression | t.FunctionExpression,
-          ),
-        ]);
-    const program = t.file(t.program([syntheticStatement]));
-
-    traverse(program, {
-      CallExpression: (path) => {
-        const name = this.getSearchParamName(path.node);
-        if (name) {
-          queryParamNames.add(name);
-        }
-      },
-    });
+    this.collectQueryParamNames(functionLike.body, queryParamNames);
 
     return Array.from(queryParamNames);
+  }
+
+  private collectQueryParamNames(
+    node: t.Node | null | undefined,
+    queryParamNames: Set<string>,
+  ): void {
+    if (!node) {
+      return;
+    }
+
+    if (t.isCallExpression(node)) {
+      const name = this.getSearchParamName(node);
+      if (name) {
+        queryParamNames.add(name);
+      }
+    }
+
+    if (this.isNestedFunctionNode(node)) {
+      return;
+    }
+
+    const visitorKeys = t.VISITOR_KEYS[node.type];
+    if (!visitorKeys) {
+      return;
+    }
+
+    visitorKeys.forEach((key) => {
+      const value = node[key as keyof typeof node];
+      if (Array.isArray(value)) {
+        value.forEach((child) => {
+          if (this.isTraversableNode(child)) {
+            this.collectQueryParamNames(child, queryParamNames);
+          }
+        });
+        return;
+      }
+
+      if (this.isTraversableNode(value)) {
+        this.collectQueryParamNames(value, queryParamNames);
+      }
+    });
   }
 
   private getSearchParamName(node: t.CallExpression): string | null {
@@ -195,19 +222,143 @@ export class AppRouterStrategy implements RouterStrategy {
   }
 
   private inferResponseTypeFromHandler(handlerNode: t.Node): string {
-    if (t.isFunctionDeclaration(handlerNode) || t.isFunctionExpression(handlerNode)) {
+    const functionLike = this.getFunctionLikeNode(handlerNode);
+    if (
+      functionLike &&
+      (t.isFunctionDeclaration(functionLike) || t.isFunctionExpression(functionLike))
+    ) {
       return this.inferResponseTypeFromAnnotation(
-        this.getReturnTypeAnnotation(handlerNode.returnType),
+        this.getReturnTypeAnnotation(functionLike.returnType),
       );
     }
 
-    if (t.isVariableDeclarator(handlerNode) && t.isArrowFunctionExpression(handlerNode.init)) {
+    if (functionLike && t.isArrowFunctionExpression(functionLike)) {
       return this.inferResponseTypeFromAnnotation(
-        this.getReturnTypeAnnotation(handlerNode.init.returnType),
+        this.getReturnTypeAnnotation(functionLike.returnType),
       );
     }
 
     return "";
+  }
+
+  private requiresTypeScriptResponseInference(handlerNode: t.Node): boolean {
+    const functionLike = this.getFunctionLikeNode(handlerNode);
+    if (!functionLike || !functionLike.body) {
+      return false;
+    }
+
+    if (!t.isBlockStatement(functionLike.body)) {
+      return this.requiresCheckerForExpression(functionLike.body);
+    }
+
+    let requiresChecker = false;
+    this.visitReturnExpressions(functionLike.body, (expression) => {
+      if (this.requiresCheckerForExpression(expression)) {
+        requiresChecker = true;
+      }
+    });
+    return requiresChecker;
+  }
+
+  private visitReturnExpressions(
+    node: t.Node | null | undefined,
+    visitor: (expression: t.Expression) => void,
+  ): void {
+    if (!node) {
+      return;
+    }
+
+    if (t.isReturnStatement(node) && node.argument) {
+      visitor(node.argument);
+      return;
+    }
+
+    if (this.isNestedFunctionNode(node)) {
+      return;
+    }
+
+    const visitorKeys = t.VISITOR_KEYS[node.type];
+    if (!visitorKeys) {
+      return;
+    }
+
+    visitorKeys.forEach((key) => {
+      const value = node[key as keyof typeof node];
+      if (Array.isArray(value)) {
+        value.forEach((child) => {
+          if (this.isTraversableNode(child)) {
+            this.visitReturnExpressions(child, visitor);
+          }
+        });
+        return;
+      }
+
+      if (this.isTraversableNode(value)) {
+        this.visitReturnExpressions(value, visitor);
+      }
+    });
+  }
+
+  private requiresCheckerForExpression(expression: t.Expression): boolean {
+    if (t.isCallExpression(expression) && t.isMemberExpression(expression.callee)) {
+      const property = expression.callee.property;
+      if (!t.isIdentifier(property)) {
+        return false;
+      }
+
+      const object = expression.callee.object;
+      if (!t.isIdentifier(object)) {
+        return false;
+      }
+
+      const isResponseFactory = object.name === "Response" || object.name === "NextResponse";
+      if (!isResponseFactory) {
+        return false;
+      }
+
+      if (property.name === "redirect") {
+        return true;
+      }
+
+      if (property.name === "json") {
+        return Boolean(expression.arguments[1]);
+      }
+    }
+
+    return t.isNewExpression(expression) && t.isIdentifier(expression.callee, { name: "Response" });
+  }
+
+  private getFunctionLikeNode(
+    handlerNode: t.Node,
+  ): t.FunctionDeclaration | t.FunctionExpression | t.ArrowFunctionExpression | null {
+    if (t.isFunctionDeclaration(handlerNode) || t.isFunctionExpression(handlerNode)) {
+      return handlerNode;
+    }
+
+    if (t.isVariableDeclarator(handlerNode) && t.isArrowFunctionExpression(handlerNode.init)) {
+      return handlerNode.init;
+    }
+
+    return null;
+  }
+
+  private isNestedFunctionNode(node: t.Node): boolean {
+    return (
+      t.isFunctionDeclaration(node) ||
+      t.isFunctionExpression(node) ||
+      t.isArrowFunctionExpression(node) ||
+      t.isObjectMethod(node) ||
+      t.isClassMethod(node)
+    );
+  }
+
+  private isTraversableNode(value: unknown): value is t.Node {
+    if (!value || typeof value !== "object" || !("type" in value)) {
+      return false;
+    }
+
+    const { type } = value;
+    return typeof type === "string" && type in t.VISITOR_KEYS;
   }
 
   private getReturnTypeAnnotation(

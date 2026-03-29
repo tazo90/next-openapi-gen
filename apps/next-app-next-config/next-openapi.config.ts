@@ -1,7 +1,8 @@
 import { defineConfig } from "next-openapi-gen";
 
 export default defineConfig({
-  openapi: "3.0.0",
+  openapi: "3.1.0",
+  jsonSchemaDialect: "https://spec.openapis.org/oas/3.1/dialect/base",
   info: {
     title: "Next Config Integration API",
     version: "1.0.0",

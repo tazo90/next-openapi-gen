@@ -3,18 +3,18 @@
   "outputFile": "/Users/mhvdijk/Code/next-openapi-gen/apps/react-router-app/public/openapi.json",
   "diagnostics": [],
   "performance": {
-    "prepareTemplateMs": 0.06629099999997834,
-    "loadCustomFragmentsMs": 0.0004999999999881766,
-    "prepareDocumentMs": 0.06679099999996652,
-    "scanRouteFilesMs": 0.6402920000000449,
-    "processRouteFilesMs": 15.229082999999946,
-    "buildOperationsMs": 12.45174899999995,
-    "scanRoutesMs": 28.32112399999994,
-    "sortAndMergePathsMs": 1.0271250000000691,
-    "buildPathsMs": 1.0271250000000691,
-    "defaultComponentsAndErrorsMs": 0.2029579999999669,
-    "mergeSchemasMs": 0.2027500000000373,
-    "finalizeDocumentMs": 1.7263339999999516,
-    "totalMs": 31.891624999999976
+    "prepareTemplateMs": 0.06212500000003729,
+    "loadCustomFragmentsMs": 0.0004159999999728825,
+    "prepareDocumentMs": 0.06254100000001017,
+    "scanRouteFilesMs": 0.17029200000001765,
+    "processRouteFilesMs": 13.478207999999881,
+    "buildOperationsMs": 11.791292999999769,
+    "scanRoutesMs": 25.439792999999668,
+    "sortAndMergePathsMs": 0.6282089999999698,
+    "buildPathsMs": 0.6282089999999698,
+    "defaultComponentsAndErrorsMs": 0.19100000000003092,
+    "mergeSchemasMs": 0.171416000000022,
+    "finalizeDocumentMs": 1.0742079999999987,
+    "totalMs": 27.72012499999994
   }
 }

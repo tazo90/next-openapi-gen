@@ -3,18 +3,18 @@
   "outputFile": "/Users/mhvdijk/Code/next-openapi-gen/apps/tanstack-app/public/openapi.json",
   "diagnostics": [],
   "performance": {
-    "prepareTemplateMs": 0.05679199999940465,
-    "loadCustomFragmentsMs": 0.0005409999994299142,
-    "prepareDocumentMs": 0.057332999998834566,
-    "scanRouteFilesMs": 0.13920800000050804,
-    "processRouteFilesMs": 3.391125000000102,
-    "buildOperationsMs": 7.492207999999664,
-    "scanRoutesMs": 11.022541000000274,
-    "sortAndMergePathsMs": 0.030582999999751337,
-    "buildPathsMs": 0.030582999999751337,
-    "defaultComponentsAndErrorsMs": 0.07008400000086112,
-    "mergeSchemasMs": 0.11304200000085984,
-    "finalizeDocumentMs": 1.0660829999997077,
-    "totalMs": 12.44549999999981
+    "prepareTemplateMs": 0.06925000000001091,
+    "loadCustomFragmentsMs": 0.00041699999997035775,
+    "prepareDocumentMs": 0.06966699999998127,
+    "scanRouteFilesMs": 0.18908299999998235,
+    "processRouteFilesMs": 13.304250000000025,
+    "buildOperationsMs": 72.86787500000014,
+    "scanRoutesMs": 86.36120800000015,
+    "sortAndMergePathsMs": 0.6702080000000024,
+    "buildPathsMs": 0.6702080000000024,
+    "defaultComponentsAndErrorsMs": 0.19600000000002638,
+    "mergeSchemasMs": 0.18899999999996453,
+    "finalizeDocumentMs": 12.246124999999893,
+    "totalMs": 99.90779200000009
   }
 }

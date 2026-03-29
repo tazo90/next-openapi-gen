@@ -79,6 +79,41 @@ export async function GET() {
 }
 ```
 
+When the schema referenced by `@params` already carries OpenAPI parameter
+serialization fields, `next-openapi-gen` lifts them onto the generated
+parameter object:
+
+```ts
+export const SearchParams = {
+  type: "object",
+  properties: {
+    filter: {
+      type: "object",
+      properties: {
+        status: {
+          type: "string",
+        },
+      },
+    },
+    search: {
+      type: "string",
+      style: "form",
+      explode: false,
+      allowReserved: true,
+    },
+  },
+};
+```
+
+Serialization notes:
+
+- object-shaped query params default to `style: "deepObject"` and `explode: true`
+  when you do not set an explicit style
+- explicit `style`, `explode`, and `allowReserved` stay on the parameter object
+  instead of being duplicated inside `schema`
+- this behavior applies to OpenAPI `3.0`, `3.1`, and `3.2`; it is separate from
+  the `3.2`-only `@querystring` tag
+
 ### Request bodies
 
 ```ts
@@ -157,6 +192,37 @@ export async function POST() {
   return Response.json({ ok: true });
 }
 ```
+
+`@contentType multipart/form-data` also enables multipart-specific request-body
+encoding output. The generator derives per-part `encoding` entries from the body
+schema:
+
+```ts
+export const UploadBody = {
+  type: "object",
+  properties: {
+    avatarFile: {
+      type: "object",
+      description: "Avatar file",
+    },
+    upload: {
+      type: "object",
+      description: "Avatar upload",
+      contentMediaType: "image/png",
+    },
+  },
+};
+```
+
+Multipart encoding rules:
+
+- `contentMediaType` on a part wins and becomes `encoding.<part>.contentType`
+- `type: "string"` with `format: "binary"` maps to
+  `application/octet-stream`
+- object-shaped parts whose property name or description contains `file`
+  are treated as binary uploads and also map to `application/octet-stream`
+- the same encoding generation applies when `@body` points at a reusable
+  component schema rather than an inline definition
 
 ### Deprecation and custom operation IDs
 
@@ -241,6 +307,13 @@ export async function GET() {
 
 These `3.2`-specific fields are version-aware and are stripped or downgraded for
 older OpenAPI targets where appropriate.
+
+For version-neutral behavior such as multipart request-body encoding and query
+parameter serialization, see the earlier sections in this guide. For the full
+version matrix, see [OpenAPI version coverage](./openapi-version-coverage.md).
+
+For a runnable checked-in example, see the event routes in
+[`../apps/next-app-zod/src/app/api/events`](../apps/next-app-zod/src/app/api/events).
 
 ## Response sets and extra responses
 

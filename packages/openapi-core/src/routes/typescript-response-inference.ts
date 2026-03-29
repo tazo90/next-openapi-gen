@@ -8,6 +8,9 @@ type InferredRouteResponses = {
   diagnostics: Diagnostic[];
 };
 
+const exportNodeCache = new WeakMap<ts.SourceFile, Map<string, ts.Node>>();
+const inferredResponseCache = new WeakMap<ts.SourceFile, Map<string, InferredRouteResponses>>();
+
 export function inferResponsesForExport(
   filePath: string,
   exportName: string,
@@ -18,7 +21,12 @@ export function inferResponsesForExport(
     return { responses: [], diagnostics: [] };
   }
 
-  const exportNode = findExportNode(sourceFile, exportName);
+  const cachedResponses = inferredResponseCache.get(sourceFile)?.get(exportName);
+  if (cachedResponses) {
+    return cachedResponses;
+  }
+
+  const exportNode = getExportNode(sourceFile, exportName);
   if (!exportNode) {
     return { responses: [], diagnostics: [] };
   }
@@ -27,32 +35,62 @@ export function inferResponsesForExport(
   const responses = inferResponsesFromReturns(exportNode, sourceFile, project.checker, diagnostics);
 
   if (responses.length > 0) {
-    return { responses, diagnostics };
+    const result = { responses, diagnostics };
+    cacheInferredResponses(sourceFile, exportName, result);
+    return result;
   }
 
   const signatureResponse = inferResponseFromSignature(exportNode, project.checker);
-  return {
+  const result = {
     responses: signatureResponse ? [signatureResponse] : [],
     diagnostics,
   };
+  cacheInferredResponses(sourceFile, exportName, result);
+  return result;
 }
 
-function findExportNode(sourceFile: ts.SourceFile, exportName: string): ts.Node | undefined {
+function getExportNode(sourceFile: ts.SourceFile, exportName: string): ts.Node | undefined {
+  return getExportNodeMap(sourceFile).get(exportName);
+}
+
+function getExportNodeMap(sourceFile: ts.SourceFile): Map<string, ts.Node> {
+  const cachedNodes = exportNodeCache.get(sourceFile);
+  if (cachedNodes) {
+    return cachedNodes;
+  }
+
+  const exportNodes = new Map<string, ts.Node>();
   for (const statement of sourceFile.statements) {
-    if (ts.isFunctionDeclaration(statement) && statement.name?.text === exportName) {
-      return statement;
+    if (ts.isFunctionDeclaration(statement) && statement.name?.text) {
+      exportNodes.set(statement.name.text, statement);
+      continue;
     }
 
     if (ts.isVariableStatement(statement)) {
       for (const declaration of statement.declarationList.declarations) {
-        if (ts.isIdentifier(declaration.name) && declaration.name.text === exportName) {
-          return declaration;
+        if (ts.isIdentifier(declaration.name)) {
+          exportNodes.set(declaration.name.text, declaration);
         }
       }
     }
   }
 
-  return undefined;
+  exportNodeCache.set(sourceFile, exportNodes);
+  return exportNodes;
+}
+
+function cacheInferredResponses(
+  sourceFile: ts.SourceFile,
+  exportName: string,
+  result: InferredRouteResponses,
+): void {
+  let cachedResponses = inferredResponseCache.get(sourceFile);
+  if (!cachedResponses) {
+    cachedResponses = new Map<string, InferredRouteResponses>();
+    inferredResponseCache.set(sourceFile, cachedResponses);
+  }
+
+  cachedResponses.set(exportName, result);
 }
 
 function inferResponsesFromReturns(

@@ -1,8 +1,10 @@
 # Example App Coverage Plan
 
-This document maps each example app to a primary responsibility and defines the
-route packs needed to grow the example suite without turning every app into the
-same demo.
+This document serves two jobs:
+
+1. It is the current guide to which example app demonstrates which feature area.
+2. It defines the route packs and follow-on work needed to grow the example
+   suite without turning every app into the same demo.
 
 It complements:
 
@@ -10,6 +12,21 @@ It complements:
 - [jsdoc-reference](./jsdoc-reference.md) for route-level tags
 - [openapi-version-coverage](./openapi-version-coverage.md) for version-specific behavior
 - [workflows-and-integrations](./workflows-and-integrations.md) for adoption stories
+
+## Quick example picker
+
+Open one of these first based on what you want to evaluate:
+
+- `apps/next-app-zod`: Zod-first usage and the primary OpenAPI `3.2.0` showcase
+- `apps/next-app-typescript`: TypeScript-first contracts and inferred type flows
+- `apps/next-app-mixed-schemas`: mixed `zod`, `typescript`, and `schemaFiles`
+- `apps/next-app-drizzle-zod`: Drizzle and `drizzle-zod` integration
+- `apps/next-pages-router`: legacy Pages Router support
+- `apps/tanstack-app`: TanStack Router framework parity
+- `apps/react-router-app`: React Router framework parity
+- `apps/next-app-next-config`, `apps/next-app-ts-config`, `apps/next-app-adapter`: config and adapter integration paths
+- `apps/next-app-sandbox`: edge-case route behavior and exclusion coverage
+- `apps/next-app-scalar`, `apps/next-app-swagger`: docs UI scaffolding variants
 
 ## Coverage model
 

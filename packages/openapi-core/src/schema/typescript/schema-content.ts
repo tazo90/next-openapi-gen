@@ -1,4 +1,9 @@
-import { createFormDataSchema, detectContentType, getExampleForParam } from "./helpers.js";
+import {
+  createFormDataSchema,
+  createMultipartEncoding,
+  detectContentType,
+  getExampleForParam,
+} from "./helpers.js";
 import type {
   OpenAPIDefinition,
   OpenApiExampleMap,
@@ -80,11 +85,33 @@ export function createRequestParamsSchema(
         param.schema = createParameterSchema(value);
       }
 
+      if (typeof value.style === "string") {
+        param.style = value.style;
+      }
+
+      if (typeof value.explode === "boolean") {
+        param.explode = value.explode;
+      }
+
+      if (typeof value.allowReserved === "boolean") {
+        param.allowReserved = value.allowReserved;
+      }
+
       if (value.description) {
         param.description = value.description;
         if (param.schema) {
           param.schema.description = value.description;
         }
+      }
+
+      if (
+        param.in === "query" &&
+        !param.content &&
+        typeof param.style === "undefined" &&
+        isDeepObjectCandidate(value)
+      ) {
+        param.style = "deepObject";
+        param.explode = true;
       }
 
       if (isPathParam) {
@@ -115,6 +142,9 @@ function createParameterSchema(value: OpenApiSchemaLike): OpenApiSchemaLike {
   delete schema.required;
   delete schema.example;
   delete schema.content;
+  delete schema.style;
+  delete schema.explode;
+  delete schema.allowReserved;
   if (!hasSchemaKeywords(schema)) {
     schema.type = "string";
   }
@@ -148,11 +178,14 @@ export function createRequestBodySchema(
 ): OpenApiRequestBody {
   const detectedContentType = detectContentType(getPrimarySchemaType(body?.type), contentType);
   const schema = detectedContentType === "multipart/form-data" ? createFormDataSchema(body) : body;
+  const encoding =
+    detectedContentType === "multipart/form-data" ? createMultipartEncoding(body) : undefined;
   const requestBody: OpenApiRequestBody = {
     content: {
       [detectedContentType]: {
         schema,
         ...(examples ? { examples } : {}),
+        ...(encoding ? { encoding } : {}),
       },
     },
   };
@@ -162,6 +195,18 @@ export function createRequestBodySchema(
   }
 
   return requestBody;
+}
+
+function isDeepObjectCandidate(value: OpenApiSchemaLike): boolean {
+  if (value.type === "object") {
+    return true;
+  }
+
+  if (value.properties || value.additionalProperties) {
+    return true;
+  }
+
+  return false;
 }
 
 function getPrimarySchemaType(type: string | string[] | undefined): string {
@@ -188,6 +233,7 @@ export function createResponseSchema(responses: OpenAPIDefinition, description?:
 type GetSchemaContentOptions = {
   tag: OpenAPIDefinition;
   paramsType?: string;
+  querystringType?: string;
   pathParamsType?: string;
   bodyType?: string;
   responseType?: string;
@@ -200,11 +246,19 @@ type GetSchemaContentContext = {
 };
 
 export function getSchemaContent(
-  { tag, paramsType, pathParamsType, bodyType, responseType }: GetSchemaContentOptions,
+  {
+    tag,
+    paramsType,
+    querystringType,
+    pathParamsType,
+    bodyType,
+    responseType,
+  }: GetSchemaContentOptions,
   context: GetSchemaContentContext,
 ): {
   tag: OpenAPIDefinition;
   params: OpenAPIDefinition;
+  querystring: OpenAPIDefinition;
   pathParams: OpenAPIDefinition;
   body: OpenAPIDefinition;
   responses: OpenAPIDefinition;
@@ -221,10 +275,15 @@ export function getSchemaContent(
   };
 
   const baseBodyType = stripArrayNotation(bodyType);
+  const baseQuerystringType = stripArrayNotation(querystringType);
   const baseResponseType = stripArrayNotation(responseType);
 
   if (paramsType && !context.openapiDefinitions[paramsType]) {
     context.findSchemaDefinition(paramsType, "params");
+  }
+
+  if (baseQuerystringType && !context.openapiDefinitions[baseQuerystringType]) {
+    context.findSchemaDefinition(baseQuerystringType, "params");
   }
 
   if (pathParamsType && !context.openapiDefinitions[pathParamsType]) {
@@ -240,12 +299,21 @@ export function getSchemaContent(
   }
 
   const params = paramsType ? context.openapiDefinitions[paramsType] || {} : {};
+  const querystring = baseQuerystringType
+    ? context.openapiDefinitions[baseQuerystringType] || {}
+    : {};
   const pathParams = pathParamsType ? context.openapiDefinitions[pathParamsType] || {} : {};
   const body = baseBodyType ? context.openapiDefinitions[baseBodyType] || {} : {};
   const responses = baseResponseType ? context.openapiDefinitions[baseResponseType] || {} : {};
 
   if (context.schemaTypes.includes("zod")) {
-    for (const schemaName of [paramsType, pathParamsType, baseBodyType, baseResponseType]) {
+    for (const schemaName of [
+      paramsType,
+      baseQuerystringType,
+      pathParamsType,
+      baseBodyType,
+      baseResponseType,
+    ]) {
       if (!schemaName) {
         continue;
       }
@@ -259,6 +327,7 @@ export function getSchemaContent(
   return {
     tag,
     params,
+    querystring,
     pathParams,
     body,
     responses,

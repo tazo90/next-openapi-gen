@@ -6,6 +6,7 @@ describe("ResponseProcessor", () => {
   it("omits content for 204 responses and DELETE defaults", () => {
     const schemaProcessor = {
       getSchemaContent: vi.fn(),
+      hasResolvedSchema: vi.fn(() => false),
     };
     const processor = new ResponseProcessor(
       {
@@ -38,6 +39,7 @@ describe("ResponseProcessor", () => {
   it("builds nested array schemas for typed success responses", () => {
     const schemaProcessor = {
       getSchemaContent: vi.fn(),
+      hasResolvedSchema: vi.fn(() => false),
     };
     const processor = new ResponseProcessor(
       {
@@ -77,6 +79,7 @@ describe("ResponseProcessor", () => {
   it("adds configured response sets and custom response references", () => {
     const schemaProcessor = {
       getSchemaContent: vi.fn(),
+      hasResolvedSchema: vi.fn(() => false),
     };
     const processor = new ResponseProcessor(
       {
@@ -113,6 +116,7 @@ describe("ResponseProcessor", () => {
   it("ignores missing response sets and uses fallback descriptions for custom schema refs", () => {
     const schemaProcessor = {
       getSchemaContent: vi.fn(),
+      hasResolvedSchema: vi.fn(() => false),
     };
     const processor = new ResponseProcessor(
       {
@@ -155,6 +159,7 @@ describe("ResponseProcessor", () => {
   it("uses inline descriptions for custom @add response schemas", () => {
     const schemaProcessor = {
       getSchemaContent: vi.fn(),
+      hasResolvedSchema: vi.fn(() => false),
     };
     const processor = new ResponseProcessor(
       {
@@ -192,6 +197,7 @@ describe("ResponseProcessor", () => {
   it("skips malformed custom responses and adds explicit 204 descriptions", () => {
     const schemaProcessor = {
       getSchemaContent: vi.fn(),
+      hasResolvedSchema: vi.fn(() => false),
     };
     const processor = new ResponseProcessor(
       {
@@ -233,6 +239,7 @@ describe("ResponseProcessor", () => {
   it("uses inferred responses when no explicit @response tag exists", () => {
     const schemaProcessor = {
       getSchemaContent: vi.fn(),
+      hasResolvedSchema: vi.fn(() => false),
     };
     const processor = new ResponseProcessor(
       {
@@ -270,6 +277,7 @@ describe("ResponseProcessor", () => {
   it("prefers inferred success status codes over mutation defaults", () => {
     const schemaProcessor = {
       getSchemaContent: vi.fn(),
+      hasResolvedSchema: vi.fn(() => false),
       resolveTypeExpression: vi.fn(),
     };
     const processor = new ResponseProcessor(
@@ -307,6 +315,7 @@ describe("ResponseProcessor", () => {
   it("supports inline response type expressions", () => {
     const schemaProcessor = {
       getSchemaContent: vi.fn(),
+      hasResolvedSchema: vi.fn(() => false),
       resolveTypeExpression: vi.fn(() => ({
         type: "object",
         properties: {
@@ -354,6 +363,7 @@ describe("ResponseProcessor", () => {
   it("emits sequential media and examples for first-class 3.2 response metadata", () => {
     const schemaProcessor = {
       getSchemaContent: vi.fn(),
+      hasResolvedSchema: vi.fn(() => false),
     };
     const processor = new ResponseProcessor(
       {

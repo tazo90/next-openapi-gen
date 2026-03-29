@@ -1,4 +1,5 @@
 import type { SchemaProcessor } from "../schema/typescript/schema-processor.js";
+import { createMultipartEncoding } from "../schema/typescript/helpers.js";
 import { capitalize, getOperationId } from "../shared/utils.js";
 import type { DataTypes, ParamSchema, RouteDefinition } from "../shared/types.js";
 import { ResponseProcessor } from "./response-processor.js";
@@ -22,7 +23,7 @@ export class OperationProcessor {
     const { tag, summary, description, auth, deprecated, bodyDescription, responseDescription } =
       dataTypes;
 
-    const { params, pathParams, body, responses } =
+    const { params, querystring, pathParams, body, responses } =
       this.schemaProcessor.getSchemaContent(dataTypes);
     const definition: RouteDefinition = {
       operationId,
@@ -85,21 +86,19 @@ export class OperationProcessor {
       definition.parameters.push(...moreParams);
     }
 
-    const querystringParameter = this.createQuerystringParameter(dataTypes);
+    const querystringParameter = this.createQuerystringParameter(dataTypes, querystring);
     if (querystringParameter) {
       definition.parameters.push(querystringParameter);
     }
 
     if (this.responseProcessor.supportsRequestBody(method)) {
       if (dataTypes.bodyType) {
-        this.schemaProcessor.getSchemaContent({
-          bodyType: dataTypes.bodyType,
-        });
-
         const contentType = this.schemaProcessor.detectContentType(
           dataTypes.bodyType || "",
           dataTypes.contentType,
         );
+        const multipartEncoding =
+          contentType === "multipart/form-data" ? createMultipartEncoding(body) : undefined;
 
         definition.requestBody = {
           content: {
@@ -108,6 +107,7 @@ export class OperationProcessor {
               ...(dataTypes.requestExamples
                 ? { examples: structuredClone(dataTypes.requestExamples) }
                 : {}),
+              ...(multipartEncoding ? { encoding: multipartEncoding } : {}),
             },
           },
         };
@@ -139,14 +139,13 @@ export class OperationProcessor {
     };
   }
 
-  private createQuerystringParameter(dataTypes: DataTypes): ParamSchema | undefined {
+  private createQuerystringParameter(
+    dataTypes: DataTypes,
+    _querystring: ReturnType<SchemaProcessor["getSchemaContent"]>["querystring"],
+  ): ParamSchema | undefined {
     if (!dataTypes.querystringType) {
       return undefined;
     }
-
-    this.schemaProcessor.getSchemaContent({
-      paramsType: dataTypes.querystringType,
-    });
 
     return {
       in: "querystring",

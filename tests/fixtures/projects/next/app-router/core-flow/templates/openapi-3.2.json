@@ -5,6 +5,24 @@
     "version": "1.0.0",
     "description": "Fixture for generator integration tests"
   },
+  "$self": "https://example.com/fixtures/core-flow/openapi.json",
+  "jsonSchemaDialect": "https://spec.openapis.org/oas/3.2/dialect/2025-09-17",
+  "servers": [
+    {
+      "url": "https://api.example.com",
+      "description": "Production",
+      "name": "production"
+    }
+  ],
+  "externalDocs": {
+    "description": "Core flow fixture guide",
+    "url": "https://example.com/docs/core-flow"
+  },
+  "security": [
+    {
+      "BearerAuth": []
+    }
+  ],
   "components": {
     "securitySchemes": {
       "BearerAuth": {

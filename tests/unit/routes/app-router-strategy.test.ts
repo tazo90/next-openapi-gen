@@ -121,7 +121,7 @@ describe("AppRouterStrategy", () => {
     expect(addRoute).toHaveBeenCalledTimes(2);
   });
 
-  it("infers response schemas from typed NextResponse return annotations", () => {
+  it("uses typed NextResponse return annotations without checker fallback when no special response inference is needed", () => {
     strategy = new AppRouterStrategy(baseConfig);
 
     const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-app-router-infer-"));
@@ -157,8 +157,47 @@ describe("AppRouterStrategy", () => {
       routeFile,
       expect.objectContaining({
         isOpenApi: true,
+        responseType: "PostResponse",
+      }),
+    );
+  });
+
+  it("keeps checker inference for response helpers that need status-aware analysis", () => {
+    strategy = new AppRouterStrategy(baseConfig);
+
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-app-router-status-"));
+    roots.push(root);
+    const routeFile = path.join(root, "route.ts");
+    fs.writeFileSync(
+      routeFile,
+      `
+      import { NextResponse } from "next/server";
+
+      type PostResponse = {
+        id: number;
+      };
+
+      /**
+       * Create post
+       * @openapi
+       */
+      export async function POST(): Promise<NextResponse<PostResponse>> {
+        return NextResponse.json({ id: 1 }, { status: 201 });
+      }
+      `,
+    );
+
+    const addRoute = vi.fn();
+    strategy.processFile(routeFile, addRoute);
+
+    expect(addRoute).toHaveBeenCalledWith(
+      "POST",
+      routeFile,
+      expect.objectContaining({
+        isOpenApi: true,
         inferredResponses: [
           expect.objectContaining({
+            statusCode: "201",
             contentType: "application/json",
           }),
         ],

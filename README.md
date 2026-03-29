@@ -4,9 +4,9 @@
 [![CI](https://github.com/tazo90/next-openapi-gen/actions/workflows/ci.yml/badge.svg)](https://github.com/tazo90/next-openapi-gen/actions/workflows/ci.yml)
 [![License](https://img.shields.io/github/license/tazo90/next-openapi-gen)](https://github.com/tazo90/next-openapi-gen)
 
-Generate OpenAPI `3.0`, `3.1`, and `3.2` from your Next.js routes using the schemas you already have.
+Generate OpenAPI `3.0`, `3.1`, and `3.2` from the routes and schemas you already have.
 
-`next-openapi-gen` scans App Router and Pages Router handlers, reads JSDoc metadata, and generates an OpenAPI spec plus an optional docs UI. It is built for real Next.js codebases that use Zod, TypeScript, drizzle-zod, or reusable OpenAPI fragments, including mixed-schema migrations.
+`next-openapi-gen` scans Next.js, TanStack Router, and React Router route handlers, reads JSDoc metadata, and generates an OpenAPI spec plus an optional docs UI. It is built for real codebases that use Zod, TypeScript, drizzle-zod, or reusable OpenAPI fragments, including mixed-schema migrations.
 
 [Quick start](#quick-start) • [Docs index](./docs/README.md) • [Example apps](#example-apps) • [Validation and coverage](#validation-and-coverage)
 
@@ -23,7 +23,10 @@ Generate OpenAPI `3.0`, `3.1`, and `3.2` from your Next.js routes using the sche
 ### Requirements
 
 - Node.js `>=24`
-- A Next.js project using App Router or Pages Router
+- A supported app framework:
+  - Next.js using App Router or Pages Router
+  - TanStack Router
+  - React Router
 
 ### Install
 
@@ -42,11 +45,18 @@ yarn add --dev next-openapi-gen
 ### Initialize and generate
 
 ```bash
-# Creates next.openapi.json and a docs page (Scalar by default)
+# Next.js is the default framework
 pnpm exec openapi-gen init
 
-# Scans your routes and writes the spec
+# Or choose another supported framework
+pnpm exec openapi-gen init --framework tanstack
+pnpm exec openapi-gen init --framework react-router
+
+# Scans your routes and writes the spec once
 pnpm exec openapi-gen generate
+
+# Keeps the spec fresh during local development
+pnpm exec openapi-gen generate --watch
 ```
 
 > [!TIP]
@@ -55,7 +65,9 @@ pnpm exec openapi-gen generate
 > The package name is still `next-openapi-gen` during the transition. Config
 > discovery also accepts the new `openapi-gen.config.ts` and
 > `openapi-gen.config.json` aliases, while `next-openapi.config.*` and
-> `next.openapi.json` continue to work with deprecation warnings.
+> `next.openapi.json` continue to work with deprecation warnings. The legacy
+> `next-openapi-gen` binary still works too, but `openapi-gen` is the preferred
+> CLI name going forward.
 
 Need the full setup flow, config walkthrough, or production notes? See
 [docs/getting-started.md](./docs/getting-started.md).
@@ -64,7 +76,15 @@ Need the full setup flow, config walkthrough, or production notes? See
 
 - `next.openapi.json` in your project root
 - `public/openapi.json` by default
-- `/api-docs` with your selected UI provider
+- `/api-docs` with your selected UI provider by default
+
+## Framework support
+
+| Framework       | Setup path                                            | Notes                                                          |
+| --------------- | ----------------------------------------------------- | -------------------------------------------------------------- |
+| Next.js         | `pnpm exec openapi-gen init`                          | Supports App Router and Pages Router                           |
+| TanStack Router | `pnpm exec openapi-gen init --framework tanstack`     | Uses the public `next-openapi-gen/vite` plugin surface         |
+| React Router    | `pnpm exec openapi-gen init --framework react-router` | Uses the public `next-openapi-gen/react-router` plugin surface |
 
 ## Minimal example
 
@@ -98,7 +118,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 
 | Capability                            | Why it matters                                                                                        |
 | ------------------------------------- | ----------------------------------------------------------------------------------------------------- |
-| Next.js-first route scanning          | Designed for App Router and legacy Pages Router instead of generic controller conventions.            |
+| Framework-aware route scanning        | Covers Next.js, TanStack Router, and React Router with one generator and shared docs story.           |
 | Mixed schema sources                  | Combine `zod`, `typescript`, `schemaFiles`, and drizzle-zod-backed schemas during gradual migrations. |
 | OpenAPI `3.0` / `3.1` / `3.2` targets | Keep one authoring flow while emitting version-aware output for newer spec features.                  |
 | Response inference                    | Infer typed App Router responses when `@response` is omitted, while still letting explicit tags win.  |
@@ -206,6 +226,12 @@ Explicit `@response` tags still take precedence when you want stable schema name
 }
 ```
 
+Version guidance:
+
+- Use `3.0.0` when you want the broadest downstream tooling compatibility.
+- Use `3.1.0` when you want JSON Schema 2020-12-aligned output such as `jsonSchemaDialect`.
+- Use `3.2.0` when you want first-class `querystring`, enhanced tag metadata, sequential media, and richer example objects.
+
 ### Important options
 
 | Option                                | Purpose                                                          |
@@ -243,10 +269,15 @@ patterns, see [docs/getting-started.md](./docs/getting-started.md).
 For the complete tag guide and usage recipes, see
 [docs/jsdoc-reference.md](./docs/jsdoc-reference.md).
 
+OpenAPI `3.2`-specific tags such as `@querystring`, `@tagSummary`, `@tagKind`,
+and sequential media annotations are documented in the same guide and shown in
+[apps/next-app-zod](./apps/next-app-zod).
+
 ## Compatibility
 
 | Area            | Support                                                      |
 | --------------- | ------------------------------------------------------------ |
+| Frameworks      | Next.js, TanStack Router, React Router                       |
 | Next.js routers | App Router and Pages Router                                  |
 | OpenAPI targets | `3.0`, `3.1`, `3.2`                                          |
 | Schema sources  | `zod`, `typescript`, drizzle-zod output, YAML/JSON fragments |
@@ -254,16 +285,36 @@ For the complete tag guide and usage recipes, see
 
 For Pages Router projects, set `routerType` to `"pages"` and annotate handlers with `@method`. See [apps/next-pages-router](./apps/next-pages-router).
 
+For the supported Zod 4 surface and known gaps, see
+[docs/zod4-support-matrix.md](./docs/zod4-support-matrix.md).
+
+## Framework integrations
+
+Use the integration that matches your framework:
+
+- `next-openapi-gen/next`: Next.js adapter helpers such as `createNextOpenApiAdapter`
+- `next-openapi-gen/vite`: Vite plugin surface used by the TanStack example app
+- `next-openapi-gen/react-router`: React Router plugin surface
+
+The main package export also exposes `generateProject`, `watchProject`, and
+config helpers when you want to script generation directly.
+
 ## Example apps
 
 Use the checked-in examples to evaluate the tool in realistic setups:
 
 - [apps/next-app-zod](./apps/next-app-zod): Zod-first App Router example
+- [apps/next-app-next-config](./apps/next-app-next-config): typed config example targeting OpenAPI `3.1`
 - [apps/next-app-typescript](./apps/next-app-typescript): TypeScript-first example
 - [apps/next-app-mixed-schemas](./apps/next-app-mixed-schemas): mixed schema migration example
 - [apps/next-app-drizzle-zod](./apps/next-app-drizzle-zod): Drizzle + drizzle-zod CRUD example
+- [apps/next-app-sandbox](./apps/next-app-sandbox): edge-case route and exclusion playground
+- [apps/next-app-ts-config](./apps/next-app-ts-config): typed config loading example
+- [apps/next-app-adapter](./apps/next-app-adapter): Next adapter integration smoke example
 - [apps/next-pages-router](./apps/next-pages-router): legacy Pages Router support
-- [apps/next-app-scalar](./apps/next-app-scalar), [apps/next-app-swagger](./apps/next-app-swagger), [apps/next-app-redoc](./apps/next-app-redoc): docs UI variants
+- [apps/tanstack-app](./apps/tanstack-app): TanStack Router framework parity example
+- [apps/react-router-app](./apps/react-router-app): React Router framework parity example
+- [apps/next-app-scalar](./apps/next-app-scalar), [apps/next-app-swagger](./apps/next-app-swagger): docs UI variants
 
 ### Run an example
 
@@ -292,6 +343,11 @@ For the detailed version matrix and validation notes, see:
 - [docs/openapi-version-coverage.md](./docs/openapi-version-coverage.md)
 - [docs/zod4-support-matrix.md](./docs/zod4-support-matrix.md)
 
+The checked-in examples intentionally span different goals: most apps stay on
+`3.0` as the conservative default, `apps/next-app-next-config` demonstrates a
+typed `3.1` config, and `apps/next-app-zod` showcases richer `3.2` route and
+document features.
+
 ## Available UI providers
 
 | Scalar                                                                                         | Swagger                                                                                          | Redoc                                                                                        | Stoplight Elements                                                                                            | RapiDoc                                                                                          |
@@ -303,13 +359,13 @@ For the detailed version matrix and validation notes, see:
 Use these deeper references when you need more than the quick start:
 
 - [docs/README.md](./docs/README.md): docs index
-- [docs/getting-started.md](./docs/getting-started.md): setup, config, Pages Router notes, response sets, and production notes
+- [docs/getting-started.md](./docs/getting-started.md): setup, config, framework defaults, watch mode, and production notes
 - [docs/jsdoc-reference.md](./docs/jsdoc-reference.md): full route tag reference and examples
-- [docs/workflows-and-integrations.md](./docs/workflows-and-integrations.md): mixed schemas, drizzle-zod, downstream tooling, and adoption patterns
+- [docs/workflows-and-integrations.md](./docs/workflows-and-integrations.md): framework integrations, mixed schemas, drizzle-zod, and downstream workflows
 - [docs/faq.md](./docs/faq.md): troubleshooting and common questions
 - [docs/openapi-version-coverage.md](./docs/openapi-version-coverage.md): version-specific behavior, validation strategy, and generated vs preserved fields
 - [docs/zod4-support-matrix.md](./docs/zod4-support-matrix.md): tested Zod 4 coverage and known boundaries
-- [docs/example-app-coverage-plan.md](./docs/example-app-coverage-plan.md): roadmap for expanding the runnable example suite and OpenAPI 3.2 coverage
+- [docs/example-app-coverage-plan.md](./docs/example-app-coverage-plan.md): example app roles, coverage goals, and expansion roadmap
 - [apps](./apps): complete runnable examples
 
 ## CLI
@@ -317,16 +373,26 @@ Use these deeper references when you need more than the quick start:
 ```bash
 pnpm exec openapi-gen init
 pnpm exec openapi-gen generate
+pnpm exec openapi-gen generate --watch
 ```
 
 ### `init` options
 
-| Option       | Choices                                                      | Default             |
-| ------------ | ------------------------------------------------------------ | ------------------- |
-| `--ui`       | `scalar`, `swagger`, `redoc`, `stoplight`, `rapidoc`, `none` | `scalar`            |
-| `--schema`   | `zod`, `typescript`                                          | `zod`               |
-| `--docs-url` | any string                                                   | `api-docs`          |
-| `--output`   | any path                                                     | `next.openapi.json` |
+| Option        | Choices                                                      | Default             |
+| ------------- | ------------------------------------------------------------ | ------------------- |
+| `--framework` | `next`, `tanstack`, `react-router`                           | `next`              |
+| `--ui`        | `scalar`, `swagger`, `redoc`, `stoplight`, `rapidoc`, `none` | `scalar`            |
+| `--schema`    | `zod`, `typescript`                                          | `zod`               |
+| `--docs-url`  | any string                                                   | `api-docs`          |
+| `--output`    | any path                                                     | `next.openapi.json` |
+
+### `generate` options
+
+| Option       | Purpose                                       |
+| ------------ | --------------------------------------------- |
+| `--config`   | Use a specific config file                    |
+| `--template` | Merge a specific OpenAPI template or fragment |
+| `--watch`    | Regenerate when routes or schema files change |
 
 ## Contributing
 

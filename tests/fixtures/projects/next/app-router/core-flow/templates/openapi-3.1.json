@@ -5,6 +5,16 @@
     "version": "1.0.0",
     "description": "Fixture for generator integration tests"
   },
+  "jsonSchemaDialect": "https://spec.openapis.org/oas/3.1/dialect/base",
+  "externalDocs": {
+    "description": "Core flow fixture guide",
+    "url": "https://example.com/docs/core-flow"
+  },
+  "security": [
+    {
+      "BearerAuth": []
+    }
+  ],
   "components": {
     "securitySchemes": {
       "BearerAuth": {

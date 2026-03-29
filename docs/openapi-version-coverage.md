@@ -18,11 +18,17 @@ Feature status uses three buckets:
 - Comma-separated `@auth` metadata emits alternative security requirements, one scheme per entry. Richer `securitySchemes` modeling still comes from templates or custom OpenAPI fragments.
 - TypeScript checker support is used selectively for App Router response inference and path-alias/module resolution.
 
+## Choosing a version
+
+- **OpenAPI 3.0**: safest default when downstream tooling compatibility matters more than newer schema and document features.
+- **OpenAPI 3.1**: best when you want JSON Schema 2020-12-aligned output such as type-array nullability, numeric exclusives, and `jsonSchemaDialect`.
+- **OpenAPI 3.2**: best when you want richer route metadata such as `querystring`, enhanced tags, sequential media, and richer example objects.
+
 ## OpenAPI 3.0 Baseline
 
 | Area                                                                                                                                            | Status                                      | Notes                                                                                                                      |
 | ----------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| Root document fields (`info`, `servers`, `security`, `tags`, `externalDocs`, `paths`, `webhooks`, `$self`, etc.)                                | `template/custom`, `validated`              | Generator now preserves unknown valid OpenAPI fields instead of dropping them.                                             |
+| Root document fields valid for the target version (`info`, `servers`, `security`, `tags`, `externalDocs`, `paths`, etc.)                        | `template/custom`, `validated`              | Generator preserves version-valid template fields instead of dropping them during finalization.                            |
 | Components (`schemas`, `responses`, `parameters`, `requestBodies`, `headers`, `examples`, `links`, `callbacks`, `pathItems`, `securitySchemes`) | `generated`, `template/custom`, `validated` | Generated coverage remains strongest for `schemas`, `responses`, and operation-level parameter/request/response objects.   |
 | Parameters (`path`, `query`, `header`, `cookie`) with schema/content                                                                            | `generated`, `template/custom`, `validated` | Generated parameters now preserve richer schema fields instead of only `type/enum/description`.                            |
 | Request/response media objects                                                                                                                  | `generated`, `template/custom`, `validated` | Inline and referenced bodies are preserved and normalized per target version.                                              |
@@ -73,6 +79,6 @@ Feature status uses three buckets:
 ## Testing Strategy
 
 - Unit tests cover version adapter transforms, new JSDoc tags, checker-assisted response inference, and TypeScript path-alias resolution.
-- Integration tests cover generated schema differences between `3.0` and `3.1`, plus first-class 3.2 route annotations and inference behavior.
+- Integration tests cover generated schema differences between `3.0` and `3.1`, version-specific template metadata passthrough, and first-class 3.2 route annotations and inference behavior.
 - Validation tests run generated `3.0`, `3.1`, and `3.2` specs through `@seriousme/openapi-schema-validator`, including a Zod-heavy fixture that exercises top-level Zod 4 helpers, transformed query params, and pure-Zod alias behavior.
 - Template/custom-fragment tests verify that advanced reusable OpenAPI objects survive generation without being dropped.
