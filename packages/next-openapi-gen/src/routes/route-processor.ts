@@ -19,7 +19,13 @@ import type {
 import { OperationProcessor } from "./operation-processor.js";
 import { sortPathDefinitions } from "./path-sort.js";
 import { ResponseProcessor } from "./response-processor.js";
-import { scanRouteFiles } from "./route-scanner.js";
+import { collectRouteFiles } from "./route-scanner.js";
+
+export type RouteScanPerformanceProfile = {
+  scanRouteFilesMs: number;
+  processRouteFilesMs: number;
+  buildOperationsMs: number;
+};
 
 export class RouteProcessor {
   private pathDefinitions: Record<string, OpenApiPathDefinition> = {};
@@ -149,32 +155,52 @@ export class RouteProcessor {
     this.addRouteToPaths(method, routePath, dataTypes, pathParams);
   }
 
-  public scanApiRoutes(dir: string): void {
+  public scanApiRoutes(dir: string): RouteScanPerformanceProfile {
     logger.debug(`Scanning API routes in: ${dir}`);
-    scanRouteFiles(
-      dir,
-      this.source,
-      {
-        directoryCache: this.directoryCache,
-        statCache: this.statCache,
-        processFileTracker: this.processFileTracker,
-      },
-      (filePath) => {
-        this.source
-          .processFile(filePath)
-          .forEach(({ method, filePath: routeFilePath, routePath, dataTypes }) => {
-            this.registerRoute(method, routeFilePath, routePath, dataTypes);
-          });
-      },
-    );
+    const { filePaths, scanRouteFilesMs } = collectRouteFiles(dir, this.source, {
+      directoryCache: this.directoryCache,
+      statCache: this.statCache,
+      processFileTracker: this.processFileTracker,
+    });
+    let processRouteFilesMs = 0;
+    let buildOperationsMs = 0;
+
+    filePaths.forEach((filePath) => {
+      let phaseStartedAt = performance.now();
+      const discoveredRoutes = this.source.processFile(filePath);
+      processRouteFilesMs += performance.now() - phaseStartedAt;
+
+      phaseStartedAt = performance.now();
+      discoveredRoutes.forEach(({ method, filePath: routeFilePath, routePath, dataTypes }) => {
+        this.registerRoute(method, routeFilePath, routePath, dataTypes);
+      });
+      buildOperationsMs += performance.now() - phaseStartedAt;
+    });
+
+    return {
+      scanRouteFilesMs,
+      processRouteFilesMs,
+      buildOperationsMs,
+    };
   }
 
-  public scanRoutes(): void {
+  public scanRoutes(): RouteScanPerformanceProfile {
+    const profile: RouteScanPerformanceProfile = {
+      scanRouteFilesMs: 0,
+      processRouteFilesMs: 0,
+      buildOperationsMs: 0,
+    };
+
     this.source.getScanRoots().forEach((rootDir) => {
       if (fs.existsSync(rootDir)) {
-        this.scanApiRoutes(rootDir);
+        const routeProfile = this.scanApiRoutes(rootDir);
+        profile.scanRouteFilesMs += routeProfile.scanRouteFilesMs;
+        profile.processRouteFilesMs += routeProfile.processRouteFilesMs;
+        profile.buildOperationsMs += routeProfile.buildOperationsMs;
       }
     });
+
+    return profile;
   }
 
   private addRouteToPaths(

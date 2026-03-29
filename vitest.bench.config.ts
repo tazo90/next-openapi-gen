@@ -15,7 +15,7 @@ export default defineConfig({
   test: {
     globals: true,
     environment: "node",
-    include: ["tests/bench/**/*.test.ts"],
+    include: ["tests/bench/**/*.bench.ts", "tests/bench/**/*.test.ts"],
     exclude: ["**/.pnpm-store/**"],
   },
 });

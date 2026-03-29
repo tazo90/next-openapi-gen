@@ -1,0 +1,62 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "React Router Core Flow",
+    "version": "1.0.0",
+    "description": "Fixture for generic framework benchmark coverage"
+  },
+  "framework": {
+    "kind": "react-router"
+  },
+  "defaultResponseSet": "common",
+  "responseSets": {
+    "common": ["400", "500"],
+    "auth": ["401", "403"]
+  },
+  "errorConfig": {
+    "template": {
+      "type": "object",
+      "properties": {
+        "message": {
+          "type": "string",
+          "example": "{{ERROR_MESSAGE}}"
+        }
+      }
+    },
+    "codes": {
+      "400": {
+        "description": "Bad Request",
+        "variables": {
+          "ERROR_MESSAGE": "Invalid request"
+        }
+      },
+      "401": {
+        "description": "Unauthorized",
+        "variables": {
+          "ERROR_MESSAGE": "Authentication required"
+        }
+      },
+      "403": {
+        "description": "Forbidden",
+        "variables": {
+          "ERROR_MESSAGE": "Access denied"
+        }
+      },
+      "500": {
+        "description": "Internal Server Error",
+        "variables": {
+          "ERROR_MESSAGE": "Unexpected error"
+        }
+      }
+    }
+  },
+  "apiDir": "./src/routes/api",
+  "schemaDir": "./src",
+  "schemaType": "typescript",
+  "docsUrl": "api-docs",
+  "ui": "scalar",
+  "outputDir": "./public",
+  "outputFile": "openapi.json",
+  "includeOpenApiRoutes": true,
+  "debug": false
+}

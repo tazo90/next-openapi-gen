@@ -17,9 +17,16 @@ import type { GeneratorHooks } from "./config/types.js";
 import type { SharedGenerationRuntime } from "./runtime.js";
 
 export type OrchestratorPerformanceProfile = {
+  prepareTemplateMs: number;
+  loadCustomFragmentsMs: number;
   prepareDocumentMs: number;
+  scanRouteFilesMs: number;
+  processRouteFilesMs: number;
+  buildOperationsMs: number;
   scanRoutesMs: number;
+  sortAndMergePathsMs: number;
   buildPathsMs: number;
+  defaultComponentsAndErrorsMs: number;
   mergeSchemasMs: number;
   finalizeDocumentMs: number;
   totalMs: number;
@@ -46,9 +53,16 @@ export function runGenerationOrchestrator({
   const routeProcessor = new RouteProcessor(config, diagnostics, runtime);
   const generationStartedAt = performance.now();
   const profile: OrchestratorPerformanceProfile = {
+    prepareTemplateMs: 0,
+    loadCustomFragmentsMs: 0,
     prepareDocumentMs: 0,
+    scanRouteFilesMs: 0,
+    processRouteFilesMs: 0,
+    buildOperationsMs: 0,
     scanRoutesMs: 0,
+    sortAndMergePathsMs: 0,
     buildPathsMs: 0,
+    defaultComponentsAndErrorsMs: 0,
     mergeSchemasMs: 0,
     finalizeDocumentMs: 0,
     totalMs: 0,
@@ -58,15 +72,24 @@ export function runGenerationOrchestrator({
 
   let phaseStartedAt = performance.now();
   const document = createDocumentFromTemplate(template);
-  const schemaFiles = config.schemaFiles ?? [];
-  const customOpenApiFragments =
-    schemaFiles.length > 0 ? loadCustomOpenApiFragments(schemaFiles) : {};
-  mergeDocumentFragment(document, customOpenApiFragments);
-  profile.prepareDocumentMs = performance.now() - phaseStartedAt;
+  profile.prepareTemplateMs = performance.now() - phaseStartedAt;
 
   phaseStartedAt = performance.now();
-  routeProcessor.scanRoutes();
-  profile.scanRoutesMs = performance.now() - phaseStartedAt;
+  const schemaFiles = config.schemaFiles ?? [];
+  if (schemaFiles.length > 0) {
+    const customOpenApiFragments = loadCustomOpenApiFragments(schemaFiles);
+    mergeDocumentFragment(document, customOpenApiFragments);
+  }
+  profile.loadCustomFragmentsMs = performance.now() - phaseStartedAt;
+  profile.prepareDocumentMs = profile.prepareTemplateMs + profile.loadCustomFragmentsMs;
+
+  phaseStartedAt = performance.now();
+  const routeScanProfile = routeProcessor.scanRoutes();
+  profile.scanRouteFilesMs = routeScanProfile.scanRouteFilesMs;
+  profile.processRouteFilesMs = routeScanProfile.processRouteFilesMs;
+  profile.buildOperationsMs = routeScanProfile.buildOperationsMs;
+  profile.scanRoutesMs =
+    profile.scanRouteFilesMs + profile.processRouteFilesMs + profile.buildOperationsMs;
 
   phaseStartedAt = performance.now();
   document.paths = {
@@ -74,7 +97,8 @@ export function runGenerationOrchestrator({
     ...routeProcessor.getPaths(),
   };
   document.tags = mergeTagDefinitions(document.tags, routeProcessor.getTags());
-  profile.buildPathsMs = performance.now() - phaseStartedAt;
+  profile.sortAndMergePathsMs = performance.now() - phaseStartedAt;
+  profile.buildPathsMs = profile.sortAndMergePathsMs;
 
   hooks?.routesDiscovered?.({
     config,
@@ -83,6 +107,7 @@ export function runGenerationOrchestrator({
     diagnostics: diagnostics.getAll(),
   });
 
+  phaseStartedAt = performance.now();
   if (!document.servers || document.servers.length === 0) {
     document.servers = [
       {
@@ -113,6 +138,7 @@ export function runGenerationOrchestrator({
       responses[code] = createErrorResponseComponent(errorDef);
     });
   }
+  profile.defaultComponentsAndErrorsMs = performance.now() - phaseStartedAt;
 
   phaseStartedAt = performance.now();
   const definedSchemas = routeProcessor.getSchemaProcessor().getDefinedSchemas();

@@ -124,9 +124,16 @@ describe("OpenApiGenerator", () => {
           },
         });
         expect(performanceProfile).toMatchObject({
+          prepareTemplateMs: expect.any(Number),
+          loadCustomFragmentsMs: expect.any(Number),
           prepareDocumentMs: expect.any(Number),
+          scanRouteFilesMs: expect.any(Number),
+          processRouteFilesMs: expect.any(Number),
+          buildOperationsMs: expect.any(Number),
           scanRoutesMs: expect.any(Number),
+          sortAndMergePathsMs: expect.any(Number),
           buildPathsMs: expect.any(Number),
+          defaultComponentsAndErrorsMs: expect.any(Number),
           mergeSchemasMs: expect.any(Number),
           finalizeDocumentMs: expect.any(Number),
           totalMs: expect.any(Number),

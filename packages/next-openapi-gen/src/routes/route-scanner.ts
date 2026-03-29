@@ -9,6 +9,27 @@ type ScanState = {
   processFileTracker: Record<string, boolean>;
 };
 
+export type CollectedRouteFiles = {
+  filePaths: string[];
+  scanRouteFilesMs: number;
+};
+
+export function collectRouteFiles(
+  rootDir: string,
+  source: FrameworkSource,
+  state: ScanState,
+): CollectedRouteFiles {
+  const filePaths: string[] = [];
+  const startedAt = performance.now();
+  scanRouteFiles(rootDir, source, state, (filePath) => {
+    filePaths.push(filePath);
+  });
+  return {
+    filePaths,
+    scanRouteFilesMs: performance.now() - startedAt,
+  };
+}
+
 export function scanRouteFiles(
   rootDir: string,
   source: FrameworkSource,

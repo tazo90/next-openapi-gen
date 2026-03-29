@@ -1,0 +1,25 @@
+export type UserIdParams = {
+  id: string;
+};
+
+export interface UpdateUserInput {
+  name?: string;
+  email?: string;
+}
+
+export interface User {
+  id: string;
+  email: string;
+  role: "admin" | "member";
+}
+
+export type ReportIdParams = {
+  reportId: string;
+};
+
+export interface ReportSummary {
+  id: string;
+  title: string;
+  status: "draft" | "published";
+  updatedAt: string;
+}

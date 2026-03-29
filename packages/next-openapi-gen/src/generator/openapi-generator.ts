@@ -4,6 +4,7 @@ import fs from "fs";
 import { DEFAULT_GENERATE_TEMPLATE_PATH } from "../config/defaults.js";
 import { normalizeOpenApiConfig } from "../config/normalize.js";
 import { runGenerationOrchestrator } from "../core/orchestrator.js";
+import type { OrchestratorPerformanceProfile } from "../core/orchestrator.js";
 import type { NextOpenApiConfigFile } from "../core/config/types.js";
 import type { SharedGenerationRuntime } from "../core/runtime.js";
 import { getErrorMessage } from "../shared/error.js";
@@ -21,14 +22,7 @@ type OpenApiGeneratorOptions = {
   runtime?: SharedGenerationRuntime | undefined;
 };
 
-export type GeneratorPerformanceProfile = {
-  prepareDocumentMs: number;
-  scanRoutesMs: number;
-  buildPathsMs: number;
-  mergeSchemasMs: number;
-  finalizeDocumentMs: number;
-  totalMs: number;
-};
+export type GeneratorPerformanceProfile = OrchestratorPerformanceProfile;
 
 export class OpenApiGenerator {
   private config: ResolvedOpenApiConfig;

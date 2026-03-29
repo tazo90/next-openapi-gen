@@ -119,9 +119,11 @@ describe("RouteProcessor", () => {
 
     it("only scans existing source roots", () => {
       routeProcessor = new RouteProcessor(baseConfig);
-      const scanApiRoutesSpy = vi
-        .spyOn(routeProcessor, "scanApiRoutes")
-        .mockImplementation(() => {});
+      const scanApiRoutesSpy = vi.spyOn(routeProcessor, "scanApiRoutes").mockImplementation(() => ({
+        scanRouteFilesMs: 0,
+        processRouteFilesMs: 0,
+        buildOperationsMs: 0,
+      }));
       // @ts-expect-error overriding source in focused unit test
       routeProcessor.source = {
         getScanRoots: () => ["./missing-root", "."],

@@ -1,62 +1,29 @@
 import { afterAll, beforeAll, bench, describe } from "vitest";
 
-import { OpenApiGenerator } from "@next-openapi-gen/generator/openapi-generator.js";
-import { createSharedGenerationRuntime } from "@next-openapi-gen/core/runtime.js";
-
 import {
-  copyProjectFixture,
-  getProjectFixturePath,
-  materializeTemplateVariant,
-  type TempProject,
-  withProjectCwd,
-} from "../../helpers/test-project.js";
-
-type BenchProject = {
-  project: TempProject;
-  templatePath: string;
-};
-
-const appRouterCoreFixture = getProjectFixturePath("next", "app-router", "core-flow");
-
-function createBenchProject(fixturePath: string): BenchProject {
-  const project = copyProjectFixture(fixturePath);
-  const templatePath = materializeTemplateVariant(project.root, "3.0");
-
-  return {
-    project,
-    templatePath,
-  };
-}
+  cleanupBenchProjects,
+  createBenchProjects,
+  getBenchmarkScenarios,
+  getScenarioBenchmarkName,
+  runWarmGeneration,
+  type BenchProject,
+} from "./benchmark-matrix.js";
 
 describe("OpenApiGenerator warm benchmarks", () => {
-  let coreFlowProject: BenchProject;
+  const scenarios = getBenchmarkScenarios("warm");
+  let projects: Map<string, BenchProject>;
 
   beforeAll(() => {
-    coreFlowProject = createBenchProject(appRouterCoreFixture);
+    projects = createBenchProjects(scenarios);
   });
 
   afterAll(() => {
-    coreFlowProject.project.cleanup();
+    cleanupBenchProjects(projects.values());
   });
 
-  bench("reuses shared runtime across warm generations", () => {
-    withProjectCwd(coreFlowProject.project.root, () => {
-      const runtime = createSharedGenerationRuntime();
-      const generator = new OpenApiGenerator({
-        templatePath: coreFlowProject.templatePath,
-        runtime,
-      });
-      generator.generate();
-
-      const warmGenerator = new OpenApiGenerator({
-        templatePath: coreFlowProject.templatePath,
-        runtime,
-      });
-      const spec = warmGenerator.generate();
-
-      if (!spec.paths || Object.keys(spec.paths).length === 0) {
-        throw new Error("Expected generated spec to include paths.");
-      }
+  scenarios.forEach((scenario) => {
+    bench(getScenarioBenchmarkName(scenario), () => {
+      runWarmGeneration(projects.get(scenario.id)!);
     });
   });
 });
