@@ -1,0 +1,339 @@
+# Reusable Workflow Template
+# This workflow can be called from other workflows in your organization
+# Demonstrates inputs, secrets, outputs, and best practices for reusability
+
+name: Reusable Build and Test
+
+# Workflow_call trigger enables this workflow to be reused
+on:
+  workflow_call:
+    # Define input parameters
+    inputs:
+      node-version:
+        description: 'Node.js version to use'
+        required: false
+        type: string
+        default: '20'
+
+      environment:
+        description: 'Target environment (dev, staging, production)'
+        required: true
+        type: string
+
+      run-tests:
+        description: 'Whether to run tests'
+        required: false
+        type: boolean
+        default: true
+
+      test-timeout:
+        description: 'Test timeout in minutes'
+        required: false
+        type: number
+        default: 10
+
+      cache-key-prefix:
+        description: 'Prefix for cache keys'
+        required: false
+        type: string
+        default: 'npm'
+
+    # Define secrets that must be passed from caller
+    secrets:
+      npm-token:
+        description: 'NPM authentication token'
+        required: false
+
+      aws-role-arn:
+        description: 'AWS IAM role ARN for deployment'
+        required: false
+
+      slack-webhook:
+        description: 'Slack webhook for notifications'
+        required: false
+
+    # Define outputs that can be used by caller
+    outputs:
+      build-version:
+        description: 'The version that was built'
+        value: ${{ jobs.build.outputs.version }}
+
+      artifact-id:
+        description: 'ID of uploaded build artifacts'
+        value: ${{ jobs.build.outputs.artifact-id }}
+
+      test-result:
+        description: 'Test execution result'
+        value: ${{ jobs.test.outputs.result }}
+
+      deployment-url:
+        description: 'URL of deployed application'
+        value: ${{ jobs.build.outputs.url }}
+
+# Minimal permissions (can be expanded by caller)
+permissions:
+  contents: read
+
+jobs:
+  # Job 1: Build the application
+  build:
+    name: Build Application
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    # Output values for caller workflows
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      artifact-id: ${{ steps.upload.outputs.artifact-id }}
+      url: https://${{ inputs.environment }}.example.com
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: 'npm'
+          registry-url: 'https://registry.npmjs.org'
+
+      # Generate version based on environment
+      - name: Generate version
+        id: version
+        run: |
+          if [ "${{ inputs.environment }}" = "production" ]; then
+            VERSION=$(jq -r .version package.json)
+          else
+            VERSION=$(jq -r .version package.json)-${{ inputs.environment }}-$(git rev-parse --short HEAD)
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Building version: $VERSION"
+
+      - name: Install dependencies
+        run: npm ci
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.npm-token }}
+
+      - name: Run linting
+        run: npm run lint
+
+      - name: Build application
+        env:
+          NODE_ENV: production
+          VERSION: ${{ steps.version.outputs.version }}
+          ENVIRONMENT: ${{ inputs.environment }}
+        run: npm run build
+
+      - name: Upload build artifacts
+        id: upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-${{ inputs.environment }}-${{ steps.version.outputs.version }}
+          path: |
+            dist/
+            package.json
+          retention-days: 30
+
+  # Job 2: Test (conditional)
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: ${{ inputs.test-timeout }}
+    # Only run if tests are requested
+    if: inputs.run-tests
+
+    outputs:
+      result: ${{ steps.test.outcome }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run unit tests
+        id: test
+        run: npm run test:unit
+
+      - name: Run integration tests
+        if: inputs.environment != 'dev'
+        run: npm run test:integration
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results-${{ inputs.environment }}
+          path: |
+            coverage/
+            test-results/
+          retention-days: 7
+
+  # Job 3: Security check
+  security:
+    name: Security Checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # Run security checks for staging and production only
+    if: inputs.environment == 'staging' || inputs.environment == 'production'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+
+      - name: Run npm audit
+        run: npm audit --audit-level=moderate
+
+      - name: Check for secrets
+        run: |
+          # Add secret scanning logic
+          echo "Scanning for exposed secrets..."
+
+  # Job 4: Notify on completion
+  notify:
+    name: Send Notification
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    needs: [build, test, security]
+    if: always() && secrets.slack-webhook != ''
+
+    steps:
+      - name: Send Slack notification
+        uses: slackapi/slack-github-action@v1
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.slack-webhook }}
+        with:
+          payload: |
+            {
+              "text": "Reusable workflow completed",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Workflow:* ${{ github.workflow }}\n*Environment:* ${{ inputs.environment }}\n*Build:* ${{ needs.build.result }}\n*Tests:* ${{ needs.test.result }}\n*Security:* ${{ needs.security.result }}"
+                  }
+                }
+              ]
+            }
+
+---
+
+# Example: Caller Workflow using this reusable workflow
+
+# Save this as: .github/workflows/main.yml
+#
+# name: Main Deployment Pipeline
+#
+# on:
+#   push:
+#     branches: [main, develop]
+#   workflow_dispatch:
+#
+# permissions:
+#   contents: read
+#   id-token: write
+#
+# jobs:
+#   # Call reusable workflow for staging
+#   staging-deployment:
+#     name: Deploy to Staging
+#     if: github.ref == 'refs/heads/develop'
+#     uses: ./.github/workflows/reusable-workflow.yml
+#     with:
+#       node-version: '20'
+#       environment: staging
+#       run-tests: true
+#       test-timeout: 15
+#     secrets:
+#       npm-token: ${{ secrets.NPM_TOKEN }}
+#       aws-role-arn: ${{ secrets.AWS_ROLE_STAGING }}
+#       slack-webhook: ${{ secrets.SLACK_WEBHOOK }}
+#
+#   # Call reusable workflow for production
+#   production-deployment:
+#     name: Deploy to Production
+#     if: github.ref == 'refs/heads/main'
+#     uses: ./.github/workflows/reusable-workflow.yml
+#     with:
+#       node-version: '20'
+#       environment: production
+#       run-tests: true
+#       test-timeout: 20
+#     secrets:
+#       npm-token: ${{ secrets.NPM_TOKEN }}
+#       aws-role-arn: ${{ secrets.AWS_ROLE_PROD }}
+#       slack-webhook: ${{ secrets.SLACK_WEBHOOK }}
+#
+#   # Use outputs from reusable workflow
+#   post-deployment:
+#     name: Post-Deployment Tasks
+#     needs: production-deployment
+#     runs-on: ubuntu-latest
+#     steps:
+#       - name: Print deployment info
+#         run: |
+#           echo "Version deployed: ${{ needs.production-deployment.outputs.build-version }}"
+#           echo "Artifact ID: ${{ needs.production-deployment.outputs.artifact-id }}"
+#           echo "Deployment URL: ${{ needs.production-deployment.outputs.deployment-url }}"
+
+# Configuration notes:
+#
+# Reusable workflow benefits:
+# 1. DRY principle - Define once, use many times
+# 2. Consistency across repositories
+# 3. Centralized maintenance
+# 4. Organization-wide standards
+#
+# Location requirements:
+# - Must be in .github/workflows/ directory
+# - Can be in same repo or different repo (for org-wide sharing)
+# - For cross-repo: uses: owner/repo/.github/workflows/workflow.yml@main
+#
+# Input types supported:
+# - string: Text values
+# - number: Numeric values
+# - boolean: true/false flags
+# - choice: Dropdown selection (for workflow_dispatch)
+#
+# Secrets handling:
+# - Cannot use ${{ secrets.SECRET_NAME }} directly in reusable workflow
+# - Must be explicitly passed from caller
+# - Provides better security and visibility
+#
+# Outputs:
+# - Can pass data back to caller workflow
+# - Useful for artifact IDs, versions, URLs
+# - Referenced as: needs.<job-id>.outputs.<output-name>
+#
+# Best practices:
+# 1. Provide sensible defaults for inputs
+# 2. Document all inputs, secrets, and outputs clearly
+# 3. Use descriptive names for jobs and steps
+# 4. Include error handling and validation
+# 5. Make workflows idempotent (can run multiple times safely)
+# 6. Version your reusable workflows (use tags/branches)
+#
+# Limitations:
+# - Can nest max 4 levels of reusable workflows
+# - Cannot use 'env' at workflow level (use inputs instead)
+# - Some contexts not available (github.event, etc.)
+#
+# Organization-wide usage:
+# 1. Create a central workflows repository
+# 2. Store reusable workflows there
+# 3. Reference from any org repository
+# 4. Update once, applies everywhere

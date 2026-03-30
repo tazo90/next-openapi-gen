@@ -1,0 +1,83 @@
+{
+  "openapi": "3.2.0",
+  "$self": "https://example.com/openapi/mixed-schemas.json",
+  "info": {
+    "title": "Mixed Schema Types API",
+    "version": "1.0.0",
+    "description": "Example demonstrating Zod + TypeScript + Custom YAML schemas"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000/api",
+      "description": "Local development server",
+      "name": "local"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      },
+      "DeviceAuth": {
+        "type": "oauth2",
+        "oauth2MetadataUrl": "https://auth.example.com/.well-known/oauth-authorization-server",
+        "flows": {
+          "deviceAuthorization": {
+            "deviceAuthorizationUrl": "https://auth.example.com/oauth/device/code",
+            "scopes": {
+              "events.read": "Read webhook and event data"
+            },
+            "tokenUrl": "https://auth.example.com/oauth/token"
+          }
+        }
+      }
+    }
+  },
+  "defaultResponseSet": "common",
+  "responseSets": {
+    "common": ["400", "500"]
+  },
+  "errorConfig": {
+    "template": {
+      "type": "object",
+      "properties": {
+        "error": {
+          "type": "string",
+          "example": "{{ERROR_MESSAGE}}"
+        },
+        "code": {
+          "type": "string",
+          "example": "{{ERROR_CODE}}"
+        }
+      }
+    },
+    "codes": {
+      "400": {
+        "description": "Bad Request",
+        "variables": {
+          "ERROR_MESSAGE": "Invalid request parameters",
+          "ERROR_CODE": "BAD_REQUEST"
+        }
+      },
+      "500": {
+        "description": "Internal Server Error",
+        "variables": {
+          "ERROR_MESSAGE": "An unexpected error occurred",
+          "ERROR_CODE": "INTERNAL_ERROR"
+        }
+      }
+    }
+  },
+  "apiDir": "./src/app/api",
+  "schemaDir": ["./src/schemas", "./src/types"],
+  "schemaType": ["zod", "typescript"],
+  "schemaFiles": ["./src/schemas/custom-schemas.yaml"],
+  "docsUrl": "api-docs",
+  "ui": "scalar",
+  "outputFile": "openapi.json",
+  "outputDir": "./public",
+  "includeOpenApiRoutes": false,
+  "debug": true
+}

@@ -1,3 +1,5 @@
+# Pull Request
+
 ## Description
 
 <!-- Describe your changes in a few sentences -->
@@ -13,8 +15,8 @@
 
 ## Checklist
 
-- [ ] Code follows project style
-- [ ] Tested locally
+- [ ] `pnpm check` passes
+- [ ] Tested locally (`pnpm test` and `pnpm build` when relevant)
 - [ ] Documentation updated (if needed)
 
 ---
@@ -25,7 +27,7 @@ Your **PR title** must follow [Conventional Commits](https://www.conventionalcom
 
 ### ✅ Good Examples
 
-```
+```text
 feat: add support for multiple schema types
 fix: resolve path parameter detection issue
 docs: update configuration examples
@@ -33,13 +35,14 @@ docs: update configuration examples
 
 ### ❌ Bad Examples
 
-```
+```text
 Added feature
 Fixed bug
 Update README
 ```
 
 **Why?** We use squash merge - your PR title becomes the commit message and is used for:
+
 - 📊 Auto-generating changelogs
 - 🏷️ Version bumping (`feat:` = minor, `fix:` = patch)
 - 📖 Clean git history

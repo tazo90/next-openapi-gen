@@ -39,8 +39,15 @@ cd next-openapi-gen
 ### 2. Install Dependencies
 
 ```bash
-npm install
+pnpm install
 ```
+
+This repository uses a pnpm workspace, so running `pnpm install` at the repository root installs dependencies for the root package and all example apps.
+
+Git hooks are installed automatically during `pnpm install` with `simple-git-hooks`.
+
+- `pre-commit` runs `lint-staged`, which formats staged files with Oxfmt and lints staged JS/TS files with Oxlint
+- `commit-msg` runs `commitlint`, which enforces Conventional Commits
 
 ### 3. Create a Branch
 
@@ -58,7 +65,7 @@ We use **[Conventional Commits](https://www.conventionalcommits.org/)** format f
 
 ### Format
 
-```
+```text
 <type>: <description>
 
 [optional body]
@@ -85,7 +92,7 @@ We use **[Conventional Commits](https://www.conventionalcommits.org/)** format f
 
 For breaking changes, add `!` after the type or include `BREAKING CHANGE:` in the footer:
 
-```
+```text
 feat!: migrate to ESM modules
 
 BREAKING CHANGE: CommonJS is no longer supported.
@@ -96,9 +103,9 @@ Node.js 16 is no longer supported, minimum version is now 18.0.0.
 
 ### Examples
 
-✅ **Good commit messages:**
+✅ **Good commit messages**
 
-```
+```text
 feat: add support for Drizzle ORM schemas
 fix: resolve crash on dynamic routes
 perf: improve OpenAPI generation speed by 40%
@@ -107,9 +114,9 @@ refactor: simplify schema processor logic
 test: add integration tests for route processor
 ```
 
-❌ **Bad commit messages:**
+❌ **Bad commit messages**
 
-```
+```text
 added feature
 fix
 update
@@ -121,7 +128,7 @@ Fixed stuff
 
 You can add a scope for more context:
 
-```
+```text
 feat(drizzle): add support for Drizzle schemas
 fix(types): resolve TypeScript errors in route processor
 docs(readme): add installation instructions
@@ -136,14 +143,26 @@ docs(readme): add installation instructions
 Before submitting a PR:
 
 ```bash
+# Run the repo-wide format + lint checks
+pnpm check
+
+# Run dead-code and unused-dependency checks
+pnpm knip
+
 # Run tests
-npm test
+pnpm test
 
 # Build the project
-npm run build
+pnpm build
 
-# Ensure no TypeScript errors
-npx tsc --noEmit
+# Run the main local verification flow
+pnpm verify
+```
+
+If you want to preview what the pre-commit hook will do before committing, run:
+
+```bash
+pnpm lint:staged
 ```
 
 ### 2. Update Documentation
@@ -156,17 +175,17 @@ npx tsc --noEmit
 
 **Important:** Your PR title must follow the Conventional Commits format!
 
-#### ✅ Good PR Titles:
+#### ✅ Good PR Titles
 
-```
+```text
 feat: add support for Drizzle ORM schemas
 fix: resolve TypeScript type errors in route processor
 docs: update README with new examples
 ```
 
-#### ❌ Bad PR Titles:
+#### ❌ Bad PR Titles
 
-```
+```text
 Added drizzle support
 Fixed bugs
 Update
@@ -194,69 +213,113 @@ When you create a PR, a template will guide you through:
 
 ### Project Structure
 
-```
+```text
 next-openapi-gen/
-├── src/
-│   ├── commands/       # CLI commands (init, generate)
-│   ├── components/     # UI components (Swagger, Scalar, etc.)
-│   ├── lib/           # Core logic
-│   │   ├── openapi-generator.ts
-│   │   ├── route-processor.ts
-│   │   ├── schema-processor.ts
-│   │   └── zod-converter.ts
-│   └── index.ts       # Entry point
-├── tests/             # Test files
-├── examples/          # Example Next.js apps
-└── dist/             # Build output (ignored)
+├── apps/                     # Example Next.js apps
+│   ├── next-app-zod/
+│   └── types/                # Shared ambient typings for examples
+├── packages/
+│   ├── next-openapi-gen/
+│   │   ├── src/              # CLI source
+│   │   └── dist/             # CLI build output (ignored)
+│   ├── next-config/          # Shared Next.js config for example apps
+│   ├── oxfmt-config/
+│   ├── oxlint-config/
+│   └── typescript-config/
+├── tests/
+│   ├── unit/                 # Isolated Vitest coverage
+│   ├── integration/          # Filesystem and workspace Vitest coverage
+│   ├── e2e/                  # Playwright coverage against example apps
+│   └── fixtures/             # Shared test fixtures
+└── turbo.json
 ```
 
 ### Build System
 
 ```bash
-# Clean build artifacts
-npm run clean
+# Build the workspace with Turborepo
+pnpm build
 
-# Build TypeScript
-npm run build
+# Build just the published CLI package
+pnpm --filter next-openapi-gen build
 
-# Watch mode (auto-rebuild on changes)
-npx tsc --watch
+# Rebuild the CLI package in watch mode
+pnpm --filter next-openapi-gen exec tsc --watch
 ```
+
+### Editor Setup
+
+This repository commits workspace defaults in `.vscode/` so contributors and agents use the same TypeScript SDK, Oxc formatter, and common tasks in VS Code or Cursor.
+
+- Install the recommended `oxc.oxc-vscode` extension
+- Use the workspace TypeScript version when prompted
+- Use the committed `check`, `test`, and `build` tasks if you prefer running scripts from the editor
 
 ### Testing
 
 ```bash
-# Run all tests
-npm test
+# Run all workspace tests
+pnpm test
 
-# Watch mode
-npm run test:watch
+# Run only the unit suite
+pnpm test:unit
 
-# UI mode
-npm run test:ui
+# Run only the integration suite
+pnpm test:integration
 
-# Coverage report
-npm run test:coverage
+# Watch or inspect the Vitest suites
+pnpm test:watch
+pnpm test:ui
+
+# Coverage report for unit + integration tests
+pnpm test:coverage
+
+# Run the Playwright suite against next-app-zod
+pnpm test:e2e
 ```
+
+### Knip
+
+```bash
+# Full local report
+pnpm knip
+
+# Compact CI-style report
+pnpm knip:ci
+```
+
+Use Knip findings to remove real unused files, exports, and dependencies first. Only add a targeted exception in `knip.mts` when a file is intentionally discovered indirectly, such as published UI templates, test fixtures, or example-app schema inputs scanned by the generator.
 
 ### Local Testing
 
-To test the CLI locally:
+To test the CLI locally inside this workspace:
 
 ```bash
-# Build first
-npm run build
+# Install dependencies and build the workspace
+pnpm install
+pnpm build
 
-# Link globally
-npm link
+# Run an example app against the workspace package
+cd apps/next-app-zod
+pnpm exec openapi-gen generate
+pnpm dev
+```
 
-# Now you can use it in any Next.js project
+To test the CLI in another local project:
+
+```bash
+# From the repository root
+pnpm build
+pnpm link --global
+
+# In another Next.js project
 cd /path/to/your/nextjs/app
-next-openapi-gen init
-next-openapi-gen generate
+pnpm link --global next-openapi-gen
+openapi-gen init
+openapi-gen generate
 
 # Unlink when done
-npm unlink -g next-openapi-gen
+pnpm unlink --global next-openapi-gen
 ```
 
 ---
@@ -272,7 +335,7 @@ We use [`np`](https://github.com/sindresorhus/np) for interactive releases with 
 #### Creating a Release
 
 ```bash
-npm run release
+pnpm run release
 ```
 
 This will:
@@ -291,13 +354,13 @@ This will:
 
 ```bash
 # Specific version
-npx np 1.0.0
+pnpm exec np 1.0.0
 
 # Beta release
-npx np 1.0.0-beta.1
+pnpm exec np 1.0.0-beta.1
 
 # Only tag, skip npm publish
-npx np --no-publish
+pnpm exec np --no-publish
 ```
 
 #### Version Bump Guidelines

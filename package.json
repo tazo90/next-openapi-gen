@@ -1,79 +1,100 @@
 {
-  "name": "next-openapi-gen",
-  "version": "0.10.5",
-  "description": "Automatically generate OpenAPI 3.0 documentation from Next.js projects, with support for Zod schemas and TypeScript types.",
-  "type": "module",
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
-  "typings": "dist/index.d.ts",
-  "bin": {
-    "next-openapi-gen": "./dist/index.js"
-  },
-  "files": [
-    "dist"
-  ],
-  "scripts": {
-    "clean": "rm -rf dist",
-    "build": "npm run clean && tsc",
-    "prepare": "npm run build",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "test:ui": "vitest --ui",
-    "test:coverage": "vitest run --coverage",
-    "release": "np --no-cleanup --no-tests",
-    "version": "conventional-changelog -p angular -i CHANGELOG.md -s -n .changelogrc.cjs && git add CHANGELOG.md"
-  },
+  "name": "next-openapi-gen-workspace",
+  "private": true,
+  "license": "MIT",
+  "author": "Mariusz Winnik",
   "repository": {
     "type": "git",
     "url": "git+ssh://git@github.com/tazo90/next-openapi-gen.git"
   },
-  "keywords": [
-    "nextjs",
-    "openapi",
-    "swagger",
-    "typescript",
-    "zod",
-    "api-docs",
-    "api",
-    "docs",
-    "react",
-    "scalar",
-    "redoc",
-    "drizzle"
-  ],
-  "publishConfig": {
-    "access": "public"
-  },
-  "author": "Mariusz Winnik",
-  "license": "MIT",
-  "engines": {
-    "node": ">=18.0.0"
-  },
-  "dependencies": {
-    "@babel/parser": "^7.28.3",
-    "@babel/traverse": "^7.28.3",
-    "@babel/types": "^7.28.2",
-    "commander": "^14.0.0",
-    "fs-extra": "^11.3.1",
-    "js-yaml": "^4.1.0",
-    "ora": "^8.2.0"
+  "scripts": {
+    "build": "turbo run build",
+    "check": "pnpm format:check && pnpm lint",
+    "dev": "turbo run dev",
+    "format": "pnpm format:root && turbo run format",
+    "format:check": "pnpm format:check:root && turbo run format:check",
+    "format:check:root": "oxfmt --config ./.oxfmtrc.json --ignore-path .gitignore --check tests .vscode package.json pnpm-workspace.yaml turbo.json vitest.config.ts vitest.bench.config.ts playwright.config.ts commitlint.config.ts README.md CONTRIBUTING.md CHANGELOG.md .oxlintrc.json .oxfmtrc.json",
+    "format:root": "oxfmt --config ./.oxfmtrc.json --ignore-path .gitignore tests .vscode package.json pnpm-workspace.yaml turbo.json vitest.config.ts vitest.bench.config.ts playwright.config.ts commitlint.config.ts README.md CONTRIBUTING.md CHANGELOG.md .oxlintrc.json .oxfmtrc.json",
+    "knip": "knip -c knip.mts",
+    "knip:ci": "knip -c knip.mts --reporter compact",
+    "lint": "pnpm lint:root && turbo run lint",
+    "lint:root": "oxlint --config ./.oxlintrc.json tests vitest.config.ts vitest.bench.config.ts playwright.config.ts commitlint.config.ts --ignore-path .gitignore --deny-warnings",
+    "lint:staged": "lint-staged",
+    "prepare": "simple-git-hooks",
+    "test": "pnpm test:unit && pnpm test:integration && pnpm test:e2e",
+    "test:unit": "vitest run --config vitest.config.ts tests/unit",
+    "test:integration": "vitest run --config vitest.config.ts tests/integration",
+    "test:watch": "vitest --config vitest.config.ts",
+    "test:ui": "vitest --config vitest.config.ts --ui",
+    "test:coverage": "pnpm test:coverage:openapi-cli && pnpm test:coverage:openapi-framework-next && pnpm test:coverage:openapi-framework-tanstack && pnpm test:coverage:openapi-framework-react-router && pnpm test:coverage:openapi-init && pnpm test:coverage:next-openapi-gen && pnpm test:coverage:openapi-core",
+    "test:coverage:openapi-cli": "COVERAGE_SCOPE=openapi-cli vitest run --config vitest.config.ts --coverage",
+    "test:coverage:openapi-core": "COVERAGE_SCOPE=openapi-core vitest run --config vitest.config.ts --coverage",
+    "test:coverage:openapi-framework-next": "COVERAGE_SCOPE=openapi-framework-next vitest run --config vitest.config.ts --coverage",
+    "test:coverage:openapi-framework-react-router": "COVERAGE_SCOPE=openapi-framework-react-router vitest run --config vitest.config.ts --coverage",
+    "test:coverage:openapi-framework-tanstack": "COVERAGE_SCOPE=openapi-framework-tanstack vitest run --config vitest.config.ts --coverage",
+    "test:coverage:openapi-init": "COVERAGE_SCOPE=openapi-init vitest run --config vitest.config.ts --coverage",
+    "test:coverage:next-openapi-gen": "COVERAGE_SCOPE=next-openapi-gen vitest run --config vitest.config.ts --coverage",
+    "test:bench": "pnpm test:bench:profile",
+    "test:bench:vitest": "vitest bench --config vitest.bench.config.ts --dir tests/bench --exclude \"**/.pnpm-store/**\"",
+    "test:bench:profile": "vitest run --config vitest.bench.config.ts tests/bench/generator/openapi-generator.profile.test.ts --reporter=verbose --silent false",
+    "test:e2e": "pnpm test:e2e:next-app-zod && pnpm test:e2e:next-app-typescript && pnpm test:e2e:next-app-scalar && pnpm test:e2e:next-app-swagger && pnpm test:e2e:next-app-sandbox && pnpm test:e2e:next-app-drizzle-zod && pnpm test:e2e:next-pages-router && pnpm test:e2e:next-app-mixed-schemas && pnpm test:e2e:tanstack-app && pnpm test:e2e:react-router-app && pnpm test:e2e:next-app-adapter && pnpm test:e2e:next-app-next-config && pnpm test:e2e:next-app-ts-config",
+    "test:e2e:app": "playwright test",
+    "test:e2e:next-app-zod": "E2E_APP=next-app-zod pnpm test:e2e:app",
+    "test:e2e:next-app-typescript": "E2E_APP=next-app-typescript pnpm test:e2e:app",
+    "test:e2e:next-app-scalar": "E2E_APP=next-app-scalar pnpm test:e2e:app",
+    "test:e2e:next-app-swagger": "E2E_APP=next-app-swagger pnpm test:e2e:app",
+    "test:e2e:next-app-sandbox": "E2E_APP=next-app-sandbox pnpm test:e2e:app",
+    "test:e2e:next-app-drizzle-zod": "E2E_APP=next-app-drizzle-zod pnpm test:e2e:app",
+    "test:e2e:next-pages-router": "E2E_APP=next-pages-router pnpm test:e2e:app",
+    "test:e2e:next-app-mixed-schemas": "E2E_APP=next-app-mixed-schemas pnpm test:e2e:app",
+    "test:e2e:tanstack-app": "E2E_APP=tanstack-app pnpm test:e2e:app",
+    "test:e2e:react-router-app": "E2E_APP=react-router-app pnpm test:e2e:app",
+    "test:e2e:next-app-adapter": "E2E_APP=next-app-adapter pnpm test:e2e:app",
+    "test:e2e:next-app-next-config": "E2E_APP=next-app-next-config pnpm test:e2e:app",
+    "test:e2e:next-app-ts-config": "E2E_APP=next-app-ts-config pnpm test:e2e:app",
+    "release": "pnpm --filter next-openapi-gen release",
+    "verify": "pnpm check && pnpm knip:ci && pnpm test:unit && pnpm test:integration && pnpm build",
+    "version": "pnpm --filter next-openapi-gen version"
   },
   "devDependencies": {
-    "@types/js-yaml": "^4.0.9",
-    "@types/node": "^24.3.0",
-    "@vitest/ui": "^3.2.4",
-    "conventional-changelog-cli": "^5.0.0",
-    "np": "^10.2.0",
-    "typescript": "^5.9.2",
-    "vitest": "^3.2.4"
+    "@babel/traverse": "catalog:",
+    "@babel/types": "catalog:",
+    "@commitlint/cli": "catalog:",
+    "@commitlint/config-conventional": "catalog:",
+    "@commitlint/types": "catalog:",
+    "@playwright/test": "catalog:",
+    "@seriousme/openapi-schema-validator": "catalog:",
+    "@vitest/coverage-v8": "catalog:",
+    "@vitest/ui": "catalog:",
+    "@workspace/openapi-cli": "workspace:*",
+    "@workspace/openapi-core": "workspace:*",
+    "@workspace/openapi-framework-next": "workspace:*",
+    "@workspace/openapi-framework-react-router": "workspace:*",
+    "@workspace/openapi-framework-tanstack": "workspace:*",
+    "@workspace/openapi-init": "workspace:*",
+    "knip": "catalog:",
+    "lint-staged": "catalog:",
+    "next-openapi-gen": "workspace:*",
+    "oxfmt": "catalog:",
+    "oxlint": "catalog:",
+    "simple-git-hooks": "catalog:",
+    "turbo": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   },
-  "np": {
-    "yarn": false,
-    "anyBranch": false,
-    "branch": "main",
-    "cleanup": false,
-    "tests": false,
-    "2fa": false,
-    "releaseDraft": false
-  }
+  "simple-git-hooks": {
+    "pre-commit": "pnpm lint:staged",
+    "commit-msg": "pnpm exec commitlint --edit \"$1\""
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx,mjs,cjs,mts,cts}": [
+      "oxfmt --config ./.oxfmtrc.json --ignore-path .gitignore",
+      "oxlint --config ./.oxlintrc.json --ignore-path .gitignore --deny-warnings"
+    ],
+    "*.{json,jsonc,md,mdx,yml,yaml,css,scss,html,toml}": "oxfmt --config ./.oxfmtrc.json --ignore-path .gitignore"
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "packageManager": "pnpm@10.27.0"
 }

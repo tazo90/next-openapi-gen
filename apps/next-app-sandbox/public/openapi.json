@@ -1,0 +1,1211 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "API Documentation",
+    "version": "1.0.0",
+    "description": "This is the OpenAPI specification for your project."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000/api",
+      "description": "Local development server"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "schemas": {
+      "AdminAuditQuery": {
+        "type": "object",
+        "properties": {
+          "actorId": {
+            "type": "string",
+            "description": "Filter by actor"
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true,
+            "description": "Maximum audit rows"
+          }
+        }
+      },
+      "AdminAuditEntry": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "description": "Administrative action"
+          },
+          "actorId": {
+            "type": "string",
+            "description": "Administrator identifier"
+          },
+          "occurredAt": {
+            "type": "string",
+            "description": "Timestamp"
+          },
+          "resourceId": {
+            "type": "string",
+            "description": "Optional related resource"
+          }
+        },
+        "required": [
+          "action",
+          "actorId",
+          "occurredAt"
+        ]
+      },
+      "AdminUserQuery": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "number",
+            "description": "Page number"
+          },
+          "limit": {
+            "type": "number",
+            "description": "Items per page"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "admin",
+              "user"
+            ],
+            "description": "Filter by role"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "inactive",
+              "banned"
+            ],
+            "description": "Filter by status"
+          }
+        }
+      },
+      "AdminUserListResponse": {
+        "type": "object",
+        "properties": {
+          "users": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "description": "User ID"
+                },
+                "email": {
+                  "type": "string",
+                  "format": "email",
+                  "description": "User email"
+                },
+                "name": {
+                  "type": "string",
+                  "description": "User full name"
+                },
+                "role": {
+                  "type": "string",
+                  "enum": [
+                    "admin",
+                    "user"
+                  ],
+                  "description": "User role"
+                },
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "active",
+                    "inactive",
+                    "banned"
+                  ],
+                  "description": "User status"
+                },
+                "createdAt": {
+                  "type": "string",
+                  "description": "Account creation date"
+                }
+              },
+              "required": [
+                "id",
+                "email",
+                "name",
+                "role",
+                "status",
+                "createdAt"
+              ]
+            },
+            "description": "List of users"
+          },
+          "pagination": {
+            "type": "object",
+            "properties": {
+              "page": {
+                "type": "number",
+                "description": "Current page"
+              },
+              "limit": {
+                "type": "number",
+                "description": "Items per page"
+              },
+              "total": {
+                "type": "number",
+                "description": "Total number of users"
+              }
+            },
+            "required": [
+              "page",
+              "limit",
+              "total"
+            ],
+            "description": "Pagination information"
+          }
+        },
+        "required": [
+          "users",
+          "pagination"
+        ]
+      },
+      "DashboardResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Dashboard ID"
+          },
+          "name": {
+            "type": "string",
+            "description": "Dashboard name"
+          },
+          "widgets": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Widget IDs"
+          },
+          "userId": {
+            "type": "string",
+            "description": "Owner user ID"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "widgets",
+          "userId"
+        ]
+      },
+      "UserSettings": {
+        "type": "object",
+        "properties": {
+          "theme": {
+            "type": "string",
+            "enum": [
+              "light",
+              "dark"
+            ],
+            "description": "UI theme preference"
+          },
+          "notifications": {
+            "type": "boolean",
+            "description": "Enable notifications"
+          },
+          "language": {
+            "type": "string",
+            "description": "Preferred language"
+          },
+          "timezone": {
+            "type": "string",
+            "description": "User timezone"
+          }
+        },
+        "required": [
+          "theme",
+          "notifications",
+          "language",
+          "timezone"
+        ]
+      },
+      "LoginRequest": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "User email address"
+          },
+          "password": {
+            "type": "string",
+            "minLength": 6,
+            "description": "User password"
+          }
+        },
+        "required": [
+          "email",
+          "password"
+        ]
+      },
+      "LoginResponse": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "description": "JWT access token"
+          },
+          "user": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "description": "User ID"
+              },
+              "email": {
+                "type": "string",
+                "format": "email",
+                "description": "User email"
+              },
+              "name": {
+                "type": "string",
+                "description": "User full name"
+              }
+            },
+            "required": [
+              "id",
+              "email",
+              "name"
+            ],
+            "description": "User information"
+          }
+        },
+        "required": [
+          "token",
+          "user"
+        ]
+      },
+      "ProfileFilters": {
+        "type": "object",
+        "properties": {
+          "includeHidden": {
+            "type": "boolean",
+            "description": "Include hidden profiles"
+          },
+          "q": {
+            "type": "string",
+            "description": "Search term"
+          }
+        }
+      },
+      "ProfileDraft": {
+        "type": "object",
+        "properties": {
+          "avatar": {
+            "type": "object",
+            "properties": {
+              "url": {
+                "type": "string",
+                "format": "uri",
+                "description": "Avatar URL"
+              }
+            },
+            "required": [
+              "url"
+            ],
+            "nullable": true,
+            "description": "Nullable avatar"
+          },
+          "banner": {
+            "type": "object",
+            "properties": {
+              "url": {
+                "type": "string",
+                "format": "uri",
+                "description": "Banner URL"
+              }
+            },
+            "required": [
+              "url"
+            ],
+            "nullable": true,
+            "description": "Nullish banner"
+          },
+          "displayName": {
+            "type": "string",
+            "description": "Optional public display name"
+          }
+        },
+        "required": [
+          "avatar"
+        ]
+      },
+      "User": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Full name of the user"
+          },
+          "profileImage": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Image"
+              }
+            ],
+            "description": "The profile image"
+          },
+          "avatar": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Image"
+              }
+            ],
+            "description": "The avatar image"
+          },
+          "banner": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Image"
+              }
+            ],
+            "description": "The banner image"
+          }
+        },
+        "required": [
+          "name",
+          "avatar"
+        ]
+      },
+      "SearchQueryParams": {
+        "type": "object",
+        "properties": {
+          "q": {
+            "type": "string",
+            "description": "Search query"
+          },
+          "page": {
+            "type": "number",
+            "description": "Page number"
+          },
+          "limit": {
+            "type": "number",
+            "description": "Items per page"
+          },
+          "sort": {
+            "type": "string",
+            "enum": [
+              "asc",
+              "desc"
+            ],
+            "description": "Sort order"
+          }
+        },
+        "required": [
+          "q"
+        ]
+      },
+      "SearchResponse": {
+        "type": "object",
+        "properties": {
+          "results": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "description": "Result ID"
+                },
+                "title": {
+                  "type": "string",
+                  "description": "Result title"
+                },
+                "score": {
+                  "type": "number",
+                  "description": "Relevance score"
+                }
+              },
+              "required": [
+                "id",
+                "title",
+                "score"
+              ]
+            },
+            "description": "Search results"
+          },
+          "total": {
+            "type": "number",
+            "description": "Total results found"
+          }
+        },
+        "required": [
+          "results",
+          "total"
+        ]
+      },
+      "GetUserProfilePathParams": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "User ID"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "Users": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "User ID"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ]
+      },
+      "Image": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "description": "The url"
+          }
+        },
+        "required": [
+          "url"
+        ]
+      }
+    },
+    "responses": {
+      "400": {
+        "description": "Bad request",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "success": {
+                  "type": "boolean",
+                  "example": false
+                },
+                "error": {
+                  "type": "string",
+                  "example": "Validation error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "401": {
+        "description": "Unauthorized",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "success": {
+                  "type": "boolean",
+                  "example": false
+                },
+                "error": {
+                  "type": "string",
+                  "example": "Unathorized"
+                }
+              }
+            }
+          }
+        }
+      },
+      "500": {
+        "description": "Internal server error",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "success": {
+                  "type": "boolean",
+                  "example": false
+                },
+                "error": {
+                  "type": "string",
+                  "example": "Something went wrong"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/audit": {
+      "get": {
+        "operationId": "get-audit",
+        "summary": "List admin audit entries",
+        "description": "Provides a second admin route-group example with explicit auth and edge-case query parsing.",
+        "tags": [
+          "Admin"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "actorId",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "Filter by actor"
+            },
+            "description": "Filter by actor"
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "exclusiveMinimum": true,
+              "description": "Maximum audit rows"
+            },
+            "description": "Maximum audit rows"
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AdminAuditEntry"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          }
+        }
+      }
+    },
+    "/users": {
+      "get": {
+        "operationId": "get-users",
+        "summary": "List all users (Admin only)",
+        "description": "Retrieves a paginated list of all users in the system",
+        "tags": [
+          "Admin"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "type": "number",
+              "description": "Page number"
+            },
+            "description": "Page number"
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "type": "number",
+              "description": "Items per page"
+            },
+            "description": "Items per page"
+          },
+          {
+            "in": "query",
+            "name": "role",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "admin",
+                "user"
+              ],
+              "description": "Filter by role"
+            },
+            "description": "Filter by role"
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "active",
+                "inactive",
+                "banned"
+              ],
+              "description": "Filter by status"
+            },
+            "description": "Filter by status"
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminUserListResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    },
+    "/auth": {
+      "post": {
+        "operationId": "post-auth",
+        "summary": "User login",
+        "description": "Authenticate user and return access token",
+        "tags": [
+          "Authentication"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    },
+    "/dashboard": {
+      "get": {
+        "operationId": "get-dashboard",
+        "summary": "Get user dashboard",
+        "description": "Retrieves the user's dashboard configuration",
+        "tags": [
+          "Dashboard"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      },
+      "put": {
+        "operationId": "put-dashboard",
+        "summary": "Update dashboard",
+        "description": "Updates the user's dashboard configuration",
+        "tags": [
+          "Dashboard"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DashboardResponse"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    },
+    "/profiles": {
+      "get": {
+        "operationId": "get-profiles",
+        "summary": "List public profiles",
+        "description": "Exercises nullable, nullish, and optional permutations from a public route group.",
+        "tags": [
+          "Profiles"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "includeHidden",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Include hidden profiles"
+            },
+            "description": "Include hidden profiles"
+          },
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "Search term"
+            },
+            "description": "Search term"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ProfileDraft"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      },
+      "post": {
+        "operationId": "post-profiles",
+        "summary": "Create a profile preview",
+        "description": "Mixes query and body metadata in the sandbox app to stress route parsing.",
+        "tags": [
+          "Profiles"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "includeHidden",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Include hidden profiles"
+            },
+            "description": "Include hidden profiles"
+          },
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "Search term"
+            },
+            "description": "Search term"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProfileDraft"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileDraft"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    },
+    "/settings": {
+      "get": {
+        "operationId": "get-settings",
+        "summary": "Get user settings",
+        "description": "Retrieves the user's personal settings",
+        "tags": [
+          "Settings"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserSettings"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      },
+      "patch": {
+        "operationId": "patch-settings",
+        "summary": "Update user settings",
+        "description": "Updates the user's personal settings",
+        "tags": [
+          "Settings"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserSettings"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserSettings"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    },
+    "/test-optional": {
+      "get": {
+        "operationId": "get-test-optional",
+        "summary": "This is a test user endpoint",
+        "description": "Test User Description",
+        "tags": [
+          "Test-optional"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    },
+    "/test-query-params": {
+      "get": {
+        "operationId": "get-test-query-params",
+        "summary": "Search endpoint with @queryParams tag",
+        "description": "Test endpoint to verify @queryParams works (to avoid prettier-plugin-jsdoc conflicts)",
+        "tags": [
+          "Test-query-params"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "q",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Search query"
+            },
+            "description": "Search query"
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "type": "number",
+              "description": "Page number"
+            },
+            "description": "Page number"
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "type": "number",
+              "description": "Items per page"
+            },
+            "description": "Items per page"
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "description": "Sort order"
+            },
+            "description": "Sort order"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    },
+    "/users/{id}": {
+      "get": {
+        "operationId": "get-users-{id}",
+        "summary": "Read the user profile",
+        "description": "Detailed user profile",
+        "tags": [
+          "Users"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "User ID"
+            },
+            "description": "User ID",
+            "example": "123"
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Test",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Users"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "delete-users-{id}",
+        "summary": "Delete user",
+        "description": "Delete a user by ID",
+        "tags": [
+          "Users"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "User ID"
+            },
+            "description": "User ID",
+            "example": "123"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "User deleted successfully"
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Admin"
+    },
+    {
+      "name": "Dashboard"
+    },
+    {
+      "name": "Settings"
+    },
+    {
+      "name": "Authentication"
+    },
+    {
+      "name": "Profiles"
+    },
+    {
+      "name": "Test-optional"
+    },
+    {
+      "name": "Test-query-params"
+    },
+    {
+      "name": "Users"
+    }
+  ]
+}

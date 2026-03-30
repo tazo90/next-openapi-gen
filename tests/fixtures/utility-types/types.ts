@@ -14,9 +14,7 @@ export type AwaitedNestedUser = Awaited<NestedUserPromise>;
 export type AwaitedRegularType = Awaited<User>;
 
 // Function declarations for ReturnType tests
-export async function getUserNameById(
-  id: number
-): Promise<{ name: string; firstName: string }> {
+export async function getUserNameById(id: number): Promise<{ name: string; firstName: string }> {
   return {
     name: "John Doe",
     firstName: "John",
@@ -47,10 +45,7 @@ export type EmailResponse = ReturnType<typeof getEmail>;
 export type AwaitedReturnType = Awaited<ReturnType<typeof getUserNameById>>;
 
 // Parameters tests
-export function createUserWithParams(
-  userData: { name: string },
-  options: { email: string }
-): User {
+export function createUserWithParams(userData: { name: string }, options: { email: string }): User {
   return { name: userData.name, email: options.email };
 }
 

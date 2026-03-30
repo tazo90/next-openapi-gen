@@ -1,116 +1,95 @@
 # next-openapi-gen
 
-Automatically generate OpenAPI 3.0 documentation from Next.js projects, with support for Zod schemas and TypeScript types.
+[![npm version](https://img.shields.io/npm/v/next-openapi-gen)](https://www.npmjs.com/package/next-openapi-gen)
+[![CI](https://github.com/tazo90/next-openapi-gen/actions/workflows/ci.yml/badge.svg)](https://github.com/tazo90/next-openapi-gen/actions/workflows/ci.yml)
+[![License](https://img.shields.io/github/license/tazo90/next-openapi-gen)](https://github.com/tazo90/next-openapi-gen)
 
-## Features
+Generate OpenAPI `3.0`, `3.1`, and `3.2` from the routes and schemas you already have.
 
-- ✅ Automatic OpenAPI 3.0 documentation generation from Next.js App Router and Pages Router 🆕
-- ✅ Multiple schema types: `TypeScript`, `Zod`, `Drizzle-Zod`, or `custom YAML/JSON` files
-- ✅ Mix schema sources simultaneously - perfect for gradual migrations
-- ✅ JSDoc comments with intelligent parameter examples
-- ✅ Multiple UI interfaces: `Scalar`, `Swagger`, `Redoc`, `Stoplight`, and `RapiDoc` available at `/api-docs` url
-- ✅ Auto-detection of path parameters (e.g., `/users/[id]/route.ts`)
-- ✅ Intuitive CLI for quick setup and generation
+`next-openapi-gen` scans Next.js, TanStack Router, and React Router route handlers, reads JSDoc metadata, and generates an OpenAPI spec plus an optional docs UI. It is built for real codebases that use Zod, TypeScript, drizzle-zod, or reusable OpenAPI fragments, including mixed-schema migrations.
 
-## Supported interfaces
+[Quick start](#quick-start) • [Docs index](./docs/README.md) • [Example apps](#example-apps) • [Validation and coverage](#validation-and-coverage)
 
-- Scalar 💡(default)
-- Swagger
-- Redoc
-- Stoplight Elements
-- RapiDoc
+## Why teams use it
 
-## Installation
+- Keep OpenAPI close to your handlers instead of maintaining a separate manual spec.
+- Reuse existing `zod`, `typescript`, `drizzle-zod`, and YAML/JSON OpenAPI fragments in one pipeline.
+- Target `3.0`, `3.1`, or `3.2` from the same route metadata with version-aware finalization.
+- Ship interactive docs quickly with built-in UI scaffolding for Scalar, Swagger, Redoc, Stoplight Elements, or RapiDoc.
+- Fall back on checker-assisted App Router response inference when explicit `@response` tags are missing.
+
+## Quick start
+
+### Requirements
+
+- Node.js `>=24`
+- A supported app framework:
+  - Next.js using App Router or Pages Router
+  - TanStack Router
+  - React Router
+
+### Install
 
 ```bash
-npm install next-openapi-gen --save-dev
+pnpm add -D next-openapi-gen
 ```
 
-## Quick Start
+```bash
+npm install --save-dev next-openapi-gen
+```
 
 ```bash
-# Initialize OpenAPI configuration
-npx next-openapi-gen init
+yarn add --dev next-openapi-gen
+```
 
-# Generate OpenAPI documentation
-npx next-openapi-gen generate
+### Initialize and generate
+
+```bash
+# Next.js is the default framework
+pnpm exec openapi-gen init
+
+# Or choose another supported framework
+pnpm exec openapi-gen init --framework tanstack
+pnpm exec openapi-gen init --framework react-router
+
+# Scans your routes and writes the spec once
+pnpm exec openapi-gen generate
+
+# Keeps the spec fresh during local development
+pnpm exec openapi-gen generate --watch
 ```
 
 > [!TIP]
-> Scalar UI and Zod are set by default
+> Use `--ui none` during `init` if you only want the generated OpenAPI file.
+>
+> The package name is still `next-openapi-gen` during the transition. Config
+> discovery also accepts the new `openapi-gen.config.ts` and
+> `openapi-gen.config.json` aliases, while `next-openapi.config.*` and
+> `next.openapi.json` continue to work with deprecation warnings. The legacy
+> `next-openapi-gen` binary still works too, but `openapi-gen` is the preferred
+> CLI name going forward.
 
+Need the full setup flow, config walkthrough, or production notes? See
+[docs/getting-started.md](./docs/getting-started.md).
 
-### Init Command Options
+### What you get
 
-| Option | Choices | Default | Description |
-|--------|---------|---------|-------------|
-| `--ui` | `scalar`, `swagger`, `redoc`, `stoplight`, `rapidoc`, `none` | `scalar` | UI framework for API docs |
-| `--schema` | `zod`, `typescript` | `zod` | Schema validation tool |
-| `--docs-url` | any string | `api-docs` | URL path for documentation page |
-| `--output` | any path | `next.openapi.json` | Output file for OpenAPI template |
+- `next.openapi.json` in your project root
+- `public/openapi.json` by default
+- `/api-docs` with your selected UI provider by default
 
-> [!TIP]
-> Use `--ui none` to skip UI setup and only generate the OpenAPI specification file.
+## Framework support
 
-## Configuration
+| Framework       | Setup path                                            | Notes                                                          |
+| --------------- | ----------------------------------------------------- | -------------------------------------------------------------- |
+| Next.js         | `pnpm exec openapi-gen init`                          | Supports App Router and Pages Router                           |
+| TanStack Router | `pnpm exec openapi-gen init --framework tanstack`     | Uses the public `next-openapi-gen/vite` plugin surface         |
+| React Router    | `pnpm exec openapi-gen init --framework react-router` | Uses the public `next-openapi-gen/react-router` plugin surface |
 
-During initialization (`npx next-openapi-gen init`), a configuration file `next.openapi.json` will be created in the project's root directory:
+## Minimal example
 
-```json
-{
-  "openapi": "3.0.0",
-  "info": {
-    "title": "Next.js API",
-    "version": "1.0.0",
-    "description": "API generated by next-openapi-gen"
-  },
-  "servers": [
-    {
-      "url": "http://localhost:3000",
-      "description": "Local server"
-    }
-  ],
-  "apiDir": "src/app/api", // or "pages/api" for Pages Router
-  "routerType": "app", // "app" (default) or "pages" for legacy Pages Router
-  "schemaDir": "src/types", // or ["src/types", "src/schemas"] for multiple directories
-  "schemaType": "zod", // or "typescript", or ["zod", "typescript"] for multiple
-  "schemaFiles": [], // Optional: ["./schemas/models.yaml", "./schemas/api.json"]
-  "outputFile": "openapi.json",
-  "outputDir": "./public",
-  "docsUrl": "/api-docs",
-  "includeOpenApiRoutes": false,
-  "ignoreRoutes": [],
-  "debug": false
-}
-```
-
-### Configuration Options
-
-| Option                 | Description                                                                   |
-| ---------------------- | ----------------------------------------------------------------------------- |
-| `apiDir`               | Path to the API directory                                                     |
-| `routerType`           | Router type: `"app"` (default) or `"pages"` for legacy Pages Router           |
-| `schemaDir`            | Path to types/schemas directory, or array of paths for multiple directories   |
-| `schemaType`           | Schema type: `"zod"`, `"typescript"`, or `["zod", "typescript"]` for multiple |
-| `schemaFiles`          | Optional: Array of custom OpenAPI schema files (YAML/JSON) to include         |
-| `outputFile`           | Name of the OpenAPI output file                                               |
-| `outputDir`            | Directory where OpenAPI file will be generated (default: `"./public"`)        |
-| `docsUrl`              | API documentation URL (for Swagger UI)                                        |
-| `includeOpenApiRoutes` | Whether to include only routes with @openapi tag                              |
-| `ignoreRoutes`         | Array of route patterns to exclude from documentation (supports wildcards)    |
-| `defaultResponseSet`   | Default error response set for all endpoints                                  |
-| `responseSets`         | Named sets of error response codes                                            |
-| `errorConfig`          | Error schema configuration                                                    |
-| `debug`                | Enable detailed logging during generation                                     |
-
-## Documenting Your API
-
-### With Zod Schemas
-
-```typescript
-// src/app/api/products/[id]/route.ts
-
-import { NextRequest, NextResponse } from "next/server";
+```ts
+import { NextRequest } from "next/server";
 import { z } from "zod";
 
 export const ProductParams = z.object({
@@ -118,836 +97,49 @@ export const ProductParams = z.object({
 });
 
 export const ProductResponse = z.object({
-  id: z.string().describe("Product ID"),
-  name: z.string().describe("Product name"),
-  price: z.number().positive().describe("Product price"),
+  id: z.string(),
+  name: z.string(),
+  price: z.number().positive(),
 });
 
 /**
  * Get product information
- * @description Fetches detailed product information by ID
+ * @description Fetch a product by ID
  * @pathParams ProductParams
  * @response ProductResponse
  * @openapi
  */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  // Implementation...
+export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+  return Response.json({ id: params.id, name: "Keyboard", price: 99 });
 }
 ```
 
-### With TypeScript Types
+## Why `next-openapi-gen` is different
 
-```typescript
-// src/app/api/users/[id]/route.ts
+| Capability                            | Why it matters                                                                                        |
+| ------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| Framework-aware route scanning        | Covers Next.js, TanStack Router, and React Router with one generator and shared docs story.           |
+| Mixed schema sources                  | Combine `zod`, `typescript`, `schemaFiles`, and drizzle-zod-backed schemas during gradual migrations. |
+| OpenAPI `3.0` / `3.1` / `3.2` targets | Keep one authoring flow while emitting version-aware output for newer spec features.                  |
+| Response inference                    | Infer typed App Router responses when `@response` is omitted, while still letting explicit tags win.  |
+| Docs UI scaffolding                   | Generate a docs page fast instead of stopping at a JSON file.                                         |
 
-import { NextRequest, NextResponse } from "next/server";
+## Common workflows
 
-type UserParams = {
-  id: string; // User ID
-};
+### Start with Zod or TypeScript
 
-type UserResponse = {
-  id: string; // User ID
-  name: string; // Full name
-  email: string; // Email address
-};
-
-/**
- * Get user information
- * @description Fetches detailed user information by ID
- * @pathParams UserParams
- * @response UserResponse
- * @openapi
- */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  // Implementation...
-}
-```
-
-### With Drizzle-Zod
-
-```typescript
-// src/db/schema.ts - Define your Drizzle table
-import { pgTable, serial, varchar, text } from "drizzle-orm/pg-core";
-
-export const posts = pgTable("posts", {
-  id: serial("id").primaryKey(),
-  title: varchar("title", { length: 255 }).notNull(),
-  content: text("content").notNull(),
-});
-
-// src/schemas/post.ts - Generate Zod schema with drizzle-zod
-import { createInsertSchema, createSelectSchema } from "drizzle-zod";
-import { posts } from "@/db/schema";
-
-export const CreatePostSchema = createInsertSchema(posts, {
-  title: (schema) => schema.title.min(5).max(255).describe("Post title"),
-  content: (schema) => schema.content.min(10).describe("Post content"),
-});
-
-export const PostResponseSchema = createSelectSchema(posts);
-
-// src/app/api/posts/route.ts - Use in your API route
-/**
- * Create a new post
- * @description Create a new blog post with Drizzle-Zod validation
- * @body CreatePostSchema
- * @response 201:PostResponseSchema
- * @openapi
- */
-export async function POST(request: NextRequest) {
-  const body = await request.json();
-  const validated = CreatePostSchema.parse(body);
-  // Implementation...
-}
-```
-
-## JSDoc Documentation Tags
-
-| Tag                    | Description                                                                                                                                          |
-|------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `@description`         | Endpoint description                                                                                                                                 |
-| `@operationId`         | Custom operation ID (overrides auto-generated ID)                                                                                                    |
-| `@pathParams`          | Path parameters type/schema                                                                                                                          |
-| `@params`              | Query parameters type/schema (use `@queryParams` if you have prettier-plugin-jsdoc conflicts)                                                        |
-| `@body`                | Request body type/schema                                                                                                                             |
-| `@bodyDescription`     | Request body description                                                                                                                             |
-| `@response`            | Response type/schema with optional code and description (`User`, `201:User`, `User:Description`, `201:User:Description`)                             |
-| `@responseDescription` | Response description                                                                                                                                 |
-| `@responseSet`         | Override default response set (`public`, `auth`, `none`)                                                                                             |
-| `@add`                 | Add custom response codes (`409:ConflictResponse`, `429`)                                                                                            |
-| `@contentType`         | Request body content type (`application/json`, `multipart/form-data`)                                                                                |
-| `@auth`                | Authorization type (e.g., `bearer`, `basic`, `apikey`, or a custom type) — supports multiple auths using comma separator (e.g., `bearer, CustomType`) |
-| `@tag`                 | Custom tag                                                                                                                                           |
-| `@deprecated`          | Marks the route as deprecated                                                                                                                        |
-| `@openapi`             | Marks the route for inclusion in documentation (if includeOpenApiRoutes is enabled)                                                                  |
-| `@ignore`              | Excludes the route from OpenAPI documentation                                                                                                        |
-| `@method`              | HTTP method for Pages Router (`GET`, `POST`, `PUT`, `PATCH`, `DELETE`) - required for Pages Router only                                              |
-
-## Pages Router Support 🆕
-
-The library now supports the legacy Next.js Pages Router. To use it:
-
-1. Set `routerType` to `"pages"` in your configuration
-2. Use the `@method` JSDoc tag to specify HTTP methods
-
-See **[next15-pages-router](./examples/next15-pages-router)** for a complete working example.
-
-## CLI Usage
-
-### 1. Initialization
-
-```bash
-npx next-openapi-gen init
-```
-
-This command will generate following elements:
-
-- Generate `next.openapi.json` configuration file
-- Set up `Scalar` UI for documentation display
-- Add `/api-docs` page to display OpenAPI documentation
-- Configure `zod` as the default schema tool
-
-### 2. Generate Documentation
-
-```bash
-npx next-openapi-gen generate
-```
-
-This command will generate OpenAPI documentation based on your API code:
-
-- Scan API directories for routes
-- Analyze types/schemas
-- Generate OpenAPI file (`openapi.json`) in specified output directory (default: `public` folder)
-- Create Scalar/Swagger UI endpoint and page (if enabled)
-
-### 3. View API Documentation
-
-To see API documenation go to `http://localhost:3000/api-docs`
-
-## Examples
-
-### Path Parameters
-
-```typescript
-// src/app/api/users/[id]/route.ts
-
-// Zod
-const UserParams = z.object({
-  id: z.string().describe("User ID"),
-});
-
-// Or TypeScript
-type UserParams = {
-  id: string; // User ID
-};
-
-/**
- * @pathParams UserParams
- */
-export async function GET() {
-  // ...
-}
-```
-
-### Query Parameters
-
-```typescript
-// src/app/api/users/route.ts
-
-// Zod
-const UsersQueryParams = z.object({
-  page: z.number().optional().describe("Page number"),
-  limit: z.number().optional().describe("Results per page"),
-  search: z.string().optional().describe("Search phrase"),
-});
-
-// Or TypeScript
-type UsersQueryParams = {
-  page?: number; // Page number
-  limit?: number; // Results per page
-  search?: string; // Search phrase
-};
-
-/**
- * @params UsersQueryParams
- */
-export async function GET() {
-  // ...
-}
-```
-
-### Request Body
-
-```typescript
-// src/app/api/users/route.ts
-
-// Zod
-const CreateUserBody = z.object({
-  name: z.string().describe("Full name"),
-  email: z.string().email().describe("Email address"),
-  password: z.string().min(8).describe("Password"),
-});
-
-// Or TypeScript
-type CreateUserBody = {
-  name: string; // Full name
-  email: string; // Email address
-  password: string; // Password
-};
-
-/**
- * @body CreateUserBody
- * @bodyDescription User registration data including email and password
- */
-export async function POST() {
-  // ...
-}
-```
-
-### Response
-
-```typescript
-// src/app/api/users/route.ts
-
-// Zod
-const UserResponse = z.object({
-  id: z.string().describe("User ID"),
-  name: z.string().describe("Full name"),
-  email: z.string().email().describe("Email address"),
-  createdAt: z.date().describe("Creation date"),
-});
-
-// Or TypeScript
-type UserResponse = {
-  id: string; // User ID
-  name: string; // Full name
-  email: string; // Email address
-  createdAt: Date; // Creation date
-};
-
-/**
- * @response UserResponse
- * @responseDescription Returns newly created user object
- */
-export async function GET() {
-  // ...
-}
-
-// Alternative formats with inline description
-/**
- * @response UserResponse:Returns user profile data
- */
-export async function GET() {
-  // ...
-}
-
-/**
- * @response 201:UserResponse:Returns newly created user
- */
-export async function POST() {
-  // ...
-}
-
-/**
- * @response 204:Empty:User successfully deleted
- */
-export async function DELETE() {
-  // ...
-}
-```
-
-### Authorization
-
-```typescript
-// src/app/api/protected/route.ts
-
-/**
- * @auth bearer
- */
-export async function GET() {
-  // ...
-}
-```
-
-### Deprecated
-
-```typescript
-// src/app/api/v1/route.ts
-
-// Zod
-const UserSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  fullName: z.string().optional().describe("@deprecated Use name instead"),
-  email: z.string().email(),
-});
-
-// Or TypeScript
-type UserResponse = {
-  id: string;
-  name: string;
-  /** @deprecated Use firstName and lastName instead */
-  fullName?: string;
-  email: string;
-};
-
-/**
- * @body UserSchema
- * @response UserResponse
- */
-export async function GET() {
-  // ...
-}
-```
-
-### Custom Operation ID
-
-```typescript
-// src/app/api/users/[id]/route.ts
-
-/**
- * Get user by ID
- * @operationId getUserById
- * @pathParams UserParams
- * @response UserResponse
- */
-export async function GET() {
-  // ...
-}
-// Generates: operationId: "getUserById" instead of auto-generated "get-users-{id}"
-```
-
-### File Uploads / Multipart Form Data
-
-```typescript
-// src/app/api/upload/route.ts
-
-// Zod
-const FileUploadSchema = z.object({
-  file: z.custom<File>().describe("Image file (PNG/JPG)"),
-  description: z.string().optional().describe("File description"),
-  category: z.string().describe("File category"),
-});
-
-// Or TypeScript
-type FileUploadFormData = {
-  file: File;
-  description?: string;
-  category: string;
-};
-
-/**
- * @body FileUploadSchema
- * @contentType multipart/form-data
- */
-export async function POST() {
-  // ...
-}
-```
-
-## Response Management
-
-### Zero Config + Response Sets
-
-Configure reusable error sets in `next.openapi.json`:
+Use one schema system if your app is already consistent:
 
 ```json
 {
-  "defaultResponseSet": "common",
-  "responseSets": {
-    "common": ["400", "401", "500"],
-    "public": ["400", "500"],
-    "auth": ["400", "401", "403", "500"]
-  }
+  "schemaType": "zod",
+  "schemaDir": "src/schemas"
 }
 ```
 
-### Usage Examples
+### Migrate gradually with mixed schema sources
 
-```typescript
-/**
- * Auto-default responses
- * @response UserResponse
- * @openapi
- */
-export async function GET() {}
-// Generates: 200:UserResponse + common errors (400, 401, 500)
-
-/**
- * With custom description inline
- * @response UserResponse:Complete user profile information
- * @openapi
- */
-export async function GET() {}
-// Generates: 200:UserResponse (with custom description) + common errors
-
-/**
- * Override response set
- * @response ProductResponse
- * @responseSet public
- * @openapi
- */
-export async function GET() {}
-// Generates: 200:ProductResponse + public errors (400, 500)
-
-/**
- * Add custom responses with description
- * @response 201:UserResponse:User created successfully
- * @add 409:ConflictResponse
- * @openapi
- */
-export async function POST() {}
-// Generates: 201:UserResponse (with custom description) + common errors + 409:ConflictResponse
-
-/**
- * Combine multiple sets
- * @response UserResponse
- * @responseSet auth,crud
- * @add 429:RateLimitResponse
- * @openapi
- */
-export async function PUT() {}
-// Combines: auth + crud errors + custom 429
-```
-
-### Error Schema Configuration
-
-#### Define consistent error schemas using templates:
-
-```json
-{
-  "defaultResponseSet": "common",
-  "responseSets": {
-    "common": ["400", "500"],
-    "auth": ["400", "401", "403", "500"],
-    "public": ["400", "500"]
-  },
-  "errorConfig": {
-    "template": {
-      "type": "object",
-      "properties": {
-        "error": {
-          "type": "string",
-          "example": "{{ERROR_MESSAGE}}"
-        },
-        "code": {
-          "type": "string",
-          "example": "{{ERROR_CODE}}"
-        }
-      }
-    },
-    "codes": {
-      "400": {
-        "description": "Bad Request",
-        "variables": {
-          "ERROR_MESSAGE": "Invalid request parameters",
-          "ERROR_CODE": "BAD_REQUEST"
-        }
-      },
-      "401": {
-        "description": "Unauthorized",
-        "variables": {
-          "ERROR_MESSAGE": "Authentication required",
-          "ERROR_CODE": "UNAUTHORIZED"
-        }
-      },
-      "403": {
-        "description": "Forbidden",
-        "variables": {
-          "ERROR_MESSAGE": "Access denied",
-          "ERROR_CODE": "FORBIDDEN"
-        }
-      },
-      "404": {
-        "description": "Not Found",
-        "variables": {
-          "ERROR_MESSAGE": "Resource not found",
-          "ERROR_CODE": "NOT_FOUND"
-        }
-      },
-      "500": {
-        "description": "Internal Server Error",
-        "variables": {
-          "ERROR_MESSAGE": "An unexpected error occurred",
-          "ERROR_CODE": "INTERNAL_ERROR"
-        }
-      }
-    }
-  }
-}
-```
-
-## Ignoring Routes
-
-You can exclude routes from OpenAPI documentation in two ways:
-
-### Using @ignore Tag
-
-Add the `@ignore` tag to any route you want to exclude:
-
-```typescript
-// src/app/api/internal/route.ts
-
-/**
- * Internal route - not for documentation
- * @ignore
- */
-export async function GET() {
-  // This route will not appear in OpenAPI documentation
-}
-```
-
-### Using ignoreRoutes Configuration
-
-Add patterns to your `next.openapi.json` configuration file to exclude multiple routes at once:
-
-```json
-{
-  "openapi": "3.0.0",
-  "info": {
-    "title": "Next.js API",
-    "version": "1.0.0"
-  },
-  "apiDir": "src/app/api",
-  "ignoreRoutes": ["/internal/*", "/debug", "/admin/test/*"]
-}
-```
-
-Pattern matching supports wildcards:
-
-- `/internal/*` - Ignores all routes under `/internal/`
-- `/debug` - Ignores only the `/debug` route
-- `/admin/*/temp` - Ignores routes like `/admin/users/temp`, `/admin/posts/temp`
-
-## Advanced Usage
-
-### Automatic Path Parameter Detection
-
-The library automatically detects path parameters and generates documentation for them:
-
-```typescript
-// src/app/api/users/[id]/posts/[postId]/route.ts
-
-// Will automatically detect 'id' and 'postId' parameters
-export async function GET() {
-  // ...
-}
-```
-
-If no type/schema is provided for path parameters, a default schema will be generated.
-
-### Intelligent Examples
-
-The library generates intelligent examples for parameters based on their name:
-
-| Parameter name | Example                                  |
-| -------------- | ---------------------------------------- |
-| `id`, `*Id`    | `"123"` or `123`                         |
-| `slug`         | `"example-slug"`                         |
-| `uuid`         | `"123e4567-e89b-12d3-a456-426614174000"` |
-| `email`        | `"user@example.com"`                     |
-| `name`         | `"example-name"`                         |
-| `date`         | `"2023-01-01"`                           |
-
-### TypeScript Generics Support
-
-The library supports TypeScript generic types and automatically resolves them during documentation generation:
-
-```typescript
-// src/app/api/llms/route.ts
-
-import { NextResponse } from "next/server";
-
-// Define generic response wrapper
-type MyApiSuccessResponseBody<T> = T & {
-  success: true;
-  httpCode: string;
-};
-
-// Define specific response data
-type LLMSResponse = {
-  llms: Array<{
-    id: string;
-    name: string;
-    provider: string;
-    isDefault: boolean;
-  }>;
-};
-
-/**
- * Get list of available LLMs
- * @description Get list of available LLMs with success wrapper
- * @response 200:MyApiSuccessResponseBody<LLMSResponse>
- * @openapi
- */
-export async function GET() {
-  return NextResponse.json({
-    success: true,
-    httpCode: "200",
-    llms: [
-      {
-        id: "gpt-5",
-        name: "GPT-5",
-        provider: "OpenAI",
-        isDefault: true,
-      },
-    ],
-  });
-}
-```
-
-### TypeScript Utility Types Support
-
-The library supports TypeScript utility types for extracting types from functions:
-
-```typescript
-// src/app/api/products/route.utils.ts
-export async function getProductById(id: string): Promise<{
-  product: Product;
-  fetchedAt: string;
-}> {
-  // Implementation...
-}
-
-export function createProduct(
-  data: { name: string; price: number },
-  options: { notify: boolean }
-): { success: boolean; productId: string } {
-  // Implementation...
-}
-
-// src/types/product-types.ts
-
-// Extract return type from async functions
-export type ProductResponse = Awaited<ReturnType<typeof getProductById>>;
-
-// Extract return type from sync functions
-export type CreateResult = ReturnType<typeof createProduct>;
-
-// Extract parameter types as tuple
-export type CreateProductParams = Parameters<typeof createProduct>;
-
-// Extract specific parameter using indexed access
-export type ProductData = Parameters<typeof createProduct>[0];
-export type ProductOptions = Parameters<typeof createProduct>[1];
-
-// Use with generic types
-interface ApiResponse<T> {
-  success: boolean;
-  data: T;
-}
-
-export type ProductApiResponse = ApiResponse<ProductResponse>;
-
-/**
- * @response ProductApiResponse
- * @openapi
- */
-export async function GET() {
-  // Fully typed response automatically documented
-}
-```
-
-**Supported utility types:**
-- `Awaited<T>` - Unwraps Promise types
-- `ReturnType<typeof func>` - Extracts function return type
-- `Parameters<typeof func>` - Extracts function parameters as tuple
-- `Parameters<typeof func>[N]` - Indexed access to specific parameter
-- Generic interfaces like `ApiResponse<T>` with type parameter substitution
-
-## Advanced Zod Features
-
-The library supports advanced Zod features such as:
-
-### Validation Chains
-
-```typescript
-// Zod validation chains are properly converted to OpenAPI schemas
-const EmailSchema = z
-  .string()
-  .email()
-  .min(5)
-  .max(100)
-  .describe("Email address");
-
-// Converts to OpenAPI with email format, minLength and maxLength
-```
-
-### Type Aliases with z.infer
-
-```typescript
-// You can use TypeScript with Zod types
-import { z } from "zod";
-
-const UserSchema = z.object({
-  id: z.string().uuid(),
-  name: z.string().min(2),
-});
-
-// Use z.infer to create a TypeScript type
-type User = z.infer<typeof UserSchema>;
-
-// The library will be able to recognize this schema by reference `UserSchema` or `User` type.
-```
-
-### Factory Functions (Schema Generators)
-
-The library automatically detects and expands Zod factory functions - any function that returns a Zod schema:
-
-```typescript
-// Define reusable schema factory
-export function createPaginatedSchema<T extends z.ZodTypeAny>(dataSchema: T) {
-  return z.object({
-    data: z.array(dataSchema).describe("Array of items"),
-    pagination: z.object({
-      nextCursor: z.string().nullable(),
-      hasMore: z.boolean(),
-      limit: z.number().int().positive(),
-    }),
-  });
-}
-
-// Use in your schemas - automatically expanded in OpenAPI
-export const PaginatedUsersSchema = createPaginatedSchema(UserSchema);
-export const PaginatedProductsSchema = createPaginatedSchema(ProductSchema);
-```
-
-Factory functions work with any naming convention and support:
-- Generic type parameters
-- Inline schemas as arguments
-- Imported schemas
-- Multiple factory patterns in the same project
-
-### Schema Composition with `.extend()`
-
-Zod's `.extend()` method allows you to build upon existing schemas:
-
-```typescript
-// src/schemas/user.ts
-
-// Base user schema
-export const BaseUserSchema = z.object({
-  id: z.string().uuid().describe("User ID"),
-  email: z.string().email().describe("Email address"),
-});
-
-// Extend with additional fields
-export const UserProfileSchema = BaseUserSchema.extend({
-  name: z.string().describe("Full name"),
-  bio: z.string().optional().describe("User biography"),
-});
-
-// Multiple levels of extension
-export const AdminUserSchema = UserProfileSchema.extend({
-  role: z.enum(["admin", "moderator"]).describe("Admin role"),
-  permissions: z.array(z.string()).describe("Permission list"),
-});
-
-export const UserIdParams = z.object({
-  id: z.string().uuid().describe("User ID"),
-});
-
-// src/app/api/users/[id]/route.ts
-
-/**
- * Get user profile
- * @pathParams UserIdParams
- * @response UserProfileSchema
- * @openapi
- */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  // Returns: { id, email, name, bio? }
-}
-```
-
-### Drizzle-Zod Support
-
-The library fully supports **drizzle-zod** for generating Zod schemas from Drizzle ORM table definitions. This provides a single source of truth for your database schema, validation, and API documentation.
-
-**Supported Functions:**
-
-- `createInsertSchema()` - Generate schema for inserts
-- `createSelectSchema()` - Generate schema for selects
-- `createUpdateSchema()` - Generate schema for updates
-
-**Features:**
-
-- ✅ Automatic field extraction from refinements
-- ✅ Validation method conversion (min, max, email, url, etc.)
-- ✅ Optional/nullable field detection
-- ✅ Intelligent type mapping based on field names
-- ✅ Full OpenAPI schema generation
-
-**Example:**
-
-```typescript
-import { createInsertSchema } from "drizzle-zod";
-import { posts } from "@/db/schema";
-
-export const CreatePostSchema = createInsertSchema(posts, {
-  title: (schema) => schema.title.min(5).max(255),
-  content: (schema) => schema.content.min(10),
-  published: (schema) => schema.published.optional(),
-});
-```
-
-See the [complete Drizzle-Zod example](./examples/next15-app-drizzle-zod) for a full working implementation with a blog API.
-
-## Multiple Schema Types Support 🆕
-
-Use **multiple schema types simultaneously** in a single project - perfect for gradual migrations, combining hand-written schemas with generated ones (protobuf, GraphQL), or using existing OpenAPI specs.
-
-### Configuration
+Use multiple schema types in the same project when you are moving from TypeScript to Zod or merging generated and hand-authored schemas:
 
 ```json
 {
@@ -957,90 +149,258 @@ Use **multiple schema types simultaneously** in a single project - perfect for g
 }
 ```
 
-### Schema Resolution Priority
+Resolution priority is:
 
-1. **Custom files** (highest) - from `schemaFiles` array
-2. **Zod schemas** (medium) - if `"zod"` in `schemaType`
-3. **TypeScript types** (fallback) - if `"typescript"` in `schemaType`
+1. `schemaFiles`
+2. `zod`
+3. `typescript`
 
-### Common Use Cases
+See [apps/next-app-mixed-schemas](./apps/next-app-mixed-schemas) for a full working example.
+For more adoption patterns, see
+[docs/workflows-and-integrations.md](./docs/workflows-and-integrations.md).
+
+### Generate docs from Drizzle schemas
+
+`next-openapi-gen` works well with `drizzle-zod`, so your database schema, validation, and API docs can share the same source of truth.
+
+```ts
+import { createInsertSchema, createSelectSchema } from "drizzle-zod";
+import { posts } from "@/db/schema";
+
+export const CreatePostSchema = createInsertSchema(posts, {
+  title: (schema) => schema.title.min(5).max(255),
+  content: (schema) => schema.content.min(10),
+});
+
+export const PostResponseSchema = createSelectSchema(posts);
+```
+
+See [apps/next-app-drizzle-zod](./apps/next-app-drizzle-zod) for the full CRUD example.
+
+### Rely on inference when you want less annotation
+
+If you omit `@response`, App Router handlers can infer responses from typed `NextResponse.json(...)` and `Response.json(...)` returns.
+
+```ts
+import { NextResponse } from "next/server";
+
+type SearchResponse = {
+  total: number;
+};
+
+/**
+ * Search events
+ * @responseDescription Search result
+ * @openapi
+ */
+export async function POST(): Promise<NextResponse<SearchResponse>> {
+  return NextResponse.json({ total: 3 });
+}
+```
+
+Explicit `@response` tags still take precedence when you want stable schema names or exact response codes.
+
+## Configuration
+
+`init` creates a `next.openapi.json` file like this:
 
 ```json
-// Gradual TypeScript → Zod migration
-{ "schemaType": ["zod", "typescript"] }
-
-// Zod + protobuf schemas
 {
-  "schemaType": ["zod"],
-  "schemaFiles": ["./proto/schemas.yaml"]
-}
-
-// Everything together
-{
-  "schemaType": ["zod", "typescript"],
-  "schemaFiles": ["./openapi-models.yaml"]
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Next.js API",
+    "version": "1.0.0",
+    "description": "API generated by next-openapi-gen"
+  },
+  "apiDir": "src/app/api",
+  "routerType": "app",
+  "schemaDir": "src/schemas",
+  "schemaType": "zod",
+  "schemaFiles": [],
+  "outputFile": "openapi.json",
+  "outputDir": "./public",
+  "docsUrl": "api-docs",
+  "includeOpenApiRoutes": false,
+  "ignoreRoutes": [],
+  "debug": false
 }
 ```
 
-Custom schema files support YAML/JSON in OpenAPI 3.0 format. See **[next15-app-mixed-schemas](./examples/next15-app-mixed-schemas)** for a complete working example.
+Version guidance:
 
-## Examples
+- Use `3.0.0` when you want the broadest downstream tooling compatibility.
+- Use `3.1.0` when you want JSON Schema 2020-12-aligned output such as `jsonSchemaDialect`.
+- Use `3.2.0` when you want first-class `querystring`, enhanced tag metadata, sequential media, and richer example objects.
 
-Explore complete demo projects in the **[examples](./examples/)** directory, covering integrations with Zod, TypeScript, Drizzle and documentation tools like Scalar and Swagger.
+### Important options
 
-### 🚀 Run an Example
+| Option                                | Purpose                                                          |
+| ------------------------------------- | ---------------------------------------------------------------- |
+| `openapi`                             | Target `3.0.0`, `3.1.0`, or `3.2.0` output                       |
+| `apiDir`                              | Route directory to scan                                          |
+| `routerType`                          | `"app"` or `"pages"`                                             |
+| `schemaDir`                           | Directory or directories to search for schemas/types             |
+| `schemaType`                          | `"zod"`, `"typescript"`, or both                                 |
+| `schemaFiles`                         | YAML/JSON OpenAPI fragments to merge into the generated document |
+| `includeOpenApiRoutes`                | Only include handlers tagged with `@openapi`                     |
+| `ignoreRoutes`                        | Exclude routes with wildcard support                             |
+| `defaultResponseSet` / `responseSets` | Reusable error-response groups                                   |
+| `errorConfig`                         | Shared error schema templates                                    |
+
+For a fuller setup guide, Pages Router notes, response sets, and route exclusion
+patterns, see [docs/getting-started.md](./docs/getting-started.md).
+
+## JSDoc tags you will use most
+
+| Tag                        | Purpose                                                          |
+| -------------------------- | ---------------------------------------------------------------- |
+| `@pathParams`              | Path parameter schema or type                                    |
+| `@params` / `@queryParams` | Query parameter schema or type                                   |
+| `@body`                    | Request body schema or type                                      |
+| `@response`                | Response schema, code, and optional description                  |
+| `@responseDescription`     | Response description without redefining the schema               |
+| `@auth`                    | Security requirement(s), including comma-separated alternatives  |
+| `@contentType`             | Request content type such as `multipart/form-data`               |
+| `@examples`                | Request, response, and querystring examples                      |
+| `@openapi`                 | Explicit inclusion marker when `includeOpenApiRoutes` is enabled |
+| `@ignore`                  | Exclude a route from generation                                  |
+| `@method`                  | Required HTTP method tag for Pages Router handlers               |
+
+For the complete tag guide and usage recipes, see
+[docs/jsdoc-reference.md](./docs/jsdoc-reference.md).
+
+OpenAPI `3.2`-specific tags such as `@querystring`, `@tagSummary`, `@tagKind`,
+and sequential media annotations are documented in the same guide and shown in
+[apps/next-app-zod](./apps/next-app-zod).
+
+## Compatibility
+
+| Area            | Support                                                      |
+| --------------- | ------------------------------------------------------------ |
+| Frameworks      | Next.js, TanStack Router, React Router                       |
+| Next.js routers | App Router and Pages Router                                  |
+| OpenAPI targets | `3.0`, `3.1`, `3.2`                                          |
+| Schema sources  | `zod`, `typescript`, drizzle-zod output, YAML/JSON fragments |
+| Docs UIs        | Scalar, Swagger, Redoc, Stoplight Elements, RapiDoc          |
+
+For Pages Router projects, set `routerType` to `"pages"` and annotate handlers with `@method`. See [apps/next-pages-router](./apps/next-pages-router).
+
+For the supported Zod 4 surface and known gaps, see
+[docs/zod4-support-matrix.md](./docs/zod4-support-matrix.md).
+
+## Framework integrations
+
+Use the integration that matches your framework:
+
+- `next-openapi-gen/next`: Next.js adapter helpers such as `createNextOpenApiAdapter`
+- `next-openapi-gen/vite`: Vite plugin surface used by the TanStack example app
+- `next-openapi-gen/react-router`: React Router plugin surface
+
+The main package export also exposes `generateProject`, `watchProject`, and
+config helpers when you want to script generation directly.
+
+## Example apps
+
+Use the checked-in examples to evaluate the tool in realistic setups:
+
+- [apps/next-app-zod](./apps/next-app-zod): Zod-first App Router example
+- [apps/next-app-next-config](./apps/next-app-next-config): typed config example targeting OpenAPI `3.1`
+- [apps/next-app-typescript](./apps/next-app-typescript): TypeScript-first example
+- [apps/next-app-mixed-schemas](./apps/next-app-mixed-schemas): mixed schema migration example
+- [apps/next-app-drizzle-zod](./apps/next-app-drizzle-zod): Drizzle + drizzle-zod CRUD example
+- [apps/next-app-sandbox](./apps/next-app-sandbox): edge-case route and exclusion playground
+- [apps/next-app-ts-config](./apps/next-app-ts-config): typed config loading example
+- [apps/next-app-adapter](./apps/next-app-adapter): Next adapter integration smoke example
+- [apps/next-pages-router](./apps/next-pages-router): legacy Pages Router support
+- [apps/tanstack-app](./apps/tanstack-app): TanStack Router framework parity example
+- [apps/react-router-app](./apps/react-router-app): React Router framework parity example
+- [apps/next-app-scalar](./apps/next-app-scalar), [apps/next-app-swagger](./apps/next-app-swagger): docs UI variants
+
+### Run an example
 
 ```bash
-cd examples/next15-app-zod
-npm install
-npx next-openapi-gen generate
-npm run dev
+pnpm install
+cd apps/next-app-zod
+pnpm exec openapi-gen generate
+pnpm dev
 ```
 
-Then open `http://localhost:3000/api-docs` to view the generated docs.
+Then open `http://localhost:3000/api-docs`.
+
+## Validation and coverage
+
+This repo is not just a demo. The CI pipeline covers:
+
+- formatting and linting
+- workspace builds
+- unit tests
+- integration tests
+- coverage reporting
+- Playwright E2E runs across an app matrix
+
+For the detailed version matrix and validation notes, see:
+
+- [docs/openapi-version-coverage.md](./docs/openapi-version-coverage.md)
+- [docs/zod4-support-matrix.md](./docs/zod4-support-matrix.md)
+
+The checked-in examples intentionally span different goals: most apps stay on
+`3.0` as the conservative default, `apps/next-app-next-config` demonstrates a
+typed `3.1` config, and `apps/next-app-zod` showcases richer `3.2` route and
+document features.
 
 ## Available UI providers
 
-<div align="center">
-<table>
-  <thead>
-   <th>Scalar</th>
-   <th>Swagger</th>
-   <th>Redoc</th>
-   <th>Stoplight Elements</th>
-   <th>RapiDoc</th>
-  </thead>
-  <tbody>
-   <tr>
-   <td>
-	<img width="320" alt="scalar" src="https://raw.githubusercontent.com/tazo90/next-openapi-gen/refs/heads/main/assets/scalar.png" alt-text="scalar">
-	</td>
-    <td>
-	<img width="320" alt="swagger" src="https://raw.githubusercontent.com/tazo90/next-openapi-gen/refs/heads/main/assets/swagger.png" alt-text="swagger">
-	</td>
-	<td>
-	<img width="320" alt="redoc" src="https://raw.githubusercontent.com/tazo90/next-openapi-gen/refs/heads/main/assets/redoc.png" alt-text="redoc">
-	</td>
-	<td>
-	<img width="320" alt="stoplight" src="https://raw.githubusercontent.com/tazo90/next-openapi-gen/refs/heads/main/assets/stoplight.png" alt-text="stoplight">
-	</td>
-	<td>
-	<img width="320" alt="rapidoc" src="https://raw.githubusercontent.com/tazo90/next-openapi-gen/refs/heads/main/assets/rapidoc.png" alt-text="rapidoc">
-	</td>
-   </tr>
-  </tbody>
-</table>
-</div>
+| Scalar                                                                                         | Swagger                                                                                          | Redoc                                                                                        | Stoplight Elements                                                                                            | RapiDoc                                                                                          |
+| ---------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| ![Scalar UI](https://raw.githubusercontent.com/tazo90/next-openapi-gen/main/assets/scalar.png) | ![Swagger UI](https://raw.githubusercontent.com/tazo90/next-openapi-gen/main/assets/swagger.png) | ![Redoc UI](https://raw.githubusercontent.com/tazo90/next-openapi-gen/main/assets/redoc.png) | ![Stoplight Elements UI](https://raw.githubusercontent.com/tazo90/next-openapi-gen/main/assets/stoplight.png) | ![RapiDoc UI](https://raw.githubusercontent.com/tazo90/next-openapi-gen/main/assets/rapidoc.png) |
+
+## Advanced docs
+
+Use these deeper references when you need more than the quick start:
+
+- [docs/README.md](./docs/README.md): docs index
+- [docs/getting-started.md](./docs/getting-started.md): setup, config, framework defaults, watch mode, and production notes
+- [docs/jsdoc-reference.md](./docs/jsdoc-reference.md): full route tag reference and examples
+- [docs/workflows-and-integrations.md](./docs/workflows-and-integrations.md): framework integrations, mixed schemas, drizzle-zod, and downstream workflows
+- [docs/faq.md](./docs/faq.md): troubleshooting and common questions
+- [docs/openapi-version-coverage.md](./docs/openapi-version-coverage.md): version-specific behavior, validation strategy, and generated vs preserved fields
+- [docs/zod4-support-matrix.md](./docs/zod4-support-matrix.md): tested Zod 4 coverage and known boundaries
+- [docs/example-app-coverage-plan.md](./docs/example-app-coverage-plan.md): example app roles, coverage goals, and expansion roadmap
+- [apps](./apps): complete runnable examples
+
+## CLI
+
+```bash
+pnpm exec openapi-gen init
+pnpm exec openapi-gen generate
+pnpm exec openapi-gen generate --watch
+```
+
+### `init` options
+
+| Option        | Choices                                                      | Default             |
+| ------------- | ------------------------------------------------------------ | ------------------- |
+| `--framework` | `next`, `tanstack`, `react-router`                           | `next`              |
+| `--ui`        | `scalar`, `swagger`, `redoc`, `stoplight`, `rapidoc`, `none` | `scalar`            |
+| `--schema`    | `zod`, `typescript`                                          | `zod`               |
+| `--docs-url`  | any string                                                   | `api-docs`          |
+| `--output`    | any path                                                     | `next.openapi.json` |
+
+### `generate` options
+
+| Option       | Purpose                                       |
+| ------------ | --------------------------------------------- |
+| `--config`   | Use a specific config file                    |
+| `--template` | Merge a specific OpenAPI template or fragment |
+| `--watch`    | Regenerate when routes or schema files change |
 
 ## Contributing
 
-We welcome contributions! 🎉
-
-Please read our [Contributing Guide](CONTRIBUTING.md) for details.
+Contributions are welcome. See [CONTRIBUTING.md](./CONTRIBUTING.md) for setup, commit conventions, and workflow details.
 
 ## Changelog
 
-See [CHANGELOG.md](CHANGELOG.md) for release history and changes.
+See [CHANGELOG.md](./CHANGELOG.md) for release history and recent changes.
 
 ## License
 

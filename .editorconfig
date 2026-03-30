@@ -1,0 +1,29 @@
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+indent_style = space
+indent_size = 2
+trim_trailing_whitespace = true
+
+[*.md]
+trim_trailing_whitespace = false
+
+[*.mdx]
+trim_trailing_whitespace = false
+
+[*.{json,jsonc,yml,yaml}]
+indent_style = space
+indent_size = 2
+
+[*.{sh,bash,zsh}]
+indent_style = space
+indent_size = 2
+
+[*.{js,jsx,ts,tsx,mjs,cjs,mts,cts}]
+max_line_length = 100
+
+[Makefile]
+indent_style = tab

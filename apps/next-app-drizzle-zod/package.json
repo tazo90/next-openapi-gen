@@ -1,0 +1,42 @@
+{
+  "name": "next-app-drizzle-zod",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "generate": "openapi-gen generate",
+    "start": "next start",
+    "lint": "oxlint --config ../../packages/oxlint-config/base.json . --ignore-path ../../.gitignore --deny-warnings",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:studio": "drizzle-kit studio",
+    "openapi:generate": "pnpm generate",
+    "format": "oxfmt --config ../../packages/oxfmt-config/oxfmt.json --ignore-path ../../.gitignore .",
+    "format:check": "oxfmt --config ../../packages/oxfmt-config/oxfmt.json --ignore-path ../../.gitignore --check .",
+    "check": "pnpm format:check && pnpm lint"
+  },
+  "dependencies": {
+    "@scalar/api-reference-react": "catalog:",
+    "drizzle-orm": "catalog:",
+    "drizzle-zod": "catalog:",
+    "next": "catalog:nextjs",
+    "postgres": "catalog:",
+    "react": "catalog:nextjs",
+    "react-dom": "catalog:nextjs",
+    "zod": "catalog:zod3"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "catalog:",
+    "@types/node": "catalog:",
+    "@types/react": "catalog:nextjs",
+    "@types/react-dom": "catalog:nextjs",
+    "@workspace/next-config": "workspace:*",
+    "autoprefixer": "catalog:",
+    "drizzle-kit": "catalog:",
+    "next-openapi-gen": "workspace:*",
+    "postcss": "catalog:",
+    "tailwindcss": "catalog:",
+    "typescript": "catalog:"
+  }
+}

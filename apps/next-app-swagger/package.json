@@ -1,0 +1,30 @@
+{
+  "name": "next-app-swagger",
+  "version": "0.1.1",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "generate": "openapi-gen generate",
+    "start": "next start",
+    "lint": "oxlint --config ../../packages/oxlint-config/base.json . --ignore-path ../../.gitignore --deny-warnings",
+    "format": "oxfmt --config ../../packages/oxfmt-config/oxfmt.json --ignore-path ../../.gitignore .",
+    "format:check": "oxfmt --config ../../packages/oxfmt-config/oxfmt.json --ignore-path ../../.gitignore --check .",
+    "check": "pnpm format:check && pnpm lint"
+  },
+  "dependencies": {
+    "next": "catalog:nextjs",
+    "react": "catalog:nextjs",
+    "react-dom": "catalog:nextjs",
+    "swagger-ui-react": "catalog:"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "@types/react": "catalog:nextjs",
+    "@types/react-dom": "catalog:nextjs",
+    "@types/swagger-ui-react": "catalog:",
+    "@workspace/next-config": "workspace:*",
+    "next-openapi-gen": "workspace:*",
+    "typescript": "catalog:"
+  }
+}

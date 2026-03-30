@@ -1,0 +1,13 @@
+{
+  "extends": "../typescript-config/base.json",
+  "compilerOptions": {
+    "incremental": false,
+    "lib": ["ES2024"],
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "newLine": "lf",
+    "types": ["node"]
+  },
+  "include": ["src"],
+  "exclude": ["dist", "build", "node_modules", "tests", "**/*.test.ts", "**/*.spec.ts"]
+}

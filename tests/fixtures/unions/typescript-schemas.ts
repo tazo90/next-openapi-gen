@@ -74,10 +74,7 @@ export interface PushNotification {
   body: string; // Notification body
 }
 
-export type Notification =
-  | EmailNotification
-  | SmsNotification
-  | PushNotification;
+export type Notification = EmailNotification | SmsNotification | PushNotification;
 
 // ========================================
 // 5. Mixed Unions (literal + reference types)
@@ -157,7 +154,4 @@ export interface BankTransferPayment {
   routingNumber: string; // Bank routing number
 }
 
-export type PaymentMethod =
-  | CreditCardPayment
-  | PayPalPayment
-  | BankTransferPayment;
+export type PaymentMethod = CreditCardPayment | PayPalPayment | BankTransferPayment;

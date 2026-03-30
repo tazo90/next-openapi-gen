@@ -1,0 +1,158 @@
+# Schemas generated from protobuf definitions
+components:
+  schemas:
+    Role:
+      type: object
+      description: User role definition from protobuf
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Role unique identifier
+        name:
+          type: string
+          description: Role name
+          enum: [admin, user, moderator, guest]
+        permissions:
+          type: array
+          description: List of permissions
+          items:
+            type: string
+        createdAt:
+          type: string
+          format: date-time
+          description: Role creation timestamp
+      required:
+        - id
+        - name
+        - permissions
+
+    Permission:
+      type: object
+      description: Permission definition from protobuf
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          description: Permission name
+        resource:
+          type: string
+          description: Resource this permission applies to
+        action:
+          type: string
+          description: Action allowed by this permission
+          enum: [read, write, delete, admin]
+      required:
+        - id
+        - name
+        - resource
+        - action
+
+    ApiMetadata:
+      type: object
+      description: API metadata from external source
+      properties:
+        version:
+          type: string
+          example: "1.0.0"
+        environment:
+          type: string
+          enum: [development, staging, production]
+        region:
+          type: string
+          example: "us-east-1"
+
+    WebhookEnvelope:
+      oneOf:
+        - $ref: "#/components/schemas/WebhookCreated"
+        - $ref: "#/components/schemas/WebhookDelivery"
+      discriminator:
+        propertyName: kind
+        mapping:
+          created: "#/components/schemas/WebhookCreated"
+          delivered: "#/components/schemas/WebhookDelivery"
+        defaultMapping: "#/components/schemas/WebhookDelivery"
+
+    WebhookCreated:
+      type: object
+      properties:
+        kind:
+          type: string
+          enum: [created]
+        endpointId:
+          type: string
+        deliveryUrl:
+          type: string
+          format: uri
+      required:
+        - kind
+        - endpointId
+        - deliveryUrl
+
+    WebhookDelivery:
+      type: object
+      properties:
+        kind:
+          type: string
+          enum: [delivered]
+        eventId:
+          type: string
+        status:
+          type: string
+          enum: [delivered, failed]
+      required:
+        - kind
+        - eventId
+        - status
+
+  examples:
+    webhookStructured:
+      summary: Structured webhook payload
+      dataValue:
+        kind: delivered
+        eventId: evt_123
+        status: delivered
+    webhookSerialized:
+      summary: Serialized webhook payload
+      serializedValue: '{"kind":"delivered","eventId":"evt_123","status":"delivered"}'
+    webhookExternal:
+      summary: External webhook example
+      externalValue: https://example.com/examples/webhook-delivery.json
+
+  links:
+    WebhookDeliveryEvent:
+      operationId: getWebhookDeliveryAttempts
+      parameters:
+        eventId: $response.body#/latestEventId
+      description: Follow the latest delivered event
+
+  callbacks:
+    WebhookDelivery:
+      "{$request.body#/deliveryUrl}":
+        post:
+          requestBody:
+            required: true
+            content:
+              application/json:
+                schema:
+                  $ref: "#/components/schemas/WebhookEnvelope"
+          responses:
+            "202":
+              description: Delivery accepted
+
+pathItems:
+  /integrations/webhooks/{eventId}/attempts:
+    get:
+      operationId: getWebhookDeliveryAttempts
+      summary: Inspect delivery attempts
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Delivery attempts for a webhook event

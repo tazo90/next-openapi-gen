@@ -1,0 +1,17 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Mixed Schemas Fixture",
+    "version": "1.0.0",
+    "description": "Fixture for mixed schema backend integration tests"
+  },
+  "apiDir": "./src/app/api",
+  "schemaDir": ["./src/schemas", "./src/types"],
+  "schemaType": ["zod", "typescript"],
+  "docsUrl": "api-docs",
+  "ui": "scalar",
+  "outputDir": "./public",
+  "outputFile": "openapi.json",
+  "includeOpenApiRoutes": true,
+  "debug": false
+}

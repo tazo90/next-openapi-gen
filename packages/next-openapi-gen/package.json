@@ -1,0 +1,108 @@
+{
+  "name": "next-openapi-gen",
+  "version": "0.10.5",
+  "description": "Automatically generate OpenAPI 3.0, 3.1, and 3.2 documentation from Next.js projects, with support for Zod schemas, TypeScript types, and reusable OpenAPI fragments.",
+  "keywords": [
+    "api",
+    "api-docs",
+    "docs",
+    "drizzle",
+    "nextjs",
+    "openapi",
+    "react",
+    "redoc",
+    "scalar",
+    "swagger",
+    "typescript",
+    "zod"
+  ],
+  "license": "MIT",
+  "author": "Mariusz Winnik",
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/tazo90/next-openapi-gen.git"
+  },
+  "bin": {
+    "next-openapi-gen": "./dist/cli.js",
+    "openapi-gen": "./dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "templates"
+  ],
+  "type": "module",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "typings": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./next": {
+      "types": "./dist/next/index.d.ts",
+      "default": "./dist/next/index.js"
+    },
+    "./react-router": {
+      "types": "./dist/react-router/index.d.ts",
+      "default": "./dist/react-router/index.js"
+    },
+    "./vite": {
+      "types": "./dist/vite/index.d.ts",
+      "default": "./dist/vite/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "check": "pnpm format:check && pnpm lint",
+    "clean": "rm -rf dist coverage templates tsconfig.tsbuildinfo",
+    "build": "pnpm clean && tsup --config tsup.config.ts && cp -R ../openapi-init/templates ./templates",
+    "format": "oxfmt --config ../oxfmt-config/oxfmt.json --ignore-path ../../.gitignore .",
+    "format:check": "oxfmt --config ../oxfmt-config/oxfmt.json --ignore-path ../../.gitignore --check .",
+    "lint": "oxlint --config ../oxlint-config/base.json . --ignore-path ../../.gitignore --deny-warnings",
+    "lint:fix": "oxlint --config ../oxlint-config/base.json . --ignore-path ../../.gitignore --fix --deny-warnings",
+    "test": "pnpm --dir ../.. test:unit && pnpm --dir ../.. test:integration",
+    "test:coverage": "pnpm --dir ../.. test:coverage:next-openapi-gen",
+    "release": "np --no-cleanup --no-tests",
+    "version": "conventional-changelog -p angular -i ../../CHANGELOG.md -s -n ../../.changelogrc.cjs && git add ../../CHANGELOG.md"
+  },
+  "dependencies": {
+    "@babel/parser": "catalog:",
+    "@babel/traverse": "catalog:",
+    "@babel/types": "catalog:",
+    "commander": "catalog:",
+    "fs-extra": "catalog:",
+    "js-yaml": "catalog:",
+    "ora": "catalog:",
+    "typescript": "catalog:"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "@workspace/openapi-cli": "workspace:*",
+    "@workspace/openapi-core": "workspace:*",
+    "@workspace/openapi-framework-next": "workspace:*",
+    "@workspace/openapi-framework-react-router": "workspace:*",
+    "@workspace/openapi-framework-tanstack": "workspace:*",
+    "conventional-changelog-cli": "catalog:",
+    "np": "catalog:",
+    "oxfmt": "catalog:",
+    "oxlint": "catalog:",
+    "tsup": "catalog:"
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "packageManager": "pnpm@10.27.0",
+  "np": {
+    "packageManager": "pnpm",
+    "anyBranch": false,
+    "branch": "main",
+    "cleanup": false,
+    "tests": false,
+    "2fa": false,
+    "releaseDraft": false
+  }
+}

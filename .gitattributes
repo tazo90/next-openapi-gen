@@ -1,0 +1,18 @@
+* text=auto eol=lf
+
+# Mark lockfiles as generated in GitHub language stats.
+package-lock.json linguist-generated=true
+pnpm-lock.yaml linguist-generated=true
+
+# Keep common binary assets untouched by line-ending normalization.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.pdf binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.otf binary

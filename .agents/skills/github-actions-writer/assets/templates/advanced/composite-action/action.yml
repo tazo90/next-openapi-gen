@@ -1,0 +1,301 @@
+# Composite Action Template
+# Composite actions bundle multiple steps into a reusable action
+# This example shows a Node.js setup action with caching and dependency installation
+
+name: 'Setup Node.js with Caching'
+description: 'Sets up Node.js environment with intelligent caching and dependency installation'
+author: 'Your Organization'
+
+# Branding for GitHub Marketplace (optional)
+branding:
+  icon: 'package'
+  color: 'green'
+
+# Define inputs for the action
+inputs:
+  node-version:
+    description: 'Node.js version to install'
+    required: false
+    default: '20'
+
+  cache:
+    description: 'Enable dependency caching (npm, yarn, pnpm)'
+    required: false
+    default: 'npm'
+
+  install-dependencies:
+    description: 'Automatically install dependencies'
+    required: false
+    default: 'true'
+
+  working-directory:
+    description: 'Working directory for installation'
+    required: false
+    default: '.'
+
+  registry-url:
+    description: 'NPM registry URL'
+    required: false
+    default: ''
+
+  scope:
+    description: 'Scope for scoped packages'
+    required: false
+    default: ''
+
+  token:
+    description: 'Authentication token for private packages'
+    required: false
+    default: ''
+
+  frozen-lockfile:
+    description: 'Use frozen lockfile (npm ci, yarn install --frozen-lockfile)'
+    required: false
+    default: 'true'
+
+# Define outputs from the action
+outputs:
+  cache-hit:
+    description: 'Whether the cache was hit'
+    value: ${{ steps.cache.outputs.cache-hit }}
+
+  node-version:
+    description: 'The actual Node.js version installed'
+    value: ${{ steps.setup-node.outputs.node-version }}
+
+  install-time:
+    description: 'Time taken to install dependencies (seconds)'
+    value: ${{ steps.install.outputs.time }}
+
+# Composite actions use 'composite' runner
+runs:
+  using: "composite"
+  steps:
+    # Step 1: Setup Node.js
+    - name: Setup Node.js ${{ inputs.node-version }}
+      id: setup-node
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
+        cache: ${{ inputs.cache != 'false' && inputs.cache || '' }}
+        cache-dependency-path: ${{ inputs.working-directory }}/package-lock.json
+        registry-url: ${{ inputs.registry-url }}
+        scope: ${{ inputs.scope }}
+
+    # Step 2: Cache node_modules for faster installs
+    - name: Cache node_modules
+      id: cache
+      if: inputs.cache != 'false'
+      uses: actions/cache@v4
+      with:
+        path: |
+          ${{ inputs.working-directory }}/node_modules
+          ~/.npm
+        key: ${{ runner.os }}-node-${{ inputs.node-version }}-${{ hashFiles(format('{0}/package-lock.json', inputs.working-directory)) }}
+        restore-keys: |
+          ${{ runner.os }}-node-${{ inputs.node-version }}-
+          ${{ runner.os }}-node-
+
+    # Step 3: Display cache status
+    - name: Display cache status
+      shell: bash
+      run: |
+        if [ "${{ steps.cache.outputs.cache-hit }}" = "true" ]; then
+          echo "✅ Cache hit! Skipping installation if dependencies exist."
+        else
+          echo "❌ Cache miss. Dependencies will be installed."
+        fi
+
+    # Step 4: Install dependencies
+    - name: Install dependencies
+      id: install
+      if: inputs.install-dependencies == 'true'
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        NODE_AUTH_TOKEN: ${{ inputs.token }}
+      run: |
+        START_TIME=$(date +%s)
+
+        # Detect package manager
+        if [ -f "pnpm-lock.yaml" ]; then
+          echo "📦 Detected pnpm"
+          npm install -g pnpm
+          if [ "${{ inputs.frozen-lockfile }}" = "true" ]; then
+            pnpm install --frozen-lockfile
+          else
+            pnpm install
+          fi
+        elif [ -f "yarn.lock" ]; then
+          echo "📦 Detected yarn"
+          if [ "${{ inputs.frozen-lockfile }}" = "true" ]; then
+            yarn install --frozen-lockfile
+          else
+            yarn install
+          fi
+        elif [ -f "package-lock.json" ]; then
+          echo "📦 Detected npm"
+          if [ "${{ inputs.frozen-lockfile }}" = "true" ]; then
+            npm ci
+          else
+            npm install
+          fi
+        else
+          echo "⚠️  No lockfile found, using npm install"
+          npm install
+        fi
+
+        END_TIME=$(date +%s)
+        INSTALL_TIME=$((END_TIME - START_TIME))
+        echo "time=$INSTALL_TIME" >> $GITHUB_OUTPUT
+        echo "✅ Dependencies installed in ${INSTALL_TIME}s"
+
+    # Step 5: Display installed versions
+    - name: Display versions
+      shell: bash
+      run: |
+        echo "📊 Environment Information:"
+        echo "Node version: $(node --version)"
+        echo "NPM version: $(npm --version)"
+        if command -v yarn &> /dev/null; then
+          echo "Yarn version: $(yarn --version)"
+        fi
+        if command -v pnpm &> /dev/null; then
+          echo "pnpm version: $(pnpm --version)"
+        fi
+
+    # Step 6: Audit dependencies for security (optional)
+    - name: Audit dependencies
+      if: inputs.install-dependencies == 'true'
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      continue-on-error: true
+      run: |
+        echo "🔒 Running security audit..."
+        if [ -f "pnpm-lock.yaml" ]; then
+          pnpm audit --audit-level moderate || echo "⚠️  Audit found vulnerabilities"
+        elif [ -f "yarn.lock" ]; then
+          yarn audit --level moderate || echo "⚠️  Audit found vulnerabilities"
+        else
+          npm audit --audit-level=moderate || echo "⚠️  Audit found vulnerabilities"
+        fi
+
+---
+
+# Example usage in a workflow:
+
+# name: CI
+#
+# on: [push, pull_request]
+#
+# jobs:
+#   test:
+#     runs-on: ubuntu-latest
+#     steps:
+#       - uses: actions/checkout@v4
+#
+#       # Use the composite action
+#       - name: Setup Node.js with deps
+#         uses: ./.github/actions/setup-node  # Local action
+#         # OR for published action:
+#         # uses: your-org/setup-node-action@v1
+#         with:
+#           node-version: '20'
+#           cache: 'npm'
+#           install-dependencies: true
+#           frozen-lockfile: true
+#
+#       - name: Run tests
+#         run: npm test
+#
+#       - name: Build
+#         run: npm run build
+
+---
+
+# Alternative example: AWS Deployment Composite Action
+#
+# name: 'Deploy to AWS'
+# description: 'Composite action for AWS deployment with OIDC'
+#
+# inputs:
+#   aws-region:
+#     required: true
+#   role-arn:
+#     required: true
+#   ecr-repository:
+#     required: true
+#   ecs-cluster:
+#     required: true
+#   ecs-service:
+#     required: true
+#
+# outputs:
+#   image-tag:
+#     value: ${{ steps.meta.outputs.tags }}
+#
+# runs:
+#   using: "composite"
+#   steps:
+#     - name: Configure AWS credentials
+#       uses: aws-actions/configure-aws-credentials@v4
+#       with:
+#         role-to-assume: ${{ inputs.role-arn }}
+#         aws-region: ${{ inputs.aws-region }}
+#
+#     - name: Login to ECR
+#       uses: aws-actions/amazon-ecr-login@v2
+#
+#     - name: Build and push image
+#       uses: docker/build-push-action@v5
+#       with:
+#         push: true
+#         tags: ${{ steps.meta.outputs.tags }}
+#
+#     - name: Deploy to ECS
+#       uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+#       with:
+#         cluster: ${{ inputs.ecs-cluster }}
+#         service: ${{ inputs.ecs-service }}
+
+# Configuration notes:
+#
+# Composite action location:
+# - Local: .github/actions/action-name/action.yml
+# - Repository: your-org/repo/.github/actions/action-name/action.yml
+# - Published: your-org/action-name (separate repository)
+#
+# Benefits of composite actions:
+# 1. Reusable across workflows and repositories
+# 2. Encapsulate complex logic
+# 3. Maintain consistency
+# 4. Can include multiple steps and actions
+# 5. Support inputs and outputs
+#
+# Limitations:
+# - Can only use shell scripts or other actions
+# - No job-level features (containers, services, strategy)
+# - Cannot use secrets directly (pass as inputs)
+# - Uses caller's runner (cannot specify runs-on)
+#
+# Best practices:
+# 1. Provide sensible defaults for all inputs
+# 2. Include comprehensive error handling
+# 3. Use descriptive step names
+# 4. Document inputs/outputs clearly
+# 5. Add branding for marketplace visibility
+# 6. Include usage examples in README
+# 7. Version your actions (use tags/releases)
+# 8. Test thoroughly before publishing
+#
+# Publishing to GitHub Marketplace:
+# 1. Create separate repository for action
+# 2. Add action.yml in root directory
+# 3. Add comprehensive README.md
+# 4. Create a release with semantic version tag
+# 5. Check "Publish this action to GitHub Marketplace"
+#
+# For organization-wide actions:
+# - Store in .github repository
+# - Create actions/ directory
+# - Reference as: org-name/.github/.github/actions/action-name@main

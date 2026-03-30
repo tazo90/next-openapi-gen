@@ -1,0 +1,15 @@
+{
+  "$schema": "../../node_modules/oxlint/configuration_schema.json",
+  "overrides": [
+    {
+      "files": ["**/*.{test,spec}.{ts,tsx,js,jsx}", "**/__tests__/**/*.{ts,tsx,js,jsx}"],
+      "plugins": ["vitest"]
+    },
+    {
+      "files": ["**/tests/fixtures/**/*.{ts,tsx,js,jsx}", "**/fixtures/**/*.{ts,tsx,js,jsx}"],
+      "rules": {
+        "no-unused-vars": "off"
+      }
+    }
+  ]
+}

@@ -1,4 +1,45 @@
-**/node_modules
-**/dist
+node_modules/
+dist/
 .npmrc
+
+# Package manager logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Local environment files
+.env
+.env.*
+.env*.local
+!.env.example
+!.env*.example
+
+# Testing
+coverage/
+.nyc_output/
+playwright-report/
+test-results/
+blob-report/
+
+# Caches
+.turbo/
+.cache/
+.pnpm-store/
+.cursor/hooks/state/
+.next-openapi/
+.openapi-gen/
+
+# Vercel
+.vercel/
+
+# Build outputs
+.next/
+out/
+build/
+*.tsbuildinfo
+
+# Misc
+.DS_Store
+*.pem
 

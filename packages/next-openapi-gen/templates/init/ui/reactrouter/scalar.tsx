@@ -1,0 +1,14 @@
+import { ApiReferenceReact } from "@scalar/api-reference-react";
+
+import "@scalar/api-reference-react/style.css";
+
+export default function ApiDocsPage() {
+  return (
+    <ApiReferenceReact
+      configuration={{
+        _integration: "react",
+        url: "/__NEXT_OPENAPI_GEN_OUTPUT_FILE__",
+      }}
+    />
+  );
+}
