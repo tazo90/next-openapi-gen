@@ -23,6 +23,7 @@ catalog:
   ajv: ^8.18.0
   autoprefixer: ^10.4.27
   commander: ^14.0.3
+  cross-env: ^7.0.3
   conventional-changelog-cli: ^5.0.0
   drizzle-kit: ^0.31.10
   drizzle-orm: ^0.45.1

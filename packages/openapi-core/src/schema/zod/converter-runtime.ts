@@ -45,11 +45,13 @@ export function resolveImportPath(
   fileAccess: Pick<typeof import("fs"), "existsSync">,
 ): string | null {
   if (importSource.startsWith(".")) {
-    const currentDir = path.dirname(currentFilePath);
-    const resolvedPath = path.resolve(currentDir, importSource);
+    // Use posix path operations for virtual/POSIX-style absolute paths (e.g. /virtual/...)
+    const pathOps = currentFilePath.startsWith("/") ? path.posix : path;
+    const currentDir = pathOps.dirname(currentFilePath);
+    const resolvedPath = pathOps.resolve(currentDir, importSource);
     const extensions = [".ts", ".tsx", ".js", ".jsx"];
 
-    if (!path.extname(resolvedPath)) {
+    if (!pathOps.extname(resolvedPath)) {
       for (const ext of extensions) {
         const withExt = resolvedPath + ext;
         if (fileAccess.existsSync(withExt)) {
@@ -58,7 +60,7 @@ export function resolveImportPath(
       }
 
       for (const ext of extensions) {
-        const indexPath = path.join(resolvedPath, `index${ext}`);
+        const indexPath = pathOps.join(resolvedPath, `index${ext}`);
         if (fileAccess.existsSync(indexPath)) {
           return indexPath;
         }

@@ -1,4 +1,5 @@
 import fs from "node:fs";
+import path from "node:path";
 
 import { describe, expect, it } from "vitest";
 
@@ -135,13 +136,13 @@ describe("UI registry helpers", () => {
 
   it("resolves framework-specific template paths", () => {
     expect(getDocsPageTemplatePath("next", "scalar")).toContain(
-      "/templates/init/ui/nextjs/scalar.tsx",
+      path.join("templates", "init", "ui", "nextjs", "scalar.tsx"),
     );
     expect(getDocsPageTemplatePath("tanstack", "scalar")).toContain(
-      "/templates/init/ui/tanstack/scalar.tsx",
+      path.join("templates", "init", "ui", "tanstack", "scalar.tsx"),
     );
     expect(getDocsPageTemplatePath("react-router", "scalar")).toContain(
-      "/templates/init/ui/reactrouter/scalar.tsx",
+      path.join("templates", "init", "ui", "reactrouter", "scalar.tsx"),
     );
   });
 

@@ -7,11 +7,14 @@ const baseURL = `http://localhost:${app.port}`;
 const readyURL = `${baseURL}${app.docsPath}`;
 
 function createAssertOpenApiFileCommand() {
-  return `node -e 'if (!require("node:fs").existsSync(${JSON.stringify(app.openApiFile)})) { throw new Error(${JSON.stringify(`Expected generated OpenAPI file at ${app.openApiFile}.`)}); }'`;
+  const file = app.openApiFile.replace(/\\/g, "/");
+  return `node -e "if (!require('node:fs').existsSync('${file}')) { throw new Error('Expected generated OpenAPI file at ${file}.'); }"`;
 }
 
 function createWebServerCommand() {
-  const deleteOpenApiFileCommand = `node -e 'require("node:fs").rmSync(${JSON.stringify(app.openApiFile)}, { force: true });'`;
+  const file = app.openApiFile.replace(/\\/g, "/");
+  const deleteOpenApiFileCommand = `node -e "require('node:fs').rmSync('${file}', { force: true });"`;
+
   const commands = [deleteOpenApiFileCommand];
 
   if (app.generateCommand) {

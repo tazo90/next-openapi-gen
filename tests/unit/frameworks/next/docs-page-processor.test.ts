@@ -27,7 +27,7 @@ describe("createNextDocsPage", () => {
 
     const pagePath = await createNextDocsPage("developer/reference", "scalar", "openapi.json");
 
-    expect(pagePath).toBe("src/app/developer/reference/page.tsx");
+    expect(pagePath).toBe(path.join("src", "app", "developer", "reference", "page.tsx"));
     expect(fs.existsSync(path.join(root, "src", "app", "developer", "reference", "page.tsx"))).toBe(
       true,
     );
@@ -40,7 +40,7 @@ describe("createNextDocsPage", () => {
 
     const pagePath = await createNextDocsPage("api-docs", "scalar", "openapi.json");
 
-    expect(pagePath).toBe("app/api-docs/page.tsx");
+    expect(pagePath).toBe(path.join("app", "api-docs", "page.tsx"));
     expect(fs.existsSync(path.join(root, "app", "api-docs", "page.tsx"))).toBe(true);
   });
 

@@ -94,7 +94,9 @@ export class SchemaProcessor {
     fileAccess: SchemaProcessorFileAccess = defaultFileAccess,
     runtime?: SharedGenerationRuntime,
   ) {
-    this.schemaDirs = normalizeSchemaDirs(schemaDir).map((d) => path.resolve(d));
+    this.schemaDirs = normalizeSchemaDirs(schemaDir).map((d) =>
+      path.isAbsolute(d) ? d : path.resolve(d),
+    );
     this.schemaTypes = normalizeSchemaTypes(schemaType);
     this.fileAccess = fileAccess;
     this.sharedRuntime = runtime;
@@ -229,7 +231,7 @@ export class SchemaProcessor {
     }
 
     files.forEach((file) => {
-      const filePath = path.join(dir, file);
+      const filePath = dir.startsWith("/") ? path.posix.join(dir, file) : path.join(dir, file);
       let stat = this.statCache[filePath];
       if (typeof stat === "undefined") {
         stat = this.fileAccess.statSync(filePath);

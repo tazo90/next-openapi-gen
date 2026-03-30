@@ -94,7 +94,7 @@ describe("createDocsPage", () => {
       );
       const pageSource = fs.readFileSync(componentPath, "utf8");
 
-      expect(pagePath).toBe("src/app/developer/reference/page.tsx");
+      expect(pagePath).toBe(path.join("src", "app", "developer", "reference", "page.tsx"));
       expect(
         withProjectCwd(project.root, () => getDocsPageRelativePath("next", "developer/reference")),
       ).toBe(path.join("src", "app", "developer", "reference", "page.tsx"));

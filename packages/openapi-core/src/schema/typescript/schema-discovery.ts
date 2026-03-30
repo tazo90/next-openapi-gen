@@ -74,15 +74,17 @@ export function resolveImportPath(
 ): string | null {
   const typeScriptResolvedPath = resolveTypeScriptModule(importPath, fromFilePath);
   if (typeScriptResolvedPath) {
-    return typeScriptResolvedPath;
+    return path.normalize(typeScriptResolvedPath);
   }
 
   if (!importPath.startsWith(".")) {
     return null;
   }
 
-  const fromDir = path.dirname(fromFilePath);
-  const resolvedPath = path.resolve(fromDir, importPath);
+  // Use posix path operations for virtual/POSIX-style absolute paths (e.g. /virtual/...)
+  const pathOps = fromFilePath.startsWith("/") ? path.posix : path;
+  const fromDir = pathOps.dirname(fromFilePath);
+  const resolvedPath = pathOps.resolve(fromDir, importPath);
 
   if (fileAccess.existsSync(resolvedPath + ".ts")) {
     return resolvedPath + ".ts";

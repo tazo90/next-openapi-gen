@@ -69,6 +69,9 @@ catalogs:
     conventional-changelog-cli:
       specifier: ^5.0.0
       version: 5.0.0
+    cross-env:
+      specifier: ^7.0.3
+      version: 7.0.3
     drizzle-kit:
       specifier: ^0.31.10
       version: 0.31.10
@@ -249,6 +252,9 @@ importers:
       '@workspace/openapi-init':
         specifier: workspace:*
         version: link:packages/openapi-init
+      cross-env:
+        specifier: 'catalog:'
+        version: 7.0.3
       knip:
         specifier: 'catalog:'
         version: 6.1.0(@emnapi/core@1.9.1)(@emnapi/runtime@1.9.1)
@@ -4393,6 +4399,11 @@ packages:
 
   crelt@1.0.6:
     resolution: {integrity: sha512-VQ2MBenTq1fWZUH9DJNGti7kKv6EeAuYr3cLwxUWhIu1baTaXh4Ib5W2CqHVqib4/MqbYGJqiL3Zb8GJZr3l4g==}
+
+  cross-env@7.0.3:
+    resolution: {integrity: sha512-+/HKd6EgcQCJGh2PSjZuUitQBQynKor4wrFbRg4DtAgS1aWO+gU52xpH7M9ScGgXSYmAVS9bIJ8EzuaGw0oNAw==}
+    engines: {node: '>=10.14', npm: '>=6', yarn: '>=1'}
+    hasBin: true
 
   cross-spawn@7.0.6:
     resolution: {integrity: sha512-uV2QOWP2nWzsy2aMp8aRibhi9dlzF5Hgh5SHaB9OiTGEyDTiJJyx0uy51QXdyWbtAHNua4XJzUKca3OzKUd3vA==}
@@ -10977,6 +10988,10 @@ snapshots:
       typescript: 5.9.3
 
   crelt@1.0.6: {}
+
+  cross-env@7.0.3:
+    dependencies:
+      cross-spawn: 7.0.6
 
   cross-spawn@7.0.6:
     dependencies:

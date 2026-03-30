@@ -73,7 +73,7 @@ describe("Zod prescan helpers", () => {
 
     const files: string[] = [];
     walkTypeScriptFiles(root, fs, (filePath) => {
-      files.push(path.relative(root, filePath));
+      files.push(path.relative(root, filePath).replace(/\\/g, "/"));
     });
 
     expect(files.sort()).toEqual(["a.ts", "nested/b.tsx"]);

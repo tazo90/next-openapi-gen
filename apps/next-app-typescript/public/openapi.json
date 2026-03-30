@@ -1747,6 +1747,120 @@
           "success"
         ]
       },
+      "CreateProductData": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "nullable": false
+          },
+          "price": {
+            "type": "number",
+            "nullable": false
+          }
+        },
+        "required": [
+          "name",
+          "price"
+        ]
+      },
+      "CreateProductOptions": {
+        "type": "object",
+        "properties": {
+          "notify": {
+            "type": "boolean",
+            "nullable": false
+          }
+        },
+        "required": [
+          "notify"
+        ]
+      },
+      "CreateProductRequest": {
+        "type": "object",
+        "properties": {
+          "product": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "nullable": false
+              },
+              "price": {
+                "type": "number",
+                "nullable": false
+              }
+            },
+            "required": [
+              "name",
+              "price"
+            ],
+            "nullable": false
+          },
+          "options": {
+            "type": "object",
+            "properties": {
+              "notify": {
+                "type": "boolean",
+                "nullable": false
+              }
+            },
+            "required": [
+              "notify"
+            ],
+            "nullable": true
+          }
+        },
+        "required": [
+          "product"
+        ]
+      },
+      "CreateProductResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "productId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "success",
+          "productId"
+        ]
+      },
+      "CreateProductApiResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "success": {
+                "type": "boolean"
+              },
+              "productId": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "success",
+              "productId"
+            ]
+          },
+          "timestamp": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "success",
+          "data",
+          "timestamp"
+        ]
+      },
       "ProductIdParam": {
         "type": "object",
         "properties": {
@@ -1901,120 +2015,6 @@
         "required": [
           "name",
           "price"
-        ]
-      },
-      "CreateProductData": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "nullable": false
-          },
-          "price": {
-            "type": "number",
-            "nullable": false
-          }
-        },
-        "required": [
-          "name",
-          "price"
-        ]
-      },
-      "CreateProductOptions": {
-        "type": "object",
-        "properties": {
-          "notify": {
-            "type": "boolean",
-            "nullable": false
-          }
-        },
-        "required": [
-          "notify"
-        ]
-      },
-      "CreateProductRequest": {
-        "type": "object",
-        "properties": {
-          "product": {
-            "type": "object",
-            "properties": {
-              "name": {
-                "type": "string",
-                "nullable": false
-              },
-              "price": {
-                "type": "number",
-                "nullable": false
-              }
-            },
-            "required": [
-              "name",
-              "price"
-            ],
-            "nullable": false
-          },
-          "options": {
-            "type": "object",
-            "properties": {
-              "notify": {
-                "type": "boolean",
-                "nullable": false
-              }
-            },
-            "required": [
-              "notify"
-            ],
-            "nullable": true
-          }
-        },
-        "required": [
-          "product"
-        ]
-      },
-      "CreateProductResponse": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean"
-          },
-          "productId": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "success",
-          "productId"
-        ]
-      },
-      "CreateProductApiResponse": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean"
-          },
-          "data": {
-            "type": "object",
-            "properties": {
-              "success": {
-                "type": "boolean"
-              },
-              "productId": {
-                "type": "string"
-              }
-            },
-            "required": [
-              "success",
-              "productId"
-            ]
-          },
-          "timestamp": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "success",
-          "data",
-          "timestamp"
         ]
       },
       "ReportQuery": {
