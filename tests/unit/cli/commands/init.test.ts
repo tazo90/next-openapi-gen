@@ -3,7 +3,7 @@ import path from "node:path";
 
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { createTempProject, writeJsonFile } from "../../../helpers/test-project.js";
+import { createTempProject, withProjectCwd, writeJsonFile } from "../../../helpers/test-project.js";
 
 type SpinnerMock = {
   start: ReturnType<typeof vi.fn>;
@@ -34,10 +34,7 @@ async function loadInitModule(
 }
 
 describe("init command", () => {
-  const previousCwd = process.cwd();
-
   afterEach(() => {
-    process.chdir(previousCwd);
     vi.restoreAllMocks();
     vi.resetModules();
   });
@@ -55,17 +52,18 @@ describe("init command", () => {
     });
 
     try {
-      process.chdir(project.root);
-      writeJsonFile(path.join(project.root, "package.json"), {
-        name: "fixture-app",
-        packageManager: "pnpm@10.27.0",
-        version: "1.0.0",
+      await withProjectCwd(project.root, async () => {
+        writeJsonFile(path.join(project.root, "package.json"), {
+          name: "fixture-app",
+          packageManager: "pnpm@10.27.0",
+          version: "1.0.0",
+        });
+        fs.writeFileSync(path.join(project.root, "pnpm-lock.yaml"), "lockfileVersion: '9.0'");
+
+        const { init } = await loadInitModule(execMock, spinner);
+
+        await init({});
       });
-      fs.writeFileSync(path.join(project.root, "pnpm-lock.yaml"), "lockfileVersion: '9.0'");
-
-      const { init } = await loadInitModule(execMock, spinner);
-
-      await init({});
 
       const template = JSON.parse(
         fs.readFileSync(path.join(project.root, "next.openapi.json"), "utf8"),
@@ -123,23 +121,24 @@ describe("init command", () => {
     });
 
     try {
-      process.chdir(project.root);
-      fs.mkdirSync(path.join(project.root, "config"), { recursive: true });
-      writeJsonFile(path.join(project.root, "package.json"), {
-        name: "fixture-app",
-        packageManager: "pnpm@10.27.0",
-        version: "1.0.0",
-        devDependencies: {
-          typescript: "^5.9.0",
-        },
-      });
+      await withProjectCwd(project.root, async () => {
+        fs.mkdirSync(path.join(project.root, "config"), { recursive: true });
+        writeJsonFile(path.join(project.root, "package.json"), {
+          name: "fixture-app",
+          packageManager: "pnpm@10.27.0",
+          version: "1.0.0",
+          devDependencies: {
+            typescript: "^5.9.0",
+          },
+        });
 
-      const { init } = await loadInitModule(execMock, spinner);
+        const { init } = await loadInitModule(execMock, spinner);
 
-      await init({
-        ui: "none",
-        schema: "typescript",
-        output: "config/custom.openapi.json",
+        await init({
+          ui: "none",
+          schema: "typescript",
+          output: "config/custom.openapi.json",
+        });
       });
 
       expect(fs.existsSync(path.join(project.root, "config", "custom.openapi.json"))).toBe(true);
@@ -166,17 +165,17 @@ describe("init command", () => {
     });
 
     try {
-      process.chdir(project.root);
+      await withProjectCwd(project.root, async () => {
+        const { init } = await loadInitModule(execMock, spinner, () => {
+          vi.doMock("@workspace/openapi-init/init/create-docs-page.js", () => ({
+            createDocsPage: vi.fn(async () => {
+              throw new Error("disk full");
+            }),
+          }));
+        });
 
-      const { init } = await loadInitModule(execMock, spinner, () => {
-        vi.doMock("@workspace/openapi-init/init/create-docs-page.js", () => ({
-          createDocsPage: vi.fn(async () => {
-            throw new Error("disk full");
-          }),
-        }));
+        await init({});
       });
-
-      await init({});
 
       expect(fs.existsSync(path.join(project.root, "next.openapi.json"))).toBe(true);
       expect(execMock).not.toHaveBeenCalled();
@@ -198,21 +197,22 @@ describe("init command", () => {
     });
 
     try {
-      process.chdir(project.root);
-      fs.mkdirSync(path.join(project.root, "config"), { recursive: true });
-      writeJsonFile(path.join(project.root, "package.json"), {
-        name: "fixture-app",
-        packageManager: "pnpm@10.27.0",
-        version: "1.0.0",
-      });
+      await withProjectCwd(project.root, async () => {
+        fs.mkdirSync(path.join(project.root, "config"), { recursive: true });
+        writeJsonFile(path.join(project.root, "package.json"), {
+          name: "fixture-app",
+          packageManager: "pnpm@10.27.0",
+          version: "1.0.0",
+        });
 
-      const { init } = await loadInitModule(execMock, spinner);
+        const { init } = await loadInitModule(execMock, spinner);
 
-      await init({
-        docsUrl: "internal/reference",
-        output: "config/template.json",
-        schema: "zod",
-        ui: "redoc",
+        await init({
+          docsUrl: "internal/reference",
+          output: "config/template.json",
+          schema: "zod",
+          ui: "redoc",
+        });
       });
 
       const template = JSON.parse(
@@ -249,18 +249,19 @@ describe("init command", () => {
     });
 
     try {
-      process.chdir(project.root);
-      writeJsonFile(path.join(project.root, "package.json"), {
-        name: "fixture-app",
-        packageManager: "pnpm@10.27.0",
-        version: "1.0.0",
-      });
+      await withProjectCwd(project.root, async () => {
+        writeJsonFile(path.join(project.root, "package.json"), {
+          name: "fixture-app",
+          packageManager: "pnpm@10.27.0",
+          version: "1.0.0",
+        });
 
-      const { init } = await loadInitModule(execMock, spinner);
+        const { init } = await loadInitModule(execMock, spinner);
 
-      await init({
-        framework: "tanstack",
-        ui: "scalar",
+        await init({
+          framework: "tanstack",
+          ui: "scalar",
+        });
       });
 
       const template = JSON.parse(
@@ -341,19 +342,20 @@ describe("init command", () => {
     });
 
     try {
-      process.chdir(project.root);
-      writeJsonFile(path.join(project.root, "package.json"), {
-        name: "fixture-app",
-        packageManager: "pnpm@10.27.0",
-        version: "1.0.0",
-      });
+      await withProjectCwd(project.root, async () => {
+        writeJsonFile(path.join(project.root, "package.json"), {
+          name: "fixture-app",
+          packageManager: "pnpm@10.27.0",
+          version: "1.0.0",
+        });
 
-      const { init } = await loadInitModule(execMock, spinner);
+        const { init } = await loadInitModule(execMock, spinner);
 
-      await init({
-        docsUrl: "internal/reference",
-        framework: "react-router",
-        ui: "swagger",
+        await init({
+          docsUrl: "internal/reference",
+          framework: "react-router",
+          ui: "swagger",
+        });
       });
 
       const template = JSON.parse(

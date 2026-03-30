@@ -27,6 +27,8 @@ blob-report/
 .cache/
 .pnpm-store/
 .cursor/hooks/state/
+.next-openapi/
+.openapi-gen/
 
 # Vercel
 .vercel/

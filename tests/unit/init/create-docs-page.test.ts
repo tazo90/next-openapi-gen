@@ -1,34 +1,28 @@
 import fs from "node:fs";
 import path from "node:path";
 
-import { afterEach, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 
 import {
   createDocsPage,
   getDocsPageRelativePath,
 } from "@workspace/openapi-init/init/create-docs-page.js";
 
-import { createTempProject } from "../../helpers/test-project.js";
+import { createTempProject, withProjectCwd } from "../../helpers/test-project.js";
 
 describe("createDocsPage", () => {
-  const previousCwd = process.cwd();
-
-  afterEach(() => {
-    process.chdir(previousCwd);
-  });
-
   it("writes TanStack docs routes using file-route syntax", async () => {
     const project = createTempProject("nxog-tanstack-docs-");
 
     try {
-      process.chdir(project.root);
-
-      const relativePath = await createDocsPage({
-        framework: "tanstack",
-        docsUrl: "internal/reference",
-        ui: "scalar",
-        outputFile: "openapi.json",
-      });
+      const relativePath = await withProjectCwd(project.root, () =>
+        createDocsPage({
+          framework: "tanstack",
+          docsUrl: "internal/reference",
+          ui: "scalar",
+          outputFile: "openapi.json",
+        }),
+      );
       const docsPage = fs.readFileSync(
         path.join(project.root, "src", "routes", "internal.reference.tsx"),
         "utf8",
@@ -47,14 +41,14 @@ describe("createDocsPage", () => {
     const project = createTempProject("nxog-react-router-docs-");
 
     try {
-      process.chdir(project.root);
-
-      const relativePath = await createDocsPage({
-        framework: "react-router",
-        docsUrl: "api-docs",
-        ui: "redoc",
-        outputFile: "openapi.json",
-      });
+      const relativePath = await withProjectCwd(project.root, () =>
+        createDocsPage({
+          framework: "react-router",
+          docsUrl: "api-docs",
+          ui: "redoc",
+          outputFile: "openapi.json",
+        }),
+      );
       const docsPage = fs.readFileSync(
         path.join(project.root, "src", "routes", "api-docs.tsx"),
         "utf8",
@@ -82,14 +76,14 @@ describe("createDocsPage", () => {
     const project = createTempProject("nxog-docs-path-");
 
     try {
-      process.chdir(project.root);
-
-      const pagePath = await createDocsPage({
-        docsUrl: "developer/reference",
-        framework: "next",
-        ui: "scalar",
-        outputFile: "openapi.json",
-      });
+      const pagePath = await withProjectCwd(project.root, () =>
+        createDocsPage({
+          docsUrl: "developer/reference",
+          framework: "next",
+          ui: "scalar",
+          outputFile: "openapi.json",
+        }),
+      );
       const componentPath = path.join(
         project.root,
         "src",
@@ -101,9 +95,9 @@ describe("createDocsPage", () => {
       const pageSource = fs.readFileSync(componentPath, "utf8");
 
       expect(pagePath).toBe("src/app/developer/reference/page.tsx");
-      expect(getDocsPageRelativePath("next", "developer/reference")).toBe(
-        path.join("src", "app", "developer", "reference", "page.tsx"),
-      );
+      expect(
+        withProjectCwd(project.root, () => getDocsPageRelativePath("next", "developer/reference")),
+      ).toBe(path.join("src", "app", "developer", "reference", "page.tsx"));
       expect(fs.existsSync(componentPath)).toBe(true);
       expect(pageSource).toContain("export default function ApiDocsPage()");
       expect(pageSource).toContain('url: "/openapi.json"');

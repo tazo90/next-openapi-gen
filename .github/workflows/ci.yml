@@ -137,6 +137,45 @@ jobs:
       - name: Run integration tests
         run: pnpm test:integration
 
+  windows-smoke:
+    name: Windows Smoke
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.27.0
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run Windows-focused unit tests
+        run: >
+          pnpm exec vitest run --config vitest.config.ts
+          tests/unit/core/generate.test.ts
+          tests/unit/core/orchestrator.test.ts
+          tests/unit/cli/commands/generate.test.ts
+          tests/unit/cli/commands/init.test.ts
+          tests/unit/init/create-docs-page.test.ts
+          tests/unit/public/cli.test.ts
+          tests/unit/workspace/generate-scripts.test.ts
+          tests/unit/schema/zod/zod-converter-drizzle.test.ts
+
+      - name: Run one Windows generate path
+        run: pnpm exec turbo run generate --filter=next-pages-router
+
   coverage:
     name: Coverage
     runs-on: ubuntu-latest
@@ -295,6 +334,7 @@ jobs:
       - build
       - unit
       - integration
+      - windows-smoke
       - coverage
       - e2e
     steps:
@@ -304,6 +344,7 @@ jobs:
           BUILD_RESULT: ${{ needs.build.result }}
           UNIT_RESULT: ${{ needs.unit.result }}
           INTEGRATION_RESULT: ${{ needs.integration.result }}
+          WINDOWS_SMOKE_RESULT: ${{ needs.windows-smoke.result }}
           COVERAGE_RESULT: ${{ needs.coverage.result }}
           E2E_RESULT: ${{ needs.e2e.result }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
@@ -316,6 +357,7 @@ jobs:
             ["Build", process.env.BUILD_RESULT],
             ["Unit Tests", process.env.UNIT_RESULT],
             ["Integration Tests", process.env.INTEGRATION_RESULT],
+            ["Windows Smoke", process.env.WINDOWS_SMOKE_RESULT],
             ["Coverage", process.env.COVERAGE_RESULT],
             ["E2E Matrix", process.env.E2E_RESULT],
           ];

@@ -50,9 +50,7 @@ export function createTempProject(prefix: string): TempProject {
 
   return {
     root,
-    cleanup() {
-      fs.rmSync(root, { recursive: true, force: true });
-    },
+    cleanup: createProjectCleanup(root),
   };
 }
 
@@ -107,9 +105,7 @@ export function copyProjectFixture(fixturePath: string): TempProject {
 
   return {
     root,
-    cleanup() {
-      fs.rmSync(root, { recursive: true, force: true });
-    },
+    cleanup: createProjectCleanup(root),
   };
 }
 
@@ -133,9 +129,19 @@ export function withProjectCwd<T>(projectRoot: string, callback: () => T): T {
   process.chdir(projectRoot);
 
   try {
-    return callback();
-  } finally {
+    const result = callback();
+
+    if (isPromiseLike(result)) {
+      return Promise.resolve(result).finally(() => {
+        process.chdir(previousCwd);
+      }) as T;
+    }
+
     process.chdir(previousCwd);
+    return result;
+  } catch (error) {
+    process.chdir(previousCwd);
+    throw error;
   }
 }
 
@@ -227,6 +233,26 @@ function copyDirectoryContents(sourceDir: string, targetDir: string) {
 
     fs.copyFileSync(sourcePath, targetPath);
   });
+}
+
+function createProjectCleanup(root: string) {
+  return () => {
+    if (isWithinProjectRoot(process.cwd(), root)) {
+      process.chdir(os.tmpdir());
+    }
+
+    fs.rmSync(root, { recursive: true, force: true });
+  };
+}
+
+function isWithinProjectRoot(candidatePath: string, root: string) {
+  const relativePath = path.relative(path.resolve(root), path.resolve(candidatePath));
+
+  return relativePath === "" || (!relativePath.startsWith("..") && !path.isAbsolute(relativePath));
+}
+
+function isPromiseLike<T>(value: T): value is T & PromiseLike<Awaited<T>> {
+  return typeof value === "object" && value !== null && "then" in value;
 }
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {

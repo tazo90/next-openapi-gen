@@ -1,10 +1,11 @@
 import fs from "node:fs";
 import path from "node:path";
 
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import {
   createTempProject,
+  withProjectCwd,
   writeAppRoute,
   writeOpenApiTemplate,
 } from "../../../helpers/test-project.js";
@@ -27,10 +28,7 @@ async function loadGenerateModule(
 }
 
 describe("generate command", () => {
-  const previousCwd = process.cwd();
-
   afterEach(() => {
-    process.chdir(previousCwd);
     vi.restoreAllMocks();
     vi.resetModules();
   });
@@ -62,18 +60,18 @@ export async function GET() {}
 `,
       );
 
-      process.chdir(project.root);
+      const spec = await withProjectCwd(project.root, async () => {
+        const { generate } = await loadGenerateModule(spinner);
 
-      const { generate } = await loadGenerateModule(spinner);
+        await generate({ template: "next.openapi.json" });
 
-      await generate({ template: "next.openapi.json" });
-
-      const outputPath = path.join(project.root, "public", "openapi.json");
-      const spec = JSON.parse(fs.readFileSync(outputPath, "utf8")) as {
-        info: { title: string };
-        paths: Record<string, Record<string, { operationId: string }>>;
-        components: { schemas: Record<string, unknown> };
-      };
+        const outputPath = path.join(project.root, "public", "openapi.json");
+        return JSON.parse(fs.readFileSync(outputPath, "utf8")) as {
+          info: { title: string };
+          paths: Record<string, Record<string, { operationId: string }>>;
+          components: { schemas: Record<string, unknown> };
+        };
+      });
 
       expect(spec.info.title).toBe("API Documentation");
       expect(spec.paths["/users"]?.get?.operationId).toBe("get-users");
@@ -92,11 +90,11 @@ export async function GET() {}
 
     try {
       writeOpenApiTemplate(project.root);
-      process.chdir(project.root);
+      await withProjectCwd(project.root, async () => {
+        const { generate } = await loadGenerateModule(spinner);
 
-      const { generate } = await loadGenerateModule(spinner);
-
-      await generate({});
+        await generate({});
+      });
 
       expect(fs.existsSync(path.join(project.root, "public", "openapi.json"))).toBe(true);
     } finally {
@@ -145,17 +143,17 @@ export async function GET() {}
  */
 export async function GET() {}`,
       );
-      process.chdir(project.root);
+      const spec = await withProjectCwd(project.root, async () => {
+        const { generate } = await loadGenerateModule(spinner);
 
-      const { generate } = await loadGenerateModule(spinner);
+        await generate({});
 
-      await generate({});
-
-      const outputPath = path.join(project.root, "public", "openapi.json");
-      const spec = JSON.parse(fs.readFileSync(outputPath, "utf8")) as {
-        info: { title: string };
-        paths: Record<string, Record<string, { operationId: string }>>;
-      };
+        const outputPath = path.join(project.root, "public", "openapi.json");
+        return JSON.parse(fs.readFileSync(outputPath, "utf8")) as {
+          info: { title: string };
+          paths: Record<string, Record<string, { operationId: string }>>;
+        };
+      });
 
       expect(spec.info.title).toBe("Typed Config");
       expect(spec.paths["/orders"]?.get?.operationId).toBe("get-orders");
@@ -173,13 +171,13 @@ export async function GET() {}`,
     };
 
     try {
-      process.chdir(project.root);
+      await withProjectCwd(project.root, async () => {
+        const { generate } = await loadGenerateModule(spinner);
 
-      const { generate } = await loadGenerateModule(spinner);
-
-      await expect(generate({ template: "missing.openapi.json" })).rejects.toThrow(
-        "Config file not found",
-      );
+        await expect(generate({ template: "missing.openapi.json" })).rejects.toThrow(
+          "Config file not found",
+        );
+      });
       expect(spinner.succeed).not.toHaveBeenCalled();
     } finally {
       project.cleanup();

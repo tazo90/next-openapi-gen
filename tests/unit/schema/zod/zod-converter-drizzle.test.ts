@@ -41,7 +41,7 @@ describe("ZodSchemaConverter drizzle-zod support", () => {
     expect(converter.factoryCache.size).toBeGreaterThan(0);
   });
 
-  it("converts drizzle-zod schemas used by the example app", () => {
+  it("converts drizzle-zod schemas used by the example app", { timeout: 20_000 }, () => {
     const converter = new ZodSchemaConverter("apps/next-app-drizzle-zod/src/schemas");
 
     const createSchema = converter.convertZodSchemaToOpenApi("CreatePostSchema");

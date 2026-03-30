@@ -1,19 +1,18 @@
 import fs from "node:fs";
 import path from "node:path";
 
-import { afterEach, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 
 import { FrameworkKind, generateProject } from "next-openapi-gen";
 
-import { createTempProject, writeAppRoute, writeJsonFile } from "../../helpers/test-project.js";
+import {
+  createTempProject,
+  withProjectCwd,
+  writeAppRoute,
+  writeJsonFile,
+} from "../../helpers/test-project.js";
 
 describe("generateProject", () => {
-  const previousCwd = process.cwd();
-
-  afterEach(() => {
-    process.chdir(previousCwd);
-  });
-
   it("writes the spec and incremental manifest", async () => {
     const project = createTempProject("nxog-core-generate-");
 
@@ -52,11 +51,14 @@ export type UserList = {
 `,
       );
 
-      process.chdir(project.root);
-
-      const result = await generateProject();
-      const outputPath = fs.realpathSync(path.join(project.root, "public", "openapi.json"));
-      const manifestPath = path.join(project.root, ".openapi-cache", "manifest.json");
+      const { manifestPath, outputPath, result } = await withProjectCwd(project.root, async () => {
+        const result = await generateProject();
+        return {
+          result,
+          outputPath: fs.realpathSync(path.join(project.root, "public", "openapi.json")),
+          manifestPath: path.join(project.root, ".openapi-cache", "manifest.json"),
+        };
+      });
 
       expect(result.artifacts).toContainEqual({
         kind: "spec",
@@ -113,12 +115,13 @@ export async function GET() {}
 `,
       );
 
-      process.chdir(project.root);
-
-      const result = await generateProject();
-      const docsPath = fs.realpathSync(
-        path.join(project.root, "src", "app", "api-docs", "page.tsx"),
-      );
+      const { docsPath, result } = await withProjectCwd(project.root, async () => {
+        const result = await generateProject();
+        return {
+          result,
+          docsPath: fs.realpathSync(path.join(project.root, "src", "app", "api-docs", "page.tsx")),
+        };
+      });
 
       expect(result.artifacts).toContainEqual(
         expect.objectContaining({

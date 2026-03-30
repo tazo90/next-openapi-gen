@@ -6,7 +6,7 @@ import { resolveGeneratedWorkspaceDir } from "@workspace/openapi-core/core/gener
 
 describe("resolveGeneratedWorkspaceDir", () => {
   it("defaults to the hidden generated workspace directory", () => {
-    expect(resolveGeneratedWorkspaceDir()).toBe(path.resolve(process.cwd(), ".next-openapi"));
+    expect(resolveGeneratedWorkspaceDir()).toBe(path.resolve(process.cwd(), ".openapi-gen"));
   });
 
   it("resolves custom generated workspace directories from cwd", () => {

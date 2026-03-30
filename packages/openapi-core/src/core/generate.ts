@@ -53,7 +53,7 @@ export async function generateFromLoadedConfig(
   await fse.ensureDir(outputDir);
 
   const outputFile = path.join(outputDir, config.outputFile);
-  fs.writeFileSync(outputFile, JSON.stringify(document, null, 2));
+  fs.writeFileSync(outputFile, `${JSON.stringify(document, null, 2)}\n`);
 
   const artifacts: GeneratedArtifact[] = [{ kind: "spec", path: outputFile }];
   const generatedWorkspaceDir = resolveGeneratedWorkspaceDir(loadedConfig.config.generatedDir);
@@ -61,7 +61,7 @@ export async function generateFromLoadedConfig(
 
   fs.writeFileSync(
     path.join(generatedWorkspaceDir, "manifest.json"),
-    JSON.stringify(
+    `${JSON.stringify(
       {
         configPath: loadedConfig.configPath,
         outputFile,
@@ -70,7 +70,7 @@ export async function generateFromLoadedConfig(
       },
       null,
       2,
-    ),
+    )}\n`,
   );
 
   const docsArtifact = await emitDocsArtifacts(loadedConfig, config.outputFile, adapters);
