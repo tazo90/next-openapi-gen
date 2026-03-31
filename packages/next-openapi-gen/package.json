@@ -66,7 +66,7 @@
     "lint:fix": "oxlint --config ../oxlint-config/base.json . --ignore-path ../../.gitignore --fix --deny-warnings",
     "test": "pnpm --dir ../.. test:unit && pnpm --dir ../.. test:integration",
     "test:coverage": "pnpm --dir ../.. test:coverage:next-openapi-gen",
-    "release": "np --no-cleanup --no-tests",
+    "release": "np --no-cleanup --no-tests --no-publish",
     "version": "conventional-changelog -p angular -i ../../CHANGELOG.md -s -n ../../.changelogrc.cjs && git add ../../CHANGELOG.md"
   },
   "dependencies": {
