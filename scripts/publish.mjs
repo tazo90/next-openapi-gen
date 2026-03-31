@@ -1,9 +1,19 @@
-import { readFileSync, writeFileSync, unlinkSync, readdirSync } from "node:fs";
+import {
+  readFileSync,
+  writeFileSync,
+  unlinkSync,
+  readdirSync,
+  copyFileSync,
+  existsSync,
+} from "node:fs";
 import { execSync } from "node:child_process";
 import { join } from "node:path";
 
-const pkgDir = join(import.meta.dirname, "..", "packages", "next-openapi-gen");
+const rootDir = join(import.meta.dirname, "..");
+const pkgDir = join(rootDir, "packages", "next-openapi-gen");
 const pkgPath = join(pkgDir, "package.json");
+const readmeSrc = join(rootDir, "README.md");
+const readmeDst = join(pkgDir, "README.md");
 
 const original = readFileSync(pkgPath, "utf8");
 const pkg = JSON.parse(original);
@@ -16,6 +26,9 @@ for (const [key, value] of Object.entries(pkg.devDependencies ?? {})) {
 }
 
 writeFileSync(pkgPath, JSON.stringify(pkg, null, "\t") + "\n");
+
+// Copy root README.md into package dir for inclusion in the tarball
+copyFileSync(readmeSrc, readmeDst);
 
 try {
   // pnpm pack resolves catalog: → real versions
@@ -30,6 +43,7 @@ try {
 
   unlinkSync(tarballPath);
 } finally {
-  // Always restore original package.json
+  // Always restore original package.json and remove temp README
   writeFileSync(pkgPath, original);
+  if (existsSync(readmeDst)) unlinkSync(readmeDst);
 }
