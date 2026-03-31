@@ -1,3 +1,9 @@
+## [1.0.1](https://github.com/tazo90/next-openapi-gen/compare/v1.0.0...v1.0.1) (2026-03-31)
+
+### 🐛 Bug Fixes
+
+- add README.md to build package ([2bd4173](https://github.com/tazo90/next-openapi-gen/commit/2bd4173210faf42088fdf9384d41cfd0ee8bd34c))
+
 # [1.0.0](https://github.com/tazo90/next-openapi-gen/compare/v0.10.5...v1.0.0) (2026-03-31)
 
 ### ✨ Features
