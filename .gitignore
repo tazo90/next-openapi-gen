@@ -42,4 +42,5 @@ build/
 # Misc
 .DS_Store
 *.pem
+RELEASE.md
 
