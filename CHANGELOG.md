@@ -1,3 +1,13 @@
+## [1.0.2](https://github.com/tazo90/next-openapi-gen/compare/v1.0.1...v1.0.2) (2026-04-01)
+
+### 🐛 Bug Fixes
+
+- invalid package root dir in ui-template ([71588cd](https://github.com/tazo90/next-openapi-gen/commit/71588cdf05ba8749dcba30ccd680518e06e207d0))
+
+### 🔨 Chores
+
+- remove examples and update .gitignore ([c222e74](https://github.com/tazo90/next-openapi-gen/commit/c222e74e95a7f03adf5ae05413de5091d111f607))
+
 ## [1.0.1](https://github.com/tazo90/next-openapi-gen/compare/v1.0.0...v1.0.1) (2026-03-31)
 
 ### 🐛 Bug Fixes
