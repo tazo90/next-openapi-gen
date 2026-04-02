@@ -4,6 +4,8 @@ import path from "node:path";
 
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+type MockFn = (...args: unknown[]) => unknown;
+
 describe("watchProject", () => {
   const tempDirs: string[] = [];
 
@@ -25,7 +27,7 @@ describe("watchProject", () => {
     fs.mkdirSync(apiDir, { recursive: true });
     fs.writeFileSync(configPath, "export default {};");
 
-    const close = vi.fn();
+    const close = vi.fn<MockFn>();
     const watch = vi.spyOn(fs, "watch").mockImplementation(
       ((_path, _options, _listener) =>
         ({
@@ -33,7 +35,7 @@ describe("watchProject", () => {
         }) as fs.FSWatcher) as typeof fs.watch,
     );
 
-    const loadConfig = vi.fn().mockResolvedValue({
+    const loadConfig = vi.fn<MockFn>().mockResolvedValue({
       config: {
         apiDir,
         schemaDir,
@@ -44,7 +46,7 @@ describe("watchProject", () => {
       },
       configPath,
     });
-    const generateFromLoadedConfig = vi.fn().mockResolvedValue(undefined);
+    const generateFromLoadedConfig = vi.fn<MockFn>().mockResolvedValue(undefined);
 
     vi.doMock("@workspace/openapi-core/core/config/load-config.js", () => ({
       loadConfig,

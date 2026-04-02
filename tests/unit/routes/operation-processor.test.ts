@@ -1,11 +1,22 @@
 import { describe, expect, it, vi } from "vitest";
 
+type MockFn = (...args: unknown[]) => unknown;
+
 import { OperationProcessor } from "@workspace/openapi-core/routes/operation-processor.js";
 
 describe("OperationProcessor", () => {
   it("builds mutation operations with auth, path params, and referenced request bodies", () => {
+    const createRequestParamsSchema = vi.fn<MockFn>();
+    createRequestParamsSchema
+      .mockReturnValueOnce([
+        { in: "query", name: "search", required: true, schema: { type: "string" } },
+      ])
+      .mockReturnValueOnce([
+        { in: "path", name: "id", required: true, schema: { type: "string" } },
+      ]);
+
     const schemaProcessor = {
-      getSchemaContent: vi.fn(({ bodyType }: { bodyType?: string }) =>
+      getSchemaContent: vi.fn<MockFn>(({ bodyType }: { bodyType?: string }) =>
         bodyType
           ? {
               params: {},
@@ -35,23 +46,16 @@ describe("OperationProcessor", () => {
               responses: {},
             },
       ),
-      createRequestParamsSchema: vi
-        .fn()
-        .mockReturnValueOnce([
-          { in: "query", name: "search", required: true, schema: { type: "string" } },
-        ])
-        .mockReturnValueOnce([
-          { in: "path", name: "id", required: true, schema: { type: "string" } },
-        ]),
-      createDefaultPathParamsSchema: vi.fn(),
-      detectContentType: vi.fn(() => "multipart/form-data"),
-      createRequestBodySchema: vi.fn(),
-      createResponseSchema: vi.fn(),
-      ensureSchemaResolved: vi.fn(),
+      createRequestParamsSchema,
+      createDefaultPathParamsSchema: vi.fn<MockFn>(),
+      detectContentType: vi.fn<MockFn>(() => "multipart/form-data"),
+      createRequestBodySchema: vi.fn<MockFn>(),
+      createResponseSchema: vi.fn<MockFn>(),
+      ensureSchemaResolved: vi.fn<MockFn>(),
     };
     const responseProcessor = {
-      supportsRequestBody: vi.fn(() => true),
-      processResponses: vi.fn(() => ({
+      supportsRequestBody: vi.fn<MockFn>(() => true),
+      processResponses: vi.fn<MockFn>(() => ({
         201: {
           description: "Created",
         },
@@ -119,7 +123,7 @@ describe("OperationProcessor", () => {
 
   it("uses explicit path params and falls back to generated responses for root routes", () => {
     const schemaProcessor = {
-      getSchemaContent: vi.fn(({ responseType }: { responseType?: string }) =>
+      getSchemaContent: vi.fn<MockFn>(({ responseType }: { responseType?: string }) =>
         responseType
           ? {
               params: undefined,
@@ -136,24 +140,24 @@ describe("OperationProcessor", () => {
               responses: undefined,
             },
       ),
-      createRequestParamsSchema: vi.fn(() => [
+      createRequestParamsSchema: vi.fn<MockFn>(() => [
         { in: "path", name: "slug", required: true, schema: { type: "string" } },
       ]),
-      createDefaultPathParamsSchema: vi.fn(),
-      detectContentType: vi.fn(),
-      createRequestBodySchema: vi.fn(() => ({
+      createDefaultPathParamsSchema: vi.fn<MockFn>(),
+      detectContentType: vi.fn<MockFn>(),
+      createRequestBodySchema: vi.fn<MockFn>(() => ({
         description: "Body",
       })),
-      createResponseSchema: vi.fn(() => ({
+      createResponseSchema: vi.fn<MockFn>(() => ({
         200: {
           description: "Fallback",
         },
       })),
-      ensureSchemaResolved: vi.fn(),
+      ensureSchemaResolved: vi.fn<MockFn>(),
     };
     const responseProcessor = {
-      supportsRequestBody: vi.fn(() => false),
-      processResponses: vi.fn(() => ({})),
+      supportsRequestBody: vi.fn<MockFn>(() => false),
+      processResponses: vi.fn<MockFn>(() => ({})),
     };
 
     const processor = new OperationProcessor(schemaProcessor as never, responseProcessor as never);
@@ -190,24 +194,24 @@ describe("OperationProcessor", () => {
 
   it("adds inferred query parameters that are missing from schema-driven params", () => {
     const schemaProcessor = {
-      getSchemaContent: vi.fn(() => ({
+      getSchemaContent: vi.fn<MockFn>(() => ({
         params: undefined,
         querystring: undefined,
         pathParams: undefined,
         body: undefined,
         responses: {},
       })),
-      createRequestParamsSchema: vi.fn(),
-      createDefaultPathParamsSchema: vi.fn(),
-      detectContentType: vi.fn(),
-      createRequestBodySchema: vi.fn(),
-      createResponseSchema: vi.fn(),
-      getExampleForParam: vi.fn(() => "123"),
-      ensureSchemaResolved: vi.fn(),
+      createRequestParamsSchema: vi.fn<MockFn>(),
+      createDefaultPathParamsSchema: vi.fn<MockFn>(),
+      detectContentType: vi.fn<MockFn>(),
+      createRequestBodySchema: vi.fn<MockFn>(),
+      createResponseSchema: vi.fn<MockFn>(),
+      getExampleForParam: vi.fn<MockFn>(() => "123"),
+      ensureSchemaResolved: vi.fn<MockFn>(),
     };
     const responseProcessor = {
-      supportsRequestBody: vi.fn(() => false),
-      processResponses: vi.fn(() => ({
+      supportsRequestBody: vi.fn<MockFn>(() => false),
+      processResponses: vi.fn<MockFn>(() => ({
         200: {
           description: "Successful response",
         },
@@ -236,7 +240,7 @@ describe("OperationProcessor", () => {
 describe("OperationProcessor", () => {
   it("builds operation metadata, auth, parameters, request bodies, and responses", () => {
     const schemaProcessor = {
-      getSchemaContent: vi.fn().mockReturnValueOnce({
+      getSchemaContent: vi.fn<MockFn>().mockReturnValueOnce({
         params: "UserQuery",
         querystring: undefined,
         pathParams: undefined,
@@ -244,19 +248,19 @@ describe("OperationProcessor", () => {
         responses: undefined,
       }),
       createRequestParamsSchema: vi
-        .fn()
+        .fn<MockFn>()
         .mockReturnValueOnce([{ name: "limit", in: "query", schema: { type: "number" } }]),
       createDefaultPathParamsSchema: vi
-        .fn()
+        .fn<MockFn>()
         .mockReturnValue([{ name: "id", in: "path", required: true, schema: { type: "string" } }]),
-      detectContentType: vi.fn(() => "application/json"),
-      createRequestBodySchema: vi.fn(),
-      createResponseSchema: vi.fn(),
-      ensureSchemaResolved: vi.fn(),
+      detectContentType: vi.fn<MockFn>(() => "application/json"),
+      createRequestBodySchema: vi.fn<MockFn>(),
+      createResponseSchema: vi.fn<MockFn>(),
+      ensureSchemaResolved: vi.fn<MockFn>(),
     };
     const responseProcessor = {
-      supportsRequestBody: vi.fn(() => true),
-      processResponses: vi.fn(() => ({
+      supportsRequestBody: vi.fn<MockFn>(() => true),
+      processResponses: vi.fn<MockFn>(() => ({
         201: {
           description: "Created",
         },
@@ -314,7 +318,7 @@ describe("OperationProcessor", () => {
 
   it("falls back to generated tags, explicit path params schemas, and schema response creation", () => {
     const schemaProcessor = {
-      getSchemaContent: vi.fn(({ responseType }: { responseType?: string }) =>
+      getSchemaContent: vi.fn<MockFn>(({ responseType }: { responseType?: string }) =>
         responseType
           ? {
               params: undefined,
@@ -333,18 +337,18 @@ describe("OperationProcessor", () => {
               responses: undefined,
             },
       ),
-      createRequestParamsSchema: vi.fn(() => [{ name: "teamId", in: "path" }]),
-      createDefaultPathParamsSchema: vi.fn(),
-      detectContentType: vi.fn(),
-      createRequestBodySchema: vi.fn(() => ({ description: "Body schema" })),
-      createResponseSchema: vi.fn(() => ({
+      createRequestParamsSchema: vi.fn<MockFn>(() => [{ name: "teamId", in: "path" }]),
+      createDefaultPathParamsSchema: vi.fn<MockFn>(),
+      detectContentType: vi.fn<MockFn>(),
+      createRequestBodySchema: vi.fn<MockFn>(() => ({ description: "Body schema" })),
+      createResponseSchema: vi.fn<MockFn>(() => ({
         200: { description: "Generated response" },
       })),
-      ensureSchemaResolved: vi.fn(),
+      ensureSchemaResolved: vi.fn<MockFn>(),
     };
     const responseProcessor = {
-      supportsRequestBody: vi.fn(() => true),
-      processResponses: vi.fn(() => ({})),
+      supportsRequestBody: vi.fn<MockFn>(() => true),
+      processResponses: vi.fn<MockFn>(() => ({})),
     };
 
     const processor = new OperationProcessor(schemaProcessor as never, responseProcessor as never);
@@ -365,7 +369,7 @@ describe("OperationProcessor", () => {
 
   it("adds first-class querystring parameters and request examples", () => {
     const schemaProcessor = {
-      getSchemaContent: vi.fn(() => ({
+      getSchemaContent: vi.fn<MockFn>(() => ({
         params: undefined,
         querystring: {
           type: "object",
@@ -381,10 +385,10 @@ describe("OperationProcessor", () => {
         },
         responses: undefined,
       })),
-      createRequestParamsSchema: vi.fn(() => []),
-      createDefaultPathParamsSchema: vi.fn(),
-      detectContentType: vi.fn(() => "application/json"),
-      createRequestBodySchema: vi.fn(() => ({
+      createRequestParamsSchema: vi.fn<MockFn>(() => []),
+      createDefaultPathParamsSchema: vi.fn<MockFn>(),
+      detectContentType: vi.fn<MockFn>(() => "application/json"),
+      createRequestBodySchema: vi.fn<MockFn>(() => ({
         content: {
           "application/json": {
             schema: { type: "object" },
@@ -396,12 +400,12 @@ describe("OperationProcessor", () => {
           },
         },
       })),
-      createResponseSchema: vi.fn(),
-      ensureSchemaResolved: vi.fn(),
+      createResponseSchema: vi.fn<MockFn>(),
+      ensureSchemaResolved: vi.fn<MockFn>(),
     };
     const responseProcessor = {
-      supportsRequestBody: vi.fn(() => true),
-      processResponses: vi.fn(() => ({
+      supportsRequestBody: vi.fn<MockFn>(() => true),
+      processResponses: vi.fn<MockFn>(() => ({
         200: {
           description: "OK",
         },

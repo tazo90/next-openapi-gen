@@ -1,6 +1,8 @@
 import fs from "node:fs";
 
 import { describe, expect, it, vi } from "vitest";
+
+type MockFn = (...args: unknown[]) => unknown;
 import { createDefaultGenerationAdapters } from "@workspace/openapi-cli";
 
 import { runGenerationOrchestrator } from "@workspace/openapi-core/core/orchestrator.js";
@@ -33,9 +35,9 @@ export async function GET() {}
         () => {
           const template = JSON.parse(fs.readFileSync(templatePath, "utf8"));
           const config = normalizeOpenApiConfig(template);
-          const configLoaded = vi.fn();
-          const routesDiscovered = vi.fn();
-          const documentBuilt = vi.fn();
+          const configLoaded = vi.fn<MockFn>();
+          const routesDiscovered = vi.fn<MockFn>();
+          const documentBuilt = vi.fn<MockFn>();
           const adapters = createDefaultGenerationAdapters();
 
           const result = runGenerationOrchestrator({

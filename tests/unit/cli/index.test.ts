@@ -2,10 +2,12 @@ import fs from "node:fs";
 
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+type MockFn = (...args: unknown[]) => unknown;
+
 const { buildProgram, parse } = vi.hoisted(() => {
-  const parse = vi.fn();
+  const parse = vi.fn<MockFn>();
   return {
-    buildProgram: vi.fn(() => ({ parse })),
+    buildProgram: vi.fn<MockFn>(() => ({ parse })),
     parse,
   };
 });
@@ -53,7 +55,7 @@ describe("openapi-cli root entrypoints", () => {
 
   it("executes the CLI entrypoint via runCli", async () => {
     vi.resetModules();
-    const runCli = vi.fn();
+    const runCli = vi.fn<MockFn>();
     vi.doMock("@workspace/openapi-cli/index.js", () => ({
       runCli,
     }));

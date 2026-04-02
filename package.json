@@ -9,7 +9,8 @@
   },
   "scripts": {
     "build": "turbo run build",
-    "check": "pnpm format:check && pnpm lint",
+    "check": "pnpm check:root && pnpm exec turbo run check",
+    "check:root": "pnpm format:check:root && pnpm lint:root",
     "dev": "turbo run dev",
     "format": "pnpm format:root && turbo run format",
     "format:check": "pnpm format:check:root && turbo run format:check",
@@ -21,7 +22,7 @@
     "lint:root": "oxlint --config ./.oxlintrc.json tests vitest.config.ts vitest.bench.config.ts playwright.config.ts commitlint.config.ts --ignore-path .gitignore --deny-warnings",
     "lint:staged": "lint-staged",
     "prepare": "simple-git-hooks",
-    "test": "pnpm test:unit && pnpm test:integration && pnpm test:e2e",
+    "test": "pnpm exec turbo run test:unit && pnpm exec turbo run test:integration && pnpm test:e2e",
     "test:unit": "vitest run --config vitest.config.ts tests/unit",
     "test:integration": "vitest run --config vitest.config.ts tests/integration",
     "test:watch": "vitest --config vitest.config.ts",
@@ -53,7 +54,7 @@
     "test:e2e:next-app-next-config": "cross-env E2E_APP=next-app-next-config pnpm test:e2e:app",
     "test:e2e:next-app-ts-config": "cross-env E2E_APP=next-app-ts-config pnpm test:e2e:app",
     "release": "pnpm --filter next-openapi-gen release && node scripts/publish.mjs",
-    "verify": "pnpm check && pnpm --filter next-openapi-gen build && pnpm knip:ci && pnpm test:unit && pnpm test:integration && pnpm build",
+    "verify": "pnpm check && pnpm exec turbo run knip:ci && pnpm exec turbo run test:unit && pnpm exec turbo run test:integration && pnpm build",
     "version": "pnpm --filter next-openapi-gen version"
   },
   "devDependencies": {

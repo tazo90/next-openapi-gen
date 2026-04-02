@@ -3,6 +3,8 @@ import path from "node:path";
 
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+type MockFn = (...args: unknown[]) => unknown;
+
 const packageManifestPath = path.resolve(
   import.meta.dirname,
   "..",
@@ -20,7 +22,7 @@ describe("next-openapi-gen cli entrypoint", () => {
   });
 
   it("delegates to the shared CLI runtime", async () => {
-    const runCli = vi.fn();
+    const runCli = vi.fn<MockFn>();
     vi.doMock("@workspace/openapi-cli", () => ({
       runCli,
     }));

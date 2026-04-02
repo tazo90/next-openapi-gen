@@ -1,11 +1,13 @@
 import { describe, expect, it, vi } from "vitest";
 
+type MockFn = (...args: unknown[]) => unknown;
+
 import { ResponseProcessor } from "@workspace/openapi-core/routes/response-processor.js";
 
 describe("ResponseProcessor", () => {
   it("omits content for 204 responses and DELETE defaults", () => {
     const schemaProcessor = {
-      ensureSchemaResolved: vi.fn(),
+      ensureSchemaResolved: vi.fn<MockFn>(),
     };
     const processor = new ResponseProcessor(
       {
@@ -37,7 +39,7 @@ describe("ResponseProcessor", () => {
 
   it("builds nested array schemas for typed success responses", () => {
     const schemaProcessor = {
-      ensureSchemaResolved: vi.fn(),
+      ensureSchemaResolved: vi.fn<MockFn>(),
     };
     const processor = new ResponseProcessor(
       {
@@ -74,7 +76,7 @@ describe("ResponseProcessor", () => {
 
   it("adds configured response sets and custom response references", () => {
     const schemaProcessor = {
-      ensureSchemaResolved: vi.fn(),
+      ensureSchemaResolved: vi.fn<MockFn>(),
     };
     const processor = new ResponseProcessor(
       {
@@ -110,7 +112,7 @@ describe("ResponseProcessor", () => {
 
   it("ignores missing response sets and uses fallback descriptions for custom schema refs", () => {
     const schemaProcessor = {
-      ensureSchemaResolved: vi.fn(),
+      ensureSchemaResolved: vi.fn<MockFn>(),
     };
     const processor = new ResponseProcessor(
       {
@@ -152,7 +154,7 @@ describe("ResponseProcessor", () => {
 
   it("uses inline descriptions for custom @add response schemas", () => {
     const schemaProcessor = {
-      ensureSchemaResolved: vi.fn(),
+      ensureSchemaResolved: vi.fn<MockFn>(),
     };
     const processor = new ResponseProcessor(
       {
@@ -189,7 +191,7 @@ describe("ResponseProcessor", () => {
 
   it("skips malformed custom responses and adds explicit 204 descriptions", () => {
     const schemaProcessor = {
-      ensureSchemaResolved: vi.fn(),
+      ensureSchemaResolved: vi.fn<MockFn>(),
     };
     const processor = new ResponseProcessor(
       {
@@ -231,7 +233,7 @@ describe("ResponseProcessor", () => {
 
   it("uses inferred responses when no explicit @response tag exists", () => {
     const schemaProcessor = {
-      ensureSchemaResolved: vi.fn(),
+      ensureSchemaResolved: vi.fn<MockFn>(),
     };
     const processor = new ResponseProcessor(
       {
@@ -266,8 +268,8 @@ describe("ResponseProcessor", () => {
 
   it("prefers inferred success status codes over mutation defaults", () => {
     const schemaProcessor = {
-      ensureSchemaResolved: vi.fn(),
-      resolveTypeExpression: vi.fn(),
+      ensureSchemaResolved: vi.fn<MockFn>(),
+      resolveTypeExpression: vi.fn<MockFn>(),
     };
     const processor = new ResponseProcessor(
       {
@@ -303,8 +305,8 @@ describe("ResponseProcessor", () => {
 
   it("supports inline response type expressions", () => {
     const schemaProcessor = {
-      ensureSchemaResolved: vi.fn(),
-      resolveTypeExpression: vi.fn(() => ({
+      ensureSchemaResolved: vi.fn<MockFn>(),
+      resolveTypeExpression: vi.fn<MockFn>(() => ({
         type: "object",
         properties: {
           success: {
@@ -350,7 +352,7 @@ describe("ResponseProcessor", () => {
 
   it("emits sequential media and examples for first-class 3.2 response metadata", () => {
     const schemaProcessor = {
-      ensureSchemaResolved: vi.fn(),
+      ensureSchemaResolved: vi.fn<MockFn>(),
     };
     const processor = new ResponseProcessor(
       {

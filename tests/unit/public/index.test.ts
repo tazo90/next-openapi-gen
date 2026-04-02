@@ -1,11 +1,13 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+type MockFn = (...args: unknown[]) => unknown;
+
 const { buildProgram, coreGenerateProject, coreOpenApiGenerator, coreWatchProject } = vi.hoisted(
   () => ({
-    buildProgram: vi.fn(),
-    coreGenerateProject: vi.fn(),
-    coreOpenApiGenerator: vi.fn(),
-    coreWatchProject: vi.fn(),
+    buildProgram: vi.fn<MockFn>(),
+    coreGenerateProject: vi.fn<MockFn>(),
+    coreOpenApiGenerator: vi.fn<MockFn>(),
+    coreWatchProject: vi.fn<MockFn>(),
   }),
 );
 
@@ -23,10 +25,10 @@ vi.mock("@workspace/openapi-core", () => ({
       coreOpenApiGenerator(options);
     }
   },
-  defineConfig: vi.fn((config) => config),
+  defineConfig: vi.fn<MockFn>((config) => config),
   generateProject: coreGenerateProject,
-  loadConfig: vi.fn(),
-  resolveGeneratedWorkspaceDir: vi.fn(),
+  loadConfig: vi.fn<MockFn>(),
+  resolveGeneratedWorkspaceDir: vi.fn<MockFn>(),
   watchProject: coreWatchProject,
 }));
 

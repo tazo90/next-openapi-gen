@@ -1,7 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
 
+type MockFn = (...args: unknown[]) => unknown;
+
 const { generateProject } = vi.hoisted(() => ({
-  generateProject: vi.fn(),
+  generateProject: vi.fn<MockFn>(),
 }));
 
 vi.mock("@workspace/openapi-core/core/generate.js", () => ({

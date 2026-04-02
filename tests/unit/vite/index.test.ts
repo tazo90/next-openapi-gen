@@ -1,9 +1,11 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+type MockFn = (...args: unknown[]) => unknown;
+
 const { generateProject, stopWatching, watchProject } = vi.hoisted(() => ({
-  generateProject: vi.fn(),
-  stopWatching: vi.fn(),
-  watchProject: vi.fn(() => Promise.resolve(stopWatching)),
+  generateProject: vi.fn<MockFn>(),
+  stopWatching: vi.fn<MockFn>(),
+  watchProject: vi.fn<MockFn>(() => Promise.resolve(stopWatching)),
 }));
 
 vi.mock("@workspace/openapi-core/core/generate.js", () => ({

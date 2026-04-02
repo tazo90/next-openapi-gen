@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
+type MockFn = (...args: unknown[]) => unknown;
+
 import {
   createDefaultPathParamsSchema,
   createMultipleResponsesSchema,
@@ -192,7 +194,7 @@ describe("TypeScript schema content helpers", () => {
     });
 
     const openapiDefinitions: Record<string, any> = {};
-    const findSchemaDefinition = vi.fn((schemaName: string) => {
+    const findSchemaDefinition = vi.fn<MockFn>((schemaName: string) => {
       openapiDefinitions[schemaName] = {
         type: "object",
         title: schemaName,
