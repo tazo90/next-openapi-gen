@@ -23,10 +23,11 @@
     "url": "git+ssh://git@github.com/tazo90/next-openapi-gen.git"
   },
   "bin": {
-    "next-openapi-gen": "./dist/cli.js",
-    "openapi-gen": "./dist/cli.js"
+    "next-openapi-gen": "./bin/cli.mjs",
+    "openapi-gen": "./bin/cli.mjs"
   },
   "files": [
+    "bin",
     "dist",
     "templates",
     "README.md"

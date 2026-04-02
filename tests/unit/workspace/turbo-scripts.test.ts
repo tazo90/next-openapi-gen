@@ -61,4 +61,22 @@ describe("workspace Turbo script ownership", () => {
 
     expect(turboConfig.tasks["//#knip:ci"]?.dependsOn).toEqual(["next-openapi-gen#build"]);
   });
+
+  it("keeps the public CLI bins pointed at a committed wrapper", () => {
+    const packageJson = JSON.parse(
+      fs.readFileSync(
+        path.join(workspaceRoot, "packages", "next-openapi-gen", "package.json"),
+        "utf8",
+      ),
+    ) as {
+      bin: Record<string, string>;
+      files: string[];
+    };
+
+    expect(packageJson.bin).toMatchObject({
+      "next-openapi-gen": "./bin/cli.mjs",
+      "openapi-gen": "./bin/cli.mjs",
+    });
+    expect(packageJson.files).toContain("bin");
+  });
 });

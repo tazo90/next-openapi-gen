@@ -38,8 +38,8 @@ describe("next-openapi-gen cli entrypoint", () => {
     };
 
     expect(packageJson.bin).toMatchObject({
-      "next-openapi-gen": "./dist/cli.js",
-      "openapi-gen": "./dist/cli.js",
+      "next-openapi-gen": "./bin/cli.mjs",
+      "openapi-gen": "./bin/cli.mjs",
     });
   });
 });
