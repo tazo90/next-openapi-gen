@@ -25,7 +25,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 - Shared TypeScript baselines in `packages/typescript-config` (`base.json`, `nextjs.json`) intentionally follow a stricter preset.
 - Workspace editor defaults live in `.vscode/`; they point TypeScript at the workspace SDK and use the Oxc VS Code extension for formatting and fixes.
-- Git hooks are installed via `simple-git-hooks` from the root `package.json`; `pre-commit` runs `lint-staged` with Oxfmt/Oxlint and `commit-msg` runs `commitlint`.
+- Git hooks are installed via `simple-git-hooks` from the root `package.json`; `pre-commit` runs `lint-staged` with Oxfmt/Oxlint and `commit-msg` runs `commitlint`. Root `.oxfmtrc.json` ignores `**/public/openapi.json`; when only such generated JSON is staged, `oxfmt` can otherwise receive no paths, so lint-staged runs `oxfmt` with `--no-error-on-unmatched-pattern` (root `package.json`).
 - The workspace pins a Zod 3 compatibility catalog (and related apps) to the latest Zod 3 line; broad dependency major upgrades should not fold that track onto Zod 4.
 - Vitest coverage thresholds in `vitest.config.ts` are currently `90/90/90/90` for statements, branches, functions, and lines.
 - Integration generator fixtures live under `tests/fixtures/projects/`, and `tests/helpers/test-project.ts` provides temp-copy, template-materialization, and isolated-cwd helpers for running them; the `next/app-router/core-flow` fixture carries checked-in OpenAPI `3.0`/`3.1`/`3.2` templates, and `apps/next-app-next-config` plus `apps/next-app-zod` serve as concrete `3.1`/`3.2` examples.

@@ -76,6 +76,66 @@ export type UserList = {
     }
   });
 
+  it("does not write the incremental manifest when NODE_ENV is production", async () => {
+    const project = createTempProject("nxog-core-generate-prod-manifest-");
+    const prevEnv = process.env.NODE_ENV;
+    process.env.NODE_ENV = "production";
+
+    try {
+      writeJsonFile(path.join(project.root, "next.openapi.json"), {
+        openapi: "3.0.0",
+        info: {
+          title: "API Documentation",
+          version: "1.0.0",
+          description: "Fixture template",
+        },
+        apiDir: "./src/app/api",
+        schemaDir: "./src",
+        schemaType: "zod",
+        outputDir: "./public",
+        outputFile: "openapi.json",
+        docsUrl: "api-docs",
+        ui: "scalar",
+        includeOpenApiRoutes: false,
+        ignoreRoutes: [],
+        debug: false,
+        generatedDir: ".openapi-cache",
+      });
+      writeAppRoute(
+        project.root,
+        ["users"],
+        `/**
+ * @openapi
+ * @response UserList
+ */
+export async function GET() {}
+
+export type UserList = {
+  items: string[];
+};
+`,
+      );
+
+      const { manifestPath, outputPath } = await withProjectCwd(project.root, async () => {
+        await generateProject();
+        return {
+          outputPath: fs.realpathSync(path.join(project.root, "public", "openapi.json")),
+          manifestPath: path.join(project.root, ".openapi-cache", "manifest.json"),
+        };
+      });
+
+      expect(fs.existsSync(outputPath)).toBe(true);
+      expect(fs.existsSync(manifestPath)).toBe(false);
+    } finally {
+      if (prevEnv === undefined) {
+        delete process.env.NODE_ENV;
+      } else {
+        process.env.NODE_ENV = prevEnv;
+      }
+      project.cleanup();
+    }
+  });
+
   it("optionally emits the Next docs page when enabled", async () => {
     const project = createTempProject("nxog-core-generate-docs-");
 
