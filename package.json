@@ -53,7 +53,7 @@
     "test:e2e:next-app-next-config": "cross-env E2E_APP=next-app-next-config pnpm test:e2e:app",
     "test:e2e:next-app-ts-config": "cross-env E2E_APP=next-app-ts-config pnpm test:e2e:app",
     "release": "pnpm --filter next-openapi-gen release && node scripts/publish.mjs",
-    "verify": "pnpm check && pnpm knip:ci && pnpm test:unit && pnpm test:integration && pnpm build",
+    "verify": "pnpm check && pnpm --filter next-openapi-gen build && pnpm knip:ci && pnpm test:unit && pnpm test:integration && pnpm build",
     "version": "pnpm --filter next-openapi-gen version"
   },
   "devDependencies": {

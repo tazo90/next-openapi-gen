@@ -47,6 +47,11 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # Knip loads Vite configs (e.g. apps/react-router-app/vite.config.ts), which import
+      # next-openapi-gen/vite → dist/vite/index.js. That file exists only after the package build.
+      - name: Build next-openapi-gen for Knip
+        run: pnpm --filter next-openapi-gen build
+
       - name: Check formatting
         run: pnpm format:check
 

@@ -27,7 +27,7 @@ describe("example app generate scripts", () => {
           return [];
         }
 
-        return packageJson.scripts.generate === "openapi-gen generate"
+        return packageJson.scripts.generate === "pnpm exec openapi-gen generate"
           ? []
           : [`apps/${entry.name}/package.json -> ${packageJson.scripts.generate}`];
       });
