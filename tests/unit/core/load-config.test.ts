@@ -149,7 +149,9 @@ describe("loadConfig", () => {
     await loadConfig({ cwd: tempDir });
 
     expect(emitWarning).toHaveBeenCalledWith(
-      expect.stringContaining('The config filename "next.openapi.json" is deprecated'),
+      expect.stringMatching(
+        /The config filename "next\.openapi\.json" is deprecated.*Prefer "openapi-gen\.config\.ts"/,
+      ),
       expect.objectContaining({
         type: "DeprecationWarning",
       }),

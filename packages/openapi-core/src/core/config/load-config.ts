@@ -121,7 +121,7 @@ function warnForLegacyConfigName(cwd: string, configPath: string): void {
 
 function getModernConfigSuggestion(configPath: string): string {
   if (configPath.endsWith("next.openapi.json")) {
-    return configPath.replace("next.openapi.json", "openapi-gen.config.json");
+    return configPath.replace("next.openapi.json", "openapi-gen.config.ts");
   }
 
   return configPath.replace("next-openapi.config", "openapi-gen.config");
