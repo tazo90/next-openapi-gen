@@ -1,18 +1,32 @@
+## [1.0.3](https://github.com/tazo90/next-openapi-gen/compare/v1.0.2...v1.0.3) (2026-04-02)
+
+### ✨ Features
+
+- ci fixes and packages updates ([#112](https://github.com/tazo90/next-openapi-gen/issues/112)) ([c1b9fbd](https://github.com/tazo90/next-openapi-gen/commit/c1b9fbdd865db3c5a27b12df9ea278a2aaf42bcc)) by [@tazo90](https://github.com/tazo90)
+
+### 📝 Documentation
+
+- update CHANGELOG.md for v1.2.0 ([7047509](https://github.com/tazo90/next-openapi-gen/commit/7047509cf6fbd4fb8fa2f01e10761ffb5ff47e8d)) by [@tazo90](https://github.com/tazo90)
+
+### 🔨 Chores
+
+- add MIT license ([a27ebae](https://github.com/tazo90/next-openapi-gen/commit/a27ebae3f870dc1c645d7da155edf87b4183de28)) by [@tazo90](https://github.com/tazo90)
+
 ## [1.0.2](https://github.com/tazo90/next-openapi-gen/compare/v1.0.1...v1.0.2) (2026-04-01)
 
 ### 🐛 Bug Fixes
 
-- **templates:** Fix invalid package root directory in ui-template ([71588cd](https://github.com/tazo90/next-openapi-gen/commit/71588cdf05ba8749dcba30ccd680518e06e207d0) by [@tazo90](https://github.com/tazo90))
+- **templates:** Fix invalid package root directory in ui-template ([71588cd](https://github.com/tazo90/next-openapi-gen/commit/71588cdf05ba8749dcba30ccd680518e06e207d0)) by [@tazo90](https://github.com/tazo90)
 
 ### 🔨 Chores
 
-- Remove bundled examples and update `.gitignore` ([c222e74](https://github.com/tazo90/next-openapi-gen/commit/c222e74e95a7f03adf5ae05413de5091d111f607) by [@tazo90](https://github.com/tazo90))
+- Remove bundled examples and update `.gitignore` ([c222e74](https://github.com/tazo90/next-openapi-gen/commit/c222e74e95a7f03adf5ae05413de5091d111f607)) by [@tazo90](https://github.com/tazo90)
 
 ## [1.0.1](https://github.com/tazo90/next-openapi-gen/compare/v1.0.0...v1.0.1) (2026-03-31)
 
 ### 🐛 Bug Fixes
 
-- **pkg:** Include `README.md` in the published package ([2bd4173](https://github.com/tazo90/next-openapi-gen/commit/2bd4173210faf42088fdf9384d41cfd0ee8bd34c) by [@tazo90](https://github.com/tazo90))
+- **pkg:** Include `README.md` in the published package ([2bd4173](https://github.com/tazo90/next-openapi-gen/commit/2bd4173210faf42088fdf9384d41cfd0ee8bd34c)) by [@tazo90](https://github.com/tazo90)
 
 # [1.0.0](https://github.com/tazo90/next-openapi-gen/compare/v0.10.5...v1.0.0) (2026-03-31)
 
