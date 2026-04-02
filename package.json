@@ -89,10 +89,10 @@
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx,mjs,cjs,mts,cts}": [
-      "oxfmt --config ./.oxfmtrc.json --ignore-path .gitignore",
+      "oxfmt --config ./.oxfmtrc.json --ignore-path .gitignore --no-error-on-unmatched-pattern",
       "oxlint --config ./.oxlintrc.json --ignore-path .gitignore --deny-warnings"
     ],
-    "*.{json,jsonc,md,mdx,yml,yaml,css,scss,html,toml}": "oxfmt --config ./.oxfmtrc.json --ignore-path .gitignore"
+    "*.{json,jsonc,md,mdx,yml,yaml,css,scss,html,toml}": "oxfmt --config ./.oxfmtrc.json --ignore-path .gitignore --no-error-on-unmatched-pattern"
   },
   "engines": {
     "node": ">=24.0.0"
