@@ -2,77 +2,78 @@
 
 ### 🐛 Bug Fixes
 
-- invalid package root dir in ui-template ([71588cd](https://github.com/tazo90/next-openapi-gen/commit/71588cdf05ba8749dcba30ccd680518e06e207d0))
+- **templates:** Fix invalid package root directory in ui-template ([71588cd](https://github.com/tazo90/next-openapi-gen/commit/71588cdf05ba8749dcba30ccd680518e06e207d0) by [@tazo90](https://github.com/tazo90))
 
 ### 🔨 Chores
 
-- remove examples and update .gitignore ([c222e74](https://github.com/tazo90/next-openapi-gen/commit/c222e74e95a7f03adf5ae05413de5091d111f607))
+- Remove bundled examples and update `.gitignore` ([c222e74](https://github.com/tazo90/next-openapi-gen/commit/c222e74e95a7f03adf5ae05413de5091d111f607) by [@tazo90](https://github.com/tazo90))
 
 ## [1.0.1](https://github.com/tazo90/next-openapi-gen/compare/v1.0.0...v1.0.1) (2026-03-31)
 
 ### 🐛 Bug Fixes
 
-- add README.md to build package ([2bd4173](https://github.com/tazo90/next-openapi-gen/commit/2bd4173210faf42088fdf9384d41cfd0ee8bd34c))
+- **pkg:** Include `README.md` in the published package ([2bd4173](https://github.com/tazo90/next-openapi-gen/commit/2bd4173210faf42088fdf9384d41cfd0ee8bd34c) by [@tazo90](https://github.com/tazo90))
 
 # [1.0.0](https://github.com/tazo90/next-openapi-gen/compare/v0.10.5...v1.0.0) (2026-03-31)
 
+This major release is a full modernization of the project. The codebase has been restructured into a Turborepo monorepo, split into focused packages, and ships with OpenAPI 3.1/3.2 support, strict TypeScript, a new real-world integration and end-to-end test suite, and meaningful performance improvements.
+
+### ⚠️ Breaking Changes
+
+- The package has been restructured as part of the monorepo migration. If upgrading from v0.x, review the updated installation and configuration instructions.
+
 ### ✨ Features
 
-- add agent skills ([9f06e38](https://github.com/tazo90/next-openapi-gen/commit/9f06e3865a9e6413061cbade99bfd22f9725b044))
-- add dependabot ([10d44d9](https://github.com/tazo90/next-openapi-gen/commit/10d44d922d225bcfc7726c3f3be6ffa33bb503d1))
-- add e2e for all apps ([f3e3560](https://github.com/tazo90/next-openapi-gen/commit/f3e35607702adbe3b83500d4b23752e47db7b34e))
-- add generate to turbo ([350dc78](https://github.com/tazo90/next-openapi-gen/commit/350dc78818d74a652ace2f4899c4f1f59d061c0e))
-- add github actions ([22a0188](https://github.com/tazo90/next-openapi-gen/commit/22a018885fb708789934e10124cf78683a8bfbc3))
-- add knip ([63cb8aa](https://github.com/tazo90/next-openapi-gen/commit/63cb8aa0e4db89246f90827024946a27075c298c))
-- add publish script to support pnpm release with workspaces ([0d1fe06](https://github.com/tazo90/next-openapi-gen/commit/0d1fe067fb6c1da4c1e4d28113359a5c66a28834))
-- add real world integration tests ([f6c8cea](https://github.com/tazo90/next-openapi-gen/commit/f6c8cea2b4aed12c00719de5be41817e24cf8441))
-- add sample apps for react router and tanstack ([5ca4fd9](https://github.com/tazo90/next-openapi-gen/commit/5ca4fd982d3253c80e2b7b9f29a0f8f73f1fb217))
-- better strict typescript ([742eac1](https://github.com/tazo90/next-openapi-gen/commit/742eac1bd06f6c3bc84feb466d30ac18c7d1a437))
-- better zod support ([de02482](https://github.com/tazo90/next-openapi-gen/commit/de024822ce44bc8754bee138382527d5f8fe958f))
-- commit lint and standard config ([04e8084](https://github.com/tazo90/next-openapi-gen/commit/04e8084e71a2d391ac1e70a680da5ce739fc438d))
-- introduce oxlint and oxfmt ([3209b3b](https://github.com/tazo90/next-openapi-gen/commit/3209b3bb5f9fde3b31ba6c1ce2a0a875b427e94e))
-- make ui templates typed ([dfec719](https://github.com/tazo90/next-openapi-gen/commit/dfec719ce140e346dfdf26bb95f4574052f38cf1))
-- more docs ([ff24483](https://github.com/tazo90/next-openapi-gen/commit/ff24483654d3fb0ebfc6e2403d2b07569b83e587))
-- more tests ([ad5e92e](https://github.com/tazo90/next-openapi-gen/commit/ad5e92e37e2fca516ad97cb7b59557c0a40bba8b))
-- more tests ([e683e67](https://github.com/tazo90/next-openapi-gen/commit/e683e67dc8c9da39cd2c04005ce3bfdee3d0e34b))
-- more tests ([de7f6b7](https://github.com/tazo90/next-openapi-gen/commit/de7f6b76dde0b266f96ffcc58e0dfbab8e2c4fc7))
-- move into a standard monorepo with turborepo ([b7fae86](https://github.com/tazo90/next-openapi-gen/commit/b7fae86376c6e4d2315c8e5a32dc2ccea6502fea))
-- move to pnpm ([9fed4df](https://github.com/tazo90/next-openapi-gen/commit/9fed4df6748d06972126a567d7ffb8e4b0f4a9dc))
-- new test suite and updates ([59b43d2](https://github.com/tazo90/next-openapi-gen/commit/59b43d2a9744a8b00d8aa51f6c0dfcda80e375bd))
-- openapi 3.1 and 3.2 support ([f62dcc1](https://github.com/tazo90/next-openapi-gen/commit/f62dcc17ae88c2852ae08800a904766b179be2d0))
-- performance optimal ([fd5495e](https://github.com/tazo90/next-openapi-gen/commit/fd5495ea99e1734b97dabe618fae5c88a14b4ba1))
-- put packages into catalogs ([9aea033](https://github.com/tazo90/next-openapi-gen/commit/9aea033d44676b0a157f44285c53ed9cea3d6a3d))
-- refactor cli ([bebd0f3](https://github.com/tazo90/next-openapi-gen/commit/bebd0f317f6468b94b349a87498527a6ecf656bd))
-- refactor structure and naming for future expansion ([a8a05fc](https://github.com/tazo90/next-openapi-gen/commit/a8a05fc54f49032c6ef7f3d74a0540b7968bef08))
-- refactor testing as well ([3ce5f24](https://github.com/tazo90/next-openapi-gen/commit/3ce5f249f41b371da9c51e007e358a61a9f666a6))
-- restructure the lib for new features ([f3d84ec](https://github.com/tazo90/next-openapi-gen/commit/f3d84ec01eead208a215abf41848dd1aa69d1a13))
-- split up the code into packages ([8d680c3](https://github.com/tazo90/next-openapi-gen/commit/8d680c3313403b954865be8d78b0735a41c97778))
-- stricter types ([e75d8ed](https://github.com/tazo90/next-openapi-gen/commit/e75d8ed0dbbf16e7b2db6794f6e8baa14a02af5f))
-- update basic repo config ([3fe4aff](https://github.com/tazo90/next-openapi-gen/commit/3fe4affc6fec6cd72af94c84198d7d4f4401f1c2))
-- update benchmarks to cover more ([007e32a](https://github.com/tazo90/next-openapi-gen/commit/007e32a5dc0374b606100ac5dd6459cf7c84db34))
-- update to next16 ([d4bc32b](https://github.com/tazo90/next-openapi-gen/commit/d4bc32b2bbfcfc09194fda90aaba9685e5921c2b))
+- **openapi:** Add OpenAPI 3.1 and 3.2 specification support ([f62dcc1](https://github.com/tazo90/next-openapi-gen/commit/f62dcc17ae88c2852ae08800a904766b179be2d0)) by [@martijn00](https://github.com/martijn00)
+- **zod:** Expand Zod schema inference and type coverage ([de02482](https://github.com/tazo90/next-openapi-gen/commit/de024822ce44bc8754bee138382527d5f8fe958f)) by [@martijn00](https://github.com/martijn00)
+- **typescript:** Enforce strict TypeScript across the entire codebase ([742eac1](https://github.com/tazo90/next-openapi-gen/commit/742eac1bd06f6c3bc84feb466d30ac18c7d1a437), [e75d8ed](https://github.com/tazo90/next-openapi-gen/commit/e75d8ed0dbbf16e7b2db6794f6e8baa14a02af5f)) by [@martijn00](https://github.com/martijn00)
+- **templates:** Add full TypeScript types to UI template components ([dfec719](https://github.com/tazo90/next-openapi-gen/commit/dfec719ce140e346dfdf26bb95f4574052f38cf1)) by [@martijn00](https://github.com/martijn00)
+- **cli:** Refactor CLI commands for improved ergonomics and extensibility ([bebd0f3](https://github.com/tazo90/next-openapi-gen/commit/bebd0f317f6468b94b349a87498527a6ecf656bd)) by [@martijn00](https://github.com/martijn00)
+- **perf:** Optimize OpenAPI generation performance ([fd5495e](https://github.com/tazo90/next-openapi-gen/commit/fd5495ea99e1734b97dabe618fae5c88a14b4ba1)) by [@martijn00](https://github.com/martijn00)
+- **examples:** Add sample applications for React Router and TanStack ([5ca4fd9](https://github.com/tazo90/next-openapi-gen/commit/5ca4fd982d3253c80e2b7b9f29a0f8f73f1fb217)) by [@martijn00](https://github.com/martijn00)
+- **next:** Update to Next.js 16 ([d4bc32b](https://github.com/tazo90/next-openapi-gen/commit/d4bc32b2bbfcfc09194fda90aaba9685e5921c2b)) by [@martijn00](https://github.com/martijn00)
+- **bench:** Expand benchmark coverage ([007e32a](https://github.com/tazo90/next-openapi-gen/commit/007e32a5dc0374b606100ac5dd6459cf7c84db34)) by [@martijn00](https://github.com/martijn00)
 
 ### 🐛 Bug Fixes
 
-- correct release command in package.json ([019a3bf](https://github.com/tazo90/next-openapi-gen/commit/019a3bf882f87ea08995ab844adfb7626f7dfb74))
-- fix drizzle bug ([f157e4c](https://github.com/tazo90/next-openapi-gen/commit/f157e4c46a4c010e83da83f90695cb9195af0b67))
-- fix issues for windows ([d7bf8f8](https://github.com/tazo90/next-openapi-gen/commit/d7bf8f849e6da54ae3cdad67642ee159e286df84))
-- fix missing generated specs ([f139dcf](https://github.com/tazo90/next-openapi-gen/commit/f139dcfe666e8a91f19c755bcf6653c80663ecbf))
-- fix Windows compatibility for tests and e2e scripts ([edca05d](https://github.com/tazo90/next-openapi-gen/commit/edca05dffc78710f8699c8bee3ccb166ee4a685f))
-- more performance ([5a5c806](https://github.com/tazo90/next-openapi-gen/commit/5a5c8069c63a5f3f4bd803c84a183963b4f33811))
+- **drizzle:** Fix Drizzle ORM schema compatibility ([f157e4c](https://github.com/tazo90/next-openapi-gen/commit/f157e4c46a4c010e83da83f90695cb9195af0b67)) by [@martijn00](https://github.com/martijn00)
+- **windows:** Fix path compatibility on Windows for tests and e2e scripts ([d7bf8f8](https://github.com/tazo90/next-openapi-gen/commit/d7bf8f849e6da54ae3cdad67642ee159e286df84) by [@martijn00](https://github.com/martijn00), [edca05d](https://github.com/tazo90/next-openapi-gen/commit/edca05dffc78710f8699c8bee3ccb166ee4a685f) by [@tazo90](https://github.com/tazo90))
+- **specs:** Fix missing generated OpenAPI specs in certain project configurations ([f139dcf](https://github.com/tazo90/next-openapi-gen/commit/f139dcfe666e8a91f19c755bcf6653c80663ecbf)) by [@martijn00](https://github.com/martijn00)
+- **perf:** Additional generation performance improvements ([5a5c806](https://github.com/tazo90/next-openapi-gen/commit/5a5c8069c63a5f3f4bd803c84a183963b4f33811)) by [@martijn00](https://github.com/martijn00)
 
-### 📝 Documentation
+### 🏗️ Infrastructure
 
-- update openapi.json for next-app-zod ([5e6798e](https://github.com/tazo90/next-openapi-gen/commit/5e6798ec8cdc7f7266d308bc4b9cc844f73fb708))
+- **monorepo:** Migrate to Turborepo monorepo and split codebase into focused packages ([b7fae86](https://github.com/tazo90/next-openapi-gen/commit/b7fae86376c6e4d2315c8e5a32dc2ccea6502fea), [8d680c3](https://github.com/tazo90/next-openapi-gen/commit/8d680c3313403b954865be8d78b0735a41c97778)) by [@martijn00](https://github.com/martijn00)
+- **pkg:** Migrate to pnpm with workspace catalogs for dependency management ([9fed4df](https://github.com/tazo90/next-openapi-gen/commit/9fed4df6748d06972126a567d7ffb8e4b0f4a9dc), [9aea033](https://github.com/tazo90/next-openapi-gen/commit/9aea033d44676b0a157f44285c53ed9cea3d6a3d)) by [@martijn00](https://github.com/martijn00)
+- **ci:** Add GitHub Actions CI pipeline with full test and build matrix ([22a0188](https://github.com/tazo90/next-openapi-gen/commit/22a018885fb708789934e10124cf78683a8bfbc3)) by [@martijn00](https://github.com/martijn00)
+- **ci:** Add Dependabot for automated dependency updates ([10d44d9](https://github.com/tazo90/next-openapi-gen/commit/10d44d922d225bcfc7726c3f3be6ffa33bb503d1)) by [@martijn00](https://github.com/martijn00)
+- **lint:** Adopt oxlint and oxfmt for fast linting and formatting ([3209b3b](https://github.com/tazo90/next-openapi-gen/commit/3209b3bb5f9fde3b31ba6c1ce2a0a875b427e94e)) by [@martijn00](https://github.com/martijn00)
+- **lint:** Add commitlint with standardized commit message convention ([04e8084](https://github.com/tazo90/next-openapi-gen/commit/04e8084e71a2d391ac1e70a680da5ce739fc438d)) by [@martijn00](https://github.com/martijn00)
+- **test:** Add real-world integration tests and end-to-end test suite ([f6c8cea](https://github.com/tazo90/next-openapi-gen/commit/f6c8cea2b4aed12c00719de5be41817e24cf8441), [f3e3560](https://github.com/tazo90/next-openapi-gen/commit/f3e35607702adbe3b83500d4b23752e47db7b34e), [59b43d2](https://github.com/tazo90/next-openapi-gen/commit/59b43d2a9744a8b00d8aa51f6c0dfcda80e375bd)) by [@martijn00](https://github.com/martijn00)
+- **release:** Add pnpm workspace-compatible publish script ([0d1fe06](https://github.com/tazo90/next-openapi-gen/commit/0d1fe067fb6c1da4c1e4d28113359a5c66a28834)) by [@tazo90](https://github.com/tazo90)
 
-### 🔨 Chores
+---
 
-- cleanup templates ([05f4c4c](https://github.com/tazo90/next-openapi-gen/commit/05f4c4c62ddb7261b91576bae889a95c45c5c1ba))
-- more turbo ([7499eb7](https://github.com/tazo90/next-openapi-gen/commit/7499eb7813b8d476f0fe4766b8a4f47ade4c027a))
-- move to ts ([f8baab5](https://github.com/tazo90/next-openapi-gen/commit/f8baab509d5e44802d0d2075d54b6e5b8e7c1247))
-- rename ([f89ea5e](https://github.com/tazo90/next-openapi-gen/commit/f89ea5e0726d6621bf924a094413a0784528e9f7))
-- replace swagger implementation ([af9048c](https://github.com/tazo90/next-openapi-gen/commit/af9048c77cd31cbb742940318a7bbee5ad344016))
-- update the docs and performance improvements ([d5c63de](https://github.com/tazo90/next-openapi-gen/commit/d5c63de49797cf70f585bcaa1461fdd0d1f6e2b9))
+### Contributors
+
+<table>
+  <tr>
+    <td align="center">
+      <a href="https://github.com/tazo90">
+        <img src="https://github.com/tazo90.png?size=48" width="48" alt="tazo90" style="border-radius:50%"/><br/>
+        <sub><b>@tazo90</b></sub>
+      </a>
+    </td>
+    <td align="center">
+      <a href="https://github.com/martijn00">
+        <img src="https://github.com/martijn00.png?size=48" width="48" alt="martijn00" style="border-radius:50%"/><br/>
+        <sub><b>@martijn00</b></sub>
+      </a>
+    </td>
+  </tr>
+</table>
+
+Special thanks to [@martijn00](https://github.com/martijn00) for an extraordinary contribution — modernizing the entire workspace, adding OpenAPI 3.1/3.2 support, expanding Zod handling, building out the test suite, setting up the CI pipeline, and much more ([#106](https://github.com/tazo90/next-openapi-gen/pull/106)).
 
 ## [0.10.5](https://github.com/tazo90/next-openapi-gen/compare/v0.10.4...v0.10.5) (2026-03-17)
 
