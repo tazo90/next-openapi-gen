@@ -85,6 +85,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Build next-openapi-gen
+        run: pnpm --filter next-openapi-gen build
+
       - name: Build workspace
         run: pnpm build
 
