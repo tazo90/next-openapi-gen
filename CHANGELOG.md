@@ -2,7 +2,7 @@
 
 ### ✨ Features
 
-- ci fixes and packages updates ([#112](https://github.com/tazo90/next-openapi-gen/issues/112)) ([c1b9fbd](https://github.com/tazo90/next-openapi-gen/commit/c1b9fbdd865db3c5a27b12df9ea278a2aaf42bcc)) by [@tazo90](https://github.com/tazo90)
+- ci fixes and packages updates ([#112](https://github.com/tazo90/next-openapi-gen/issues/112)) ([c1b9fbd](https://github.com/tazo90/next-openapi-gen/commit/c1b9fbdd865db3c5a27b12df9ea278a2aaf42bcc)) by [@martijn00](https://github.com/martijn00)
 
 ### 📝 Documentation
 
