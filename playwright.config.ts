@@ -7,10 +7,7 @@ const baseURL = `http://localhost:${app.port}`;
 const readyURL = `${baseURL}${app.docsPath}`;
 
 function createEnsureNextOpenApiGenBuildCommand() {
-  const cli = "packages/next-openapi-gen/dist/cli.js";
-  const next = "packages/next-openapi-gen/dist/next/index.js";
-
-  return `node -e "const fs = require('node:fs'); if (!fs.existsSync('${cli}') || !fs.existsSync('${next}')) process.exit(1);" || pnpm --filter next-openapi-gen build`;
+  return "pnpm exec turbo run build --filter=next-openapi-gen...";
 }
 
 function createAssertOpenApiFileCommand() {
