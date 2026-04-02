@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
+type MockFn = (...args: unknown[]) => unknown;
+
 import {
   CLI_FRAMEWORK_CHOICES,
   CLI_NAME,
@@ -75,7 +77,7 @@ describe("CLI program", () => {
 
   it("parses init and generate options through the public command surface", async () => {
     const program = buildProgram();
-    const actionSpy = vi.fn();
+    const actionSpy = vi.fn<MockFn>();
     program.commands.forEach((command) => {
       command.action(actionSpy);
     });

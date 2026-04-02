@@ -7,7 +7,7 @@ const workspaceRoot = path.resolve(import.meta.dirname, "..", "..", "..");
 const appsDir = path.join(workspaceRoot, "apps");
 
 describe("example app generate scripts", () => {
-  it("invoke the preferred CLI alias directly", () => {
+  it("invoke the preferred CLI entry directly", () => {
     const mismatches = fs
       .readdirSync(appsDir, { withFileTypes: true })
       .filter((entry) => entry.isDirectory())
@@ -27,7 +27,7 @@ describe("example app generate scripts", () => {
           return [];
         }
 
-        return packageJson.scripts.generate === "openapi-gen generate"
+        return packageJson.scripts.generate === "pnpm exec next-openapi-gen generate"
           ? []
           : [`apps/${entry.name}/package.json -> ${packageJson.scripts.generate}`];
       });

@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 import { normalizeRapidocTemplate } from "./rapidoc-template.js";
 import type { InitFramework } from "./framework.js";
 
-const packageRootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const packageRootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 const uiTemplatesDir = path.join(packageRootDir, "templates", "init", "ui");
 
 type RenderUiTemplateOptions = {

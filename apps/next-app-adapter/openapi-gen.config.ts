@@ -3,9 +3,9 @@ import { defineConfig } from "next-openapi-gen";
 export default defineConfig({
   openapi: "3.0.0",
   info: {
-    title: "Typed Config API",
+    title: "Next Adapter API",
     version: "1.0.0",
-    description: "OpenAPI document discovered from next-openapi.config.ts.",
+    description: "OpenAPI document generated from the Next 16 adapter build hook.",
   },
   apiDir: "./src/app/api",
   schemaDir: "./src",

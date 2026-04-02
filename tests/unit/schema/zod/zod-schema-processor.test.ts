@@ -1,14 +1,16 @@
 import { describe, expect, it, vi } from "vitest";
 
+type MockFn = (...args: unknown[]) => unknown;
+
 import { ZodSchemaProcessor } from "@workspace/openapi-core/schema/zod/zod-schema-processor.js";
 
 describe("ZodSchemaProcessor", () => {
   it("delegates schema resolution and exposes the underlying converter", () => {
     const converter = {
-      getProcessedSchemas: vi.fn(() => ({
+      getProcessedSchemas: vi.fn<MockFn>(() => ({
         UserSchema: { type: "object" },
       })),
-      convertZodSchemaToOpenApi: vi.fn(() => ({
+      convertZodSchemaToOpenApi: vi.fn<MockFn>(() => ({
         type: "string",
       })),
     };

@@ -1,9 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
 
+type MockFn = (...args: unknown[]) => unknown;
+
 import { FrameworkKind } from "@workspace/openapi-core/shared/types.js";
 
 const { createNextFrameworkSource } = vi.hoisted(() => ({
-  createNextFrameworkSource: vi.fn(() => ({ name: "next-source" })),
+  createNextFrameworkSource: vi.fn<MockFn>(() => ({ name: "next-source" })),
 }));
 
 vi.mock("@workspace/openapi-framework-next/frameworks/next/source.js", () => ({

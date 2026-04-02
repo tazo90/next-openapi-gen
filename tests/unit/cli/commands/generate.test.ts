@@ -3,6 +3,8 @@ import path from "node:path";
 
 import { describe, expect, it, vi } from "vitest";
 
+type MockFn = (...args: unknown[]) => unknown;
+
 import {
   createTempProject,
   withProjectCwd,
@@ -20,7 +22,7 @@ async function loadGenerateModule(
 ) {
   vi.resetModules();
   vi.doMock("ora", () => ({
-    default: vi.fn(() => spinner),
+    default: vi.fn<MockFn>(() => spinner),
   }));
   setupMocks?.();
 
@@ -36,8 +38,8 @@ describe("generate command", () => {
   it("writes an OpenAPI document using the configured output path", async () => {
     const project = createTempProject("nxog-generate-");
     const spinner = {
-      start: vi.fn().mockReturnThis(),
-      succeed: vi.fn(),
+      start: vi.fn<MockFn>().mockReturnThis(),
+      succeed: vi.fn<MockFn>(),
     };
 
     try {
@@ -84,8 +86,8 @@ export async function GET() {}
   it("uses the default template path when no template option is provided", async () => {
     const project = createTempProject("nxog-generate-default-template-");
     const spinner = {
-      start: vi.fn().mockReturnThis(),
-      succeed: vi.fn(),
+      start: vi.fn<MockFn>().mockReturnThis(),
+      succeed: vi.fn<MockFn>(),
     };
 
     try {
@@ -105,8 +107,8 @@ export async function GET() {}
   it("discovers typed config files when no template option is provided", async () => {
     const project = createTempProject("nxog-generate-typed-config-");
     const spinner = {
-      start: vi.fn().mockReturnThis(),
-      succeed: vi.fn(),
+      start: vi.fn<MockFn>().mockReturnThis(),
+      succeed: vi.fn<MockFn>(),
     };
 
     try {
@@ -165,9 +167,9 @@ export async function GET() {}`,
   it("propagates generation errors before reporting success", async () => {
     const project = createTempProject("nxog-generate-missing-template-");
     const spinner = {
-      start: vi.fn().mockReturnThis(),
-      succeed: vi.fn(),
-      fail: vi.fn(),
+      start: vi.fn<MockFn>().mockReturnThis(),
+      succeed: vi.fn<MockFn>(),
+      fail: vi.fn<MockFn>(),
     };
 
     try {
@@ -186,15 +188,15 @@ export async function GET() {}`,
 
   it("starts the watcher when watch mode is enabled", async () => {
     const spinner = {
-      start: vi.fn().mockReturnThis(),
-      succeed: vi.fn(),
-      info: vi.fn(),
+      start: vi.fn<MockFn>().mockReturnThis(),
+      succeed: vi.fn<MockFn>(),
+      info: vi.fn<MockFn>(),
     };
-    const generateProject = vi.fn(async () => ({
+    const generateProject = vi.fn<MockFn>(async () => ({
       artifacts: [],
       outputFile: "/tmp/openapi.json",
     }));
-    const watchProject = vi.fn(async () => vi.fn());
+    const watchProject = vi.fn<MockFn>(async () => vi.fn<MockFn>());
 
     const { generate } = await loadGenerateModule(spinner, () => {
       vi.doMock("@workspace/openapi-core", () => ({

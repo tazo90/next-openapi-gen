@@ -2,10 +2,11 @@
   "name": "next-app-adapter",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "generate": "openapi-gen generate",
+    "generate": "pnpm exec next-openapi-gen generate",
     "start": "next start",
     "lint": "oxlint --config ../../packages/oxlint-config/base.json . --ignore-path ../../.gitignore --deny-warnings",
     "format": "oxfmt --config ../../packages/oxfmt-config/oxfmt.json --ignore-path ../../.gitignore .",

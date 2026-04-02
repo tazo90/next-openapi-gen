@@ -19,6 +19,7 @@
   "scripts": {
     "clean": "rm -rf dist tsconfig.tsbuildinfo",
     "build": "pnpm clean && tsc",
+    "check": "pnpm format:check && pnpm lint",
     "format": "oxfmt --config ../oxfmt-config/oxfmt.json --ignore-path ../../.gitignore .",
     "format:check": "oxfmt --config ../oxfmt-config/oxfmt.json --ignore-path ../../.gitignore --check .",
     "lint": "oxlint --config ../oxlint-config/base.json . --ignore-path ../../.gitignore --deny-warnings",

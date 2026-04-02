@@ -56,22 +56,27 @@ export async function generateFromLoadedConfig(
   fs.writeFileSync(outputFile, `${JSON.stringify(document, null, 2)}\n`);
 
   const artifacts: GeneratedArtifact[] = [{ kind: "spec", path: outputFile }];
-  const generatedWorkspaceDir = resolveGeneratedWorkspaceDir(loadedConfig.config.generatedDir);
-  await fse.ensureDir(generatedWorkspaceDir);
 
-  fs.writeFileSync(
-    path.join(generatedWorkspaceDir, "manifest.json"),
-    `${JSON.stringify(
-      {
-        configPath: loadedConfig.configPath,
-        outputFile,
-        diagnostics: generator.getDiagnostics(),
-        performance: generator.getPerformanceProfile(),
-      },
-      null,
-      2,
-    )}\n`,
-  );
+  // Dev-only metadata (diagnostics, perf): omit during production builds so deploy
+  // artifacts stay limited to the OpenAPI spec and optional docs/SDK outputs.
+  if (process.env.NODE_ENV !== "production") {
+    const generatedWorkspaceDir = resolveGeneratedWorkspaceDir(loadedConfig.config.generatedDir);
+    await fse.ensureDir(generatedWorkspaceDir);
+
+    fs.writeFileSync(
+      path.join(generatedWorkspaceDir, "manifest.json"),
+      `${JSON.stringify(
+        {
+          configPath: loadedConfig.configPath,
+          outputFile,
+          diagnostics: generator.getDiagnostics(),
+          performance: generator.getPerformanceProfile(),
+        },
+        null,
+        2,
+      )}\n`,
+    );
+  }
 
   const docsArtifact = await emitDocsArtifacts(loadedConfig, config.outputFile, adapters);
   if (docsArtifact) {

@@ -4,7 +4,10 @@ import path from "node:path";
 
 import { afterEach, describe, expect, it } from "vitest";
 
-import { inferResponsesForExport } from "@workspace/openapi-core/routes/typescript-response-inference.js";
+import {
+  inferResponsesForExport,
+  inferResponsesForExports,
+} from "@workspace/openapi-core/routes/typescript-response-inference.js";
 
 describe("TypeScript response inference", () => {
   const roots: string[] = [];
@@ -118,6 +121,60 @@ export async function GET(flag: boolean) {
         }),
       ]),
     );
+  });
+
+  it("returns empty results when the route file is missing from the TypeScript program", () => {
+    const result = inferResponsesForExport(
+      path.join(os.tmpdir(), "nxog-response-missing", "missing-route.ts"),
+      "GET",
+    );
+
+    expect(result.responses).toEqual([]);
+    expect(result.diagnostics).toEqual([]);
+  });
+
+  it("infers variable exports that use arrow function handlers", () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-response-const-export-"));
+    roots.push(root);
+
+    const routeFile = path.join(root, "route.ts");
+    fs.writeFileSync(
+      routeFile,
+      `export const GET = async () => {
+  return Response.json({ ok: true });
+};
+`,
+    );
+
+    const result = inferResponsesForExport(routeFile, "GET");
+
+    expect(result.diagnostics).toEqual([]);
+    expect(result.responses).toEqual([
+      expect.objectContaining({
+        statusCode: "200",
+        contentType: "application/json",
+        source: "typescript",
+      }),
+    ]);
+  });
+
+  it("reuses cached inference when inferResponsesForExports is called repeatedly", () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-response-cache-"));
+    roots.push(root);
+
+    const routeFile = path.join(root, "route.ts");
+    fs.writeFileSync(
+      routeFile,
+      `export async function GET() {
+  return Response.json({ cached: true });
+}
+`,
+    );
+
+    const first = inferResponsesForExports(routeFile, ["GET"]);
+    const second = inferResponsesForExports(routeFile, ["GET"]);
+
+    expect(first.get("GET")?.responses).toEqual(second.get("GET")?.responses);
   });
 
   it("infers redirect status codes from Response.redirect calls", () => {

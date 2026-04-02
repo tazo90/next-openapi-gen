@@ -9,10 +9,10 @@ catalog:
   "@commitlint/cli": ^20.5.0
   "@commitlint/config-conventional": ^20.5.0
   "@commitlint/types": ^20.5.0
-  "@playwright/test": ^1.58.2
-  "@scalar/api-reference-react": ^0.9.15
+  "@playwright/test": ^1.59.0
+  "@scalar/api-reference-react": ^0.9.18
   "@seriousme/openapi-schema-validator": ^2.8.0
-  "@tailwindcss/postcss": ^4.1.16
+  "@tailwindcss/postcss": ^4.2.2
   "@types/babel__traverse": ^7.28.0
   "@types/fs-extra": ^11.0.4
   "@types/js-yaml": ^4.0.9
@@ -23,26 +23,26 @@ catalog:
   ajv: ^8.18.0
   autoprefixer: ^10.4.27
   commander: ^14.0.3
-  cross-env: ^7.0.3
+  cross-env: ^10.1.0
   conventional-changelog-cli: ^5.0.0
   drizzle-kit: ^0.31.10
-  drizzle-orm: ^0.45.1
+  drizzle-orm: ^0.45.2
   drizzle-zod: ^0.8.3
   fs-extra: ^11.3.4
   js-yaml: ^4.1.1
-  knip: ^6.1.0
+  knip: ^6.2.0
   lint-staged: ^16.4.0
   np: ^11.0.2
   ora: ^9.3.0
-  oxfmt: ^0.42.0
-  oxlint: ^1.57.0
+  oxfmt: ^0.43.0
+  oxlint: ^1.58.0
   postcss: ^8.5.8
   postgres: ^3.4.8
   simple-git-hooks: ^2.13.1
   swagger-ui-react: ^5.32.1
   tailwindcss: ^4.2.2
   tsup: ^8.5.1
-  turbo: ^2.8.20
+  turbo: ^2.9.3
   typescript: ^5.9.3
   vitest: ^4.1.2
   zod: ^4.3.6
@@ -53,26 +53,26 @@ catalogs:
   nextjs:
     "@types/react": ^19.2.14
     "@types/react-dom": ^19.2.3
-    next: 16.2.1
+    next: 16.2.2
     react: 19.2.4
     react-dom: 19.2.4
   react-router:
     "@types/react": ^19.2.14
     "@types/react-dom": ^19.2.3
-    "@vitejs/plugin-react": ^5.2.0
+    "@vitejs/plugin-react": ^6.0.1
     react: 19.2.4
     react-dom: 19.2.4
     react-router: ^7.13.2
-    vite: ^7.3.1
+    vite: ^8.0.3
   tanstack:
-    "@tanstack/react-router": ^1.168.8
-    "@tanstack/react-start": ^1.167.13
+    "@tanstack/react-router": ^1.168.10
+    "@tanstack/react-start": ^1.167.16
     "@types/react": ^19.2.14
     "@types/react-dom": ^19.2.3
-    "@vitejs/plugin-react": ^5.2.0
+    "@vitejs/plugin-react": ^6.0.1
     react: 19.2.4
     react-dom: 19.2.4
-    vite: ^7.3.1
+    vite: ^8.0.3
   zod3:
     zod: ^3.25.76
 
@@ -82,5 +82,10 @@ onlyBuiltDependencies:
   - vue-demi
 
 saveWorkspaceProtocol: rolling
+
+# swagger-ui-react still declares React 18 peers on some transitive deps; React 19 is compatible.
+peerDependencyRules:
+  allowedVersions:
+    react: 19
 
 strictPeerDependencies: true

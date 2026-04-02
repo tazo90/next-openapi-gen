@@ -20,30 +20,17 @@
       }
     },
     "schemas": {
-      "ProductListParamsSchema": {
+      "ProductIdParamsSchema": {
         "type": "object",
         "properties": {
-          "category": {
+          "id": {
             "type": "string",
-            "description": "Filter by category"
-          },
-          "minPrice": {
-            "type": "number",
-            "description": "Minimum price"
-          },
-          "maxPrice": {
-            "type": "number",
-            "description": "Maximum price"
-          },
-          "page": {
-            "type": "number",
-            "description": "Page number"
-          },
-          "limit": {
-            "type": "number",
-            "description": "Results per page"
+            "description": "Product ID"
           }
-        }
+        },
+        "required": [
+          "id"
+        ]
       },
       "ProductSchema": {
         "type": "object",
@@ -120,17 +107,30 @@
           "category"
         ]
       },
-      "ProductIdParamsSchema": {
+      "ProductListParamsSchema": {
         "type": "object",
         "properties": {
-          "id": {
+          "category": {
             "type": "string",
-            "description": "Product ID"
+            "description": "Filter by category"
+          },
+          "minPrice": {
+            "type": "number",
+            "description": "Minimum price"
+          },
+          "maxPrice": {
+            "type": "number",
+            "description": "Maximum price"
+          },
+          "page": {
+            "type": "number",
+            "description": "Page number"
+          },
+          "limit": {
+            "type": "number",
+            "description": "Results per page"
           }
-        },
-        "required": [
-          "id"
-        ]
+        }
       },
       "UploadRequestSchema": {
         "type": "object",
@@ -185,22 +185,17 @@
           "url"
         ]
       },
-      "UserListParamsSchema": {
+      "UserIdParamsSchema": {
         "type": "object",
         "properties": {
-          "page": {
-            "type": "number",
-            "description": "Page number"
-          },
-          "limit": {
-            "type": "number",
-            "description": "Results per page"
-          },
-          "search": {
+          "id": {
             "type": "string",
-            "description": "Search query"
+            "description": "User ID"
           }
-        }
+        },
+        "required": [
+          "id"
+        ]
       },
       "UserSchema": {
         "type": "object",
@@ -230,6 +225,38 @@
           "createdAt"
         ]
       },
+      "UpdateUserSchema": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 2,
+            "description": "Full name"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "Email address"
+          }
+        }
+      },
+      "UserListParamsSchema": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "number",
+            "description": "Page number"
+          },
+          "limit": {
+            "type": "number",
+            "description": "Results per page"
+          },
+          "search": {
+            "type": "string",
+            "description": "Search query"
+          }
+        }
+      },
       "CreateUserSchema": {
         "type": "object",
         "properties": {
@@ -254,33 +281,6 @@
           "email",
           "password"
         ]
-      },
-      "UserIdParamsSchema": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "description": "User ID"
-          }
-        },
-        "required": [
-          "id"
-        ]
-      },
-      "UpdateUserSchema": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "minLength": 2,
-            "description": "Full name"
-          },
-          "email": {
-            "type": "string",
-            "format": "email",
-            "description": "Email address"
-          }
-        }
       }
     },
     "responses": {}

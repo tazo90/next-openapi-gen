@@ -11,6 +11,52 @@ import {
 import { createTempProject, withProjectCwd } from "../../helpers/test-project.js";
 
 describe("createDocsPage", () => {
+  it("returns null when ui is none", async () => {
+    const project = createTempProject("nxog-docs-none-");
+
+    try {
+      const result = await withProjectCwd(project.root, () =>
+        createDocsPage({
+          framework: "next",
+          docsUrl: "api-docs",
+          ui: "none",
+          outputFile: "openapi.json",
+        }),
+      );
+
+      expect(result).toBeNull();
+    } finally {
+      project.cleanup();
+    }
+  });
+
+  it("maps an empty docs URL to the root route path", async () => {
+    const project = createTempProject("nxog-docs-root-route-");
+
+    try {
+      await withProjectCwd(project.root, () =>
+        createDocsPage({
+          framework: "next",
+          docsUrl: "",
+          ui: "scalar",
+          outputFile: "openapi.json",
+        }),
+      );
+      const pageSource = fs.readFileSync(path.join(project.root, "src", "app", "page.tsx"), "utf8");
+
+      expect(pageSource).toContain('url: "/openapi.json"');
+    } finally {
+      project.cleanup();
+    }
+  });
+
+  it("places TanStack and React Router index routes when docsUrl is empty", () => {
+    expect(getDocsPageRelativePath("tanstack", "")).toBe(path.join("src", "routes", "index.tsx"));
+    expect(getDocsPageRelativePath("react-router", "")).toBe(
+      path.join("src", "routes", "_index.tsx"),
+    );
+  });
+
   it("writes TanStack docs routes using file-route syntax", async () => {
     const project = createTempProject("nxog-tanstack-docs-");
 

@@ -5,17 +5,33 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { createTempProject, withProjectCwd, writeJsonFile } from "../../../helpers/test-project.js";
 
+type SpinnerMethod = (message?: string) => void;
+type ExecCallback = (error: Error | null, stdout: string, stderr: string) => void;
+
 type SpinnerMock = {
-  start: ReturnType<typeof vi.fn>;
-  succeed: ReturnType<typeof vi.fn>;
-  fail: ReturnType<typeof vi.fn>;
+  start: ReturnType<typeof vi.fn<SpinnerMethod>>;
+  succeed: ReturnType<typeof vi.fn<SpinnerMethod>>;
+  fail: ReturnType<typeof vi.fn<SpinnerMethod>>;
 };
 
-async function loadInitModule(
-  execMock: ReturnType<typeof vi.fn>,
-  spinner: SpinnerMock,
-  setupMocks?: () => void,
-) {
+type ExecMock = ReturnType<typeof vi.fn<(command: string, callback: ExecCallback) => never>>;
+
+function createSpinnerMock(): SpinnerMock {
+  return {
+    start: vi.fn<SpinnerMethod>(),
+    succeed: vi.fn<SpinnerMethod>(),
+    fail: vi.fn<SpinnerMethod>(),
+  };
+}
+
+function createExecMock(): ExecMock {
+  return vi.fn<(command: string, callback: ExecCallback) => never>((_command, callback) => {
+    callback(null, "", "");
+    return {} as never;
+  });
+}
+
+async function loadInitModule(execMock: ExecMock, spinner: SpinnerMock, setupMocks?: () => void) {
   vi.resetModules();
   vi.doUnmock("fs-extra");
   vi.doUnmock("child_process");
@@ -26,7 +42,7 @@ async function loadInitModule(
     exec: execMock,
   }));
   vi.doMock("ora", () => ({
-    default: vi.fn(() => spinner),
+    default: vi.fn<() => SpinnerMock>(() => spinner),
   }));
   setupMocks?.();
 
@@ -41,15 +57,8 @@ describe("init command", () => {
 
   it("writes the template, docs page, and installs default scalar and zod dependencies", async () => {
     const project = createTempProject("nxog-init-defaults-");
-    const spinner = {
-      start: vi.fn(),
-      succeed: vi.fn(),
-      fail: vi.fn(),
-    };
-    const execMock = vi.fn((command: string, callback: (...args: unknown[]) => void) => {
-      callback(null, "", "");
-      return {} as never;
-    });
+    const spinner = createSpinnerMock();
+    const execMock = createExecMock();
 
     try {
       await withProjectCwd(project.root, async () => {
@@ -110,15 +119,8 @@ describe("init command", () => {
 
   it("writes output to the requested path and skips schema installs when the dependency already exists", async () => {
     const project = createTempProject("nxog-init-typescript-");
-    const spinner = {
-      start: vi.fn(),
-      succeed: vi.fn(),
-      fail: vi.fn(),
-    };
-    const execMock = vi.fn((command: string, callback: (...args: unknown[]) => void) => {
-      callback(null, "", "");
-      return {} as never;
-    });
+    const spinner = createSpinnerMock();
+    const execMock = createExecMock();
 
     try {
       await withProjectCwd(project.root, async () => {
@@ -154,21 +156,14 @@ describe("init command", () => {
 
   it("reports initialization failures through the spinner", async () => {
     const project = createTempProject("nxog-init-failure-");
-    const spinner = {
-      start: vi.fn(),
-      succeed: vi.fn(),
-      fail: vi.fn(),
-    };
-    const execMock = vi.fn((command: string, callback: (...args: unknown[]) => void) => {
-      callback(null, "", "");
-      return {} as never;
-    });
+    const spinner = createSpinnerMock();
+    const execMock = createExecMock();
 
     try {
       await withProjectCwd(project.root, async () => {
         const { init } = await loadInitModule(execMock, spinner, () => {
           vi.doMock("@workspace/openapi-init/init/create-docs-page.js", () => ({
-            createDocsPage: vi.fn(async () => {
+            createDocsPage: vi.fn<() => Promise<string | null>>(async () => {
               throw new Error("disk full");
             }),
           }));
@@ -186,15 +181,8 @@ describe("init command", () => {
 
   it("honors an explicit docs route and ui choice", async () => {
     const project = createTempProject("nxog-init-redoc-");
-    const spinner = {
-      start: vi.fn(),
-      succeed: vi.fn(),
-      fail: vi.fn(),
-    };
-    const execMock = vi.fn((command: string, callback: (...args: unknown[]) => void) => {
-      callback(null, "", "");
-      return {} as never;
-    });
+    const spinner = createSpinnerMock();
+    const execMock = createExecMock();
 
     try {
       await withProjectCwd(project.root, async () => {
@@ -238,15 +226,8 @@ describe("init command", () => {
 
   it("writes TanStack-specific template defaults and route files", async () => {
     const project = createTempProject("nxog-init-tanstack-");
-    const spinner = {
-      start: vi.fn(),
-      succeed: vi.fn(),
-      fail: vi.fn(),
-    };
-    const execMock = vi.fn((command: string, callback: (...args: unknown[]) => void) => {
-      callback(null, "", "");
-      return {} as never;
-    });
+    const spinner = createSpinnerMock();
+    const execMock = createExecMock();
 
     try {
       await withProjectCwd(project.root, async () => {
@@ -292,54 +273,55 @@ describe("init command", () => {
   });
 
   it("falls back to default docs and schema values when the template omits them", async () => {
-    const spinner = {
-      start: vi.fn(),
-      succeed: vi.fn(),
-      fail: vi.fn(),
-    };
-    const execMock = vi.fn((command: string, callback: (...args: unknown[]) => void) => {
-      callback(null, "", "");
-      return {} as never;
-    });
-    const createDocsPage = vi.fn(async () => "src/app/api-docs/page.tsx");
-    const installDependencies = vi.fn(async () => undefined);
+    const project = createTempProject("nxog-init-fallbacks-");
+    const spinner = createSpinnerMock();
+    const execMock = createExecMock();
+    const createDocsPage = vi.fn<() => Promise<string | null>>(
+      async () => "src/app/api-docs/page.tsx",
+    );
+    const installDependencies = vi.fn<
+      (ui: unknown, schema: unknown, spinner: unknown) => Promise<void>
+    >(async () => undefined);
+    const outputPath = path.join(project.root, "fallback-openapi.json");
 
-    const { init } = await loadInitModule(execMock, spinner, () => {
-      vi.doMock("@workspace/openapi-init", () => ({
-        createDocsPage,
-        createOpenApiTemplate: vi.fn(() => ({
-          docsUrl: undefined,
-          outputFile: undefined,
-          ui: undefined,
-        })),
-        extendOpenApiTemplate: vi.fn(),
-        getErrorMessage: vi.fn((error: unknown) => String(error)),
-        getOutputPath: vi.fn(() => "/tmp/fallback-openapi.json"),
-        installDependencies,
-      }));
-    });
+    try {
+      await withProjectCwd(project.root, async () => {
+        const { init } = await loadInitModule(execMock, spinner, () => {
+          vi.doMock("@workspace/openapi-init", () => ({
+            createDocsPage,
+            createOpenApiTemplate: vi.fn<
+              () => { docsUrl: undefined; outputFile: undefined; ui: undefined }
+            >(() => ({
+              docsUrl: undefined,
+              outputFile: undefined,
+              ui: undefined,
+            })),
+            extendOpenApiTemplate: vi.fn<(template: unknown, options: unknown) => void>(),
+            getErrorMessage: vi.fn<(error: unknown) => string>((error) => String(error)),
+            getOutputPath: vi.fn<() => string>(() => outputPath),
+            installDependencies,
+          }));
+        });
 
-    await init({});
+        await init({});
+      });
 
-    expect(createDocsPage).toHaveBeenCalledWith({
-      docsUrl: "api-docs",
-      outputFile: "openapi.json",
-      ui: "scalar",
-    });
-    expect(installDependencies).toHaveBeenCalledWith("scalar", "zod", expect.anything());
+      expect(createDocsPage).toHaveBeenCalledWith({
+        docsUrl: "api-docs",
+        outputFile: "openapi.json",
+        ui: "scalar",
+      });
+      expect(installDependencies).toHaveBeenCalledWith("scalar", "zod", expect.anything());
+      expect(spinner.fail).not.toHaveBeenCalled();
+    } finally {
+      project.cleanup();
+    }
   });
 
   it("writes React Router docs routes for the requested framework", async () => {
     const project = createTempProject("nxog-init-react-router-");
-    const spinner = {
-      start: vi.fn(),
-      succeed: vi.fn(),
-      fail: vi.fn(),
-    };
-    const execMock = vi.fn((command: string, callback: (...args: unknown[]) => void) => {
-      callback(null, "", "");
-      return {} as never;
-    });
+    const spinner = createSpinnerMock();
+    const execMock = createExecMock();
 
     try {
       await withProjectCwd(project.root, async () => {

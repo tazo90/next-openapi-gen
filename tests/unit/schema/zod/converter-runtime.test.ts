@@ -5,6 +5,8 @@ import path from "node:path";
 import * as t from "@babel/types";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+type MockFn = (...args: unknown[]) => unknown;
+
 import {
   expandFactoryCall,
   extractReturnNode,
@@ -41,7 +43,7 @@ describe("Zod converter runtime helpers", () => {
     const fileASTCache = new Map<string, t.File>();
     const fileImportsCache = new Map<string, Record<string, string>>();
     const drizzleZodImports = new Set<string>();
-    const readFileSync = vi.fn((target: string) => {
+    const readFileSync = vi.fn<MockFn>((target: string) => {
       if (target === filePath) {
         return [
           'import { z } from "zod";',
@@ -146,7 +148,7 @@ describe("Zod converter runtime helpers", () => {
       expandFactoryCall(
         t.identifier("noop"),
         getFirstInitializer("factory()") as t.CallExpression,
-        vi.fn(),
+        vi.fn<MockFn>(),
       ),
     ).toBeNull();
 
@@ -211,7 +213,7 @@ describe("Zod converter runtime helpers", () => {
       expandFactoryCall(
         noReturnFactory as t.Node,
         getFirstInitializer("makeNothing('x')") as t.CallExpression,
-        vi.fn(),
+        vi.fn<MockFn>(),
       ),
     ).toBeNull();
 

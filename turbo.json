@@ -2,6 +2,14 @@
   "$schema": "https://turbo.build/schema.json",
   "ui": "tui",
   "tasks": {
+    "//#knip": {
+      "dependsOn": ["next-openapi-gen#build"],
+      "outputs": []
+    },
+    "//#knip:ci": {
+      "dependsOn": ["next-openapi-gen#build"],
+      "outputs": []
+    },
     "//#test:e2e": {
       "cache": false,
       "outputs": []

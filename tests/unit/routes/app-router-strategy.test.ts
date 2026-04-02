@@ -9,6 +9,8 @@ import { AppRouterStrategy } from "@workspace/openapi-framework-next/routes/app-
 import { parseTypeScriptFile } from "@workspace/openapi-core/shared/utils.js";
 import type { OpenApiConfig } from "@workspace/openapi-core/shared/types.js";
 
+type AddRoute = Parameters<AppRouterStrategy["processFile"]>[1];
+
 describe("AppRouterStrategy", () => {
   let strategy: AppRouterStrategy;
   let baseConfig: OpenApiConfig;
@@ -70,6 +72,49 @@ describe("AppRouterStrategy", () => {
     );
   });
 
+  it("precheckFile requires @openapi when includeOpenApiRoutes is enabled", () => {
+    strategy = new AppRouterStrategy({ ...baseConfig, includeOpenApiRoutes: true });
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-app-precheck-openapi-"));
+    roots.push(root);
+    const routeFile = path.join(root, "route.ts");
+    fs.writeFileSync(
+      routeFile,
+      `export async function GET() { return Response.json({ ok: true }); }`,
+    );
+
+    expect(strategy.precheckFile(routeFile)).toBe(false);
+  });
+
+  it("precheckFile rejects files without exported HTTP handlers", () => {
+    strategy = new AppRouterStrategy(baseConfig);
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-app-precheck-handlers-"));
+    roots.push(root);
+    const routeFile = path.join(root, "route.ts");
+    fs.writeFileSync(routeFile, `export async function loader() {}`);
+
+    expect(strategy.precheckFile(routeFile)).toBe(false);
+  });
+
+  it("reuses readFile cache across repeated precheckFile calls", () => {
+    strategy = new AppRouterStrategy(baseConfig);
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-app-readfile-cache-"));
+    roots.push(root);
+    const routeFile = path.join(root, "route.ts");
+    fs.writeFileSync(
+      routeFile,
+      `
+      /**
+       * Ping
+       * @openapi
+       */
+      export async function GET() {}
+      `,
+    );
+
+    expect(strategy.precheckFile(routeFile)).toBe(true);
+    expect(strategy.precheckFile(routeFile)).toBe(true);
+  });
+
   it("recognizes only App Router route files and extracts exported handlers", () => {
     strategy = new AppRouterStrategy(baseConfig);
 
@@ -99,7 +144,7 @@ describe("AppRouterStrategy", () => {
       `,
     );
 
-    const addRoute = vi.fn();
+    const addRoute = vi.fn<AddRoute>();
     strategy.processFile(routeFile, addRoute);
 
     expect(addRoute).toHaveBeenCalledWith(
@@ -149,7 +194,7 @@ describe("AppRouterStrategy", () => {
       `,
     );
 
-    const addRoute = vi.fn();
+    const addRoute = vi.fn<AddRoute>();
     strategy.processFile(routeFile, addRoute);
 
     expect(addRoute).toHaveBeenCalledWith(
@@ -187,7 +232,7 @@ describe("AppRouterStrategy", () => {
       `,
     );
 
-    const addRoute = vi.fn();
+    const addRoute = vi.fn<AddRoute>();
     strategy.processFile(routeFile, addRoute);
 
     expect(addRoute).toHaveBeenCalledWith(
@@ -203,6 +248,48 @@ describe("AppRouterStrategy", () => {
         ],
       }),
     );
+  });
+
+  it("detects status fields on response option objects, including string-literal keys", () => {
+    strategy = new AppRouterStrategy(baseConfig);
+    const optsAst = parseTypeScriptFile(`const opts = { "status": 418 };`);
+    const decl = optsAst.program.body[0];
+    if (!decl || decl.type !== "VariableDeclaration") {
+      throw new Error("Expected variable declaration");
+    }
+    const init = decl.declarations[0]?.init;
+    if (!init || init.type !== "ObjectExpression") {
+      throw new Error("Expected object expression");
+    }
+    const statusProp = init.properties[0];
+    if (!statusProp || statusProp.type !== "ObjectProperty") {
+      throw new Error("Expected object property");
+    }
+    // @ts-expect-error exercising private helper for string-literal property keys
+    expect(strategy.isPropertyNamed(statusProp, "status")).toBe(true);
+    // @ts-expect-error exercising private helper for literal status extraction
+    expect(strategy.getLiteralResponseStatusCode(init)).toBe("418");
+  });
+
+  it("infers JSON body shapes for checker-backed response analysis", () => {
+    strategy = new AppRouterStrategy(baseConfig);
+
+    // @ts-expect-error exercising inferSchemaFromJsonArgument branches
+    expect(strategy.inferSchemaFromJsonArgument(undefined)).toEqual({ type: "object" });
+    // @ts-expect-error
+    expect(strategy.inferSchemaFromJsonArgument(t.nullLiteral())).toEqual({ type: "null" });
+    // @ts-expect-error
+    expect(
+      strategy.inferSchemaFromJsonArgument(t.spreadElement(t.identifier("rest"))),
+    ).toBeUndefined();
+    // @ts-expect-error
+    expect(strategy.inferSchemaFromJsonArgument(t.identifier("data"))).toEqual({ type: "object" });
+    // @ts-expect-error
+    expect(
+      strategy.inferSchemaFromJsonArgument(
+        t.arrayExpression([t.spreadElement(t.identifier("items")), t.numericLiteral(1)]),
+      ),
+    ).toEqual({ type: "array", items: { type: "number" } });
   });
 
   it("infers query parameters read from URL searchParams", () => {
@@ -227,7 +314,7 @@ describe("AppRouterStrategy", () => {
       `,
     );
 
-    const addRoute = vi.fn();
+    const addRoute = vi.fn<AddRoute>();
     strategy.processFile(routeFile, addRoute);
 
     expect(addRoute).toHaveBeenCalledWith(
@@ -263,7 +350,7 @@ describe("AppRouterStrategy", () => {
       `,
     );
 
-    const addRoute = vi.fn();
+    const addRoute = vi.fn<AddRoute>();
     strategy.processFile(routeFile, addRoute);
 
     expect(addRoute).toHaveBeenCalledWith(
@@ -350,7 +437,7 @@ describe("AppRouterStrategy", () => {
       `,
     );
 
-    const addRoute = vi.fn();
+    const addRoute = vi.fn<AddRoute>();
     strategy.processFile(routeFile, addRoute);
 
     expect(addRoute).toHaveBeenCalledWith(
@@ -393,7 +480,7 @@ describe("AppRouterStrategy", () => {
       `,
     );
 
-    const addRoute = vi.fn();
+    const addRoute = vi.fn<AddRoute>();
     strategy.processFile(routeFile, addRoute);
 
     expect(addRoute).not.toHaveBeenCalled();
