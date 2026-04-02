@@ -6,6 +6,13 @@ const app = getE2EAppConfig();
 const baseURL = `http://localhost:${app.port}`;
 const readyURL = `${baseURL}${app.docsPath}`;
 
+function createEnsureNextOpenApiGenBuildCommand() {
+  const cli = "packages/next-openapi-gen/dist/cli.js";
+  const next = "packages/next-openapi-gen/dist/next/index.js";
+
+  return `node -e "const fs = require('node:fs'); if (!fs.existsSync('${cli}') || !fs.existsSync('${next}')) process.exit(1);" || pnpm --filter next-openapi-gen build`;
+}
+
 function createAssertOpenApiFileCommand() {
   const file = app.openApiFile.replace(/\\/g, "/");
   return `node -e "if (!require('node:fs').existsSync('${file}')) { throw new Error('Expected generated OpenAPI file at ${file}.'); }"`;
@@ -15,7 +22,7 @@ function createWebServerCommand() {
   const file = app.openApiFile.replace(/\\/g, "/");
   const deleteOpenApiFileCommand = `node -e "require('node:fs').rmSync('${file}', { force: true });"`;
 
-  const commands = [deleteOpenApiFileCommand];
+  const commands = [createEnsureNextOpenApiGenBuildCommand(), deleteOpenApiFileCommand];
 
   if (app.generateCommand) {
     commands.push(app.generateCommand);
