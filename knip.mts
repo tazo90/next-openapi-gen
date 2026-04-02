@@ -26,7 +26,7 @@ const config: KnipConfig = {
     "apps/tanstack-app/package.json": ["devDependencies"],
     "packages/next-openapi-gen/package.json": ["dependencies"],
   },
-  ignoreUnresolved: ["next"],
+  ignoreUnresolved: ["next", "./routeTree.gen"],
   workspaces: {
     ".": {
       entry: [
