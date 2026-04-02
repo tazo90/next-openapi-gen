@@ -48,6 +48,7 @@ const config: KnipConfig = {
     },
     "apps/*": {
       entry: [
+        "openapi-gen.config.ts",
         "next.openapi.json",
         "next-openapi.adapter.mjs",
         "next-openapi.config.ts",
