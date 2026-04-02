@@ -76,4 +76,47 @@ describe("package manager helpers", () => {
     await expect(hasDependency("zod")).resolves.toBe(true);
     await expect(hasDependency("typescript")).resolves.toBe(true);
   });
+
+  it("detects pnpm-lock.yaml when choosing a package manager", async () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-pm-pnpm-lock-"));
+    roots.push(root);
+
+    fs.writeFileSync(path.join(root, "pnpm-lock.yaml"), "");
+
+    process.chdir(root);
+
+    expect(await getPackageManager()).toBe("pnpm");
+  });
+
+  it("honors npm and yarn packageManager fields", async () => {
+    const npmRoot = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-pm-npm-field-"));
+    roots.push(npmRoot);
+    fs.writeFileSync(
+      path.join(npmRoot, "package.json"),
+      JSON.stringify({ packageManager: "npm@10.0.0" }),
+    );
+    process.chdir(npmRoot);
+    expect(await getPackageManager()).toBe("npm");
+
+    const yarnRoot = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-pm-yarn-field-"));
+    roots.push(yarnRoot);
+    fs.writeFileSync(
+      path.join(yarnRoot, "package.json"),
+      JSON.stringify({ packageManager: "yarn@4.0.0" }),
+    );
+    process.chdir(yarnRoot);
+    expect(await getPackageManager()).toBe("yarn");
+  });
+
+  it("ignores invalid package.json while still detecting lockfiles", async () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-pm-invalid-json-"));
+    roots.push(root);
+
+    fs.writeFileSync(path.join(root, "package.json"), "{ not json");
+    fs.writeFileSync(path.join(root, "pnpm-lock.yaml"), "");
+
+    process.chdir(root);
+
+    expect(await getPackageManager()).toBe("pnpm");
+  });
 });

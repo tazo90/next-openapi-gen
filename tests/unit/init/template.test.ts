@@ -29,6 +29,22 @@ describe("init template helpers", () => {
     });
   });
 
+  it("preserves template fields when corresponding options are omitted", () => {
+    const template = {
+      ui: "scalar",
+      docsUrl: "api-docs",
+      schemaType: "zod",
+    };
+
+    extendOpenApiTemplate(template as never, {});
+
+    expect(template).toEqual({
+      ui: "scalar",
+      docsUrl: "api-docs",
+      schemaType: "zod",
+    });
+  });
+
   it("resolves relative, absolute, and default output paths", () => {
     const absolutePath = path.join(process.cwd(), "absolute.openapi.json");
 

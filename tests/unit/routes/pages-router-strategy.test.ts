@@ -9,6 +9,26 @@ import { PagesRouterStrategy } from "@workspace/openapi-framework-next/routes/pa
 import { RouteProcessor } from "@workspace/openapi-core/routes/route-processor.js";
 import type { OpenApiConfig } from "@workspace/openapi-core/shared/types.js";
 
+type AddRoute = Parameters<PagesRouterStrategy["processFile"]>[1];
+type ParseJSDocBlockMock = (...args: unknown[]) => unknown;
+type ParseTypeScriptFileMock = (...args: unknown[]) => {
+  comments?: Array<{
+    type: string;
+    end?: number;
+    value: string;
+  }>;
+};
+type TraverseMock = (
+  ast: unknown,
+  visitors: {
+    ExportDefaultDeclaration?: (path: {
+      node: {
+        start?: number;
+      };
+    }) => void;
+  },
+) => void;
+
 describe("PagesRouterStrategy", () => {
   let strategy: PagesRouterStrategy;
   let pagesConfig: OpenApiConfig;
@@ -199,6 +219,83 @@ describe("PagesRouterStrategy", () => {
     });
   });
 
+  it("precheckFile rejects files without a default export", () => {
+    strategy = new PagesRouterStrategy(pagesConfig);
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-pages-precheck-no-default-"));
+    roots.push(root);
+    const filePath = path.join(root, "users.ts");
+    fs.writeFileSync(
+      filePath,
+      `
+      /**
+       * @method GET
+       * @openapi
+       */
+      export const named = async () => {};
+      `,
+    );
+
+    expect(strategy.precheckFile(filePath)).toBe(false);
+  });
+
+  it("precheckFile requires @openapi when includeOpenApiRoutes is enabled", () => {
+    strategy = new PagesRouterStrategy({ ...pagesConfig, includeOpenApiRoutes: true });
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-pages-precheck-openapi-flag-"));
+    roots.push(root);
+    const filePath = path.join(root, "users.ts");
+    fs.writeFileSync(
+      filePath,
+      `
+      /**
+       * List users
+       * @method GET
+       */
+      export default async function handler() {}
+      `,
+    );
+
+    expect(strategy.precheckFile(filePath)).toBe(false);
+  });
+
+  it("precheckFile requires @method in the file contents", () => {
+    strategy = new PagesRouterStrategy(pagesConfig);
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-pages-precheck-method-"));
+    roots.push(root);
+    const filePath = path.join(root, "users.ts");
+    fs.writeFileSync(
+      filePath,
+      `
+      /**
+       * @openapi
+       */
+      export default async function handler() {}
+      `,
+    );
+
+    expect(strategy.precheckFile(filePath)).toBe(false);
+  });
+
+  it("reuses readFile cache across repeated precheckFile calls", () => {
+    strategy = new PagesRouterStrategy(pagesConfig);
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-pages-readfile-cache-"));
+    roots.push(root);
+    const filePath = path.join(root, "users.ts");
+    fs.writeFileSync(
+      filePath,
+      `
+      /**
+       * List users
+       * @method GET
+       * @openapi
+       */
+      export default async function handler() {}
+      `,
+    );
+
+    expect(strategy.precheckFile(filePath)).toBe(true);
+    expect(strategy.precheckFile(filePath)).toBe(true);
+  });
+
   it("filters processable files and extracts default export handler comments", () => {
     strategy = new PagesRouterStrategy(pagesConfig);
 
@@ -222,7 +319,7 @@ describe("PagesRouterStrategy", () => {
       `,
     );
 
-    const addRoute = vi.fn();
+    const addRoute = vi.fn<AddRoute>();
     strategy.processFile(filePath, addRoute);
 
     expect(addRoute).toHaveBeenCalledWith(
@@ -255,7 +352,7 @@ describe("PagesRouterStrategy", () => {
       `,
     );
 
-    const addRoute = vi.fn();
+    const addRoute = vi.fn<AddRoute>();
     strategy.processFile(filePath, addRoute);
 
     expect(addRoute).not.toHaveBeenCalled();
@@ -282,7 +379,7 @@ describe("PagesRouterStrategy", () => {
       `,
     );
 
-    const addRoute = vi.fn();
+    const addRoute = vi.fn<AddRoute>();
     strategy.processFile(filePath, addRoute);
 
     expect(addRoute).toHaveBeenCalledTimes(1);
@@ -303,13 +400,13 @@ describe("PagesRouterStrategy", () => {
 
     vi.resetModules();
     vi.doMock("@workspace/openapi-core/shared/utils.js", () => ({
-      parseJSDocBlock: vi.fn(),
-      parseTypeScriptFile: vi.fn(() => ({
+      parseJSDocBlock: vi.fn<ParseJSDocBlockMock>(),
+      parseTypeScriptFile: vi.fn<ParseTypeScriptFileMock>(() => ({
         comments: undefined,
       })),
     }));
     vi.doMock("@workspace/openapi-core/shared/babel-traverse.js", () => ({
-      traverse: vi.fn((_ast, visitors) => {
+      traverse: vi.fn<TraverseMock>((_ast, visitors) => {
         visitors.ExportDefaultDeclaration?.({
           node: {
             start: undefined,
@@ -321,7 +418,7 @@ describe("PagesRouterStrategy", () => {
     const { PagesRouterStrategy: MockedPagesRouterStrategy } =
       await import("@workspace/openapi-framework-next/routes/pages-router-strategy.js");
     const mockedStrategy = new MockedPagesRouterStrategy(pagesConfig);
-    const addRoute = vi.fn();
+    const addRoute = vi.fn<AddRoute>();
 
     mockedStrategy.processFile(filePath, addRoute);
 
@@ -338,12 +435,12 @@ describe("PagesRouterStrategy", () => {
     fs.writeFileSync(filePath, "export default async function handler() {}");
 
     vi.resetModules();
-    const parseJSDocBlock = vi.fn(() => ({
+    const parseJSDocBlock = vi.fn<ParseJSDocBlockMock>(() => ({
       method: "GET",
     }));
     vi.doMock("@workspace/openapi-core/shared/utils.js", () => ({
       parseJSDocBlock,
-      parseTypeScriptFile: vi.fn(() => ({
+      parseTypeScriptFile: vi.fn<ParseTypeScriptFileMock>(() => ({
         comments: [
           {
             type: "CommentBlock",
@@ -354,7 +451,7 @@ describe("PagesRouterStrategy", () => {
       })),
     }));
     vi.doMock("@workspace/openapi-core/shared/babel-traverse.js", () => ({
-      traverse: vi.fn((_ast, visitors) => {
+      traverse: vi.fn<TraverseMock>((_ast, visitors) => {
         visitors.ExportDefaultDeclaration?.({
           node: {
             start: 1,
@@ -366,7 +463,7 @@ describe("PagesRouterStrategy", () => {
     const { PagesRouterStrategy: MockedPagesRouterStrategy } =
       await import("@workspace/openapi-framework-next/routes/pages-router-strategy.js");
     const mockedStrategy = new MockedPagesRouterStrategy(pagesConfig);
-    const addRoute = vi.fn();
+    const addRoute = vi.fn<AddRoute>();
 
     mockedStrategy.processFile(filePath, addRoute);
 
