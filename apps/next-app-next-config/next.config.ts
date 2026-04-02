@@ -11,5 +11,5 @@ const config = {
 } satisfies NextConfig;
 
 export default withNextOpenApi(config, {
-  configPath: "./next-openapi.config.ts",
+  configPath: "./openapi-gen.config.ts",
 });

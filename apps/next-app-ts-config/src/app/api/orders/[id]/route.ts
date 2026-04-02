@@ -8,7 +8,7 @@ type OrderRouteContext = {
 
 /**
  * Get order by ID.
- * @description Demonstrates default typed-config discovery through next-openapi.config.ts.
+ * @description Demonstrates default typed-config discovery through openapi-gen.config.ts.
  * @pathParams OrderRecordIdParams
  * @response OrderRecord
  * @tag Orders
@@ -26,7 +26,7 @@ export async function GET(_request: Request, { params }: OrderRouteContext) {
 
 /**
  * Update order by ID.
- * @description Demonstrates typed request and response contracts with next-openapi.config.ts.
+ * @description Demonstrates typed request and response contracts with openapi-gen.config.ts.
  * @pathParams OrderRecordIdParams
  * @body UpdateOrderRecordInput
  * @response OrderRecord

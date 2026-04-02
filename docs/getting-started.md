@@ -256,9 +256,9 @@ import { createNextOpenApiAdapter } from "next-openapi-gen/next";
 export default createNextOpenApiAdapter();
 ```
 
-`withNextOpenApi()` is available as a config wrapper, but today it simply
-returns the config you pass in. Do not rely on it to trigger generation by
-itself.
+`withNextOpenApi()` wires the Next build to an internal `next-openapi-gen`
+adapter automatically. Use it when you want to stay in `next.config.*` without
+checking in a separate adapter module.
 
 ### TanStack Router
 
