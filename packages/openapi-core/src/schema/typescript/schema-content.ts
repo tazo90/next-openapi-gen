@@ -307,20 +307,20 @@ export function getSchemaContent(
   const responses = baseResponseType ? context.openapiDefinitions[baseResponseType] || {} : {};
 
   if (context.schemaTypes.includes("zod")) {
-    for (const schemaName of [
-      paramsType,
-      baseQuerystringType,
-      pathParamsType,
-      baseBodyType,
-      baseResponseType,
-    ]) {
-      if (!schemaName) {
-        continue;
-      }
-
-      if (!context.openapiDefinitions[schemaName]) {
-        context.findSchemaDefinition(schemaName, "");
-      }
+    if (paramsType && !context.openapiDefinitions[paramsType]) {
+      context.findSchemaDefinition(paramsType, "params");
+    }
+    if (baseQuerystringType && !context.openapiDefinitions[baseQuerystringType]) {
+      context.findSchemaDefinition(baseQuerystringType, "params");
+    }
+    if (pathParamsType && !context.openapiDefinitions[pathParamsType]) {
+      context.findSchemaDefinition(pathParamsType, "pathParams");
+    }
+    if (baseBodyType && !context.openapiDefinitions[baseBodyType]) {
+      context.findSchemaDefinition(baseBodyType, "body");
+    }
+    if (baseResponseType && !context.openapiDefinitions[baseResponseType]) {
+      context.findSchemaDefinition(baseResponseType, "response");
     }
   }
 

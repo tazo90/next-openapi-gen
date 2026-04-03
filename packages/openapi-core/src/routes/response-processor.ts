@@ -214,7 +214,7 @@ export class ResponseProcessor {
     const mediaType: OpenApiMediaTypeDefinition = {};
 
     if (itemTypeName) {
-      mediaType.itemSchema = this.buildSchemaReference(itemTypeName);
+      mediaType.itemSchema = this.buildSchemaReference(itemTypeName, "response");
       if (dataTypes.responseItemEncoding) {
         mediaType.itemEncoding = structuredClone(dataTypes.responseItemEncoding);
       }
@@ -224,7 +224,7 @@ export class ResponseProcessor {
     } else if (response.schema) {
       mediaType.schema = structuredClone(response.schema);
     } else if (typeName) {
-      mediaType.schema = this.buildSchemaReference(typeName);
+      mediaType.schema = this.buildSchemaReference(typeName, "response");
     }
 
     if (dataTypes.responseExamples) {
@@ -245,7 +245,7 @@ export class ResponseProcessor {
     return primarySuccessResponse ? primarySuccessResponse.statusCode || "200" : undefined;
   }
 
-  private buildSchemaReference(typeName: string): OpenApiSchemaLike {
+  private buildSchemaReference(typeName: string, contentType: "response"): OpenApiSchemaLike {
     let baseType = typeName;
     let arrayDepth = 0;
 
@@ -254,7 +254,7 @@ export class ResponseProcessor {
       baseType = baseType.slice(0, -2);
     }
 
-    let schema = this.resolveSchemaLike(baseType);
+    let schema = this.resolveSchemaLike(baseType, contentType);
     for (let index = 0; index < arrayDepth; index++) {
       schema = {
         type: "array",
@@ -265,7 +265,7 @@ export class ResponseProcessor {
     return schema;
   }
 
-  private resolveSchemaLike(typeName: string): OpenApiSchemaLike {
+  private resolveSchemaLike(typeName: string, contentType: "response"): OpenApiSchemaLike {
     if (
       typeName === "string" ||
       typeName === "number" ||
@@ -281,7 +281,9 @@ export class ResponseProcessor {
 
     this.ensureSchemaResolved(typeName);
 
-    return { $ref: `#/components/schemas/${typeName}` };
+    return {
+      $ref: `#/components/schemas/${this.schemaProcessor.getSchemaReferenceName(typeName, contentType)}`,
+    };
   }
 
   private ensureSchemaResolved(typeName: string): void {

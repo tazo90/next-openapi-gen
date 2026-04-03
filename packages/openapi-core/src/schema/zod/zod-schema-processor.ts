@@ -1,6 +1,6 @@
 import { ZodSchemaConverter } from "./zod-converter.js";
 
-import type { OpenAPIDefinition } from "../../shared/types.js";
+import type { ContentType, OpenAPIDefinition } from "../../shared/types.js";
 import type { SchemaProcessorModule } from "../core/types.js";
 
 export class ZodSchemaProcessor implements SchemaProcessorModule {
@@ -12,8 +12,11 @@ export class ZodSchemaProcessor implements SchemaProcessorModule {
     return this.converter.getProcessedSchemas();
   }
 
-  public resolveSchema(schemaName: string): OpenAPIDefinition | null {
-    return this.converter.convertZodSchemaToOpenApi(schemaName);
+  public resolveSchema(
+    schemaName: string,
+    contentType: ContentType = "response",
+  ): OpenAPIDefinition | null {
+    return this.converter.convertZodSchemaToOpenApi(schemaName, contentType);
   }
 
   public getConverter(): ZodSchemaConverter {

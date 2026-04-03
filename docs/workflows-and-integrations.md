@@ -98,6 +98,12 @@ Best for:
 - projects that want rich field descriptions close to code
 - teams that already export schemas from `src/schemas`
 
+Current Zod-first behavior is hybrid:
+
+- most exported schemas are still converted through AST analysis
+- selected Zod 4 features such as `coerce`, `pipe`, `templateLiteral`, `stringbool`, and static `.meta(...)` payloads can use a runtime-assisted export path
+- request and response components stay shared unless the runtime-assisted path proves that their emitted shapes differ
+
 ### TypeScript-first projects
 
 Use this when your codebase already has exported request and response types, but

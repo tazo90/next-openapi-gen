@@ -36,7 +36,8 @@ import {
   isZodSchemaNode,
   returnsZodSchemaNode,
 } from "./prescan.js";
-import type { OpenApiSchema } from "../../shared/types.js";
+import { ZodRuntimeExporter } from "./runtime-exporter.js";
+import type { ContentType, OpenApiSchema } from "../../shared/types.js";
 
 type ZodConverterFileAccess = Pick<
   typeof fs,
@@ -63,12 +64,15 @@ export class ZodSchemaConverter {
   routeFilesCache: string[] | null = null;
   schemaFilesCache: Map<string, string[]> = new Map();
   preprocessedFiles: Set<string> = new Set();
+  schemaVariantRefs: Map<string, string> = new Map();
 
   // Current processing context (set during file processing)
   currentFilePath?: string;
   currentAST?: t.File;
   currentImports?: Record<string, string>;
+  currentContentType: ContentType = "response";
   private readonly fileAccess: ZodConverterFileAccess;
+  private readonly runtimeExporter = new ZodRuntimeExporter();
 
   constructor(
     schemaDir: string | string[],
@@ -84,7 +88,12 @@ export class ZodSchemaConverter {
   /**
    * Find a Zod schema by name and convert it to OpenAPI spec
    */
-  convertZodSchemaToOpenApi(schemaName: string): OpenApiSchema | null {
+  convertZodSchemaToOpenApi(
+    schemaName: string,
+    contentType: ContentType = this.currentContentType,
+  ): OpenApiSchema | null {
+    this.currentContentType = contentType || "response";
+
     // Run pre-scan only one time
     if (Object.keys(this.typeToSchemaMapping).length === 0) {
       this.preScanForTypeMappings();
@@ -93,34 +102,34 @@ export class ZodSchemaConverter {
     logger.debug(`Looking for Zod schema: ${schemaName}`);
 
     // Check mapped types
+    const requestedSchemaName = schemaName;
     const mappedSchemaName = this.typeToSchemaMapping[schemaName];
     if (mappedSchemaName) {
       logger.debug(`Type '${schemaName}' is mapped to schema '${mappedSchemaName}'`);
       schemaName = mappedSchemaName;
     }
 
+    const cachedSchema = this.getStoredSchema(schemaName, this.currentContentType, false);
+    if (cachedSchema) {
+      return cachedSchema;
+    }
+
     // Check for circular references
     if (this.processingSchemas.has(schemaName)) {
-      return { $ref: `#/components/schemas/${schemaName}` };
+      return { $ref: `#/components/schemas/${this.getSchemaReferenceName(schemaName)}` };
     }
 
     // Add to processing set
     this.processingSchemas.add(schemaName);
 
     try {
-      // Return cached schema if it exists
-      const cachedSchema = this.zodSchemas[schemaName];
-      if (cachedSchema) {
-        return cachedSchema;
-      }
-
       // Find all route files and process them first
       const routeFiles = this.findRouteFiles();
 
       for (const routeFile of routeFiles) {
         this.processFileForZodSchema(routeFile, schemaName);
 
-        const routeSchema = this.zodSchemas[schemaName];
+        const routeSchema = this.getStoredSchema(schemaName, this.currentContentType, false);
         if (routeSchema) {
           logger.debug(`Found Zod schema '${schemaName}' in route file: ${routeFile}`);
           return routeSchema;
@@ -130,11 +139,11 @@ export class ZodSchemaConverter {
       // Scan schema directories
       for (const dir of this.schemaDirs) {
         this.scanDirectoryForZodSchema(dir, schemaName);
-        if (this.zodSchemas[schemaName]) break;
+        if (this.getStoredSchema(schemaName)) break;
       }
 
       // Return the schema if found, or null if not
-      const resolvedSchema = this.zodSchemas[schemaName];
+      const resolvedSchema = this.getStoredSchema(schemaName);
       if (resolvedSchema) {
         logger.debug(`Found and processed Zod schema: ${schemaName}`);
         return resolvedSchema;
@@ -145,7 +154,82 @@ export class ZodSchemaConverter {
     } finally {
       // Remove from processing set
       this.processingSchemas.delete(schemaName);
+      if (mappedSchemaName && requestedSchemaName !== schemaName) {
+        const resolvedReference = this.getSchemaReferenceName(schemaName, this.currentContentType);
+        this.schemaVariantRefs.set(
+          this.getVariantKey(requestedSchemaName, this.currentContentType),
+          resolvedReference,
+        );
+      }
     }
+  }
+
+  public getSchemaReferenceName(
+    schemaName: string,
+    contentType: ContentType = this.currentContentType,
+  ): string {
+    const normalizedName = this.typeToSchemaMapping[schemaName] ?? schemaName;
+    return (
+      this.schemaVariantRefs.get(this.getVariantKey(normalizedName, contentType)) ?? normalizedName
+    );
+  }
+
+  private getVariantKey(schemaName: string, contentType: ContentType): string {
+    return `${contentType || "response"}:${schemaName}`;
+  }
+
+  private getStoredSchema(
+    schemaName: string,
+    contentType: ContentType = this.currentContentType,
+    allowBaseFallback: boolean = true,
+  ): OpenApiSchema | null {
+    const normalizedName = this.typeToSchemaMapping[schemaName] ?? schemaName;
+    const explicitReferenceName = this.schemaVariantRefs.get(
+      this.getVariantKey(normalizedName, contentType),
+    );
+    if (explicitReferenceName) {
+      return this.zodSchemas[explicitReferenceName] ?? null;
+    }
+
+    return allowBaseFallback ? (this.zodSchemas[normalizedName] ?? null) : null;
+  }
+
+  private storeResolvedSchema(
+    schemaName: string,
+    schema: OpenApiSchema,
+    contentType: ContentType = this.currentContentType,
+  ): string {
+    const normalizedName = this.typeToSchemaMapping[schemaName] ?? schemaName;
+    const variantKey = this.getVariantKey(normalizedName, contentType);
+    const existingBaseSchema = this.zodSchemas[normalizedName];
+
+    if (!existingBaseSchema) {
+      this.zodSchemas[normalizedName] = schema;
+      this.schemaVariantRefs.set(variantKey, normalizedName);
+      return normalizedName;
+    }
+
+    if (areSchemasEquivalent(existingBaseSchema, schema)) {
+      this.schemaVariantRefs.set(variantKey, normalizedName);
+      return normalizedName;
+    }
+
+    if (contentType === "response" || contentType === "") {
+      const outputName = `${normalizedName}Output`;
+      this.zodSchemas[outputName] = schema;
+      this.schemaVariantRefs.set(variantKey, outputName);
+      return outputName;
+    }
+
+    const outputName = `${normalizedName}Output`;
+    this.zodSchemas[outputName] = existingBaseSchema;
+    this.zodSchemas[normalizedName] = schema;
+    this.schemaVariantRefs.set(this.getVariantKey(normalizedName, "response"), outputName);
+    this.schemaVariantRefs.set(this.getVariantKey(normalizedName, "body"), normalizedName);
+    this.schemaVariantRefs.set(this.getVariantKey(normalizedName, "params"), normalizedName);
+    this.schemaVariantRefs.set(this.getVariantKey(normalizedName, "pathParams"), normalizedName);
+    this.schemaVariantRefs.set(variantKey, normalizedName);
+    return normalizedName;
   }
 
   /**
@@ -236,7 +320,7 @@ export class ZodSchemaConverter {
       this.preprocessAllSchemasInFile(filePath, content);
 
       // Return it, if the schema has already been processed during pre-processing
-      if (this.zodSchemas[schemaName]) {
+      if (this.getStoredSchema(schemaName, this.currentContentType, false)) {
         return;
       }
 
@@ -280,7 +364,7 @@ export class ZodSchemaConverter {
                 ) {
                   const schema = this.processZodNode(declaration.init);
                   if (schema) {
-                    this.zodSchemas[schemaName] = schema;
+                    this.storeResolvedSchema(schemaName, schema);
                   }
                 }
                 // Check if this is a call expression with .extend()
@@ -292,7 +376,7 @@ export class ZodSchemaConverter {
                 ) {
                   const schema = this.processZodNode(declaration.init);
                   if (schema) {
-                    this.zodSchemas[schemaName] = schema;
+                    this.storeResolvedSchema(schemaName, schema);
                   }
                 }
                 // Existing code for z.object({...})
@@ -304,7 +388,7 @@ export class ZodSchemaConverter {
                 ) {
                   const schema = this.processZodNode(declaration.init);
                   if (schema) {
-                    this.zodSchemas[schemaName] = schema;
+                    this.storeResolvedSchema(schemaName, schema);
                   }
                 }
                 // Check if this is a factory function call
@@ -328,7 +412,7 @@ export class ZodSchemaConverter {
                     logger.debug(`[Schema] Found factory function, attempting to expand...`);
                     const schema = this.expandFactoryCall(factoryNode, declaration.init, filePath);
                     if (schema) {
-                      this.zodSchemas[schemaName] = schema;
+                      this.storeResolvedSchema(schemaName, schema);
                       logger.debug(
                         `[Schema] Successfully expanded factory function '${factoryName}' for schema '${schemaName}'`,
                       );
@@ -371,7 +455,7 @@ export class ZodSchemaConverter {
                     typeAnnotation.typeParameters.params[0].typeName.exprName.name;
 
                   // Look for the referenced schema in the same file
-                  if (!this.zodSchemas[referencedSchema]) {
+                  if (!this.getStoredSchema(referencedSchema)) {
                     this.processFileForZodSchema(filePath, referencedSchema);
                   }
                 }
@@ -387,7 +471,7 @@ export class ZodSchemaConverter {
             if (this.isZodSchema(path.node.init)) {
               const schema = this.processZodNode(path.node.init);
               if (schema) {
-                this.zodSchemas[schemaName] = schema;
+                this.storeResolvedSchema(schemaName, schema);
               }
               return;
             }
@@ -564,21 +648,23 @@ export class ZodSchemaConverter {
                 logger.debug(`Found chained call starting from: ${baseSchemaName}`);
 
                 // First make sure the underlying schema is processed
-                if (!this.zodSchemas[baseSchemaName]) {
+                if (!this.getStoredSchema(baseSchemaName)) {
                   logger.debug(`Base schema ${baseSchemaName} not found, processing it first`);
                   this.processFileForZodSchema(filePath, baseSchemaName);
                 }
 
-                if (this.zodSchemas[baseSchemaName]) {
+                if (this.getStoredSchema(baseSchemaName)) {
                   logger.debug("Base schema found, applying transformations");
 
                   // Copy base schema
-                  const baseSchema = JSON.parse(JSON.stringify(this.zodSchemas[baseSchemaName]));
+                  const baseSchema = JSON.parse(
+                    JSON.stringify(this.getStoredSchema(baseSchemaName)),
+                  );
 
                   // Process the entire call chain
                   const finalSchema = processChainedCall(path.node.init, baseSchema);
 
-                  this.zodSchemas[schemaName] = finalSchema;
+                  this.storeResolvedSchema(schemaName, finalSchema);
                   logger.debug(
                     `Created ${schemaName} with properties: ${Object.keys(
                       finalSchema.properties || {},
@@ -599,14 +685,14 @@ export class ZodSchemaConverter {
             ) {
               const schema = this.processZodNode(path.node.init);
               if (schema) {
-                this.zodSchemas[schemaName] = schema;
+                this.storeResolvedSchema(schemaName, schema);
               }
             }
             // Existing code
             else {
               const schema = this.processZodNode(path.node.init);
               if (schema) {
-                this.zodSchemas[schemaName] = schema;
+                this.storeResolvedSchema(schemaName, schema);
               }
             }
           }
@@ -639,7 +725,7 @@ export class ZodSchemaConverter {
                   logger.debug(`Mapped type '${typeName}' to schema '${referencedSchemaName}'`);
 
                   // Process the referenced schema if not already processed
-                  if (!this.zodSchemas[referencedSchemaName]) {
+                  if (!this.getStoredSchema(referencedSchemaName)) {
                     this.processFileForZodSchema(filePath, referencedSchemaName);
                   }
                 }
@@ -692,11 +778,11 @@ export class ZodSchemaConverter {
                 declaration.init.callee.object.name === "z"
               ) {
                 const schemaName = declaration.id.name;
-                if (!this.zodSchemas[schemaName] && !this.processingSchemas.has(schemaName)) {
+                if (!this.getStoredSchema(schemaName) && !this.processingSchemas.has(schemaName)) {
                   this.processingSchemas.add(schemaName);
                   const schema = this.processZodNode(declaration.init);
                   if (schema) {
-                    this.zodSchemas[schemaName] = schema;
+                    this.storeResolvedSchema(schemaName, schema);
                   }
                   this.processingSchemas.delete(schemaName);
                 }
@@ -730,6 +816,15 @@ export class ZodSchemaConverter {
       });
     }
 
+    if (this.shouldUseRuntimeExport(node)) {
+      const runtimeSchema = this.runtimeExporter.exportSchema(node, {
+        contentType: this.currentContentType,
+      });
+      if (runtimeSchema) {
+        return runtimeSchema;
+      }
+    }
+
     // Handle reference to another schema (e.g. UserBaseSchema.extend)
     if (
       t.isCallExpression(node) &&
@@ -741,7 +836,7 @@ export class ZodSchemaConverter {
       const baseSchemaName = node.callee.object.name;
 
       // Check if the base schema already exists
-      if (!this.zodSchemas[baseSchemaName]) {
+      if (!this.getStoredSchema(baseSchemaName)) {
         // Try to find the basic pattern
         this.convertZodSchemaToOpenApi(baseSchemaName);
       }
@@ -827,14 +922,14 @@ export class ZodSchemaConverter {
       const methodName = node.callee.property.name;
 
       // Process base schema first if not already processed
-      if (!this.zodSchemas[schemaName]) {
+      if (!this.getStoredSchema(schemaName)) {
         this.convertZodSchemaToOpenApi(schemaName);
       }
 
       // If the schema exists, create a reference and apply the method
-      if (this.zodSchemas[schemaName]) {
+      if (this.getStoredSchema(schemaName)) {
         let schema: OpenApiSchema = {
-          allOf: [{ $ref: `#/components/schemas/${schemaName}` }],
+          allOf: [{ $ref: `#/components/schemas/${this.getSchemaReferenceName(schemaName)}` }],
         };
 
         // Apply method-specific transformations
@@ -925,12 +1020,12 @@ export class ZodSchemaConverter {
       const schemaName = node.name;
 
       // Try to find and process the referenced schema
-      if (!this.zodSchemas[schemaName]) {
+      if (!this.getStoredSchema(schemaName)) {
         this.convertZodSchemaToOpenApi(schemaName);
       }
 
       // Return a reference to the schema
-      return { $ref: `#/components/schemas/${schemaName}` };
+      return { $ref: `#/components/schemas/${this.getSchemaReferenceName(schemaName)}` };
     }
 
     logger.debug("Unknown Zod schema node:", node);
@@ -954,7 +1049,7 @@ export class ZodSchemaConverter {
         const schemaName = returnExpr.name;
 
         // Create a reference to the schema
-        return { $ref: `#/components/schemas/${schemaName}` };
+        return { $ref: `#/components/schemas/${this.getSchemaReferenceName(schemaName)}` };
       }
 
       // If the function returns a complex expression, try to process it
@@ -1035,20 +1130,22 @@ export class ZodSchemaConverter {
           const methodName = prop.value.callee.property.name;
 
           // Process base schema first
-          if (!this.zodSchemas[schemaName]) {
+          if (!this.getStoredSchema(schemaName)) {
             this.convertZodSchemaToOpenApi(schemaName);
           }
 
           // For describe method, use reference with description
-          if (methodName === "describe" && this.zodSchemas[schemaName]) {
+          if (methodName === "describe" && this.getStoredSchema(schemaName)) {
             if (prop.value.arguments.length > 0 && t.isStringLiteral(prop.value.arguments[0])) {
               properties[propName] = {
-                allOf: [{ $ref: `#/components/schemas/${schemaName}` }],
+                allOf: [
+                  { $ref: `#/components/schemas/${this.getSchemaReferenceName(schemaName)}` },
+                ],
                 description: prop.value.arguments[0].value,
               };
             } else {
               properties[propName] = {
-                $ref: `#/components/schemas/${schemaName}`,
+                $ref: `#/components/schemas/${this.getSchemaReferenceName(schemaName)}`,
               };
             }
             required.push(propName);
@@ -1071,12 +1168,12 @@ export class ZodSchemaConverter {
         if (t.isIdentifier(prop.value)) {
           const referencedSchemaName = prop.value.name;
           // Try to find and convert the referenced schema
-          if (!this.zodSchemas[referencedSchemaName]) {
+          if (!this.getStoredSchema(referencedSchemaName)) {
             this.convertZodSchemaToOpenApi(referencedSchemaName);
           }
           // Create a reference
           properties[propName] = {
-            $ref: `#/components/schemas/${referencedSchemaName}`,
+            $ref: `#/components/schemas/${this.getSchemaReferenceName(referencedSchemaName)}`,
           };
           required.push(propName); // Assuming it's required unless marked optional
           return; // Skip further processing for this property
@@ -1095,13 +1192,13 @@ export class ZodSchemaConverter {
         ) {
           const itemSchemaName = prop.value.arguments[0].name;
           // Try to find and convert the referenced schema
-          if (!this.zodSchemas[itemSchemaName]) {
+          if (!this.getStoredSchema(itemSchemaName)) {
             this.convertZodSchemaToOpenApi(itemSchemaName);
           }
           // Process as array with reference
           const arraySchema = this.processZodNode(prop.value);
           arraySchema.items = {
-            $ref: `#/components/schemas/${itemSchemaName}`,
+            $ref: `#/components/schemas/${this.getSchemaReferenceName(itemSchemaName)}`,
           };
           properties[propName] = arraySchema;
 
@@ -1152,10 +1249,13 @@ export class ZodSchemaConverter {
       processNode: (currentNode) => this.processZodNode(currentNode),
       processObject: (currentNode) => this.processZodObject(currentNode),
       ensureSchema: (schemaName) => {
-        if (!this.zodSchemas[schemaName]) {
+        if (!this.getStoredSchema(schemaName)) {
           this.convertZodSchemaToOpenApi(schemaName);
         }
       },
+      getReferenceSchema: (schemaName) => ({
+        $ref: `#/components/schemas/${this.getSchemaReferenceName(schemaName)}`,
+      }),
     });
   }
 
@@ -1164,6 +1264,92 @@ export class ZodSchemaConverter {
    */
   extractDescriptionFromArguments(node: t.CallExpression): string | null {
     return extractDescriptionFromArguments(node);
+  }
+
+  extractStaticJsonValue(node: t.Node | null | undefined): unknown {
+    if (!node) {
+      return undefined;
+    }
+
+    if (t.isStringLiteral(node)) {
+      return node.value;
+    }
+    if (t.isNumericLiteral(node)) {
+      return node.value;
+    }
+    if (t.isBooleanLiteral(node)) {
+      return node.value;
+    }
+    if (t.isNullLiteral(node)) {
+      return null;
+    }
+    if (t.isArrayExpression(node)) {
+      const values: unknown[] = [];
+      for (const element of node.elements) {
+        if (!element || t.isSpreadElement(element)) {
+          return undefined;
+        }
+        const value = this.extractStaticJsonValue(element);
+        if (typeof value === "undefined") {
+          return undefined;
+        }
+        values.push(value);
+      }
+      return values;
+    }
+    if (t.isObjectExpression(node)) {
+      const value: Record<string, unknown> = {};
+      for (const property of node.properties) {
+        if (!t.isObjectProperty(property)) {
+          return undefined;
+        }
+        const key = t.isIdentifier(property.key)
+          ? property.key.name
+          : t.isStringLiteral(property.key)
+            ? property.key.value
+            : null;
+        if (!key) {
+          return undefined;
+        }
+        const propertyValue = this.extractStaticJsonValue(property.value);
+        if (typeof propertyValue === "undefined") {
+          return undefined;
+        }
+        value[key] = propertyValue;
+      }
+      return value;
+    }
+
+    return undefined;
+  }
+
+  private shouldUseRuntimeExport(node: t.Node): boolean {
+    if (!t.isCallExpression(node)) {
+      return false;
+    }
+
+    const helperPath = getZodRuntimeHelperPath(node);
+    if (helperPath) {
+      const helperName = helperPath.join(".");
+      return (
+        helperName.startsWith("coerce.") ||
+        helperName === "templateLiteral" ||
+        helperName === "stringbool"
+      );
+    }
+
+    if (t.isMemberExpression(node.callee) && t.isIdentifier(node.callee.property)) {
+      const runtimeMethods = new Set(["pipe", "meta"]);
+      if (runtimeMethods.has(node.callee.property.name)) {
+        return true;
+      }
+
+      if (t.isCallExpression(node.callee.object)) {
+        return this.shouldUseRuntimeExport(node.callee.object);
+      }
+    }
+
+    return false;
   }
 
   /**
@@ -1280,10 +1466,21 @@ export class ZodSchemaConverter {
         schema.format = "uri";
         break;
       case "uuid":
+      case "guid":
         schema.format = "uuid";
         break;
       case "cuid":
         schema.format = "cuid";
+        break;
+      case "ipv4":
+        schema.format = "ipv4";
+        break;
+      case "ipv6":
+        schema.format = "ipv6";
+        break;
+      case "duration":
+      case "iso.duration":
+        schema.format = "duration";
         break;
       case "regex":
         if (node.arguments.length > 0 && t.isRegExpLiteral(node.arguments[0])) {
@@ -1370,6 +1567,23 @@ export class ZodSchemaConverter {
           }
         }
         break;
+      case "prefault":
+      case "catch":
+        if (typeof schema.default === "undefined" && node.arguments.length > 0) {
+          const fallbackValue = this.extractStaticJsonValue(node.arguments[0]);
+          if (typeof fallbackValue !== "undefined") {
+            schema.default = fallbackValue as OpenApiSchema["default"];
+          }
+        }
+        break;
+      case "meta":
+        if (node.arguments.length > 0) {
+          const metadata = this.extractStaticJsonValue(node.arguments[0]);
+          if (metadata && typeof metadata === "object" && !Array.isArray(metadata)) {
+            Object.assign(schema, metadata);
+          }
+        }
+        break;
       case "extend":
         if (node.arguments.length > 0 && t.isObjectExpression(node.arguments[0])) {
           // Get the base schema by processing the object that extend is called on
@@ -1380,15 +1594,15 @@ export class ZodSchemaConverter {
           if (baseSchemaResult && baseSchemaResult.$ref) {
             const schemaName = baseSchemaResult.$ref.replace("#/components/schemas/", "");
             // Try to convert the base schema if not already processed
-            if (!this.zodSchemas[schemaName]) {
+            if (!this.getStoredSchema(schemaName)) {
               logger.debug(
                 `[extend] Base schema ${schemaName} not found, attempting to convert it`,
               );
               this.convertZodSchemaToOpenApi(schemaName);
             }
             // Now retrieve the converted schema
-            if (this.zodSchemas[schemaName]) {
-              baseSchema = this.zodSchemas[schemaName];
+            if (this.getStoredSchema(schemaName)) {
+              baseSchema = this.getStoredSchema(schemaName)!;
             } else {
               logger.debug(`Could not resolve reference for extend: ${schemaName}`);
             }
@@ -1582,12 +1796,12 @@ export class ZodSchemaConverter {
                 const schemaName = declaration.id.name;
 
                 // Check if is Zos schema
-                if (this.isZodSchema(declaration.init) && !this.zodSchemas[schemaName]) {
+                if (this.isZodSchema(declaration.init) && !this.getStoredSchema(schemaName)) {
                   logger.debug(`Pre-processing Zod schema: ${schemaName}`);
                   this.processingSchemas.add(schemaName);
                   const schema = this.processZodNode(declaration.init);
                   if (schema) {
-                    this.zodSchemas[schemaName] = schema;
+                    this.storeResolvedSchema(schemaName, schema);
                   }
                   this.processingSchemas.delete(schemaName);
                 }
@@ -1602,14 +1816,14 @@ export class ZodSchemaConverter {
               const schemaName = declaration.id.name;
               if (
                 this.isZodSchema(declaration.init) &&
-                !this.zodSchemas[schemaName] &&
+                !this.getStoredSchema(schemaName) &&
                 !this.processingSchemas.has(schemaName)
               ) {
                 logger.debug(`Pre-processing Zod schema: ${schemaName}`);
                 this.processingSchemas.add(schemaName);
                 const schema = this.processZodNode(declaration.init);
                 if (schema) {
-                  this.zodSchemas[schemaName] = schema;
+                  this.storeResolvedSchema(schemaName, schema);
                 }
                 this.processingSchemas.delete(schemaName);
               }
@@ -1717,4 +1931,27 @@ export class ZodSchemaConverter {
   substituteParameters(node: t.Node, paramMap: Map<string, t.Node>, _filePath: string): t.Node {
     return substituteParameters(node, paramMap);
   }
+}
+
+function areSchemasEquivalent(left: OpenApiSchema, right: OpenApiSchema): boolean {
+  return JSON.stringify(left) === JSON.stringify(right);
+}
+
+function getZodRuntimeHelperPath(node: t.CallExpression): string[] | null {
+  if (!t.isMemberExpression(node.callee) || !t.isIdentifier(node.callee.property)) {
+    return null;
+  }
+
+  const path = [node.callee.property.name];
+  let currentObject: t.Node = node.callee.object;
+
+  while (t.isMemberExpression(currentObject)) {
+    if (!t.isIdentifier(currentObject.property)) {
+      return null;
+    }
+    path.unshift(currentObject.property.name);
+    currentObject = currentObject.object;
+  }
+
+  return t.isIdentifier(currentObject, { name: "z" }) ? path : null;
 }

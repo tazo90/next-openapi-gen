@@ -192,6 +192,47 @@ describe("SchemaProcessor helper seams", () => {
     });
   });
 
+  it("falls back to the TypeScript checker for conditional, import, and keyof types", () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-schema-processor-checker-"));
+    roots.push(root);
+
+    fs.writeFileSync(
+      path.join(root, "models.ts"),
+      ["export interface ImportedUser {", "  id: string;", "  active: boolean;", "}"].join("\n"),
+    );
+    fs.writeFileSync(
+      path.join(root, "schemas.ts"),
+      [
+        'import type { ImportedUser } from "./models";',
+        "export type ConditionalResult = true extends true ? { ok: true } : never;",
+        'export type ImportedViaTsImport = import("./models").ImportedUser;',
+        "export type KeyUnion = keyof ImportedUser;",
+      ].join("\n"),
+    );
+
+    const processor = new SchemaProcessor(root, "typescript");
+
+    expect(processor.findSchemaDefinition("ConditionalResult", "response")).toEqual({
+      type: "object",
+      properties: {
+        ok: { type: "boolean", enum: [true] },
+      },
+      required: ["ok"],
+    });
+    expect(processor.findSchemaDefinition("ImportedViaTsImport", "response")).toEqual({
+      type: "object",
+      properties: {
+        id: { type: "string" },
+        active: { type: "boolean" },
+      },
+      required: ["id", "active"],
+    });
+    expect(processor.findSchemaDefinition("KeyUnion", "response")).toEqual({
+      type: "string",
+      enum: ["id", "active"],
+    });
+  });
+
   it("covers extends, pick/omit, unions, and custom-schema priority", () => {
     const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-schema-processor-types-"));
     roots.push(root);

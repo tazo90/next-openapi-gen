@@ -8,6 +8,7 @@ type PrimitiveHelperContext = {
   processNode: ProcessZodNode;
   processObject: (node: t.CallExpression) => OpenApiSchema;
   ensureSchema: (schemaName: string) => void;
+  getReferenceSchema: (schemaName: string) => OpenApiSchema;
 };
 
 function isProcessableZodNode(
@@ -103,7 +104,14 @@ export function processZodTuple(
 
   return {
     type: "array",
-    items: tupleItems.length > 0 ? tupleItems[0] : { type: "string" },
+    prefixItems: tupleItems,
+    items: false,
+    ...(tupleItems.length > 0
+      ? {
+          minItems: tupleItems.length,
+          maxItems: tupleItems.length,
+        }
+      : {}),
   };
 }
 
@@ -290,6 +298,7 @@ export function processZodPrimitiveNode(
       schema = { type: "number" };
       break;
     case "boolean":
+    case "stringbool":
       schema = { type: "boolean" };
       break;
     case "date":
@@ -306,6 +315,7 @@ export function processZodPrimitiveNode(
       schema = { type: "string", format: "uri" };
       break;
     case "uuid":
+    case "guid":
       schema = { type: "string", format: "uuid" };
       break;
     case "cuid":
@@ -319,6 +329,15 @@ export function processZodPrimitiveNode(
       break;
     case "iso.time":
       schema = { type: "string", format: "time" };
+      break;
+    case "iso.duration":
+      schema = { type: "string", format: "duration" };
+      break;
+    case "ipv4":
+      schema = { type: "string", format: "ipv4" };
+      break;
+    case "ipv6":
+      schema = { type: "string", format: "ipv6" };
       break;
     case "any":
     case "unknown":
@@ -335,7 +354,7 @@ export function processZodPrimitiveNode(
         if (t.isIdentifier(firstArgument)) {
           const schemaName = firstArgument.name;
           context.ensureSchema(schemaName);
-          itemsType = { $ref: `#/components/schemas/${schemaName}` };
+          itemsType = context.getReferenceSchema(schemaName);
         } else if (isProcessableZodNode(firstArgument)) {
           itemsType = context.processNode(firstArgument);
         }
@@ -411,6 +430,9 @@ export function processZodPrimitiveNode(
     }
     case "object":
       schema = node.arguments.length > 0 ? context.processObject(node) : { type: "object" };
+      break;
+    case "templateLiteral":
+      schema = { type: "string" };
       break;
     case "custom":
       if (node.typeParameters && node.typeParameters.params.length > 0) {

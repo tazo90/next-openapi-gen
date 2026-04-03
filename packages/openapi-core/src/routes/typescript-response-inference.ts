@@ -387,6 +387,21 @@ function typeToOpenApiSchema(
 
   seen.add(seenKey);
 
+  if (type.isStringLiteral()) {
+    return { type: "string", enum: [type.value] };
+  }
+  if (type.isNumberLiteral()) {
+    return { type: "number", enum: [type.value] };
+  }
+  if (type.flags & ts.TypeFlags.BooleanLiteral) {
+    return {
+      type: "boolean",
+      enum: [checker.typeToString(type) === "true"],
+    };
+  }
+  if (type.flags & ts.TypeFlags.TemplateLiteral) {
+    return { type: "string" };
+  }
   if (type.flags & ts.TypeFlags.StringLike) {
     return { type: "string" };
   }
@@ -416,7 +431,18 @@ function typeToOpenApiSchema(
     };
   }
 
-  if (checker.isArrayType(type) || checker.isTupleType(type)) {
+  if (checker.isTupleType(type)) {
+    const itemTypes = checker.getTypeArguments(type as ts.TypeReference);
+    return {
+      type: "array",
+      prefixItems: itemTypes.map((itemType) => typeToOpenApiSchema(itemType, checker, seen)),
+      items: false,
+      minItems: itemTypes.length,
+      maxItems: itemTypes.length,
+    };
+  }
+
+  if (checker.isArrayType(type)) {
     const elementType = checker.getTypeArguments(type as ts.TypeReference)[0];
     return {
       type: "array",
@@ -452,6 +478,14 @@ function typeToOpenApiSchema(
           type: "object",
           properties: schemaProperties,
         };
+  }
+
+  const stringIndexType = type.getStringIndexType();
+  if (stringIndexType) {
+    return {
+      type: "object",
+      additionalProperties: typeToOpenApiSchema(stringIndexType, checker, seen),
+    };
   }
 
   return { type: "object" };
