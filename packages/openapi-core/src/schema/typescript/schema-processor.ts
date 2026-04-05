@@ -1,11 +1,13 @@
 import fs from "fs";
 import path from "path";
 import * as t from "@babel/types";
+import * as ts from "typescript";
 
 import { processCustomSchemaFiles } from "../core/custom-schema-file-processor.js";
 import { CustomSchemaProcessor } from "../core/custom-schema-processor.js";
 import { mergeSchemaDefinitionLayers } from "../core/schema-definition-processor.js";
 import { parseTypeScriptFile } from "../../shared/utils.js";
+import { getTypeScriptProject } from "../../shared/typescript-project.js";
 import { ZodSchemaConverter } from "../zod/zod-converter.js";
 import { ZodSchemaProcessor } from "../zod/zod-schema-processor.js";
 import {
@@ -176,7 +178,7 @@ export class SchemaProcessor {
       }
 
       // Try to convert Zod schema
-      const zodSchema = this.zodSchemaProcessor.resolveSchema(schemaName);
+      const zodSchema = this.zodSchemaProcessor.resolveSchema(schemaName, contentType);
       if (zodSchema) {
         logger.debug(`Found and processed Zod schema: ${schemaName}`);
         this.openapiDefinitions[schemaName] = zodSchema;
@@ -325,7 +327,10 @@ export class SchemaProcessor {
         this.zodSchemaConverter &&
         !this.openapiDefinitions[typeName]
       ) {
-        const zodSchema = this.zodSchemaConverter.convertZodSchemaToOpenApi(typeName);
+        const zodSchema = this.zodSchemaConverter.convertZodSchemaToOpenApi(
+          typeName,
+          this.contentType,
+        );
         if (zodSchema) {
           this.openapiDefinitions[typeName] = zodSchema;
           return zodSchema;
@@ -335,6 +340,19 @@ export class SchemaProcessor {
       const typeDefEntry = this.typeDefinitions[typeName.toString()];
       if (!typeDefEntry) return {};
       const typeNode = typeDefEntry.node || typeDefEntry; // Support both old and new format
+
+      if (typeDefEntry.filePath && this.shouldUseTypeScriptChecker(typeNode)) {
+        const checkerSchema = this.resolveTypeWithTypeScriptChecker(
+          typeName,
+          typeDefEntry.filePath,
+        );
+        if (
+          checkerSchema &&
+          !(checkerSchema.type === "object" && Object.keys(checkerSchema).length === 1)
+        ) {
+          return checkerSchema;
+        }
+      }
 
       // Handle generic type alias declarations (full node)
       if (t.isTSTypeAliasDeclaration(typeNode)) {
@@ -352,6 +370,7 @@ export class SchemaProcessor {
         typeNode.callee.object.name === "z"
       ) {
         if (this.schemaTypes.includes("zod") && this.zodSchemaConverter) {
+          this.zodSchemaConverter.currentContentType = this.contentType;
           const zodSchema = this.zodSchemaConverter.processZodNode(typeNode);
           if (zodSchema) {
             this.openapiDefinitions[typeName] = zodSchema;
@@ -455,6 +474,261 @@ export class SchemaProcessor {
     return isDateNode(node);
   }
 
+  private shouldUseTypeScriptChecker(node: t.Node): boolean {
+    return (
+      t.isTSConditionalType(node) ||
+      t.isTSMappedType(node) ||
+      t.isTSTemplateLiteralType(node) ||
+      t.isTSImportType(node) ||
+      (t.isTSTypeOperator(node) && node.operator === "keyof")
+    );
+  }
+
+  private extractKeysFromTypeNode(node: t.Node | null | undefined): string[] {
+    if (!node) {
+      return [];
+    }
+
+    if (t.isTSUnionType(node)) {
+      return node.types.flatMap((typeNode) => this.extractKeysFromTypeNode(typeNode));
+    }
+
+    if (t.isTSLiteralType(node) && t.isStringLiteral(node.literal)) {
+      return [node.literal.value];
+    }
+
+    if (t.isTSTypeReference(node) && t.isIdentifier(node.typeName)) {
+      const typeDefinition = this.typeDefinitions[node.typeName.name];
+      if (typeDefinition?.node) {
+        return this.extractKeysFromTypeNode(typeDefinition.node);
+      }
+    }
+
+    return [];
+  }
+
+  private areTypesStaticallyCompatible(left: t.Node, right: t.Node): boolean {
+    if (left.type === right.type) {
+      if (t.isTSLiteralType(left) && t.isTSLiteralType(right)) {
+        return (
+          extractKeysFromLiteralType(left).join("|") === extractKeysFromLiteralType(right).join("|")
+        );
+      }
+
+      return true;
+    }
+
+    return false;
+  }
+
+  private resolveTypeWithTypeScriptChecker(
+    typeName: string,
+    filePath: string,
+  ): OpenAPIDefinition | null {
+    try {
+      const project = getTypeScriptProject(filePath);
+      const sourceFile = project.program.getSourceFile(filePath);
+      if (!sourceFile) {
+        return null;
+      }
+
+      const symbol = project.checker
+        .getSymbolsInScope(sourceFile, ts.SymbolFlags.Type | ts.SymbolFlags.Alias)
+        .find((candidate) => candidate.name === typeName);
+      if (!symbol) {
+        return null;
+      }
+
+      const targetSymbol =
+        symbol.flags & ts.SymbolFlags.Alias ? project.checker.getAliasedSymbol(symbol) : symbol;
+      const declaration = targetSymbol.declarations?.[0];
+      if (!declaration) {
+        return null;
+      }
+
+      const resolvedType =
+        targetSymbol.flags & (ts.SymbolFlags.TypeAlias | ts.SymbolFlags.Interface)
+          ? project.checker.getDeclaredTypeOfSymbol(targetSymbol)
+          : project.checker.getTypeAtLocation(declaration);
+      return this.typeScriptTypeToOpenApiSchema(resolvedType, project.checker, new Set<string>());
+    } catch (error) {
+      logger.debug(
+        `TypeScript checker fallback failed for ${typeName}: ${getSchemaProcessorErrorMessage(error)}`,
+      );
+      return null;
+    }
+  }
+
+  private typeScriptTypeToOpenApiSchema(
+    type: ts.Type,
+    checker: ts.TypeChecker,
+    seen: Set<string>,
+  ): OpenAPIDefinition {
+    const primitiveLikeFlags =
+      ts.TypeFlags.StringLike |
+      ts.TypeFlags.NumberLike |
+      ts.TypeFlags.BooleanLike |
+      ts.TypeFlags.BooleanLiteral |
+      ts.TypeFlags.TemplateLiteral |
+      ts.TypeFlags.Null |
+      ts.TypeFlags.Undefined;
+    const apparentType = checker.getApparentType(type);
+    if (
+      !(type.flags & primitiveLikeFlags) &&
+      apparentType !== type &&
+      checker.getPropertiesOfType(apparentType).length > 0
+    ) {
+      type = apparentType;
+    }
+
+    const seenKey = checker.typeToString(type);
+    if (seen.has(seenKey)) {
+      return { type: "object" };
+    }
+
+    seen.add(seenKey);
+
+    if (type.isStringLiteral()) {
+      return { type: "string", enum: [type.value] };
+    }
+
+    if (type.isNumberLiteral()) {
+      return { type: "number", enum: [type.value] };
+    }
+
+    if (type.flags & ts.TypeFlags.BooleanLiteral) {
+      return {
+        type: "boolean",
+        enum: [checker.typeToString(type) === "true"],
+      };
+    }
+
+    if (type.flags & ts.TypeFlags.TemplateLiteral) {
+      return { type: "string" };
+    }
+
+    if (type.flags & ts.TypeFlags.StringLike) {
+      return { type: "string" };
+    }
+    if (type.flags & ts.TypeFlags.NumberLike) {
+      return { type: "number" };
+    }
+    if (type.flags & ts.TypeFlags.BooleanLike) {
+      return { type: "boolean" };
+    }
+    if (type.flags & ts.TypeFlags.Null) {
+      return { type: "null" };
+    }
+
+    if (type.isUnion()) {
+      const nullable = type.types.some((member) => member.flags & ts.TypeFlags.Null);
+      const nonNullTypes = type.types.filter((member) => !(member.flags & ts.TypeFlags.Null));
+      const allLiterals = nonNullTypes.every(
+        (member) =>
+          member.isStringLiteral() ||
+          member.isNumberLiteral() ||
+          Boolean(member.flags & ts.TypeFlags.BooleanLiteral),
+      );
+      if (allLiterals && nonNullTypes.length > 0) {
+        const enumValues = nonNullTypes.map((member) => {
+          if (member.isStringLiteral() || member.isNumberLiteral()) {
+            return member.value;
+          }
+          return checker.typeToString(member) === "true";
+        });
+        const valueType = typeof enumValues[0];
+        return {
+          type: valueType === "number" ? "number" : valueType === "boolean" ? "boolean" : "string",
+          enum: enumValues,
+          ...(nullable ? { nullable: true } : {}),
+        };
+      }
+
+      if (nullable && nonNullTypes.length === 1 && nonNullTypes[0]) {
+        return {
+          ...this.typeScriptTypeToOpenApiSchema(nonNullTypes[0], checker, seen),
+          nullable: true,
+        };
+      }
+
+      return {
+        oneOf: nonNullTypes.map((member) =>
+          this.typeScriptTypeToOpenApiSchema(member, checker, seen),
+        ),
+      };
+    }
+
+    if (checker.isTupleType(type)) {
+      const itemTypes = checker.getTypeArguments(type as ts.TypeReference);
+      return {
+        type: "array",
+        prefixItems: itemTypes.map((itemType) =>
+          this.typeScriptTypeToOpenApiSchema(itemType, checker, seen),
+        ),
+        items: false,
+        minItems: itemTypes.length,
+        maxItems: itemTypes.length,
+      };
+    }
+
+    if (checker.isArrayType(type)) {
+      const elementType = checker.getTypeArguments(type as ts.TypeReference)[0];
+      return {
+        type: "array",
+        items: elementType
+          ? this.typeScriptTypeToOpenApiSchema(elementType, checker, seen)
+          : { type: "object" },
+      };
+    }
+
+    const properties = checker.getPropertiesOfType(type);
+    if (properties.length > 0) {
+      const schemaProperties: Record<string, OpenAPIDefinition> = {};
+      const required: string[] = [];
+
+      properties.forEach((property) => {
+        const propertyDeclaration = property.valueDeclaration || property.declarations?.[0];
+        if (!propertyDeclaration) {
+          return;
+        }
+
+        const propertyType = checker.getTypeOfSymbolAtLocation(property, propertyDeclaration);
+        schemaProperties[property.getName()] = this.typeScriptTypeToOpenApiSchema(
+          propertyType,
+          checker,
+          seen,
+        );
+        if (!(property.flags & ts.SymbolFlags.Optional)) {
+          required.push(property.getName());
+        }
+      });
+
+      return required.length > 0
+        ? { type: "object", properties: schemaProperties, required }
+        : { type: "object", properties: schemaProperties };
+    }
+
+    if (type.getNumberIndexType()) {
+      return {
+        type: "array",
+        items: this.typeScriptTypeToOpenApiSchema(type.getNumberIndexType()!, checker, seen),
+      };
+    }
+
+    if (type.getStringIndexType()) {
+      return {
+        type: "object",
+        additionalProperties: this.typeScriptTypeToOpenApiSchema(
+          type.getStringIndexType()!,
+          checker,
+          seen,
+        ),
+      };
+    }
+
+    return { type: "object" };
+  }
+
   private resolveTSNodeType(node: any): OpenAPIDefinition {
     if (!node) return { type: "object" }; // Default type for undefined/null
 
@@ -542,6 +816,69 @@ export class SchemaProcessor {
 
       // Fallback
       return { type: "object" };
+    }
+
+    if (t.isTSTemplateLiteralType(node)) {
+      return { type: "string" };
+    }
+
+    if (t.isTSConditionalType(node)) {
+      return this.areTypesStaticallyCompatible(node.checkType, node.extendsType)
+        ? this.resolveTSNodeType(node.trueType)
+        : this.resolveTSNodeType(node.falseType);
+    }
+
+    if (t.isTSMappedType(node)) {
+      const constraint = node.typeParameter.constraint;
+      const keys = this.extractKeysFromTypeNode(constraint);
+      if (keys.length === 0) {
+        return { type: "object", properties: {} };
+      }
+
+      const valueType = node.typeAnnotation
+        ? this.resolveTSNodeType(node.typeAnnotation)
+        : { type: "object" };
+      const properties = Object.fromEntries(keys.map((key) => [key, structuredClone(valueType)]));
+      return {
+        type: "object",
+        properties,
+        required: keys,
+      };
+    }
+
+    if (t.isTSImportType(node)) {
+      if (
+        t.isStringLiteral(node.argument) &&
+        node.qualifier &&
+        t.isIdentifier(node.qualifier) &&
+        this.currentFilePath
+      ) {
+        const resolvedImportPath = this.resolveImportPath(
+          node.argument.value,
+          this.currentFilePath,
+        );
+        if (resolvedImportPath) {
+          this.processSchemaFile(resolvedImportPath, node.qualifier.name);
+          const importedDefinition = this.typeDefinitions[node.qualifier.name];
+          if (importedDefinition) {
+            return this.resolveType(node.qualifier.name);
+          }
+        }
+      }
+
+      return { type: "object" };
+    }
+
+    if (t.isTSTypeOperator(node) && node.operator === "keyof") {
+      const sourceSchema = this.resolveTSNodeType(node.typeAnnotation);
+      if (sourceSchema.properties) {
+        return {
+          type: "string",
+          enum: Object.keys(sourceSchema.properties),
+        };
+      }
+
+      return { type: "string" };
     }
 
     if (t.isTSTypeReference(node) && t.isIdentifier(node.typeName)) {
@@ -952,6 +1289,33 @@ export class SchemaProcessor {
     if (!this.openapiDefinitions[baseTypeName]) {
       this.findSchemaDefinition(baseTypeName, contentType);
     }
+  }
+
+  public getSchemaReferenceName(typeName: string, contentType: ContentType = "response"): string {
+    let baseTypeName = typeName.trim();
+    while (baseTypeName.endsWith("[]")) {
+      baseTypeName = baseTypeName.slice(0, -2);
+    }
+
+    if (
+      !baseTypeName ||
+      baseTypeName.startsWith("{") ||
+      baseTypeName.startsWith("[") ||
+      baseTypeName === "string" ||
+      baseTypeName === "number" ||
+      baseTypeName === "boolean" ||
+      baseTypeName === "null"
+    ) {
+      return baseTypeName;
+    }
+
+    this.ensureSchemaResolved(baseTypeName, contentType);
+
+    if (this.schemaTypes.includes("zod") && this.zodSchemaConverter) {
+      return this.zodSchemaConverter.getSchemaReferenceName(baseTypeName, contentType);
+    }
+
+    return baseTypeName;
   }
 
   /**

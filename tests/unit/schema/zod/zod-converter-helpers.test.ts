@@ -397,7 +397,10 @@ describe("ZodSchemaConverter helper seams", () => {
       ),
     ).toEqual({
       type: "array",
-      items: { type: "string" },
+      prefixItems: [{ type: "string" }, { type: "number" }],
+      items: false,
+      minItems: 2,
+      maxItems: 2,
     });
     expect(converter.processZodTuple(getFirstInitializer("z.tuple()") as t.CallExpression)).toEqual(
       {

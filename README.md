@@ -17,6 +17,7 @@ Generate OpenAPI `3.0`, `3.1`, and `3.2` from the routes and schemas you already
 - Target `3.0`, `3.1`, or `3.2` from the same route metadata with version-aware finalization.
 - Ship interactive docs quickly with built-in UI scaffolding for Scalar, Swagger, Redoc, Stoplight Elements, or RapiDoc.
 - Fall back on checker-assisted App Router response inference when explicit `@response` tags are missing.
+- Keep richer Zod 4 and TypeScript output in modern targets with selective runtime-assisted Zod export and checker fallback for advanced type constructs.
 
 ## Quick start
 
@@ -158,6 +159,8 @@ Resolution priority is:
 See [apps/next-app-mixed-schemas](./apps/next-app-mixed-schemas) for a full working example.
 For more adoption patterns, see
 [docs/workflows-and-integrations.md](./docs/workflows-and-integrations.md).
+
+When you target modern OpenAPI output, the Zod path can also split request and response component refs when a supported Zod 4 schema emits different input and output JSON Schema shapes, while the TypeScript path can use selective checker fallback for mapped, conditional, template-literal, and import-based named types.
 
 ### Generate docs from Drizzle schemas
 

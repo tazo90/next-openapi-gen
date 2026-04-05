@@ -31,7 +31,8 @@
     "@babel/types": "catalog:",
     "fs-extra": "catalog:",
     "js-yaml": "catalog:",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@types/babel__traverse": "catalog:",

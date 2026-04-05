@@ -17,6 +17,7 @@ Feature status uses three buckets:
 - Explicit `@response` metadata wins over inferred responses.
 - Comma-separated `@auth` metadata emits alternative security requirements, one scheme per entry. Richer `securitySchemes` modeling still comes from templates or custom OpenAPI fragments.
 - TypeScript checker support is used selectively for App Router response inference and path-alias/module resolution.
+- Zod schemas still default to AST conversion, but selected Zod 4 constructs can use a runtime-assisted export path so request and response variants diverge only when the emitted schemas actually differ.
 
 ## Choosing a version
 
@@ -74,6 +75,7 @@ Feature status uses three buckets:
 - Inline object returns still emit a best-effort inline schema instead of silently dropping the response.
 - Multiple return paths and explicit `204` responses are collected when they can be statically identified from `Response.json(...)` / `NextResponse.json(...)` returns.
 - `tsconfig.json` path aliases are resolved for TypeScript schema discovery when imports are not purely relative.
+- TypeScript schema resolution can now fall back to the checker for mapped, conditional, template-literal, `keyof`, and import-based named types when Babel-only analysis would otherwise collapse them to broad objects.
 - This checker support is intentionally selective; the generator does not require a full-project type-check-only architecture.
 
 ## Testing Strategy

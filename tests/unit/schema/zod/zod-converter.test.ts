@@ -117,6 +117,15 @@ describe("ZodSchemaConverter", () => {
       type: "object",
       additionalProperties: true,
     });
+    expect(
+      converter.processZodNode(
+        parseInitializer('z.string().meta({ example: "demo", deprecated: true })'),
+      ),
+    ).toEqual({
+      type: "string",
+      example: "demo",
+      deprecated: true,
+    });
   });
 
   it("supports Zod 4 top-level helpers and preserves the base schema through pipelines", () => {
@@ -157,6 +166,39 @@ describe("ZodSchemaConverter", () => {
     ).toEqual({
       type: "string",
     });
+  });
+
+  it("creates separate request and response variants for runtime-assisted zod schemas", () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-zod-runtime-variants-"));
+    roots.push(root);
+
+    fs.writeFileSync(
+      path.join(root, "schemas.ts"),
+      [
+        'import { z } from "zod";',
+        "export const QuantitySchema = z.coerce.number().pipe(z.number().min(1));",
+      ].join("\n"),
+    );
+
+    const converter = new ZodSchemaConverter(root);
+
+    expect(converter.convertZodSchemaToOpenApi("QuantitySchema", "response")).toEqual({
+      type: "number",
+      minimum: 1,
+    });
+    expect(converter.convertZodSchemaToOpenApi("QuantitySchema", "body")).toEqual({
+      type: "number",
+    });
+    expect(converter.getSchemaReferenceName("QuantitySchema", "body")).toBe("QuantitySchema");
+    expect(converter.getSchemaReferenceName("QuantitySchema", "response")).toBe(
+      "QuantitySchemaOutput",
+    );
+    expect(converter.getProcessedSchemas()).toEqual(
+      expect.objectContaining({
+        QuantitySchema: { type: "number" },
+        QuantitySchemaOutput: { type: "number", minimum: 1 },
+      }),
+    );
   });
 
   it("applies reference descriptions", () => {

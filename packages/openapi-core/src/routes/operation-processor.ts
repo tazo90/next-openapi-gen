@@ -146,7 +146,12 @@ export class OperationProcessor {
         definition.requestBody = {
           content: {
             [contentType]: {
-              schema: { $ref: `#/components/schemas/${dataTypes.bodyType}` },
+              schema: {
+                $ref: `#/components/schemas/${this.schemaProcessor.getSchemaReferenceName(
+                  dataTypes.bodyType,
+                  "body",
+                )}`,
+              },
               ...(dataTypes.requestExamples
                 ? { examples: structuredClone(dataTypes.requestExamples) }
                 : {}),
@@ -203,7 +208,10 @@ export class OperationProcessor {
       content: {
         "application/x-www-form-urlencoded": {
           schema: {
-            $ref: `#/components/schemas/${dataTypes.querystringType}`,
+            $ref: `#/components/schemas/${this.schemaProcessor.getSchemaReferenceName(
+              dataTypes.querystringType,
+              "params",
+            )}`,
           },
           ...(dataTypes.querystringExamples
             ? { examples: structuredClone(dataTypes.querystringExamples) }

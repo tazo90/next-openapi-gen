@@ -158,7 +158,10 @@ describe("Zod node helpers", () => {
       ),
     ).toEqual({
       type: "array",
-      items: { type: "string" },
+      prefixItems: [{ type: "string" }, { type: "number" }],
+      items: false,
+      minItems: 2,
+      maxItems: 2,
     });
   });
 
@@ -196,6 +199,9 @@ describe("Zod node helpers", () => {
       ensureSchema: (schemaName: string) => {
         ensuredSchemas.push(schemaName);
       },
+      getReferenceSchema: (schemaName: string) => ({
+        $ref: `#/components/schemas/${schemaName}`,
+      }),
     };
 
     expect(

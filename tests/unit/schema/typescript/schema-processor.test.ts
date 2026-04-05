@@ -198,11 +198,7 @@ describe("SchemaProcessor", () => {
     const processor = new SchemaProcessor(process.cwd(), ["typescript", "zod"]);
     const lookupSpy = vi
       .spyOn(processor, "findSchemaDefinition")
-      .mockImplementation((schemaName, contentType) => {
-        if (contentType) {
-          return {};
-        }
-
+      .mockImplementation((schemaName, _contentType) => {
         const resolved = {
           type: "object",
           title: schemaName,
@@ -216,8 +212,14 @@ describe("SchemaProcessor", () => {
       bodyType: "CreateUserInput",
     });
 
-    expect(content.params).toEqual({});
-    expect(content.body).toEqual({});
+    expect(content.params).toEqual({
+      type: "object",
+      title: "FilterParams",
+    });
+    expect(content.body).toEqual({
+      type: "object",
+      title: "CreateUserInput",
+    });
     expect((processor as any).openapiDefinitions.FilterParams).toEqual({
       type: "object",
       title: "FilterParams",
@@ -227,9 +229,7 @@ describe("SchemaProcessor", () => {
       title: "CreateUserInput",
     });
     expect(lookupSpy).toHaveBeenCalledWith("FilterParams", "params");
-    expect(lookupSpy).toHaveBeenCalledWith("FilterParams", "");
     expect(lookupSpy).toHaveBeenCalledWith("CreateUserInput", "body");
-    expect(lookupSpy).toHaveBeenCalledWith("CreateUserInput", "");
   });
 
   it("resolves generic type aliases from schema files", () => {
