@@ -52,6 +52,7 @@ describe("OperationProcessor", () => {
       createRequestBodySchema: vi.fn<MockFn>(),
       createResponseSchema: vi.fn<MockFn>(),
       ensureSchemaResolved: vi.fn<MockFn>(),
+      getSchemaReferenceName: vi.fn<MockFn>((typeName) => typeName),
     };
     const responseProcessor = {
       supportsRequestBody: vi.fn<MockFn>(() => true),
@@ -257,6 +258,7 @@ describe("OperationProcessor", () => {
       createRequestBodySchema: vi.fn<MockFn>(),
       createResponseSchema: vi.fn<MockFn>(),
       ensureSchemaResolved: vi.fn<MockFn>(),
+      getSchemaReferenceName: vi.fn<MockFn>((typeName) => typeName),
     };
     const responseProcessor = {
       supportsRequestBody: vi.fn<MockFn>(() => true),
@@ -402,6 +404,7 @@ describe("OperationProcessor", () => {
       })),
       createResponseSchema: vi.fn<MockFn>(),
       ensureSchemaResolved: vi.fn<MockFn>(),
+      getSchemaReferenceName: vi.fn<MockFn>((typeName) => typeName),
     };
     const responseProcessor = {
       supportsRequestBody: vi.fn<MockFn>(() => true),

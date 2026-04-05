@@ -3,6 +3,8 @@ import path from "path";
 
 import { logger } from "../../shared/logger.js";
 
+export const IGNORED_DIRS = new Set(["node_modules", ".git", "dist", ".next", ".turbo", ".cache"]);
+
 export function collectZodRouteFiles(apiDir?: string): string[] {
   const routeFiles: string[] = [];
 
@@ -39,7 +41,9 @@ export function collectRouteFilesInDirectory(dir: string, routeFiles: string[]):
       const stats = fs.statSync(filePath);
 
       if (stats.isDirectory()) {
-        collectRouteFilesInDirectory(filePath, routeFiles);
+        if (!IGNORED_DIRS.has(file)) {
+          collectRouteFilesInDirectory(filePath, routeFiles);
+        }
       } else if (
         file === "route.ts" ||
         file === "route.tsx" ||
@@ -65,7 +69,9 @@ export function processZodSchemaFilesInDirectory(
       const stats = fs.statSync(filePath);
 
       if (stats.isDirectory()) {
-        processZodSchemaFilesInDirectory(filePath, onFile);
+        if (!IGNORED_DIRS.has(file)) {
+          processZodSchemaFilesInDirectory(filePath, onFile);
+        }
       } else if (file.endsWith(".ts") || file.endsWith(".tsx")) {
         onFile(filePath);
       }

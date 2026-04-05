@@ -14,7 +14,11 @@ import {
   resolveImportPath,
   substituteParameters,
 } from "./converter-runtime.js";
-import { collectZodRouteFiles, processZodSchemaFilesInDirectory } from "./file-processor.js";
+import {
+  IGNORED_DIRS,
+  collectZodRouteFiles,
+  processZodSchemaFilesInDirectory,
+} from "./file-processor.js";
 import { processImports } from "./import-processor.js";
 import {
   escapeRegExp,
@@ -281,7 +285,9 @@ export class ZodSchemaConverter {
         const stats = this.fileAccess.statSync(filePath);
 
         if (stats.isDirectory()) {
-          this.findRouteFilesInDir(filePath, routeFiles);
+          if (!IGNORED_DIRS.has(file)) {
+            this.findRouteFilesInDir(filePath, routeFiles);
+          }
         } else if (
           file === "route.ts" ||
           file === "route.tsx" ||

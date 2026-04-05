@@ -40,6 +40,7 @@ describe("ResponseProcessor", () => {
   it("builds nested array schemas for typed success responses", () => {
     const schemaProcessor = {
       ensureSchemaResolved: vi.fn<MockFn>(),
+      getSchemaReferenceName: vi.fn<MockFn>((typeName) => typeName),
     };
     const processor = new ResponseProcessor(
       {
@@ -113,6 +114,7 @@ describe("ResponseProcessor", () => {
   it("ignores missing response sets and uses fallback descriptions for custom schema refs", () => {
     const schemaProcessor = {
       ensureSchemaResolved: vi.fn<MockFn>(),
+      getSchemaReferenceName: vi.fn<MockFn>((typeName) => typeName),
     };
     const processor = new ResponseProcessor(
       {
@@ -234,6 +236,7 @@ describe("ResponseProcessor", () => {
   it("uses inferred responses when no explicit @response tag exists", () => {
     const schemaProcessor = {
       ensureSchemaResolved: vi.fn<MockFn>(),
+      getSchemaReferenceName: vi.fn<MockFn>((typeName) => typeName),
     };
     const processor = new ResponseProcessor(
       {
@@ -270,6 +273,7 @@ describe("ResponseProcessor", () => {
     const schemaProcessor = {
       ensureSchemaResolved: vi.fn<MockFn>(),
       resolveTypeExpression: vi.fn<MockFn>(),
+      getSchemaReferenceName: vi.fn<MockFn>((typeName) => typeName),
     };
     const processor = new ResponseProcessor(
       {
@@ -353,6 +357,7 @@ describe("ResponseProcessor", () => {
   it("emits sequential media and examples for first-class 3.2 response metadata", () => {
     const schemaProcessor = {
       ensureSchemaResolved: vi.fn<MockFn>(),
+      getSchemaReferenceName: vi.fn<MockFn>((typeName) => typeName),
     };
     const processor = new ResponseProcessor(
       {
