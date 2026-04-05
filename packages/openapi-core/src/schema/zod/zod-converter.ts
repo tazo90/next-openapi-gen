@@ -160,9 +160,13 @@ export class ZodSchemaConverter {
       this.processingSchemas.delete(schemaName);
       if (mappedSchemaName && requestedSchemaName !== schemaName) {
         const resolvedReference = this.getSchemaReferenceName(schemaName, this.currentContentType);
+        // Copy schema under alias name so OpenAPI components use the alias
+        if (this.zodSchemas[resolvedReference] && !this.zodSchemas[requestedSchemaName]) {
+          this.zodSchemas[requestedSchemaName] = this.zodSchemas[resolvedReference];
+        }
         this.schemaVariantRefs.set(
           this.getVariantKey(requestedSchemaName, this.currentContentType),
-          resolvedReference,
+          this.zodSchemas[requestedSchemaName] ? requestedSchemaName : resolvedReference,
         );
       }
     }
@@ -172,6 +176,12 @@ export class ZodSchemaConverter {
     schemaName: string,
     contentType: ContentType = this.currentContentType,
   ): string {
+    // Check alias variant ref first (set by convertZodSchemaToOpenApi for mapped types)
+    const aliasRef = this.schemaVariantRefs.get(this.getVariantKey(schemaName, contentType));
+    if (aliasRef) {
+      return aliasRef;
+    }
+
     const normalizedName = this.typeToSchemaMapping[schemaName] ?? schemaName;
     return (
       this.schemaVariantRefs.get(this.getVariantKey(normalizedName, contentType)) ?? normalizedName
