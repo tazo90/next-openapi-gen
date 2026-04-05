@@ -316,176 +316,6 @@
           }
         ]
       },
-      "OrderIdParams": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid",
-            "description": "Order ID"
-          }
-        },
-        "required": [
-          "id"
-        ]
-      },
-      "OrderSchema": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid",
-            "description": "Order ID"
-          },
-          "userId": {
-            "type": "string",
-            "format": "uuid",
-            "description": "User ID"
-          },
-          "items": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/CartItemSchema"
-            },
-            "description": "Purchased products"
-          },
-          "shippingAddress": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/AddressSchema"
-              }
-            ],
-            "description": "Shipping address"
-          },
-          "billingAddress": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/AddressSchema"
-              }
-            ],
-            "description": "Billing address (can be the same as shipping address)"
-          },
-          "paymentMethod": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/PaymentMethodSchema"
-              }
-            ],
-            "description": "Payment method"
-          },
-          "status": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/OrderStatusSchema"
-              }
-            ],
-            "description": "Order status"
-          },
-          "subtotal": {
-            "type": "number",
-            "minimum": 0,
-            "description": "Subtotal (without discount and shipping)"
-          },
-          "discountAmount": {
-            "type": "number",
-            "minimum": 0,
-            "default": 0,
-            "description": "Discount amount"
-          },
-          "shippingCost": {
-            "type": "number",
-            "minimum": 0,
-            "description": "Shipping cost"
-          },
-          "tax": {
-            "type": "number",
-            "minimum": 0,
-            "description": "Tax"
-          },
-          "total": {
-            "type": "number",
-            "minimum": 0,
-            "description": "Total amount"
-          },
-          "notes": {
-            "type": "string",
-            "description": "Additional notes"
-          },
-          "createdAt": {
-            "type": "string",
-            "format": "date-time",
-            "description": "Order creation date"
-          },
-          "updatedAt": {
-            "type": "string",
-            "format": "date-time",
-            "description": "Last update date"
-          },
-          "paymentDate": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "format": "date-time",
-            "description": "Payment date"
-          },
-          "shippingDate": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "format": "date-time",
-            "description": "Shipping date"
-          },
-          "deliveryDate": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "format": "date-time",
-            "description": "Delivery date"
-          }
-        },
-        "required": [
-          "id",
-          "userId",
-          "items",
-          "shippingAddress",
-          "billingAddress",
-          "paymentMethod",
-          "status",
-          "subtotal",
-          "discountAmount",
-          "shippingCost",
-          "tax",
-          "total",
-          "createdAt",
-          "updatedAt",
-          "paymentDate",
-          "shippingDate",
-          "deliveryDate"
-        ]
-      },
-      "UpdateOrderStatusBody": {
-        "type": "object",
-        "properties": {
-          "status": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/OrderStatusSchema"
-              }
-            ],
-            "description": "New order status"
-          },
-          "notes": {
-            "type": "string",
-            "description": "Additional notes about the status change"
-          }
-        },
-        "required": [
-          "status"
-        ]
-      },
       "OrdersQueryParams": {
         "type": "object",
         "properties": {
@@ -598,11 +428,19 @@
             "description": "ID of billing address from user profile"
           },
           "shippingAddress": {
-            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AddressSchema"
+              }
+            ],
             "description": "New shipping address"
           },
           "billingAddress": {
-            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AddressSchema"
+              }
+            ],
             "description": "New billing address"
           },
           "useShippingAsBilling": {
@@ -629,6 +467,166 @@
         },
         "required": [
           "cartId"
+        ]
+      },
+      "OrderSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Order ID"
+          },
+          "userId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "User ID"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CartItemSchema"
+            },
+            "description": "Purchased products"
+          },
+          "shippingAddress": {
+            "type": "object"
+          },
+          "billingAddress": {
+            "type": "object"
+          },
+          "paymentMethod": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PaymentMethodSchema"
+              }
+            ],
+            "description": "Payment method"
+          },
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/OrderStatusSchema"
+              }
+            ],
+            "description": "Order status"
+          },
+          "subtotal": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Subtotal (without discount and shipping)"
+          },
+          "discountAmount": {
+            "type": "number",
+            "minimum": 0,
+            "default": 0,
+            "description": "Discount amount"
+          },
+          "shippingCost": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Shipping cost"
+          },
+          "tax": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Tax"
+          },
+          "total": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Total amount"
+          },
+          "notes": {
+            "type": "string",
+            "description": "Additional notes"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Order creation date"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Last update date"
+          },
+          "paymentDate": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "Payment date"
+          },
+          "shippingDate": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "Shipping date"
+          },
+          "deliveryDate": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "Delivery date"
+          }
+        },
+        "required": [
+          "id",
+          "userId",
+          "items",
+          "shippingAddress",
+          "billingAddress",
+          "paymentMethod",
+          "status",
+          "subtotal",
+          "discountAmount",
+          "shippingCost",
+          "tax",
+          "total",
+          "createdAt",
+          "updatedAt",
+          "paymentDate",
+          "shippingDate",
+          "deliveryDate"
+        ]
+      },
+      "OrderIdParams": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Order ID"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "UpdateOrderStatusBody": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/OrderStatusSchema"
+              }
+            ],
+            "description": "New order status"
+          },
+          "notes": {
+            "type": "string",
+            "description": "Additional notes about the status change"
+          }
+        },
+        "required": [
+          "status"
         ]
       },
       "AdminStatsSchema": {
@@ -908,26 +906,26 @@
           "uploadedAt"
         ]
       },
-      "UserFieldsQuery": {
+      "UserListParamsSchema": {
         "type": "object",
         "properties": {
-          "fields": {
-            "type": "string",
-            "description": "Comma-separated list of fields to include"
-          }
-        }
-      },
-      "UserIdParams": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid",
-            "description": "User ID"
+          "pagination": {
+            "$ref": "#/components/schemas/PaginationSchema"
+          },
+          "filter": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "name"
+            ]
           }
         },
         "required": [
-          "id"
+          "pagination"
         ]
       },
       "UserDetailedSchema": {
@@ -1043,6 +1041,28 @@
           "updatedAt"
         ]
       },
+      "UserFieldsQuery": {
+        "type": "object",
+        "properties": {
+          "fields": {
+            "type": "string",
+            "description": "Comma-separated list of fields to include"
+          }
+        }
+      },
+      "UserIdParams": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "User ID"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
       "UpdateUserBody": {
         "type": "object",
         "properties": {
@@ -1091,28 +1111,6 @@
             "description": "User preferences"
           }
         }
-      },
-      "UserListParamsSchema": {
-        "type": "object",
-        "properties": {
-          "pagination": {
-            "$ref": "#/components/schemas/PaginationSchema"
-          },
-          "filter": {
-            "type": "object",
-            "properties": {
-              "name": {
-                "type": "string"
-              }
-            },
-            "required": [
-              "name"
-            ]
-          }
-        },
-        "required": [
-          "pagination"
-        ]
       },
       "PaginationMeta": {
         "type": "object",
@@ -1716,6 +1714,143 @@
           "firstName"
         ]
       },
+      "OrderSchemaOutput": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Order ID"
+          },
+          "userId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "User ID"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CartItemSchema"
+            },
+            "description": "Purchased products"
+          },
+          "shippingAddress": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AddressSchema"
+              }
+            ],
+            "description": "Shipping address"
+          },
+          "billingAddress": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AddressSchema"
+              }
+            ],
+            "description": "Billing address (can be the same as shipping address)"
+          },
+          "paymentMethod": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PaymentMethodSchema"
+              }
+            ],
+            "description": "Payment method"
+          },
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/OrderStatusSchema"
+              }
+            ],
+            "description": "Order status"
+          },
+          "subtotal": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Subtotal (without discount and shipping)"
+          },
+          "discountAmount": {
+            "type": "number",
+            "minimum": 0,
+            "default": 0,
+            "description": "Discount amount"
+          },
+          "shippingCost": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Shipping cost"
+          },
+          "tax": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Tax"
+          },
+          "total": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Total amount"
+          },
+          "notes": {
+            "type": "string",
+            "description": "Additional notes"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Order creation date"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Last update date"
+          },
+          "paymentDate": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "Payment date"
+          },
+          "shippingDate": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "Shipping date"
+          },
+          "deliveryDate": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "Delivery date"
+          }
+        },
+        "required": [
+          "id",
+          "userId",
+          "items",
+          "shippingAddress",
+          "billingAddress",
+          "paymentMethod",
+          "status",
+          "subtotal",
+          "discountAmount",
+          "shippingCost",
+          "tax",
+          "total",
+          "createdAt",
+          "updatedAt",
+          "paymentDate",
+          "shippingDate",
+          "deliveryDate"
+        ]
+      },
       "ProductCategorySchema": {
         "type": "object",
         "properties": {
@@ -1802,6 +1937,56 @@
         "required": [
           "success",
           "message"
+        ]
+      },
+      "CreateOrderBodyOutput": {
+        "type": "object",
+        "properties": {
+          "cartId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Cart ID"
+          },
+          "shippingAddressId": {
+            "type": "integer",
+            "description": "ID of shipping address from user profile"
+          },
+          "billingAddressId": {
+            "type": "integer",
+            "description": "ID of billing address from user profile"
+          },
+          "shippingAddress": {
+            "type": "object",
+            "description": "New shipping address"
+          },
+          "billingAddress": {
+            "type": "object",
+            "description": "New billing address"
+          },
+          "useShippingAsBilling": {
+            "type": "boolean",
+            "default": true,
+            "description": "Use shipping address as billing address"
+          },
+          "paymentMethodId": {
+            "type": "integer",
+            "description": "ID of saved payment method"
+          },
+          "paymentMethod": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PaymentMethodSchema"
+              }
+            ],
+            "description": "New payment method"
+          },
+          "notes": {
+            "type": "string",
+            "description": "Additional order notes"
+          }
+        },
+        "required": [
+          "cartId"
         ]
       }
     },
@@ -2391,7 +2576,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/OrderSchema"
+                  "$ref": "#/components/schemas/OrderSchemaOutput"
                 }
               }
             }
@@ -2438,7 +2623,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/OrderSchema"
+                  "$ref": "#/components/schemas/OrderSchemaOutput"
                 }
               }
             }
@@ -2492,7 +2677,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/OrderSchema"
+                  "$ref": "#/components/schemas/OrderSchemaOutput"
                 }
               }
             }
