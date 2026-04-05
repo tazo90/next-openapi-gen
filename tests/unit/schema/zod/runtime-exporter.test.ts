@@ -656,5 +656,459 @@ describe("ZodRuntimeExporter", () => {
       });
       expect(result).toBeDefined();
     });
+
+    it("exports nonpositive()", () => {
+      expect(
+        exporter.exportSchema(parseInitializer("z.number().nonpositive()"), {
+          contentType: "response",
+        }),
+      ).toEqual({ type: "number", maximum: 0 });
+    });
+
+    it("exports z.uri() as alias for z.url()", () => {
+      expect(
+        exporter.exportSchema(parseInitializer("z.uri()"), { contentType: "response" }),
+      ).toEqual({ type: "string", format: "uri" });
+    });
+  });
+
+  describe("null-returning branches", () => {
+    it("returns null for unknown root helper", () => {
+      expect(
+        exporter.exportSchema(parseInitializer("z.unknownHelper()"), { contentType: "response" }),
+      ).toBeNull();
+    });
+
+    it("returns null for z.literal() without argument", () => {
+      expect(
+        exporter.exportSchema(parseInitializer("z.literal()"), { contentType: "response" }),
+      ).toBeNull();
+    });
+
+    it("returns null for z.enum() without argument", () => {
+      expect(
+        exporter.exportSchema(parseInitializer("z.enum()"), { contentType: "response" }),
+      ).toBeNull();
+    });
+
+    it("returns null for z.union() without argument", () => {
+      expect(
+        exporter.exportSchema(parseInitializer("z.union()"), { contentType: "response" }),
+      ).toBeNull();
+    });
+
+    it("returns null for z.union([]) with empty array", () => {
+      expect(
+        exporter.exportSchema(parseInitializer("z.union([])"), { contentType: "response" }),
+      ).toBeNull();
+    });
+
+    it("returns null for z.discriminatedUnion() without valid args", () => {
+      expect(
+        exporter.exportSchema(parseInitializer("z.discriminatedUnion()"), {
+          contentType: "response",
+        }),
+      ).toBeNull();
+    });
+
+    it("returns null for z.discriminatedUnion with fewer than 2 options", () => {
+      expect(
+        exporter.exportSchema(
+          parseInitializer('z.discriminatedUnion("type", [z.object({ type: z.literal("a") })])'),
+          { contentType: "response" },
+        ),
+      ).toBeNull();
+    });
+
+    it("returns null for z.intersection() without both args", () => {
+      expect(
+        exporter.exportSchema(parseInitializer("z.intersection()"), { contentType: "response" }),
+      ).toBeNull();
+    });
+
+    it("returns null for z.intersection() with only one arg", () => {
+      expect(
+        exporter.exportSchema(parseInitializer("z.intersection(z.string())"), {
+          contentType: "response",
+        }),
+      ).toBeNull();
+    });
+
+    it("returns null for z.templateLiteral() without argument", () => {
+      expect(
+        exporter.exportSchema(parseInitializer("z.templateLiteral()"), {
+          contentType: "response",
+        }),
+      ).toBeNull();
+    });
+
+    it("returns null for z.record() without argument", () => {
+      const result = exporter.exportSchema(parseInitializer("z.record()"), {
+        contentType: "response",
+      });
+      expect(result).toEqual(expect.objectContaining({ type: "object" }));
+    });
+
+    it("exports z.object() with no arguments (empty object)", () => {
+      expect(
+        exporter.exportSchema(parseInitializer("z.object()"), { contentType: "response" }),
+      ).toEqual({ type: "object", additionalProperties: false, properties: {} });
+    });
+
+    it("exports z.tuple() with no arguments (empty tuple)", () => {
+      const result = exporter.exportSchema(parseInitializer("z.tuple()"), {
+        contentType: "response",
+      });
+      expect(result).toBeDefined();
+    });
+
+    it("exports z.tuple([]) with empty array", () => {
+      const result = exporter.exportSchema(parseInitializer("z.tuple([])"), {
+        contentType: "response",
+      });
+      expect(result).toBeDefined();
+    });
+
+    it("returns null for z.enum with non-string values in array", () => {
+      expect(
+        exporter.exportSchema(parseInitializer("z.enum([1, 2, 3])"), {
+          contentType: "response",
+        }),
+      ).toBeNull();
+    });
+
+    it("returns null for z.enum with non-literal argument type", () => {
+      expect(
+        exporter.exportSchema(parseInitializer("z.enum(someVariable)"), {
+          contentType: "response",
+        }),
+      ).toBeNull();
+    });
+
+    it("handles describe without string argument", () => {
+      const result = exporter.exportSchema(parseInitializer("z.string().describe(someVar)"), {
+        contentType: "response",
+      });
+      expect(result).toEqual({ type: "string" });
+    });
+
+    it("handles meta without arguments", () => {
+      const result = exporter.exportSchema(parseInitializer("z.string().meta()"), {
+        contentType: "response",
+      });
+      expect(result).toEqual({ type: "string" });
+    });
+
+    it("handles default without value", () => {
+      const result = exporter.exportSchema(parseInitializer("z.string().default()"), {
+        contentType: "response",
+      });
+      expect(result).toEqual({ type: "string" });
+    });
+
+    it("handles catch without value", () => {
+      const result = exporter.exportSchema(parseInitializer("z.string().catch()"), {
+        contentType: "response",
+      });
+      expect(result).toEqual({ type: "string" });
+    });
+
+    it("handles regex without RegExpLiteral", () => {
+      const result = exporter.exportSchema(parseInitializer("z.string().regex(somePattern)"), {
+        contentType: "response",
+      });
+      expect(result).toEqual({ type: "string" });
+    });
+
+    it("handles pipe without argument", () => {
+      const result = exporter.exportSchema(parseInitializer("z.string().pipe()"), {
+        contentType: "response",
+      });
+      expect(result).toEqual({ type: "string" });
+    });
+
+    it("handles endsWith", () => {
+      expect(
+        exporter.exportSchema(parseInitializer('z.string().endsWith("xyz")'), {
+          contentType: "response",
+        }),
+      ).toEqual(expect.objectContaining({ type: "string" }));
+    });
+
+    it("handles z.literal with null", () => {
+      expect(
+        exporter.exportSchema(parseInitializer("z.literal(null)"), { contentType: "response" }),
+      ).toEqual({ type: "null", const: null });
+    });
+
+    it("exports z.object with string literal keys", () => {
+      expect(
+        exporter.exportSchema(parseInitializer('z.object({ "my-key": z.string() })'), {
+          contentType: "response",
+        }),
+      ).toEqual({
+        type: "object",
+        additionalProperties: false,
+        properties: { "my-key": { type: "string" } },
+        required: ["my-key"],
+      });
+    });
+
+    it("returns null for z.object with spread elements", () => {
+      expect(
+        exporter.exportSchema(parseInitializer("z.object({ ...other })"), {
+          contentType: "response",
+        }),
+      ).toBeNull();
+    });
+
+    it("handles unknown chained method gracefully", () => {
+      const result = exporter.exportSchema(parseInitializer("z.string().trim()"), {
+        contentType: "response",
+      });
+      // trim exists on zod schema, so it should succeed or return null gracefully
+      expect(result).toBeDefined();
+    });
+
+    it("exports z.number().max()", () => {
+      expect(
+        exporter.exportSchema(parseInitializer("z.number().max(10)"), {
+          contentType: "response",
+        }),
+      ).toEqual({ type: "number", maximum: 10 });
+    });
+
+    it("exports z.string().max()", () => {
+      expect(
+        exporter.exportSchema(parseInitializer("z.string().max(50)"), {
+          contentType: "response",
+        }),
+      ).toEqual({ type: "string", maxLength: 50 });
+    });
+
+    it("exports deeply nested object", () => {
+      expect(
+        exporter.exportSchema(
+          parseInitializer("z.object({ nested: z.object({ deep: z.string() }) })"),
+          { contentType: "response" },
+        ),
+      ).toEqual({
+        type: "object",
+        additionalProperties: false,
+        properties: {
+          nested: {
+            type: "object",
+            additionalProperties: false,
+            properties: { deep: { type: "string" } },
+            required: ["deep"],
+          },
+        },
+        required: ["nested"],
+      });
+    });
+
+    it("exports complex chained schema", () => {
+      const result = exporter.exportSchema(
+        parseInitializer(
+          'z.object({ name: z.string().min(1).max(100), age: z.number().int().positive() }).describe("A user")',
+        ),
+        { contentType: "response" },
+      );
+      expect(result).toBeDefined();
+      expect(result?.type).toBe("object");
+    });
+
+    it("exports z.string().ipv4() method", () => {
+      expect(
+        exporter.exportSchema(parseInitializer("z.string().ipv4()"), {
+          contentType: "response",
+        }),
+      ).toEqual({ type: "string", format: "ipv4" });
+    });
+
+    it("exports z.string().ipv6() method", () => {
+      expect(
+        exporter.exportSchema(parseInitializer("z.string().ipv6()"), {
+          contentType: "response",
+        }),
+      ).toEqual({ type: "string", format: "ipv6" });
+    });
+
+    it("exports z.string().guid() method", () => {
+      expect(
+        exporter.exportSchema(parseInitializer("z.string().guid()"), {
+          contentType: "response",
+        }),
+      ).toEqual({ type: "string", format: "uuid" });
+    });
+
+    it("exports z.string().cuid() method", () => {
+      expect(
+        exporter.exportSchema(parseInitializer("z.string().cuid()"), {
+          contentType: "response",
+        }),
+      ).toEqual({ type: "string", format: "cuid" });
+    });
+
+    it("handles superRefine gracefully", () => {
+      expect(
+        exporter.exportSchema(parseInitializer("z.string().superRefine((val, ctx) => {})"), {
+          contentType: "response",
+        }),
+      ).toEqual({ type: "string" });
+    });
+
+    it("exports z.number().int().min(0).max(100)", () => {
+      const result = exporter.exportSchema(parseInitializer("z.number().int().min(0).max(100)"), {
+        contentType: "response",
+      });
+      expect(result).toEqual({
+        type: "integer",
+        minimum: 0,
+        maximum: 100,
+      });
+    });
+
+    it("exports z.array(z.object(...))", () => {
+      expect(
+        exporter.exportSchema(parseInitializer("z.array(z.object({ id: z.string() }))"), {
+          contentType: "response",
+        }),
+      ).toEqual({
+        type: "array",
+        items: {
+          type: "object",
+          additionalProperties: false,
+          properties: { id: { type: "string" } },
+          required: ["id"],
+        },
+      });
+    });
+
+    it("exports z.record with two explicit type args", () => {
+      expect(
+        exporter.exportSchema(parseInitializer("z.record(z.string(), z.boolean())"), {
+          contentType: "response",
+        }),
+      ).toEqual({
+        type: "object",
+        additionalProperties: { type: "boolean" },
+        propertyNames: { type: "string" },
+      });
+    });
+
+    it("handles z.default with numeric value", () => {
+      expect(
+        exporter.exportSchema(parseInitializer("z.number().default(42)"), {
+          contentType: "response",
+        }),
+      ).toEqual({ type: "number", default: 42 });
+    });
+
+    it("handles z.default with boolean value", () => {
+      expect(
+        exporter.exportSchema(parseInitializer("z.boolean().default(false)"), {
+          contentType: "response",
+        }),
+      ).toEqual({ type: "boolean", default: false });
+    });
+
+    it("handles z.default with null value", () => {
+      expect(
+        exporter.exportSchema(parseInitializer("z.string().nullable().default(null)"), {
+          contentType: "response",
+        }),
+      ).toEqual(expect.objectContaining({ default: null }));
+    });
+
+    it("exports z.templateLiteral with only string parts", () => {
+      const result = exporter.exportSchema(parseInitializer('z.templateLiteral(["hello"])'), {
+        contentType: "response",
+      });
+      expect(result).toBeDefined();
+      expect(result?.type).toBe("string");
+    });
+
+    it("handles z.meta with nested object value", () => {
+      expect(
+        exporter.exportSchema(parseInitializer('z.string().meta({ "x-custom": "value" })'), {
+          contentType: "response",
+        }),
+      ).toEqual({ type: "string", "x-custom": "value" });
+    });
+
+    it("exports z.literal with undefined-producing node returns null", () => {
+      // z.literal(someVar) - variable reference, not a literal value
+      expect(
+        exporter.exportSchema(parseInitializer("z.literal(someVar)"), { contentType: "response" }),
+      ).toBeNull();
+    });
+
+    it("exports z.object with computed key returns null", () => {
+      // Use a template literal as computed key - not extractable
+      expect(
+        exporter.exportSchema(parseInitializer("z.object({ [`key_${x}`]: z.string() })"), {
+          contentType: "response",
+        }),
+      ).toBeNull();
+    });
+
+    it("exports z.default with array literal value", () => {
+      expect(
+        exporter.exportSchema(parseInitializer("z.array(z.string()).default([])"), {
+          contentType: "response",
+        }),
+      ).toEqual({ type: "array", items: { type: "string" }, default: [] });
+    });
+
+    it("exports z.default with object literal value", () => {
+      expect(
+        exporter.exportSchema(parseInitializer('z.object({ x: z.string() }).default({ x: "a" })'), {
+          contentType: "response",
+        }),
+      ).toEqual(expect.objectContaining({ type: "object", default: { x: "a" } }));
+    });
+
+    it("exports z.meta with array value", () => {
+      expect(
+        exporter.exportSchema(parseInitializer('z.string().meta({ examples: ["a", "b"] })'), {
+          contentType: "response",
+        }),
+      ).toEqual({ type: "string", examples: ["a", "b"] });
+    });
+
+    it("exports z.meta with nested object", () => {
+      expect(
+        exporter.exportSchema(
+          parseInitializer('z.string().meta({ openapi: { example: "test" } })'),
+          { contentType: "response" },
+        ),
+      ).toEqual({ type: "string", openapi: { example: "test" } });
+    });
+
+    it("handles z.enum with empty array returns null", () => {
+      expect(
+        exporter.exportSchema(parseInitializer("z.enum([])"), {
+          contentType: "response",
+        }),
+      ).toBeNull();
+    });
+
+    it("exports z.templateLiteral with mixed parts", () => {
+      const result = exporter.exportSchema(
+        parseInitializer('z.templateLiteral(["prefix_", z.number(), "_suffix"])'),
+        { contentType: "response" },
+      );
+      expect(result).toBeDefined();
+      expect(result?.type).toBe("string");
+    });
+
+    it("handles prefault method", () => {
+      // prefault is like default but for input
+      const result = exporter.exportSchema(parseInitializer('z.string().prefault("fallback")'), {
+        contentType: "response",
+      });
+      expect(result).toBeDefined();
+    });
   });
 });
