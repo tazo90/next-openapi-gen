@@ -1,10 +1,8 @@
 ## [1.0.4](https://github.com/tazo90/next-openapi-gen/compare/v1.0.3...v1.0.4) (2026-04-05)
 
-## [1.0.4](https://github.com/tazo90/next-openapi-gen/compare/v1.0.3...v1.0.4) (2026-04-05)
-
 ### ✨ Features
 
-- more zod types ([#113](https://github.com/tazo90/next-openapi-gen/issues/113)) ([275a422](https://github.com/tazo90/next-openapi-gen/commit/275a422dcefd655fcc58f45a65a7a7ae239f9c61)) by [@tazo90](https://github.com/tazo90)
+- more zod types ([#113](https://github.com/tazo90/next-openapi-gen/issues/113)) ([275a422](https://github.com/tazo90/next-openapi-gen/commit/275a422dcefd655fcc58f45a65a7a7ae239f9c61)) by [@martijn00](https://github.com/martijn00)
 
 ### 🐛 Bug Fixes
 
