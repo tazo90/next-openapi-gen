@@ -70,7 +70,10 @@ describe("ZodSchemaConverter", () => {
   });
 
   it("reuses cached schemas and returns refs for circular processing", () => {
-    const converter = new ZodSchemaConverter(process.cwd());
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-zod-converter-cache-"));
+    roots.push(root);
+
+    const converter = new ZodSchemaConverter(root);
     converter.typeToSchemaMapping = { Seed: "Seed" };
     converter.zodSchemas.UserSchema = { type: "object" };
 
