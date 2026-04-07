@@ -78,7 +78,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build workspace
-        run: pnpm exec turbo run build
+        run: pnpm exec turbo run build --filter='./packages/*'
 
   unit:
     name: Unit Tests
