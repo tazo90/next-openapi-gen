@@ -22,15 +22,18 @@ class NextFrameworkSource implements FrameworkSource {
 
   public getScanRoots(): string[] {
     const roots = [this.config.apiDir];
+    const resolvedApiDir = path.resolve(this.config.apiDir);
     const candidateRoots = [
       path.join(process.cwd(), "src", "app", "api"),
       path.join(process.cwd(), "app", "api"),
     ];
 
     candidateRoots.forEach((candidateRoot) => {
+      const resolvedCandidate = path.resolve(candidateRoot);
       if (
         fs.existsSync(candidateRoot) &&
-        path.resolve(candidateRoot) !== path.resolve(this.config.apiDir) &&
+        resolvedCandidate !== resolvedApiDir &&
+        !resolvedApiDir.startsWith(resolvedCandidate + path.sep) &&
         !roots.includes(candidateRoot)
       ) {
         roots.push(candidateRoot);
