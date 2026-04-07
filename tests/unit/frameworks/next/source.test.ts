@@ -56,6 +56,48 @@ describe("NextFrameworkSource", () => {
     }
   });
 
+  it("does not include parent of apiDir as a scan root when apiDir is a subdirectory", () => {
+    const project = createTempProject("nxog-next-framework-subdir-");
+
+    try {
+      // createTempProject already creates src/app/api — apiDir is a child of it
+      const previousCwd = process.cwd();
+      process.chdir(project.root);
+
+      try {
+        const source = createNextFrameworkSource({
+          apiDir: "./src/app/api/external",
+          schemaDir: "./src",
+          docsUrl: "api-docs",
+          ui: "scalar",
+          outputFile: "openapi.json",
+          outputDir: "./public",
+          includeOpenApiRoutes: false,
+          ignoreRoutes: [],
+          schemaType: "typescript",
+          schemaBackends: ["typescript"],
+          schemaFiles: [],
+          framework: {
+            kind: FrameworkKind.Nextjs,
+            router: "app",
+          },
+          next: {},
+          diagnostics: {
+            enabled: true,
+          },
+          openapiVersion: "3.0",
+          debug: false,
+        });
+
+        expect(source.getScanRoots()).toEqual(["./src/app/api/external"]);
+      } finally {
+        process.chdir(previousCwd);
+      }
+    } finally {
+      project.cleanup();
+    }
+  });
+
   it("delegates route scanning helpers to the selected app router strategy", () => {
     const project = createTempProject("nxog-next-framework-app-");
 
