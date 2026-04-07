@@ -1,3 +1,22 @@
+## [1.0.5](https://github.com/tazo90/next-openapi-gen/compare/v1.0.4...v1.0.5) (2026-04-08)
+
+### ✅ Tests
+
+- ensure scan root does not include parent of apiDir ([6d31f91](https://github.com/tazo90/next-openapi-gen/commit/6d31f9136666c669529930cdbbeed9843cd1df9f)) by [@tazo90](https://github.com/tazo90)
+
+### 🐛 Bug Fixes
+
+- correct zod alias resolution and increase E2E timeouts ([#115](https://github.com/tazo90/next-openapi-gen/issues/115)) ([f1095ba](https://github.com/tazo90/next-openapi-gen/commit/f1095ba525c2fb5e4dac39ccbdd36955ce9a183e)) by [@tazo90](https://github.com/tazo90)
+- prevent getScanRoots from scanning parent of apiDir ([#116](https://github.com/tazo90/next-openapi-gen/issues/116)) ([49a95ea](https://github.com/tazo90/next-openapi-gen/commit/49a95ead7ce2112a742b61e09d625df4804664a7)) by [@kristoferma](https://github.com/kristoferma)
+
+### 🔧 Continuous Integration
+
+- build only library packages, no app examples ([3c878a7](https://github.com/tazo90/next-openapi-gen/commit/3c878a7c2aa93dc23adf9856266f7170debe5ef6)) by [@tazo90](https://github.com/tazo90)
+
+### 🔨 Chores
+
+- update CHANGELOG.md ([313327b](https://github.com/tazo90/next-openapi-gen/commit/313327bdca5d25a64e42386c888dbbf8291a8e43)) by [@tazo90](https://github.com/tazo90)
+
 ## [1.0.4](https://github.com/tazo90/next-openapi-gen/compare/v1.0.3...v1.0.4) (2026-04-05)
 
 ### ✨ Features
