@@ -1,4 +1,10 @@
-## [1.0.5](https://github.com/tazo90/next-openapi-gen/compare/v1.0.4...v1.0.5) (2026-04-08)
+## [1.0.6](https://github.com/tazo90/next-openapi-gen/compare/v1.0.5...v1.0.6) (2026-04-08)
+
+### 🔨 Chores
+
+- rebuild openapi.json in apps ([93ba1fe](https://github.com/tazo90/next-openapi-gen/commit/93ba1fef0331e6f4268ed15eced02b057ea08b17)) by [@tazo90](https://github.com/tazo90)
+
+## [1.0.5](https://github.com/tazo90/next-openapi-gen/compare/v1.0.4...v1.0.5) (2026-04-07)
 
 ### ✅ Tests
 
