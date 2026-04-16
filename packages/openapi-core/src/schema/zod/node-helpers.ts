@@ -9,6 +9,7 @@ type PrimitiveHelperContext = {
   processObject: (node: t.CallExpression) => OpenApiSchema;
   ensureSchema: (schemaName: string) => void;
   getReferenceSchema: (schemaName: string) => OpenApiSchema;
+  resolveEnumValues?: (name: string) => (string | number)[] | null;
 };
 
 function isProcessableZodNode(
@@ -362,6 +363,7 @@ export function processZodPrimitiveNode(
       schema = { type: "array", items: itemsType };
       break;
     }
+    case "nativeEnum":
     case "enum":
       if (node.arguments.length > 0 && t.isArrayExpression(node.arguments[0])) {
         const enumValues = node.arguments[0].elements
@@ -389,6 +391,18 @@ export function processZodPrimitiveNode(
                 enum: enumValues,
               }
             : { type: "string" };
+      } else if (
+        node.arguments.length > 0 &&
+        t.isIdentifier(node.arguments[0]) &&
+        context.resolveEnumValues
+      ) {
+        const resolved = context.resolveEnumValues(node.arguments[0].name);
+        if (resolved && resolved.length > 0) {
+          const valueType = typeof resolved[0] === "number" ? "number" : "string";
+          schema = { type: valueType, enum: resolved };
+        } else {
+          schema = { type: "string" };
+        }
       } else {
         schema = { type: "string" };
       }

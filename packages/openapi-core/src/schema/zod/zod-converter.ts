@@ -1272,7 +1272,98 @@ export class ZodSchemaConverter {
       getReferenceSchema: (schemaName) => ({
         $ref: `#/components/schemas/${this.getSchemaReferenceName(schemaName)}`,
       }),
+      resolveEnumValues: (name) => this.resolveEnumValues(name),
     });
+  }
+
+  /**
+   * Resolve enum values from a TS enum declaration or an `as const` object by identifier name.
+   * Searches the current file first, then follows imports.
+   */
+  private resolveEnumValues(name: string): (string | number)[] | null {
+    const extractFromAST = (ast: t.File): (string | number)[] | null => {
+      let result: (string | number)[] | null = null;
+
+      traverse(ast, {
+        TSEnumDeclaration: (nodePath: NodePath<t.TSEnumDeclaration>) => {
+          if (result) return;
+          if (nodePath.node.id && t.isIdentifier(nodePath.node.id, { name })) {
+            const values: (string | number)[] = [];
+            for (const member of nodePath.node.members) {
+              if (t.isTSEnumMember(member) && member.initializer) {
+                if (t.isStringLiteral(member.initializer)) {
+                  values.push(member.initializer.value);
+                } else if (t.isNumericLiteral(member.initializer)) {
+                  values.push(member.initializer.value);
+                }
+              }
+            }
+            if (values.length > 0) {
+              result = values;
+            }
+          }
+        },
+        VariableDeclarator: (nodePath: NodePath<t.VariableDeclarator>) => {
+          if (result) return;
+          if (!t.isIdentifier(nodePath.node.id, { name }) || !nodePath.node.init) return;
+
+          // Unwrap `as const` / `satisfies` wrappers
+          let initNode: t.Node = nodePath.node.init;
+          if (t.isTSAsExpression(initNode) || t.isTSSatisfiesExpression(initNode)) {
+            initNode = initNode.expression;
+          }
+
+          if (t.isObjectExpression(initNode)) {
+            const values: (string | number)[] = [];
+            for (const prop of initNode.properties) {
+              if (t.isObjectProperty(prop)) {
+                if (t.isStringLiteral(prop.value)) {
+                  values.push(prop.value.value);
+                } else if (t.isNumericLiteral(prop.value)) {
+                  values.push(prop.value.value);
+                }
+              }
+            }
+            if (values.length > 0) {
+              result = values;
+            }
+          } else if (t.isArrayExpression(initNode)) {
+            const values: (string | number)[] = [];
+            for (const element of initNode.elements) {
+              if (t.isStringLiteral(element)) {
+                values.push(element.value);
+              } else if (t.isNumericLiteral(element)) {
+                values.push(element.value);
+              }
+            }
+            if (values.length > 0) {
+              result = values;
+            }
+          }
+        },
+      });
+
+      return result;
+    };
+
+    // Search in current file first
+    if (this.currentAST) {
+      const values = extractFromAST(this.currentAST);
+      if (values) return values;
+    }
+
+    // Follow imports
+    if (this.currentImports && this.currentFilePath && this.currentImports[name]) {
+      const resolvedPath = this.resolveImportPath(this.currentFilePath, this.currentImports[name]);
+      if (resolvedPath) {
+        const importedAST = this.parseFileWithCache(resolvedPath);
+        if (importedAST) {
+          return extractFromAST(importedAST);
+        }
+      }
+    }
+
+    return null;
   }
 
   /**

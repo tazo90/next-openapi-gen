@@ -344,4 +344,132 @@ describe("ZodSchemaConverter", () => {
       required: ["id"],
     });
   });
+
+  it("resolves z.enum with TS enum identifiers", () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-zod-converter-enum-ref-"));
+    roots.push(root);
+
+    fs.writeFileSync(
+      path.join(root, "schemas.ts"),
+      [
+        'import { z } from "zod";',
+        "",
+        "enum Color {",
+        '  Red = "red",',
+        '  Green = "green",',
+        '  Blue = "blue",',
+        "}",
+        "",
+        "export const itemSchema = z.object({",
+        "  color: z.enum(Color),",
+        "});",
+      ].join("\n"),
+    );
+
+    const converter = new ZodSchemaConverter(root);
+    converter.convertZodSchemaToOpenApi("itemSchema");
+
+    expect(converter.zodSchemas.itemSchema).toEqual({
+      type: "object",
+      properties: {
+        color: { type: "string", enum: ["red", "green", "blue"] },
+      },
+      required: ["color"],
+    });
+  });
+
+  it("resolves z.enum with as-const object identifiers", () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-zod-converter-const-ref-"));
+    roots.push(root);
+
+    fs.writeFileSync(
+      path.join(root, "schemas.ts"),
+      [
+        'import { z } from "zod";',
+        "",
+        "const STATUS = {",
+        '  Active: "active",',
+        '  Inactive: "inactive",',
+        '  Pending: "pending",',
+        "} as const;",
+        "",
+        "export const taskSchema = z.object({",
+        "  status: z.enum(STATUS),",
+        "});",
+      ].join("\n"),
+    );
+
+    const converter = new ZodSchemaConverter(root);
+    converter.convertZodSchemaToOpenApi("taskSchema");
+
+    expect(converter.zodSchemas.taskSchema).toEqual({
+      type: "object",
+      properties: {
+        status: { type: "string", enum: ["active", "inactive", "pending"] },
+      },
+      required: ["status"],
+    });
+  });
+
+  it("resolves z.enum with as-const array identifiers", () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-zod-converter-arr-ref-"));
+    roots.push(root);
+
+    fs.writeFileSync(
+      path.join(root, "schemas.ts"),
+      [
+        'import { z } from "zod";',
+        "",
+        'const ROLES = ["admin", "editor", "viewer"] as const;',
+        "",
+        "export const roleSchema = z.object({",
+        "  role: z.enum(ROLES),",
+        "});",
+      ].join("\n"),
+    );
+
+    const converter = new ZodSchemaConverter(root);
+    converter.convertZodSchemaToOpenApi("roleSchema");
+
+    expect(converter.zodSchemas.roleSchema).toEqual({
+      type: "object",
+      properties: {
+        role: { type: "string", enum: ["admin", "editor", "viewer"] },
+      },
+      required: ["role"],
+    });
+  });
+
+  it("resolves z.enum with numeric TS enum identifiers", () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-zod-converter-num-enum-"));
+    roots.push(root);
+
+    fs.writeFileSync(
+      path.join(root, "schemas.ts"),
+      [
+        'import { z } from "zod";',
+        "",
+        "enum HttpStatus {",
+        "  OK = 200,",
+        "  NotFound = 404,",
+        "  ServerError = 500,",
+        "}",
+        "",
+        "export const responseSchema = z.object({",
+        "  status: z.enum(HttpStatus),",
+        "});",
+      ].join("\n"),
+    );
+
+    const converter = new ZodSchemaConverter(root);
+    converter.convertZodSchemaToOpenApi("responseSchema");
+
+    expect(converter.zodSchemas.responseSchema).toEqual({
+      type: "object",
+      properties: {
+        status: { type: "number", enum: [200, 404, 500] },
+      },
+      required: ["status"],
+    });
+  });
 });
