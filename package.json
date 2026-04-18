@@ -9,6 +9,9 @@
   },
   "scripts": {
     "build": "turbo run build",
+    "build:packages": "turbo run build --filter=./packages/*",
+    "build:apps": "turbo run build --filter=./apps/*",
+    "generate:apps": "turbo run generate --filter=./apps/*",
     "check": "pnpm check:root && pnpm exec turbo run check",
     "check:root": "pnpm format:check:root && pnpm lint:root",
     "dev": "turbo run dev",
