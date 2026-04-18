@@ -1,3 +1,13 @@
+## [1.0.7](https://github.com/tazo90/next-openapi-gen/compare/v1.0.6...v1.0.7) (2026-04-18)
+
+### 🐛 Bug Fixes
+
+- resolve enum identifier references in z.enum() ([#119](https://github.com/tazo90/next-openapi-gen/issues/119)) ([64b8424](https://github.com/tazo90/next-openapi-gen/commit/64b842467ce1cf6138e3d50ea208e27f1dbd47a1)) by [@thelgason](https://github.com/thelgason)
+
+### 🔨 Chores
+
+- add granular build and generate scripts for packages and apps ([f9f3e82](https://github.com/tazo90/next-openapi-gen/commit/f9f3e8283bfb8911e94f22bb59a799ebabc0f40b)) by [@tazo90](https://github.com/tazo90)
+
 ## [1.0.6](https://github.com/tazo90/next-openapi-gen/compare/v1.0.5...v1.0.6) (2026-04-08)
 
 ### 🔨 Chores
