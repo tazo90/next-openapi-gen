@@ -270,4 +270,66 @@ describe("Zod node helpers", () => {
     });
     expect(ensuredSchemas).toEqual(["UserSchema"]);
   });
+
+  it("resolves z.enum with identifier via resolveEnumValues callback", () => {
+    const context = {
+      processNode,
+      processObject: () => ({ type: "object" as const }),
+      ensureSchema: () => {},
+      getReferenceSchema: () => ({}),
+      resolveEnumValues: (name: string) => {
+        if (name === "Color") return ["red", "green", "blue"];
+        if (name === "STATUS") return ["active", "inactive", "pending"];
+        return null;
+      },
+    };
+
+    // TS enum identifier
+    expect(
+      processZodPrimitiveNode(getFirstInitializer("z.enum(Color)") as t.CallExpression, context),
+    ).toEqual({ type: "string", enum: ["red", "green", "blue"] });
+
+    // as const object identifier
+    expect(
+      processZodPrimitiveNode(getFirstInitializer("z.enum(STATUS)") as t.CallExpression, context),
+    ).toEqual({ type: "string", enum: ["active", "inactive", "pending"] });
+
+    // z.nativeEnum also works
+    expect(
+      processZodPrimitiveNode(
+        getFirstInitializer("z.nativeEnum(Color)") as t.CallExpression,
+        context,
+      ),
+    ).toEqual({ type: "string", enum: ["red", "green", "blue"] });
+  });
+
+  it("falls back to { type: 'string' } for unresolvable enum identifiers", () => {
+    const context = {
+      processNode,
+      processObject: () => ({ type: "object" as const }),
+      ensureSchema: () => {},
+      getReferenceSchema: () => ({}),
+      resolveEnumValues: () => null,
+    };
+
+    expect(
+      processZodPrimitiveNode(
+        getFirstInitializer("z.enum(UnknownEnum)") as t.CallExpression,
+        context,
+      ),
+    ).toEqual({ type: "string" });
+  });
+
+  it("falls back to { type: 'string' } for enum identifier without resolveEnumValues", () => {
+    const context = {
+      processNode,
+      processObject: () => ({ type: "object" as const }),
+      ensureSchema: () => {},
+      getReferenceSchema: () => ({}),
+    };
+
+    expect(
+      processZodPrimitiveNode(getFirstInitializer("z.enum(SomeEnum)") as t.CallExpression, context),
+    ).toEqual({ type: "string" });
+  });
 });
