@@ -18,7 +18,9 @@
         "summary": "List authors",
         "description": "Lists authors with filtering and sorting to broaden the drizzle-zod example beyond a single resource.",
         "tags": [
-          "Authors"
+          "Authors",
+          "Blog",
+          "Editorial"
         ],
         "parameters": [
           {
@@ -78,6 +80,14 @@
                   "items": {
                     "$ref": "#/components/schemas/AuthorResponseSchema"
                   }
+                }
+              }
+            },
+            "headers": {
+              "X-Total-Count": {
+                "description": "Total authors matching the query",
+                "schema": {
+                  "type": "integer"
                 }
               }
             }
@@ -388,10 +398,11 @@
     "/posts/{id}": {
       "get": {
         "operationId": "get-posts-{id}",
-        "summary": "Get post by ID",
+        "summary": "Get post",
         "description": "Retrieve a single blog post by its ID",
         "tags": [
-          "Posts"
+          "Posts",
+          "Blog"
         ],
         "parameters": [
           {
@@ -414,6 +425,20 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PostResponseSchema"
+                }
+              }
+            },
+            "headers": {
+              "ETag": {
+                "description": "Strong ETag for optimistic concurrency",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Last-Modified": {
+                "description": "Timestamp the post was last modified",
+                "schema": {
+                  "type": "string"
                 }
               }
             }
@@ -831,8 +856,7 @@
             "maxLength": 100,
             "description": "Author display name"
           }
-        },
-        "required": []
+        }
       },
       "UpdatePostSchema": {
         "type": "object",
@@ -862,8 +886,7 @@
             "type": "boolean",
             "description": "Publication status"
           }
-        },
-        "required": []
+        }
       }
     },
     "responses": {

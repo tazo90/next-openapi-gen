@@ -29,6 +29,15 @@
         "type": "http",
         "scheme": "bearer",
         "bearerFormat": "JWT"
+      },
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-Api-Key"
+      },
+      "BasicAuth": {
+        "type": "http",
+        "scheme": "basic"
       }
     },
     "schemas": {
@@ -99,6 +108,34 @@
           }
         ]
       },
+      "AuthErrorResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "invalid_credentials",
+              "rate_limited",
+              "locked",
+              "unknown"
+            ],
+            "description": "Machine-readable error code"
+          },
+          "message": {
+            "type": "string",
+            "description": "Human-readable error message"
+          },
+          "retryAfterSeconds": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Suggested wait before retry"
+          }
+        },
+        "required": [
+          "code",
+          "message"
+        ]
+      },
       "BankTransferPaymentSchema": {
         "type": "object",
         "properties": {
@@ -122,6 +159,30 @@
           "accountNumber",
           "routingNumber"
         ]
+      },
+      "BaseFilter": {
+        "type": "object",
+        "properties": {
+          "product": {
+            "type": "string",
+            "enum": [
+              "catalog",
+              "billing",
+              "identity"
+            ]
+          },
+          "env": {
+            "type": "string",
+            "enum": [
+              "dev",
+              "staging",
+              "prod"
+            ]
+          }
+        },
+        "additionalProperties": {
+          "type": "string"
+        }
       },
       "BaseSchema": {
         "type": "object",
@@ -298,6 +359,71 @@
         "required": [
           "cartId"
         ]
+      },
+      "CreateSessionBody": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "Account email"
+          },
+          "password": {
+            "type": "string",
+            "minLength": 12,
+            "maxLength": 128,
+            "description": "Account password (min 12 chars)"
+          },
+          "deviceId": {
+            "type": "string",
+            "format": "nanoid",
+            "description": "Trusted device identifier (nanoid)"
+          },
+          "totp": {
+            "type": "string",
+            "pattern": "^\\d{6}$",
+            "description": "One-time code from authenticator app"
+          }
+        },
+        "required": [
+          "email",
+          "password"
+        ],
+        "additionalProperties": true
+      },
+      "CreateSubscriptionBody": {
+        "type": "object",
+        "properties": {
+          "callbackUrl": {
+            "type": "string",
+            "format": "uri",
+            "description": "HTTPS URL that will receive events"
+          },
+          "events": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "payment.succeeded",
+                "payment.failed",
+                "payment.refunded"
+              ]
+            },
+            "minItems": 1,
+            "description": "Event types this subscription receives"
+          },
+          "secret": {
+            "type": "string",
+            "minLength": 32,
+            "description": "Shared HMAC secret used to sign deliveries"
+          }
+        },
+        "required": [
+          "callbackUrl",
+          "events",
+          "secret"
+        ],
+        "additionalProperties": false
       },
       "CreditCardPaymentSchema": {
         "type": "object",
@@ -503,6 +629,18 @@
           "submittedAt"
         ]
       },
+      "EventIdParams": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Event identifier"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
       "EventSearchRequest": {
         "type": "object",
         "properties": {
@@ -622,6 +760,10 @@
           "name"
         ]
       },
+      "IdempotencyKey": {
+        "type": "string",
+        "format": "nanoid"
+      },
       "LegacyEventCsv": {
         "type": "string",
         "description": "Legacy CSV export payload"
@@ -644,6 +786,144 @@
             "$ref": "#/components/schemas/UserDataSchema"
           }
         ]
+      },
+      "MetricKey": {
+        "type": "string",
+        "enum": [
+          "requests_per_second",
+          "errors_per_second",
+          "latency_p95_ms",
+          "latency_p99_ms"
+        ]
+      },
+      "MetricPoint": {
+        "type": "array",
+        "prefixItems": [
+          {
+            "type": "integer",
+            "description": "Unix epoch milliseconds"
+          },
+          {
+            "type": "number",
+            "description": "Metric value"
+          }
+        ],
+        "items": false,
+        "minItems": 2,
+        "maxItems": 2
+      },
+      "MetricQueryBody": {
+        "allOf": [
+          {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BaseFilter"
+              },
+              {
+                "$ref": "#/components/schemas/WindowFilter"
+              }
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "metrics": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/MetricKey"
+                },
+                "minItems": 1,
+                "description": "Metrics to aggregate"
+              },
+              "tagFilters": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "propertyNames": {
+                  "type": "string"
+                },
+                "description": "Free-form tag filters"
+              }
+            },
+            "required": [
+              "metrics"
+            ]
+          }
+        ]
+      },
+      "MetricQueryResponse": {
+        "type": "object",
+        "properties": {
+          "series": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/MetricPoint"
+              }
+            },
+            "propertyNames": {
+              "$ref": "#/components/schemas/MetricKey"
+            },
+            "description": "Per-metric time series"
+          },
+          "samples": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "ulid"
+            },
+            "uniqueItems": true,
+            "description": "Deduplicated set of sample ids contributing to the result"
+          },
+          "cardinality": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "propertyNames": {
+              "type": "string"
+            },
+            "description": "Cardinality per tag"
+          }
+        },
+        "required": [
+          "series",
+          "samples",
+          "cardinality"
+        ]
+      },
+      "MetricSummaryPatch": {
+        "type": "object",
+        "properties": {
+          "owner": {
+            "type": "object",
+            "properties": {
+              "team": {
+                "type": "string"
+              },
+              "contactEmail": {
+                "type": "string",
+                "format": "email"
+              }
+            }
+          },
+          "windows": {
+            "type": "object",
+            "properties": {
+              "default": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "retention": {
+                "type": "string",
+                "format": "date-time"
+              }
+            }
+          }
+        }
       },
       "MixedArraySchema": {
         "type": "array",
@@ -1227,6 +1507,129 @@
           "limit"
         ]
       },
+      "PaymentCoreSchema": {
+        "type": "object",
+        "properties": {
+          "paymentId": {
+            "type": "string",
+            "format": "ulid",
+            "description": "Payment identifier"
+          },
+          "userId": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UserId"
+              }
+            ],
+            "description": "User the payment belongs to"
+          },
+          "amountMinor": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "description": "Amount in the smallest currency unit"
+          },
+          "currency": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 3,
+            "pattern": "^[A-Z]{3}$",
+            "description": "ISO-4217 currency code"
+          }
+        },
+        "required": [
+          "paymentId",
+          "userId",
+          "amountMinor",
+          "currency"
+        ]
+      },
+      "PaymentEvent": {
+        "type": "object",
+        "discriminator": {
+          "propertyName": "type"
+        },
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/PaymentSucceededEvent"
+          },
+          {
+            "$ref": "#/components/schemas/PaymentFailedEvent"
+          },
+          {
+            "$ref": "#/components/schemas/PaymentRefundedEvent"
+          }
+        ]
+      },
+      "PaymentFailedEvent": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "ulid",
+            "readOnly": true,
+            "description": "Unique event identifier"
+          },
+          "idempotencyKey": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/IdempotencyKey"
+              }
+            ],
+            "description": "Unique key de-duplicating retried deliveries"
+          },
+          "deliveredAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Delivery timestamp (ISO string coerced to Date)"
+          },
+          "apiVersion": {
+            "type": "string",
+            "enum": [
+              "2026-04-01"
+            ],
+            "description": "API version the payload is serialized against"
+          },
+          "metadata": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "propertyNames": {
+              "type": "string"
+            },
+            "description": "Free-form key/value metadata"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "payment.failed"
+            ]
+          },
+          "failureCode": {
+            "type": "string",
+            "enum": [
+              "card_declined",
+              "expired_card",
+              "insufficient_funds",
+              "unknown"
+            ],
+            "description": "Reason the payment failed"
+          },
+          "retriable": {
+            "type": "boolean",
+            "description": "Whether a retry is likely to succeed"
+          }
+        },
+        "required": [
+          "id",
+          "idempotencyKey",
+          "deliveredAt",
+          "apiVersion",
+          "type",
+          "failureCode",
+          "retriable"
+        ]
+      },
       "PaymentMethodSchema": {
         "type": "object",
         "discriminator": {
@@ -1242,6 +1645,126 @@
           {
             "$ref": "#/components/schemas/BankTransferPaymentSchema"
           }
+        ]
+      },
+      "PaymentRefundedEvent": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "ulid",
+            "readOnly": true,
+            "description": "Unique event identifier"
+          },
+          "idempotencyKey": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/IdempotencyKey"
+              }
+            ],
+            "description": "Unique key de-duplicating retried deliveries"
+          },
+          "deliveredAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Delivery timestamp (ISO string coerced to Date)"
+          },
+          "apiVersion": {
+            "type": "string",
+            "enum": [
+              "2026-04-01"
+            ],
+            "description": "API version the payload is serialized against"
+          },
+          "metadata": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "propertyNames": {
+              "type": "string"
+            },
+            "description": "Free-form key/value metadata"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "payment.refunded"
+            ]
+          },
+          "refundedAmountMinor": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Refund amount in the smallest currency unit"
+          }
+        },
+        "required": [
+          "id",
+          "idempotencyKey",
+          "deliveredAt",
+          "apiVersion",
+          "type",
+          "refundedAmountMinor"
+        ]
+      },
+      "PaymentSucceededEvent": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "ulid",
+            "readOnly": true,
+            "description": "Unique event identifier"
+          },
+          "idempotencyKey": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/IdempotencyKey"
+              }
+            ],
+            "description": "Unique key de-duplicating retried deliveries"
+          },
+          "deliveredAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Delivery timestamp (ISO string coerced to Date)"
+          },
+          "apiVersion": {
+            "type": "string",
+            "enum": [
+              "2026-04-01"
+            ],
+            "description": "API version the payload is serialized against"
+          },
+          "metadata": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "propertyNames": {
+              "type": "string"
+            },
+            "description": "Free-form key/value metadata"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "payment.succeeded"
+            ]
+          },
+          "receiptUrl": {
+            "type": "string",
+            "format": "uri",
+            "description": "Hosted receipt accessible to the customer"
+          }
+        },
+        "required": [
+          "id",
+          "idempotencyKey",
+          "deliveredAt",
+          "apiVersion",
+          "type",
+          "receiptUrl"
         ]
       },
       "PayPalPaymentSchema": {
@@ -1541,6 +2064,125 @@
           "body"
         ]
       },
+      "SessionCookies": {
+        "type": "object",
+        "properties": {
+          "session": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Opaque server-side session identifier"
+          },
+          "locale": {
+            "type": "string",
+            "enum": [
+              "en",
+              "de",
+              "pl"
+            ],
+            "description": "User's preferred locale"
+          }
+        },
+        "required": [
+          "session"
+        ]
+      },
+      "SessionRequestHeaders": {
+        "type": "object",
+        "properties": {
+          "X-Api-Key": {
+            "type": "string",
+            "minLength": 16,
+            "description": "API key issued to the caller"
+          },
+          "X-Request-Id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Client-supplied request id for tracing"
+          },
+          "Authorization": {
+            "type": "string",
+            "format": "jwt",
+            "description": "Bearer JWT granting access to the session"
+          }
+        },
+        "required": [
+          "X-Api-Key",
+          "Authorization"
+        ]
+      },
+      "SessionResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "ulid",
+            "description": "Session identifier (ULID)"
+          },
+          "token": {
+            "type": "string",
+            "format": "jwt",
+            "description": "Signed session JWT"
+          },
+          "refreshToken": {
+            "type": "string",
+            "format": "byte",
+            "description": "Opaque refresh token (base64 encoded)"
+          },
+          "user": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid",
+                "description": "User id"
+              },
+              "phone": {
+                "type": "string",
+                "format": "e164",
+                "description": "Contact phone number in E.164 format"
+              },
+              "avatar": {
+                "type": "string",
+                "format": "emoji",
+                "description": "User-chosen emoji avatar"
+              }
+            },
+            "required": [
+              "id"
+            ]
+          },
+          "ipAddress": {
+            "type": "string",
+            "format": "ipv4",
+            "description": "Remote IPv4 address of the client"
+          },
+          "network": {
+            "type": "string",
+            "format": "cidrv4",
+            "description": "CIDR range the client is part of"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true,
+            "description": "Session creation timestamp"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Session expiry timestamp"
+          }
+        },
+        "required": [
+          "id",
+          "token",
+          "refreshToken",
+          "user",
+          "ipAddress",
+          "createdAt",
+          "expiresAt"
+        ]
+      },
       "SmsNotificationSchema": {
         "type": "object",
         "properties": {
@@ -1574,6 +2216,32 @@
           {
             "type": "number"
           }
+        ]
+      },
+      "SubscriptionResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "ulid",
+            "description": "Subscription identifier"
+          },
+          "callbackUrl": {
+            "type": "string",
+            "format": "uri",
+            "description": "Registered callback URL"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true,
+            "description": "Subscription creation time"
+          }
+        },
+        "required": [
+          "id",
+          "callbackUrl",
+          "createdAt"
         ]
       },
       "SuccessResponseSchema": {
@@ -1977,6 +2645,10 @@
           }
         }
       },
+      "UserId": {
+        "type": "string",
+        "format": "uuid"
+      },
       "UserIdParams": {
         "type": "object",
         "properties": {
@@ -2041,6 +2713,72 @@
         "required": [
           "id",
           "firstName"
+        ]
+      },
+      "WebhookEnvelopeSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "ulid",
+            "readOnly": true,
+            "description": "Unique event identifier"
+          },
+          "idempotencyKey": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/IdempotencyKey"
+              }
+            ],
+            "description": "Unique key de-duplicating retried deliveries"
+          },
+          "deliveredAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Delivery timestamp (ISO string coerced to Date)"
+          },
+          "apiVersion": {
+            "type": "string",
+            "enum": [
+              "2026-04-01"
+            ],
+            "description": "API version the payload is serialized against"
+          },
+          "metadata": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "propertyNames": {
+              "type": "string"
+            },
+            "description": "Free-form key/value metadata"
+          }
+        },
+        "required": [
+          "id",
+          "idempotencyKey",
+          "deliveredAt",
+          "apiVersion"
+        ]
+      },
+      "WindowFilter": {
+        "type": "object",
+        "properties": {
+          "since": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Inclusive window start"
+          },
+          "until": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Exclusive window end"
+          }
+        },
+        "required": [
+          "since",
+          "until"
         ]
       }
     },
@@ -2120,13 +2858,120 @@
     }
   },
   "paths": {
+    "/analytics/metrics": {
+      "post": {
+        "operationId": "zodQueryMetrics",
+        "summary": "Aggregate metrics",
+        "description": "Aggregates time-series samples for the requested metrics and window.",
+        "tags": [
+          "Analytics",
+          "Platform",
+          "Observability"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "servers": [
+          {
+            "url": "https://api.example.com/v1"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MetricQueryBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MetricQueryResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Cache-Status": {
+                "description": "Cache hit or miss for this aggregation",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "description": "Remaining requests in the current window",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      },
+      "patch": {
+        "operationId": "zodPatchMetricSummary",
+        "summary": "Patch dashboard summary",
+        "description": "Partially updates the metrics dashboard metadata using `.deepPartial()` semantics.",
+        "tags": [
+          "Analytics"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MetricSummaryPatch"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MetricQueryResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    },
     "/events": {
       "get": {
         "operationId": "zodStreamPlatformEvents",
-        "summary": "Stream platform events",
+        "summary": "Event stream",
         "description": "Streams event records with first-class OpenAPI 3.2 querystring and sequential media metadata.",
         "tags": [
-          "Events"
+          "Events",
+          "Platform",
+          "Observability"
         ],
         "parameters": [
           {
@@ -2156,6 +3001,16 @@
             "BearerAuth": []
           }
         ],
+        "servers": [
+          {
+            "url": "https://api.example.com/v1,",
+            "description": "https://staging.example.com/v1"
+          }
+        ],
+        "externalDocs": {
+          "url": "https://docs.example.com/events",
+          "description": "Event streaming guide"
+        },
         "responses": {
           "200": {
             "description": "Successful response",
@@ -2199,6 +3054,14 @@
                   "external": {
                     "externalValue": "https://example.com/openapi/events/catalog-stream.txt"
                   }
+                }
+              }
+            },
+            "headers": {
+              "X-Stream-Id": {
+                "description": "Opaque stream identifier for reconnects",
+                "schema": {
+                  "type": "string"
                 }
               }
             }
@@ -2270,11 +3133,77 @@
         }
       }
     },
+    "/events/{id}": {
+      "get": {
+        "operationId": "zodGetEvent",
+        "summary": "Get event",
+        "description": "Returns the full record for a previously streamed event.",
+        "tags": [
+          "Events",
+          "Platform"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Event identifier"
+            },
+            "description": "Event identifier",
+            "example": "123"
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventChunk"
+                }
+              }
+            },
+            "headers": {
+              "ETag": {
+                "description": "Strong ETag for optimistic concurrency",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Cache-Control": {
+                "description": "Caching hint for intermediaries",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "links": {
+              "searchEvents": {
+                "operationId": "zodSearchPlatformEvents"
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    },
     "/events/legacy": {
       "get": {
         "operationId": "zodDownloadLegacyEvents",
         "summary": "Download legacy event export",
-        "description": "Deprecated CSV export kept to demonstrate migration guidance and versioned tags.",
+        "description": "Deprecated CSV export kept to demonstrate migration guidance and versioned tags.\n\nDeprecated: Use GET /api/events with Accept: text/csv; scheduled for removal 2026-12-01.",
         "tags": [
           "Events v1"
         ],
@@ -2408,6 +3337,81 @@
         }
       }
     },
+    "/integrations/subscribe": {
+      "post": {
+        "operationId": "zodCreateSubscription",
+        "summary": "Create subscription",
+        "description": "Registers a callback URL that will receive signed payment events.",
+        "tags": [
+          "Integrations",
+          "Webhooks"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "servers": [
+          {
+            "url": "https://api.example.com/v1,",
+            "description": "https://api-eu.example.com/v1"
+          }
+        ],
+        "externalDocs": {
+          "url": "https://docs.example.com/integrations/webhooks",
+          "description": "Webhook signing guide"
+        },
+        "callbacks": {
+          "paymentEvent": {
+            "{$request.body#/callbackUrl}": {
+              "$ref": "#/components/callbacks/SubscriptionEventPayload"
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateSubscriptionBody"
+              }
+            }
+          },
+          "description": "Subscription registration payload"
+        },
+        "responses": {
+          "201": {
+            "description": "Subscription created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubscriptionResponse"
+                }
+              }
+            },
+            "headers": {
+              "Location": {
+                "description": "URL of the created subscription",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "links": {
+              "getSubscription": {
+                "operationId": "zodGetSubscription"
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    },
     "/notifications": {
       "get": {
         "operationId": "get-notifications",
@@ -2493,10 +3497,11 @@
     "/orders": {
       "get": {
         "operationId": "getOrdersList",
-        "summary": "Get orders list",
+        "summary": "List orders",
         "description": "Retrieves a paginated list of orders with filtering and sorting options",
         "tags": [
-          "Orders"
+          "Orders",
+          "Commerce"
         ],
         "parameters": [
           {
@@ -2590,6 +3595,20 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/OrdersResponseOutput"
+                }
+              }
+            },
+            "headers": {
+              "X-Total-Count": {
+                "description": "Total orders matching the query",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "Link": {
+                "description": "RFC 5988 pagination links",
+                "schema": {
+                  "type": "string"
                 }
               }
             }
@@ -2995,6 +4014,161 @@
         }
       }
     },
+    "/auth/session": {
+      "get": {
+        "operationId": "zodGetSession",
+        "summary": "Current session",
+        "description": "Returns the currently authenticated session based on the session cookie and request headers.",
+        "tags": [
+          "Sessions",
+          "Auth",
+          "Platform"
+        ],
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Api-Key",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 16,
+              "description": "API key issued to the caller"
+            },
+            "description": "API key issued to the caller"
+          },
+          {
+            "in": "header",
+            "name": "X-Request-Id",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Client-supplied request id for tracing"
+            },
+            "description": "Client-supplied request id for tracing"
+          },
+          {
+            "in": "header",
+            "name": "Authorization",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "jwt",
+              "description": "Bearer JWT granting access to the session"
+            },
+            "description": "Bearer JWT granting access to the session"
+          },
+          {
+            "in": "cookie",
+            "name": "session",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Opaque server-side session identifier"
+            },
+            "description": "Opaque server-side session identifier"
+          },
+          {
+            "in": "cookie",
+            "name": "locale",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "en",
+                "de",
+                "pl"
+              ],
+              "description": "User's preferred locale"
+            },
+            "description": "User's preferred locale"
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth, ApiKeyAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionResponse"
+                }
+              }
+            },
+            "headers": {
+              "ETag": {
+                "description": "Version of the session document",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      },
+      "post": {
+        "operationId": "zodCreateSession",
+        "summary": "Sign in",
+        "description": "Exchanges credentials for a fresh session token. Exercises `@link` for follow-up navigation.",
+        "tags": [
+          "Sessions",
+          "Auth"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateSessionBody"
+              }
+            }
+          },
+          "description": "Credentials plus optional second factor"
+        },
+        "responses": {
+          "201": {
+            "description": "New session created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionResponse"
+                }
+              }
+            },
+            "headers": {
+              "Location": {
+                "description": "URL of the newly created session",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "links": {
+              "currentSession": {
+                "operationId": "zodGetSession"
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    },
     "/upload": {
       "post": {
         "operationId": "post-upload",
@@ -3098,10 +4272,11 @@
     "/users/{id}": {
       "get": {
         "operationId": "get-users-{id}",
-        "summary": "Get user by ID",
+        "summary": "Get user",
         "description": "Retrieves detailed user information",
         "tags": [
-          "Users"
+          "Users",
+          "Platform"
         ],
         "parameters": [
           {
@@ -3136,6 +4311,20 @@
                   "$ref": "#/components/schemas/UserDetailedSchema"
                 }
               }
+            },
+            "headers": {
+              "ETag": {
+                "description": "Strong ETag for optimistic concurrency",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Cache-Control": {
+                "description": "Caching hint for intermediaries",
+                "schema": {
+                  "type": "string"
+                }
+              }
             }
           },
           "400": {
@@ -3144,7 +4333,9 @@
           "500": {
             "$ref": "#/components/responses/500"
           }
-        }
+        },
+        "x-rate-limit": 1000,
+        "x-internal": false
       },
       "patch": {
         "operationId": "patch-users-{id}",
@@ -3320,9 +4511,59 @@
           }
         }
       }
+    },
+    "/webhooks/payment": {
+      "post": {
+        "operationId": "zodReceivePaymentEvent",
+        "summary": "Payment webhook",
+        "description": "Endpoint invoked by the platform when a payment changes state. The request body is a",
+        "tags": [
+          "Webhooks",
+          "Billing",
+          "Platform"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PaymentEvent"
+              }
+            }
+          },
+          "description": "Signed payment event payload"
+        },
+        "responses": {
+          "204": {
+            "description": "Delivery accepted; platform treats 2xx as \"delivered\"",
+            "headers": {
+              "X-Idempotency-Key": {
+                "description": "Echoed idempotency key",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      }
     }
   },
   "tags": [
+    {
+      "name": "Analytics"
+    },
     {
       "name": "Events",
       "summary": "Event navigation",
@@ -3339,6 +4580,9 @@
       "name": "Extended"
     },
     {
+      "name": "Integrations"
+    },
+    {
       "name": "Notifications"
     },
     {
@@ -3351,6 +4595,9 @@
       "name": "Products"
     },
     {
+      "name": "Sessions"
+    },
+    {
       "name": "Uploads"
     },
     {
@@ -3358,6 +4605,9 @@
     },
     {
       "name": "Users-paginated"
+    },
+    {
+      "name": "Webhooks"
     }
   ]
 }

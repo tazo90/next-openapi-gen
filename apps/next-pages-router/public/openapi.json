@@ -225,6 +225,44 @@
           "url"
         ]
       },
+      "UserCookiesSchema": {
+        "type": "object",
+        "properties": {
+          "session": {
+            "type": "string",
+            "description": "Session cookie"
+          },
+          "locale": {
+            "type": "string",
+            "enum": [
+              "en",
+              "de",
+              "pl"
+            ],
+            "description": "UI locale"
+          }
+        },
+        "required": [
+          "session"
+        ]
+      },
+      "UserErrorResponseSchema": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "Machine-readable error code"
+          },
+          "message": {
+            "type": "string",
+            "description": "Human-readable error message"
+          }
+        },
+        "required": [
+          "code",
+          "message"
+        ]
+      },
       "UserIdParamsSchema": {
         "type": "object",
         "properties": {
@@ -253,6 +291,23 @@
             "description": "Search query"
           }
         }
+      },
+      "UserRequestHeadersSchema": {
+        "type": "object",
+        "properties": {
+          "X-Tenant-Id": {
+            "type": "string",
+            "description": "Tenant identifier"
+          },
+          "X-Request-Id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Request trace id"
+          }
+        },
+        "required": [
+          "X-Tenant-Id"
+        ]
       },
       "UserSchema": {
         "type": "object",
@@ -557,10 +612,11 @@
     "/users": {
       "get": {
         "operationId": "get-users",
-        "summary": "Get all users",
+        "summary": "List users",
         "description": "Retrieve a list of all users with optional filtering",
         "tags": [
-          "Users"
+          "Users",
+          "Pages router"
         ],
         "parameters": [
           {
@@ -592,6 +648,52 @@
               "description": "Search query"
             },
             "description": "Search query"
+          },
+          {
+            "in": "header",
+            "name": "X-Tenant-Id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Tenant identifier"
+            },
+            "description": "Tenant identifier"
+          },
+          {
+            "in": "header",
+            "name": "X-Request-Id",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Request trace id"
+            },
+            "description": "Request trace id"
+          },
+          {
+            "in": "cookie",
+            "name": "session",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Session cookie"
+            },
+            "description": "Session cookie"
+          },
+          {
+            "in": "cookie",
+            "name": "locale",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "en",
+                "de",
+                "pl"
+              ],
+              "description": "UI locale"
+            },
+            "description": "UI locale"
           }
         ],
         "responses": {
@@ -606,18 +708,48 @@
                   }
                 }
               }
+            },
+            "headers": {
+              "X-Total-Count": {
+                "description": "Total users in the result set",
+                "schema": {
+                  "type": "integer"
+                }
+              }
             }
           }
         }
       },
       "post": {
         "operationId": "post-users",
-        "summary": "Create a new user",
+        "summary": "Create user",
         "description": "Create a new user account",
         "tags": [
           "Users"
         ],
-        "parameters": [],
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Tenant-Id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Tenant identifier"
+            },
+            "description": "Tenant identifier"
+          },
+          {
+            "in": "header",
+            "name": "X-Request-Id",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Request trace id"
+            },
+            "description": "Request trace id"
+          }
+        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -634,6 +766,14 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/UserSchema"
+                }
+              }
+            },
+            "headers": {
+              "Location": {
+                "description": "URL of the created user",
+                "schema": {
+                  "type": "string"
                 }
               }
             }
@@ -677,8 +817,8 @@
       },
       "put": {
         "operationId": "put-users-{id}",
-        "summary": "Update user",
-        "description": "Update an existing user's information",
+        "summary": "Update user (legacy)",
+        "description": "Update an existing user's information\n\nDeprecated: Use PATCH /api/v2/users/{id} instead; scheduled for removal 2026-12-01.",
         "tags": [
           "Users"
         ],
@@ -695,6 +835,7 @@
             "example": "123"
           }
         ],
+        "deprecated": true,
         "requestBody": {
           "content": {
             "application/json": {

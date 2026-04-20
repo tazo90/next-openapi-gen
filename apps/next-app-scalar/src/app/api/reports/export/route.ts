@@ -4,11 +4,16 @@ type ReportExportQuery = {
 
 /**
  * Export reports
+ * @summary Export reports
  * @description Keeps the Scalar smoke app aligned with the richer baseline route surface.
  * @queryParams ReportExportQuery
  * @response string
  * @responseContentType text/csv
+ * @responseHeader 200 Content-Disposition string Attachment filename for the download
+ * @servers https://api.example.com/v1, https://api-eu.example.com/v1
+ * @externalDocs https://docs.example.com/reports/csv CSV export reference
  * @tag Reports
+ * @tags Exports
  * @openapi
  */
 export async function GET(request: Request) {

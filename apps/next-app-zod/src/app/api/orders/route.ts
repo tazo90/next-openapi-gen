@@ -2,10 +2,18 @@ import { NextRequest, NextResponse } from "next/server";
 
 /**
  * Get orders list
+ * @summary List orders
  * @description Retrieves a paginated list of orders with filtering and sorting options
+ * @tag Orders
+ * @tags Commerce
  * @operationId getOrdersList
  * @params OrdersQueryParams
  * @response OrdersResponse
+ * @response 4XX:AuthErrorResponse:Any client error
+ * @response 5XX:AuthErrorResponse:Any server error
+ * @response default:AuthErrorResponse:Fallback error envelope
+ * @responseHeader 200 X-Total-Count integer Total orders matching the query
+ * @responseHeader 200 Link string RFC 5988 pagination links
  * @auth bearer
  * @openapi
  */

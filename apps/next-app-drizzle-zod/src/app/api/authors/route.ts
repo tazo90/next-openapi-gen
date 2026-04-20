@@ -9,10 +9,13 @@ import {
 
 /**
  * List authors
+ * @summary List authors
  * @description Lists authors with filtering and sorting to broaden the drizzle-zod example beyond a single resource.
  * @params AuthorsQueryParams
  * @response AuthorResponseSchema[]
+ * @responseHeader 200 X-Total-Count integer Total authors matching the query
  * @tag Authors
+ * @tags Blog, Editorial
  * @openapi
  */
 export async function GET(request: NextRequest) {

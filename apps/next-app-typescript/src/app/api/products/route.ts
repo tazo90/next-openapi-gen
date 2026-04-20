@@ -9,8 +9,15 @@ import { createProduct } from "./route.utils";
  * Request body type is inferred from createProduct function parameters.
  * Response type is inferred from createProduct return type.
  *
+ * @summary Create product
+ * @tag Products
+ * @tags Commerce
  * @body CreateProductRequest
  * @response CreateProductApiResponse
+ * @response 4XX:ErrorResponse:Any client error
+ * @response 5XX:ErrorResponse:Any server error
+ * @response default:ErrorResponse:Fallback error envelope
+ * @responseHeader 200 X-Request-Id string Trace identifier
  * @openapi
  */
 export async function POST(request: NextRequest) {

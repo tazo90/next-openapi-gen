@@ -2,17 +2,30 @@ import type { NextApiRequest, NextApiResponse } from "next";
 
 /**
  * Get all users
+ * @summary List users
  * @description Retrieve a list of all users with optional filtering
+ * @tag Users
+ * @tags Pages router
  * @params UserListParamsSchema
+ * @header UserRequestHeadersSchema
+ * @cookie UserCookiesSchema
  * @response UserSchema[]
+ * @response 4XX:UserErrorResponseSchema:Any client error
+ * @response default:UserErrorResponseSchema:Fallback error envelope
+ * @responseHeader 200 X-Total-Count integer Total users in the result set
+ * @responseHeader 429 Retry-After integer Seconds to wait before retrying
  * @method GET
  * @openapi
  */
 /**
  * Create a new user
+ * @summary Create user
  * @description Create a new user account
+ * @tag Users
  * @body CreateUserSchema
+ * @header UserRequestHeadersSchema
  * @response 201:UserSchema
+ * @responseHeader 201 Location string URL of the created user
  * @method POST
  * @openapi
  */

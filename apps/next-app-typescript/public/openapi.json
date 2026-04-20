@@ -1,5 +1,5 @@
 {
-  "openapi": "3.0.0",
+  "openapi": "3.1.0",
   "info": {
     "title": "API Documentation",
     "version": "1.0.0",
@@ -30,6 +30,103 @@
       }
     },
     "schemas": {
+      "AdminReport": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "financial",
+              "usage",
+              "audit"
+            ]
+          },
+          "title": {
+            "type": "string"
+          },
+          "format": {
+            "type": "string",
+            "enum": [
+              "csv",
+              "json",
+              "parquet"
+            ]
+          },
+          "requestedBy": {
+            "type": "string"
+          },
+          "requestedAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "title",
+          "format",
+          "requestedBy",
+          "requestedAt"
+        ]
+      },
+      "AdminReportsResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "financial",
+                    "usage",
+                    "audit"
+                  ]
+                },
+                "title": {
+                  "type": "string"
+                },
+                "format": {
+                  "type": "string",
+                  "enum": [
+                    "csv",
+                    "json",
+                    "parquet"
+                  ]
+                },
+                "requestedBy": {
+                  "type": "string"
+                },
+                "requestedAt": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "kind",
+                "title",
+                "format",
+                "requestedBy",
+                "requestedAt"
+              ]
+            }
+          },
+          "manifest": {
+            "type": "object"
+          }
+        },
+        "required": [
+          "data",
+          "manifest"
+        ]
+      },
       "ApiResponse": {
         "oneOf": [
           {
@@ -131,6 +228,21 @@
           "url",
           "uploadedAt"
         ]
+      },
+      "BillingCookies": {
+        "type": "object",
+        "properties": {
+          "session": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "session"
+        ]
+      },
+      "BillingRequestHeaders": {
+        "type": "object",
+        "properties": {}
       },
       "Comment": {
         "type": "object",
@@ -832,6 +944,41 @@
           "permissions"
         ]
       },
+      "CreateAdminReportBody": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "financial",
+              "usage",
+              "audit"
+            ],
+            "nullable": false
+          },
+          "format": {
+            "type": "string",
+            "enum": [
+              "csv",
+              "json",
+              "parquet"
+            ],
+            "description": "*\n   * @openapi-override { \"format\": \"email\", \"maxLength\": 320 }",
+            "nullable": false
+          },
+          "notify": {
+            "type": "string",
+            "nullable": false,
+            "format": "email",
+            "maxLength": 320
+          }
+        },
+        "required": [
+          "kind",
+          "format",
+          "notify"
+        ]
+      },
       "CreateCommentBody": {
         "type": "object",
         "properties": {
@@ -841,25 +988,31 @@
             "nullable": false
           },
           "attachmentIds": {
-            "type": "array",
+            "type": [
+              "array",
+              "null"
+            ],
             "items": {
               "type": "string"
             },
-            "description": "IDs of previously uploaded attachments",
-            "nullable": true
+            "description": "IDs of previously uploaded attachments"
           },
           "mentions": {
-            "type": "array",
+            "type": [
+              "array",
+              "null"
+            ],
             "items": {
               "type": "string"
             },
-            "description": "User IDs mentioned in the comment",
-            "nullable": true
+            "description": "User IDs mentioned in the comment"
           },
           "replyTo": {
-            "type": "string",
-            "description": "Parent comment ID if this is a reply",
-            "nullable": true
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Parent comment ID if this is a reply"
           }
         },
         "required": [
@@ -1059,6 +1212,10 @@
           "success"
         ]
       },
+      "CreateInvoiceBody": {
+        "type": "object",
+        "properties": {}
+      },
       "CreateProductApiResponse": {
         "type": "object",
         "properties": {
@@ -1141,7 +1298,10 @@
             "nullable": false
           },
           "options": {
-            "type": "object",
+            "type": [
+              "object",
+              "null"
+            ],
             "properties": {
               "notify": {
                 "type": "boolean",
@@ -1150,8 +1310,7 @@
             },
             "required": [
               "notify"
-            ],
-            "nullable": true
+            ]
           }
         },
         "required": [
@@ -1307,6 +1466,156 @@
           "exportId"
         ]
       },
+      "ImmutableInvoice": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "*\n   * @openapi-override { \"format\": \"email\", \"maxLength\": 320 }"
+          },
+          "customerEmail": {
+            "type": "string",
+            "description": "*\n   * Monetary amount in the smallest currency unit — emitted as\n   * `integer` with `format: int64` via `bigint`.",
+            "format": "email",
+            "maxLength": 320
+          },
+          "amountMinor": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "open",
+              "paid",
+              "uncollectible"
+            ]
+          },
+          "createdAt": {
+            "type": "string"
+          }
+        },
+        "readOnly": true
+      },
+      "InvoiceIdParams": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "InvoiceListItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "*\n   * @openapi-override { \"format\": \"email\", \"maxLength\": 320 }"
+          },
+          "customerEmail": {
+            "type": "string",
+            "description": "*\n   * Monetary amount in the smallest currency unit — emitted as\n   * `integer` with `format: int64` via `bigint`.",
+            "format": "email",
+            "maxLength": 320
+          },
+          "amountMinor": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "open",
+              "paid",
+              "uncollectible"
+            ]
+          },
+          "createdAt": {
+            "type": "string"
+          }
+        }
+      },
+      "InvoiceQuery": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "open",
+              "paid",
+              "uncollectible"
+            ]
+          },
+          "from": {
+            "type": "string"
+          },
+          "to": {
+            "type": "string"
+          },
+          "cursor": {
+            "type": "string"
+          }
+        }
+      },
+      "InvoicesResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "description": "*\n   * @openapi-override { \"format\": \"email\", \"maxLength\": 320 }"
+                },
+                "customerEmail": {
+                  "type": "string",
+                  "description": "*\n   * Monetary amount in the smallest currency unit — emitted as\n   * `integer` with `format: int64` via `bigint`.",
+                  "format": "email",
+                  "maxLength": 320
+                },
+                "amountMinor": {
+                  "type": "integer",
+                  "format": "int64"
+                },
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "draft",
+                    "open",
+                    "paid",
+                    "uncollectible"
+                  ]
+                },
+                "createdAt": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "total": {
+            "type": "number"
+          },
+          "nextCursor": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "data",
+          "total",
+          "nextCursor"
+        ]
+      },
       "LLMSResponse": {
         "type": "object",
         "properties": {
@@ -1376,6 +1685,10 @@
           "token",
           "refresh_token"
         ]
+      },
+      "Mutable": {
+        "type": "object",
+        "properties": {}
       },
       "MyApiSuccessResponseBody": {
         "type": "object",
@@ -1537,6 +1850,29 @@
           }
         ]
       },
+      "PaginatedResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {}
+          },
+          "total": {
+            "type": "number"
+          },
+          "nextCursor": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "data",
+          "total",
+          "nextCursor"
+        ]
+      },
       "Product": {
         "type": "object",
         "properties": {
@@ -1679,6 +2015,25 @@
           "generatedAt"
         ]
       },
+      "ReportFormat": {
+        "type": "string",
+        "enum": [
+          "csv",
+          "json",
+          "parquet"
+        ]
+      },
+      "ReportKind": {
+        "type": "string",
+        "enum": [
+          "financial",
+          "usage",
+          "audit"
+        ]
+      },
+      "ReportManifest": {
+        "type": "object"
+      },
       "ReportQuery": {
         "type": "object",
         "properties": {
@@ -1730,12 +2085,16 @@
         "type": "object",
         "properties": {
           "extendMinutes": {
-            "type": "number",
-            "nullable": true
+            "type": [
+              "number",
+              "null"
+            ]
           },
           "revokeReason": {
-            "type": "string",
-            "nullable": true
+            "type": [
+              "string",
+              "null"
+            ]
           }
         }
       },
@@ -1911,41 +2270,51 @@
         "type": "object",
         "properties": {
           "content": {
-            "type": "string",
-            "description": "Updated comment content",
-            "nullable": true
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Updated comment content"
           },
           "addAttachmentIds": {
-            "type": "array",
+            "type": [
+              "array",
+              "null"
+            ],
             "items": {
               "type": "string"
             },
-            "description": "IDs of attachments to add",
-            "nullable": true
+            "description": "IDs of attachments to add"
           },
           "removeAttachmentIds": {
-            "type": "array",
+            "type": [
+              "array",
+              "null"
+            ],
             "items": {
               "type": "string"
             },
-            "description": "IDs of attachments to remove",
-            "nullable": true
+            "description": "IDs of attachments to remove"
           },
           "addMentions": {
-            "type": "array",
+            "type": [
+              "array",
+              "null"
+            ],
             "items": {
               "type": "string"
             },
-            "description": "User IDs to add to mentions",
-            "nullable": true
+            "description": "User IDs to add to mentions"
           },
           "removeMentions": {
-            "type": "array",
+            "type": [
+              "array",
+              "null"
+            ],
             "items": {
               "type": "string"
             },
-            "description": "User IDs to remove from mentions",
-            "nullable": true
+            "description": "User IDs to remove from mentions"
           }
         }
       },
@@ -2213,13 +2582,15 @@
         "properties": {
           "file": {
             "type": "string",
-            "format": "binary",
             "description": "Image file (PNG/JPG, max 5MB)",
-            "nullable": false
+            "nullable": false,
+            "contentMediaType": "application/octet-stream"
           },
           "description": {
-            "type": "string",
-            "nullable": true
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "category": {
             "type": "string",
@@ -2353,11 +2724,15 @@
               "properties": {
                 "success": {
                   "type": "boolean",
-                  "example": false
+                  "examples": [
+                    false
+                  ]
                 },
                 "error": {
                   "type": "string",
-                  "example": "Validation error"
+                  "examples": [
+                    "Validation error"
+                  ]
                 }
               }
             }
@@ -2373,11 +2748,15 @@
               "properties": {
                 "success": {
                   "type": "boolean",
-                  "example": false
+                  "examples": [
+                    false
+                  ]
                 },
                 "error": {
                   "type": "string",
-                  "example": "Unathorized"
+                  "examples": [
+                    "Unathorized"
+                  ]
                 }
               }
             }
@@ -2393,11 +2772,15 @@
               "properties": {
                 "success": {
                   "type": "boolean",
-                  "example": false
+                  "examples": [
+                    false
+                  ]
                 },
                 "error": {
                   "type": "string",
-                  "example": "Something went wrong"
+                  "examples": [
+                    "Something went wrong"
+                  ]
                 }
               }
             }
@@ -2407,6 +2790,117 @@
     }
   },
   "paths": {
+    "/admin/reports": {
+      "get": {
+        "operationId": "tsListAdminReports",
+        "summary": "List reports",
+        "description": "Lists every admin-visible report. Demonstrates multi-scheme OR security and `@servers`.",
+        "tags": [
+          "Admin",
+          "Reports"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth, ApiKeyAuth": [
+              "read"
+            ]
+          }
+        ],
+        "servers": [
+          {
+            "url": "https://admin.example.com/v1,",
+            "description": "https://admin-eu.example.com/v1"
+          }
+        ],
+        "externalDocs": {
+          "url": "https://docs.example.com/admin/reports",
+          "description": "Admin report runbook"
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminReportsResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "description": "Request identifier for tracing",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      },
+      "post": {
+        "operationId": "tsCreateAdminReport",
+        "summary": "Create report",
+        "description": "Schedules a new admin report generation.",
+        "tags": [
+          "Admin"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth, ApiKeyAuth": [
+              "write"
+            ]
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateAdminReportBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Report generation queued",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminReport"
+                }
+              }
+            },
+            "headers": {
+              "Location": {
+                "description": "URL where the generated report will be available",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "links": {
+              "listReports": {
+                "operationId": "tsListAdminReports"
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    },
     "/auth/login": {
       "post": {
         "operationId": "post-auth-login",
@@ -2432,6 +2926,214 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/LoginResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    },
+    "/billing/invoices": {
+      "get": {
+        "operationId": "tsListInvoices",
+        "summary": "List invoices",
+        "description": "Returns a paginated list of invoices. Exercises wildcard responses and `@link`.",
+        "tags": [
+          "Billing",
+          "Finance"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "draft",
+                "open",
+                "paid",
+                "uncollectible"
+              ]
+            }
+          },
+          {
+            "in": "query",
+            "name": "from",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "to",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "cookie",
+            "name": "session",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvoicesResponse"
+                }
+              }
+            },
+            "headers": {
+              "Link": {
+                "description": "RFC 5988 pagination links",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Total-Count": {
+                "description": "Total invoices matching the query",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            },
+            "links": {
+              "getInvoice": {
+                "operationId": "tsGetInvoice"
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      },
+      "post": {
+        "operationId": "tsCreateInvoice",
+        "summary": "Create invoice",
+        "description": "Creates a new draft invoice.",
+        "tags": [
+          "Billing"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateInvoiceBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Draft invoice created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Invoice"
+                }
+              }
+            },
+            "headers": {
+              "Location": {
+                "description": "URL of the created invoice",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "links": {
+              "getInvoice": {
+                "operationId": "tsGetInvoice"
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    },
+    "/billing/invoices/{id}": {
+      "get": {
+        "operationId": "tsGetInvoice",
+        "summary": "Get invoice",
+        "description": "Fetches a single invoice by identifier. Response properties are all `readonly` to emit `readOnly: true`.",
+        "tags": [
+          "Billing",
+          "Finance"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123"
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImmutableInvoice"
+                }
+              }
+            },
+            "headers": {
+              "ETag": {
+                "description": "Strong ETag for optimistic concurrency",
+                "schema": {
+                  "type": "string"
                 }
               }
             }
@@ -2587,10 +3289,11 @@
       },
       "post": {
         "operationId": "post-notifications",
-        "summary": "Send a notification",
+        "summary": "Send notification",
         "description": "Send notification via email, SMS, or push (demonstrates discriminated unions)",
         "tags": [
-          "Notifications"
+          "Notifications",
+          "Messaging"
         ],
         "parameters": [],
         "requestBody": {
@@ -3009,10 +3712,11 @@
     "/products": {
       "post": {
         "operationId": "post-products",
-        "summary": "Create New Product",
+        "summary": "Create product",
         "description": "Demonstrates ReturnType and Parameters utility types",
         "tags": [
-          "Products"
+          "Products",
+          "Commerce"
         ],
         "parameters": [],
         "requestBody": {
@@ -3031,6 +3735,14 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/CreateProductApiResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "description": "Trace identifier",
+                "schema": {
+                  "type": "string"
                 }
               }
             }
@@ -3494,7 +4206,13 @@
   },
   "tags": [
     {
+      "name": "Admin"
+    },
+    {
       "name": "Auth"
+    },
+    {
+      "name": "Billing"
     },
     {
       "name": "Exports"

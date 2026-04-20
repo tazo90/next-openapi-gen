@@ -17,6 +17,10 @@
         "type": "http",
         "scheme": "bearer",
         "bearerFormat": "JWT"
+      },
+      "BasicAuth": {
+        "type": "http",
+        "scheme": "basic"
       }
     },
     "schemas": {
@@ -1455,13 +1459,19 @@
   "paths": {
     "/auth/login": {
       "post": {
-        "operationId": "post-auth-login",
-        "summary": "Authenticate as a user.",
+        "operationId": "scalarLogin",
+        "summary": "Sign in",
         "description": "Login a user",
         "tags": [
-          "Auth"
+          "Auth",
+          "Sessions"
         ],
         "parameters": [],
+        "security": [
+          {
+            "BasicAuth, BearerAuth": []
+          }
+        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -1479,6 +1489,19 @@
                 "schema": {
                   "$ref": "#/components/schemas/LoginResponse"
                 }
+              }
+            },
+            "headers": {
+              "Set-Cookie": {
+                "description": "Issued session cookie",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "links": {
+              "currentUser": {
+                "operationId": "scalarGetCurrentUser"
               }
             }
           },
@@ -1875,7 +1898,8 @@
         "summary": "Export reports",
         "description": "Keeps the Scalar smoke app aligned with the richer baseline route surface.",
         "tags": [
-          "Reports"
+          "Reports",
+          "Exports"
         ],
         "parameters": [
           {
@@ -1891,11 +1915,29 @@
             }
           }
         ],
+        "servers": [
+          {
+            "url": "https://api.example.com/v1,",
+            "description": "https://api-eu.example.com/v1"
+          }
+        ],
+        "externalDocs": {
+          "url": "https://docs.example.com/reports/csv",
+          "description": "CSV export reference"
+        },
         "responses": {
           "200": {
             "description": "Successful response",
             "content": {
               "text/csv": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "headers": {
+              "Content-Disposition": {
+                "description": "Attachment filename for the download",
                 "schema": {
                   "type": "string"
                 }
@@ -1913,7 +1955,7 @@
     },
     "/users/{id}": {
       "get": {
-        "operationId": "get-users-{id}",
+        "operationId": "scalarGetCurrentUser",
         "summary": "Get User by ID",
         "description": "Retrieves a user's profile information",
         "tags": [

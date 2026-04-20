@@ -35,6 +35,7 @@ type UserResponse = {
  * @description Retrieves a user's profile information
  * @pathParams UserIdParam
  * @response UserResponse
+ * @operationId scalarGetCurrentUser
  * @openapi
  */
 export async function GET(request: NextRequest, context: RouteContext) {

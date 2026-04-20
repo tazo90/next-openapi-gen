@@ -4,9 +4,13 @@ import type { UpdateUserInput, User, UserIdParams } from "../../schemas/models";
 
 /**
  * Load a single user.
+ * @summary Get user
+ * @tags Users, Identity
  * @operationId tanstackGetUserById
  * @pathParams UserIdParams
  * @response User
+ * @responseHeader 200 X-Request-Id string Trace identifier
+ * @link 200 updateUser tanstackUpdateUserById
  * @tag Users
  * @responseSet auth
  * @openapi

@@ -27,11 +27,15 @@ export async function GET(request: NextRequest) {
 
 /**
  * Send a notification
+ * @summary Send notification
  * @description Send notification via email, SMS, or push (demonstrates discriminated unions)
+ * @tag Notifications
+ * @tags Messaging
  * @body Notification
  * @response 201:ApiResponse:Notification sent successfully
  * @add 400:ApiResponse:Invalid notification data
  * @add 429:ApiResponse:Rate limit exceeded
+ * @discriminator type defaultMapping=EmailNotification
  * @openapi
  */
 export async function POST(request: NextRequest) {
