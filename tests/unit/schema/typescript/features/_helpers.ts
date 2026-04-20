@@ -9,7 +9,7 @@ import { parseTypeScriptFile } from "@workspace/openapi-core/shared/utils.js";
  * resulting `TSType` AST node. Input is wrapped in a throwaway variable
  * declaration to give Babel a type-annotation context.
  */
-export function parseAnnotation(source: string): t.TSType {
+function parseAnnotation(source: string): t.TSType {
   const ast = parseTypeScriptFile(`let _x: ${source};`);
   const declaration = ast.program.body[0] as t.VariableDeclaration;
   const declarator = declaration.declarations[0] as t.VariableDeclarator;

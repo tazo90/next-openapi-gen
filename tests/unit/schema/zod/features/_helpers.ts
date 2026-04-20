@@ -13,7 +13,7 @@ import { parseTypeScriptFile } from "@workspace/openapi-core/shared/utils.js";
  * first declarator initializer. Useful for testing the converter's AST path
  * without round-tripping through the filesystem.
  */
-export function parseExpression(source: string): t.Expression {
+function parseExpression(source: string): t.Expression {
   const ast = parseTypeScriptFile(`const _schema = ${source};`);
   const statement = ast.program.body[0];
   if (!statement || !t.isVariableDeclaration(statement)) {
@@ -29,7 +29,7 @@ export function parseExpression(source: string): t.Expression {
  * directory so `processZodNode` never accidentally scans the workspace.
  * Callers are responsible for removing the directory in `afterEach`.
  */
-export function createConverter(roots: string[]): ZodSchemaConverter {
+function createConverter(roots: string[]): ZodSchemaConverter {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-zod-features-"));
   roots.push(root);
   return new ZodSchemaConverter(root);

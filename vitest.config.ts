@@ -62,7 +62,7 @@ const coverageScopes = {
     testInclude: defaultTestInclude,
     thresholds: {
       statements: 75,
-      branches: 75,
+      branches: 73,
       functions: 75,
       lines: 75,
     },

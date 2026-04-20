@@ -2051,7 +2051,7 @@ export class ZodSchemaConverter {
           schema.properties = next;
           if (schema.required) {
             schema.required = schema.required.filter((key) => keep.has(key));
-            if (schema.required.length === 0) delete schema.required;
+            if (schema.required.length === 0) schema.required = [];
           }
         }
         break;
@@ -2066,7 +2066,7 @@ export class ZodSchemaConverter {
           if (schema.required) {
             const omit = new Set(keys);
             schema.required = schema.required.filter((key) => !omit.has(key));
-            if (schema.required.length === 0) delete schema.required;
+            if (schema.required.length === 0) schema.required = [];
           }
         }
         break;
