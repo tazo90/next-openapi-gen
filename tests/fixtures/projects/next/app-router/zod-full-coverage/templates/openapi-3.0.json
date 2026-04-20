@@ -1,0 +1,17 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "App Router Zod Full Coverage",
+    "version": "1.0.0",
+    "description": "Fixture exercising the full Zod feature catalog"
+  },
+  "apiDir": "./src/app/api",
+  "schemaDir": "./src/schemas",
+  "schemaType": "zod",
+  "docsUrl": "api-docs",
+  "ui": "scalar",
+  "outputDir": "./public",
+  "outputFile": "openapi.json",
+  "includeOpenApiRoutes": true,
+  "debug": false
+}

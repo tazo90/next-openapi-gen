@@ -5,6 +5,7 @@ import * as t from "@babel/types";
 import { parseTypeScriptFile } from "../../shared/utils.js";
 import type { ContentType, OpenAPIDefinition } from "../../shared/types.js";
 import { logger } from "../../shared/logger.js";
+import type { SymbolResolver } from "../../shared/symbol-resolver.js";
 
 type TypeDefinitionEntry = {
   node?: any;
@@ -19,6 +20,7 @@ type UtilityTypeResolverContext = {
   fileAccess: Pick<typeof fs, "readFileSync">;
   resolveImportPath: (importPath: string, fromFilePath: string) => string | null;
   resolveTSNodeType: (node: any) => OpenAPIDefinition;
+  symbolResolver?: SymbolResolver;
   findSchemaDefinition: (schemaName: string, contentType: ContentType) => OpenAPIDefinition;
   collectImports: (ast: any, filePath: string) => void;
   collectTypeDefinitions: (ast: any, schemaName: string, filePath?: string) => void;
@@ -59,20 +61,36 @@ function resolveFunctionNodeFromQuery(funcName: string, context: UtilityTypeReso
     if (importPath) {
       const resolvedPath = context.resolveImportPath(importPath, savedFilePath);
       if (resolvedPath) {
-        const content = context.fileAccess.readFileSync(resolvedPath, "utf-8");
-        const ast = parseTypeScriptFile(content);
+        const ast = readASTForUtilityContext(resolvedPath, context);
+        if (ast) {
+          context.collectImports(ast, resolvedPath);
+          context.collectTypeDefinitions(ast, funcName, resolvedPath);
+          context.collectAllExportedDefinitions(ast, resolvedPath);
 
-        context.collectImports(ast, resolvedPath);
-        context.collectTypeDefinitions(ast, funcName, resolvedPath);
-        context.collectAllExportedDefinitions(ast, resolvedPath);
-
-        funcDefEntry = context.typeDefinitions[funcName];
-        funcNode = getTypeDefinitionNode(funcDefEntry);
+          funcDefEntry = context.typeDefinitions[funcName];
+          funcNode = getTypeDefinitionNode(funcDefEntry);
+        }
       }
     }
   }
 
   return funcNode;
+}
+
+function readASTForUtilityContext(
+  filePath: string,
+  context: UtilityTypeResolverContext,
+): t.File | null {
+  if (context.symbolResolver) {
+    const ast = context.symbolResolver.parseFile(filePath);
+    if (ast) return ast;
+  }
+  try {
+    const content = context.fileAccess.readFileSync(filePath, "utf-8");
+    return parseTypeScriptFile(content);
+  } catch {
+    return null;
+  }
 }
 
 function hasGenericTypeParameters(node: any): boolean {
@@ -126,20 +144,16 @@ function resolvePreferredGenericDefinition(
       continue;
     }
 
-    try {
-      const content = context.fileAccess.readFileSync(candidateFile, "utf-8");
-      const ast = parseTypeScriptFile(content);
-      const declaration = findNamedTypeDeclarationInAst(ast, typeName);
+    const ast = readASTForUtilityContext(candidateFile, context);
+    if (!ast) continue;
 
-      if (declaration && hasGenericTypeParameters(declaration)) {
-        context.typeDefinitions[typeName] = {
-          node: declaration,
-          filePath: candidateFile,
-        };
-        return declaration;
-      }
-    } catch {
-      // Ignore unreadable candidates and fall back to the indexed definitions.
+    const declaration = findNamedTypeDeclarationInAst(ast, typeName);
+    if (declaration && hasGenericTypeParameters(declaration)) {
+      context.typeDefinitions[typeName] = {
+        node: declaration,
+        filePath: candidateFile,
+      };
+      return declaration;
     }
   }
 
@@ -287,9 +301,27 @@ export function resolveUtilityTypeReference(
     return null;
   }
 
-  if (typeName === "Partial" || typeName === "Required" || typeName === "Readonly") {
+  if (typeName === "Partial" || typeName === "Required") {
     if (node.typeParameters?.params.length > 0) {
-      return context.resolveTSNodeType(node.typeParameters.params[0]);
+      const resolved = context.resolveTSNodeType(node.typeParameters.params[0]);
+      if (typeName === "Partial" && resolved) {
+        // `Partial<T>` drops the `required` array.
+        const { required: _required, ...rest } = resolved;
+        return rest;
+      }
+      if (typeName === "Required" && resolved && resolved.properties) {
+        return { ...resolved, required: Object.keys(resolved.properties) };
+      }
+      return resolved;
+    }
+    return { type: "object" };
+  }
+
+  if (typeName === "Readonly") {
+    if (node.typeParameters?.params.length > 0) {
+      const resolved = context.resolveTSNodeType(node.typeParameters.params[0]);
+      // `Readonly<T>` — surface readOnly so serializers treat it as response-only.
+      return resolved ? { ...resolved, readOnly: true } : { type: "object" };
     }
     return { type: "object" };
   }
@@ -298,7 +330,83 @@ export function resolveUtilityTypeReference(
     if (node.typeParameters?.params.length > 0) {
       return context.resolveTSNodeType(node.typeParameters.params[0]);
     }
-    return { type: "object" };
+    return {};
+  }
+
+  if (typeName === "NonNullable") {
+    if (node.typeParameters?.params.length > 0) {
+      const resolved = context.resolveTSNodeType(node.typeParameters.params[0]);
+      if (resolved) {
+        const { nullable: _nullable, ...rest } = resolved;
+        return rest;
+      }
+    }
+    return {};
+  }
+
+  if (typeName === "Exclude" || typeName === "Extract") {
+    if (node.typeParameters?.params.length >= 2) {
+      const base = context.resolveTSNodeType(node.typeParameters.params[0]);
+      const filterNode = node.typeParameters.params[1];
+      const filterValues = new Set(context.extractKeysFromLiteralType(filterNode));
+      if (base?.enum && filterValues.size > 0) {
+        const stringValues = base.enum.filter(
+          (value: unknown): value is string => typeof value === "string",
+        );
+        const filtered =
+          typeName === "Exclude"
+            ? stringValues.filter((value) => !filterValues.has(value))
+            : stringValues.filter((value) => filterValues.has(value));
+        return { ...base, enum: filtered };
+      }
+      return base ?? {};
+    }
+    return {};
+  }
+
+  if (typeName === "InstanceType") {
+    if (node.typeParameters?.params.length > 0) {
+      return context.resolveTSNodeType(node.typeParameters.params[0]);
+    }
+    return {};
+  }
+
+  if (
+    typeName === "Uppercase" ||
+    typeName === "Lowercase" ||
+    typeName === "Capitalize" ||
+    typeName === "Uncapitalize"
+  ) {
+    // String-casing utility types operate on string literal unions. When the
+    // argument resolves to a concrete `enum` of strings we can apply the case
+    // transformation statically; otherwise fall back to the underlying schema.
+    if (node.typeParameters?.params.length > 0) {
+      const inner = context.resolveTSNodeType(node.typeParameters.params[0]);
+      const apply = (value: string): string => {
+        switch (typeName) {
+          case "Uppercase":
+            return value.toUpperCase();
+          case "Lowercase":
+            return value.toLowerCase();
+          case "Capitalize":
+            return value.length > 0 ? (value[0] as string).toUpperCase() + value.slice(1) : value;
+          case "Uncapitalize":
+            return value.length > 0 ? (value[0] as string).toLowerCase() + value.slice(1) : value;
+        }
+        return value;
+      };
+      if (inner && inner.type === "string" && Array.isArray((inner as { enum?: unknown[] }).enum)) {
+        const enumValues = (inner as { enum: unknown[] }).enum;
+        const transformed = enumValues
+          .filter((value): value is string => typeof value === "string")
+          .map(apply);
+        if (transformed.length === enumValues.length) {
+          return { ...inner, enum: transformed };
+        }
+      }
+      return inner;
+    }
+    return { type: "string" };
   }
 
   if (typeName === "ReturnType") {

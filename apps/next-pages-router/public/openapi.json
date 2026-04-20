@@ -20,6 +20,79 @@
       }
     },
     "schemas": {
+      "CreateProductSchema": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Product name"
+          },
+          "description": {
+            "type": "string",
+            "description": "Product description"
+          },
+          "price": {
+            "type": "number",
+            "minimum": 0,
+            "exclusiveMinimum": true,
+            "description": "Product price"
+          },
+          "stock": {
+            "type": "integer",
+            "minimum": 0,
+            "default": 0,
+            "description": "Stock quantity"
+          },
+          "category": {
+            "type": "string",
+            "description": "Product category"
+          }
+        },
+        "required": [
+          "name",
+          "price",
+          "stock",
+          "category"
+        ]
+      },
+      "CreateUserSchema": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 2,
+            "description": "Full name"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "Email address"
+          },
+          "password": {
+            "type": "string",
+            "minLength": 8,
+            "description": "Password (min 8 characters)"
+          }
+        },
+        "required": [
+          "name",
+          "email",
+          "password"
+        ]
+      },
+      "ProductIdParamsSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Product ID"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
       "ProductListParamsSchema": {
         "type": "object",
         "properties": {
@@ -84,53 +157,20 @@
           "category"
         ]
       },
-      "CreateProductSchema": {
+      "UpdateUserSchema": {
         "type": "object",
         "properties": {
           "name": {
             "type": "string",
-            "minLength": 1,
-            "description": "Product name"
+            "minLength": 2,
+            "description": "Full name"
           },
-          "description": {
+          "email": {
             "type": "string",
-            "description": "Product description"
-          },
-          "price": {
-            "type": "number",
-            "minimum": 0,
-            "exclusiveMinimum": true,
-            "description": "Product price"
-          },
-          "stock": {
-            "type": "integer",
-            "minimum": 0,
-            "default": 0,
-            "description": "Stock quantity"
-          },
-          "category": {
-            "type": "string",
-            "description": "Product category"
+            "format": "email",
+            "description": "Email address"
           }
-        },
-        "required": [
-          "name",
-          "price",
-          "stock",
-          "category"
-        ]
-      },
-      "ProductIdParamsSchema": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "description": "Product ID"
-          }
-        },
-        "required": [
-          "id"
-        ]
+        }
       },
       "UploadRequestSchema": {
         "type": "object",
@@ -185,6 +225,18 @@
           "url"
         ]
       },
+      "UserIdParamsSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "User ID"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
       "UserListParamsSchema": {
         "type": "object",
         "properties": {
@@ -229,58 +281,6 @@
           "email",
           "createdAt"
         ]
-      },
-      "CreateUserSchema": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "minLength": 2,
-            "description": "Full name"
-          },
-          "email": {
-            "type": "string",
-            "format": "email",
-            "description": "Email address"
-          },
-          "password": {
-            "type": "string",
-            "minLength": 8,
-            "description": "Password (min 8 characters)"
-          }
-        },
-        "required": [
-          "name",
-          "email",
-          "password"
-        ]
-      },
-      "UserIdParamsSchema": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "description": "User ID"
-          }
-        },
-        "required": [
-          "id"
-        ]
-      },
-      "UpdateUserSchema": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "minLength": 2,
-            "description": "Full name"
-          },
-          "email": {
-            "type": "string",
-            "format": "email",
-            "description": "Email address"
-          }
-        }
       }
     },
     "responses": {}
@@ -497,6 +497,27 @@
       }
     },
     "/uploads": {
+      "get": {
+        "operationId": "get-uploads",
+        "summary": "Download upload instructions",
+        "description": "Returns plain-text upload instructions for Pages Router transport coverage.",
+        "tags": [
+          "Uploads"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
       "post": {
         "operationId": "post-uploads",
         "summary": "Upload an attachment",
@@ -526,27 +547,6 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/UploadResponseSchema"
-                }
-              }
-            }
-          }
-        }
-      },
-      "get": {
-        "operationId": "get-uploads",
-        "summary": "Download upload instructions",
-        "description": "Returns plain-text upload instructions for Pages Router transport coverage.",
-        "tags": [
-          "Uploads"
-        ],
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "Successful response",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "type": "string"
                 }
               }
             }

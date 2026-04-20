@@ -75,9 +75,11 @@ export function walkTypeScriptFiles(
 export function collectImportMetadata(ast: t.File): {
   importedModules: Record<string, string>;
   drizzleZodImports: Set<string>;
+  zodLocalName: string;
 } {
   const importedModules: Record<string, string> = {};
   const drizzleZodImports = new Set<string>();
+  let zodLocalName = "z";
 
   traverse(ast, {
     ImportDeclaration: (path: NodePath<t.ImportDeclaration>) => {
@@ -91,6 +93,27 @@ export function collectImportMetadata(ast: t.File): {
         });
       }
 
+      if (source === "zod") {
+        path.node.specifiers.forEach((specifier) => {
+          if (t.isImportSpecifier(specifier)) {
+            const imported = specifier.imported;
+            const importedName = t.isIdentifier(imported)
+              ? imported.name
+              : t.isStringLiteral(imported)
+                ? imported.value
+                : "";
+            if (importedName === "z") {
+              zodLocalName = specifier.local.name;
+            }
+          } else if (
+            t.isImportDefaultSpecifier(specifier) ||
+            t.isImportNamespaceSpecifier(specifier)
+          ) {
+            zodLocalName = specifier.local.name;
+          }
+        });
+      }
+
       path.node.specifiers.forEach((specifier) => {
         if (t.isImportSpecifier(specifier) || t.isImportDefaultSpecifier(specifier)) {
           importedModules[specifier.local.name] = source;
@@ -99,10 +122,14 @@ export function collectImportMetadata(ast: t.File): {
     },
   });
 
-  return { importedModules, drizzleZodImports };
+  return { importedModules, drizzleZodImports, zodLocalName };
 }
 
-export function isZodSchemaNode(node: t.Node, drizzleZodImports: Set<string>): boolean {
+export function isZodSchemaNode(
+  node: t.Node,
+  drizzleZodImports: Set<string>,
+  zodLocalName: string = "z",
+): boolean {
   if (t.isCallExpression(node)) {
     if (t.isIdentifier(node.callee) && drizzleZodImports.has(node.callee.name)) {
       return true;
@@ -111,13 +138,13 @@ export function isZodSchemaNode(node: t.Node, drizzleZodImports: Set<string>): b
     if (
       t.isMemberExpression(node.callee) &&
       t.isIdentifier(node.callee.object) &&
-      node.callee.object.name === "z"
+      (node.callee.object.name === "z" || node.callee.object.name === zodLocalName)
     ) {
       return true;
     }
 
     if (t.isMemberExpression(node.callee) && t.isCallExpression(node.callee.object)) {
-      return isZodSchemaNode(node.callee.object, drizzleZodImports);
+      return isZodSchemaNode(node.callee.object, drizzleZodImports, zodLocalName);
     }
   }
 

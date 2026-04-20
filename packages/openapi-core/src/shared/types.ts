@@ -191,6 +191,9 @@ export type RouteDefinition = {
   parameters: ParamSchema[];
   requestBody?: OpenApiRequestBody | OpenApiReference | undefined;
   responses?: Record<string, OpenApiResponseDefinition> | undefined;
+  callbacks?: Record<string, unknown> | undefined;
+  servers?: OpenApiServer[] | undefined;
+  externalDocs?: Record<string, unknown> | undefined;
   deprecated?: boolean;
   [key: string]: unknown;
 };
@@ -223,9 +226,28 @@ export type OpenApiSchema = {
   anyOf?: OpenApiSchemaLike[] | undefined;
   allOf?: OpenApiSchemaLike[] | undefined;
   additionalProperties?: OpenApiSchemaLike | boolean | undefined;
+  unevaluatedProperties?: OpenApiSchemaLike | boolean | undefined;
+  patternProperties?: Record<string, OpenApiSchemaLike> | undefined;
+  propertyNames?: OpenApiSchemaLike | undefined;
+  dependentRequired?: Record<string, string[]> | undefined;
+  dependentSchemas?: Record<string, OpenApiSchemaLike> | undefined;
+  not?: OpenApiSchemaLike | undefined;
+  readOnly?: boolean | undefined;
+  writeOnly?: boolean | undefined;
+  xml?:
+    | {
+        name?: string | undefined;
+        namespace?: string | undefined;
+        prefix?: string | undefined;
+        attribute?: boolean | undefined;
+        wrapped?: boolean | undefined;
+      }
+    | undefined;
   const?: JsonValue | undefined;
   contentEncoding?: string | undefined;
   contentMediaType?: string | undefined;
+  contentSchema?: OpenApiSchemaLike | undefined;
+  $defs?: Record<string, OpenApiSchemaLike> | undefined;
   if?: OpenApiSchemaLike | undefined;
   then?: OpenApiSchemaLike | undefined;
   else?: OpenApiSchemaLike | undefined;
@@ -317,16 +339,48 @@ export type InferredResponseDefinition = {
   source: "typescript";
 };
 
+export type JSDocResponseHeader = {
+  status: string;
+  name: string;
+  description?: string | undefined;
+  schema?: OpenApiSchemaLike | undefined;
+};
+
+export type JSDocResponseLink = {
+  status: string;
+  name: string;
+  operationId?: string | undefined;
+  operationRef?: string | undefined;
+  parameters?: Record<string, JsonValue> | undefined;
+  requestBody?: JsonValue | undefined;
+  description?: string | undefined;
+  server?: OpenApiServer | undefined;
+};
+
+export type JSDocExternalDocs = {
+  url: string;
+  description?: string | undefined;
+};
+
+export type JSDocCallback = {
+  name: string;
+  expression: string;
+  reference?: string | undefined;
+};
+
 export type DataTypes = {
   tag?: string | undefined;
   tagSummary?: string | undefined;
   tagKind?: string | undefined;
   tagParent?: string | undefined;
+  tags?: string[] | undefined;
   pathParamsType?: string | undefined;
   paramsType?: string | undefined;
   querystringType?: string | undefined;
   querystringName?: string | undefined;
   bodyType?: string | undefined;
+  headerType?: string | undefined;
+  cookieType?: string | undefined;
   responseType?: string | undefined;
   responseContentType?: string | undefined;
   responseItemType?: string | undefined;
@@ -340,9 +394,19 @@ export type DataTypes = {
   summary?: string | undefined;
   description?: string | undefined;
   auth?: string | undefined;
+  security?: OpenApiSecurityRequirement[] | undefined;
+  servers?: OpenApiServer[] | undefined;
+  externalDocs?: JSDocExternalDocs | undefined;
+  responseHeaders?: JSDocResponseHeader[] | undefined;
+  responseLinks?: JSDocResponseLink[] | undefined;
+  callbacks?: JSDocCallback[] | undefined;
+  openapiOverride?: Record<string, JsonValue> | undefined;
   isOpenApi?: boolean | undefined;
   isIgnored?: boolean | undefined;
+  isWebhook?: boolean | undefined;
+  webhookName?: string | undefined;
   deprecated?: boolean | undefined;
+  deprecationReason?: string | undefined;
   bodyDescription?: string | undefined;
   responseDescription?: string | undefined;
   contentType?: string | undefined;

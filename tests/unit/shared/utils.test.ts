@@ -80,9 +80,14 @@ describe("shared utils", () => {
       querystringType: "",
       querystringName: "",
       bodyType: "CreateUserBody",
+      headerType: "",
+      cookieType: "",
       isOpenApi: true,
       isIgnored: true,
+      isWebhook: false,
+      webhookName: "",
       deprecated: true,
+      deprecationReason: "",
       bodyDescription: "JSON payload",
       contentType: "multipart/form-data",
       responseType: "",
@@ -113,9 +118,14 @@ describe("shared utils", () => {
       querystringType: "",
       querystringName: "",
       bodyType: "",
+      headerType: "",
+      cookieType: "",
       isOpenApi: false,
       isIgnored: false,
+      isWebhook: false,
+      webhookName: "",
       deprecated: false,
+      deprecationReason: "",
       bodyDescription: "",
       contentType: "",
       responseType: "",
@@ -359,5 +369,115 @@ describe("shared utils", () => {
     expect(performAuthPresetReplacements("BEARER, apiKey, custom-scheme")).toBe(
       "BearerAuth,ApiKeyAuth,custom-scheme",
     );
+  });
+
+  it("parses OpenAPI 3.2 JSDoc annotations: @servers, @externalDocs, @security, @tags, @webhook", () => {
+    const data = getExportCommentData(`
+      /**
+       * Subscribe to events
+       * @tag Events
+       * @tags Platform, Streaming
+       * @servers https://api.example.com as production "Primary", https://staging.example.com
+       * @externalDocs https://docs.example.com/events "Event docs"
+       * @security BearerAuth, ApiKeyAuth:read:events|write:events
+       * @webhook newEvent
+       * @deprecated use /v2/subscribe instead
+       * @openapi
+       */
+      export async function POST() {}
+    `);
+
+    expect(data?.tags).toEqual(["Platform", "Streaming"]);
+    expect(data?.servers).toBeDefined();
+    expect(data?.servers?.length).toBeGreaterThan(0);
+    expect(data?.externalDocs).toMatchObject({
+      url: "https://docs.example.com/events",
+    });
+    expect(data?.security).toBeDefined();
+    expect(data?.security?.length).toBeGreaterThan(0);
+    expect(data?.isWebhook).toBe(true);
+    expect(data?.webhookName).toBe("newEvent");
+    expect(data?.deprecated).toBe(true);
+    expect(data?.deprecationReason).toBe("use /v2/subscribe instead");
+  });
+
+  it("parses @responseHeader, @link, @callback, and @openapi-override", () => {
+    const data = getExportCommentData(`
+      /**
+       * Rate-limited endpoint
+       * @responseHeader 200 X-RateLimit-Remaining integer Requests left
+       * @responseHeader 429 Retry-After integer Seconds to wait
+       * @link 201 GetUser #/components/links/GetUser
+       * @callback onEvent {$request.body#callbackUrl} EventPayload
+       * @openapi-override {"x-internal": true, "x-rateLimit": 100}
+       * @openapi
+       */
+      export async function POST() {}
+    `);
+
+    expect(data?.responseHeaders).toEqual([
+      {
+        status: "200",
+        name: "X-RateLimit-Remaining",
+        description: "Requests left",
+        schema: { type: "integer" },
+      },
+      {
+        status: "429",
+        name: "Retry-After",
+        description: "Seconds to wait",
+        schema: { type: "integer" },
+      },
+    ]);
+    expect(data?.responseLinks).toEqual([
+      {
+        status: "201",
+        name: "GetUser",
+        operationRef: "#/components/links/GetUser",
+      },
+    ]);
+    expect(data?.callbacks).toEqual([
+      {
+        name: "onEvent",
+        expression: "{$request.body#callbackUrl}",
+        reference: "EventPayload",
+      },
+    ]);
+    expect(data?.openapiOverride).toEqual({
+      "x-internal": true,
+      "x-rateLimit": 100,
+    });
+  });
+
+  it("parses @header and @cookie type references", () => {
+    const data = getExportCommentData(`
+      /**
+       * @header RequestHeaders
+       * @cookie SessionCookies
+       * @openapi
+       */
+      export async function GET() {}
+    `);
+
+    expect(data?.headerType).toBe("RequestHeaders");
+    expect(data?.cookieType).toBe("SessionCookies");
+  });
+
+  it("parses wildcard status codes in @response tags", () => {
+    expect(parseResponseTag("@response 2XX:UserResponse")).toEqual({
+      responseDescription: "",
+      responseType: "UserResponse",
+      successCode: "2XX",
+    });
+    expect(parseResponseTag("@response default:ErrorResponse:Fallback")).toEqual({
+      responseDescription: "Fallback",
+      responseType: "ErrorResponse",
+      successCode: "default",
+    });
+    expect(parseResponseTag("@response 4XX:Unauthorized")).toEqual({
+      responseDescription: "",
+      responseType: "Unauthorized",
+      successCode: "4XX",
+    });
   });
 });

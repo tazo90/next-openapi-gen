@@ -30,221 +30,6 @@
       }
     },
     "schemas": {
-      "LoginBody": {
-        "type": "object",
-        "properties": {
-          "email": {
-            "type": "string",
-            "description": "user email",
-            "nullable": false
-          },
-          "password": {
-            "type": "string",
-            "description": "user password",
-            "nullable": false
-          }
-        },
-        "required": [
-          "email",
-          "password"
-        ]
-      },
-      "LoginResponse": {
-        "type": "object",
-        "properties": {
-          "token": {
-            "type": "string",
-            "description": "auth token"
-          },
-          "refresh_token": {
-            "type": "string",
-            "description": "refresh token"
-          }
-        },
-        "required": [
-          "token",
-          "refresh_token"
-        ]
-      },
-      "ExportIdParam": {
-        "type": "object",
-        "properties": {
-          "exportId": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "exportId"
-        ]
-      },
-      "ExportDownloadQuery": {
-        "type": "object",
-        "properties": {
-          "format": {
-            "type": "string",
-            "enum": [
-              "csv",
-              "ndjson"
-            ]
-          }
-        }
-      },
-      "CsvExportBody": {
-        "type": "string"
-      },
-      "MyApiSuccessResponseBody": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "enum": [
-              true
-            ]
-          },
-          "httpCode": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "success",
-          "httpCode"
-        ]
-      },
-      "LLMSResponse": {
-        "type": "object",
-        "properties": {
-          "llms": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "id": {
-                  "type": "string"
-                },
-                "name": {
-                  "type": "string"
-                },
-                "provider": {
-                  "type": "string"
-                },
-                "isDefault": {
-                  "type": "boolean"
-                }
-              },
-              "required": [
-                "id",
-                "name",
-                "provider",
-                "isDefault"
-              ]
-            }
-          }
-        },
-        "required": [
-          "llms"
-        ]
-      },
-      "MyApiSuccessResponseBody<LLMSResponse>": {
-        "type": "object",
-        "properties": {
-          "llms": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "id": {
-                  "type": "string"
-                },
-                "name": {
-                  "type": "string"
-                },
-                "provider": {
-                  "type": "string"
-                },
-                "isDefault": {
-                  "type": "boolean"
-                }
-              },
-              "required": [
-                "id",
-                "name",
-                "provider",
-                "isDefault"
-              ]
-            }
-          },
-          "success": {
-            "type": "boolean",
-            "enum": [
-              true
-            ]
-          },
-          "httpCode": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "llms",
-          "success",
-          "httpCode"
-        ]
-      },
-      "SuccessResponse": {
-        "type": "object",
-        "properties": {
-          "status": {
-            "type": "string",
-            "enum": [
-              "success"
-            ]
-          },
-          "data": {
-            "type": "object",
-            "properties": {
-              "id": {
-                "type": "string",
-                "description": "Unique identifier"
-              },
-              "message": {
-                "type": "string",
-                "description": "Success message"
-              }
-            },
-            "required": [
-              "id",
-              "message"
-            ]
-          }
-        },
-        "required": [
-          "status",
-          "data"
-        ]
-      },
-      "ErrorResponse": {
-        "type": "object",
-        "properties": {
-          "status": {
-            "type": "string",
-            "enum": [
-              "error"
-            ]
-          },
-          "error": {
-            "type": "string",
-            "description": "Error message"
-          },
-          "code": {
-            "type": "number",
-            "description": "Error code"
-          }
-        },
-        "required": [
-          "status",
-          "error",
-          "code"
-        ]
-      },
       "ApiResponse": {
         "oneOf": [
           {
@@ -303,284 +88,6 @@
               "code"
             ]
           }
-        ]
-      },
-      "EmailNotification": {
-        "type": "object",
-        "properties": {
-          "type": {
-            "type": "string",
-            "enum": [
-              "email"
-            ],
-            "nullable": false
-          },
-          "to": {
-            "type": "string",
-            "description": "Recipient email address",
-            "nullable": false
-          },
-          "subject": {
-            "type": "string",
-            "description": "Email subject",
-            "nullable": false
-          },
-          "body": {
-            "type": "string",
-            "description": "Email body content",
-            "nullable": false
-          }
-        },
-        "required": [
-          "type",
-          "to",
-          "subject",
-          "body"
-        ]
-      },
-      "SmsNotification": {
-        "type": "object",
-        "properties": {
-          "type": {
-            "type": "string",
-            "enum": [
-              "sms"
-            ],
-            "nullable": false
-          },
-          "phoneNumber": {
-            "type": "string",
-            "description": "Phone number with country code (e.g., +1234567890)",
-            "nullable": false
-          },
-          "message": {
-            "type": "string",
-            "description": "SMS message (max 160 characters)",
-            "nullable": false
-          }
-        },
-        "required": [
-          "type",
-          "phoneNumber",
-          "message"
-        ]
-      },
-      "PushNotification": {
-        "type": "object",
-        "properties": {
-          "type": {
-            "type": "string",
-            "enum": [
-              "push"
-            ],
-            "nullable": false
-          },
-          "deviceId": {
-            "type": "string",
-            "description": "Device identifier for push notification",
-            "nullable": false
-          },
-          "title": {
-            "type": "string",
-            "description": "Notification title",
-            "nullable": false
-          },
-          "body": {
-            "type": "string",
-            "description": "Notification body",
-            "nullable": false
-          }
-        },
-        "required": [
-          "type",
-          "deviceId",
-          "title",
-          "body"
-        ]
-      },
-      "Notification": {
-        "oneOf": [
-          {
-            "type": "object",
-            "properties": {
-              "type": {
-                "type": "string",
-                "enum": [
-                  "email"
-                ],
-                "nullable": false
-              },
-              "to": {
-                "type": "string",
-                "description": "Recipient email address",
-                "nullable": false
-              },
-              "subject": {
-                "type": "string",
-                "description": "Email subject",
-                "nullable": false
-              },
-              "body": {
-                "type": "string",
-                "description": "Email body content",
-                "nullable": false
-              }
-            },
-            "required": [
-              "type",
-              "to",
-              "subject",
-              "body"
-            ]
-          },
-          {
-            "type": "object",
-            "properties": {
-              "type": {
-                "type": "string",
-                "enum": [
-                  "sms"
-                ],
-                "nullable": false
-              },
-              "phoneNumber": {
-                "type": "string",
-                "description": "Phone number with country code (e.g., +1234567890)",
-                "nullable": false
-              },
-              "message": {
-                "type": "string",
-                "description": "SMS message (max 160 characters)",
-                "nullable": false
-              }
-            },
-            "required": [
-              "type",
-              "phoneNumber",
-              "message"
-            ]
-          },
-          {
-            "type": "object",
-            "properties": {
-              "type": {
-                "type": "string",
-                "enum": [
-                  "push"
-                ],
-                "nullable": false
-              },
-              "deviceId": {
-                "type": "string",
-                "description": "Device identifier for push notification",
-                "nullable": false
-              },
-              "title": {
-                "type": "string",
-                "description": "Notification title",
-                "nullable": false
-              },
-              "body": {
-                "type": "string",
-                "description": "Notification body",
-                "nullable": false
-              }
-            },
-            "required": [
-              "type",
-              "deviceId",
-              "title",
-              "body"
-            ]
-          }
-        ]
-      },
-      "CommentsQueryParams": {
-        "type": "object",
-        "properties": {
-          "page": {
-            "type": "number",
-            "description": "Page number for pagination"
-          },
-          "limit": {
-            "type": "number",
-            "description": "Number of comments per page"
-          },
-          "sort": {
-            "type": "string",
-            "enum": [
-              "newest",
-              "oldest",
-              "likes"
-            ],
-            "description": "Sort order"
-          },
-          "includeDeleted": {
-            "type": "boolean",
-            "description": "Whether to include soft-deleted comments"
-          },
-          "includeReplies": {
-            "type": "boolean",
-            "description": "Whether to include replies"
-          },
-          "user": {
-            "type": "string",
-            "description": "Filter by user ID"
-          }
-        }
-      },
-      "CommentPathParams": {
-        "type": "object",
-        "properties": {
-          "orgId": {
-            "type": "string",
-            "description": "Organization ID"
-          },
-          "projectId": {
-            "type": "string",
-            "description": "Project ID within the organization"
-          },
-          "taskId": {
-            "type": "string",
-            "description": "Task ID within the project"
-          }
-        },
-        "required": [
-          "orgId",
-          "projectId",
-          "taskId"
-        ]
-      },
-      "User": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "description": "User ID"
-          },
-          "name": {
-            "type": "string",
-            "description": "User's full name"
-          },
-          "avatar": {
-            "type": "string",
-            "description": "URL to user's avatar"
-          },
-          "role": {
-            "type": "string",
-            "enum": [
-              "admin",
-              "member",
-              "guest"
-            ],
-            "description": "User's role in the organization"
-          }
-        },
-        "required": [
-          "id",
-          "name",
-          "avatar",
-          "role"
         ]
       },
       "Attachment": {
@@ -971,6 +478,62 @@
           "likedBy",
           "createdAt"
         ]
+      },
+      "CommentPathParams": {
+        "type": "object",
+        "properties": {
+          "orgId": {
+            "type": "string",
+            "description": "Organization ID"
+          },
+          "projectId": {
+            "type": "string",
+            "description": "Project ID within the organization"
+          },
+          "taskId": {
+            "type": "string",
+            "description": "Task ID within the project"
+          }
+        },
+        "required": [
+          "orgId",
+          "projectId",
+          "taskId"
+        ]
+      },
+      "CommentsQueryParams": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "number",
+            "description": "Page number for pagination"
+          },
+          "limit": {
+            "type": "number",
+            "description": "Number of comments per page"
+          },
+          "sort": {
+            "type": "string",
+            "enum": [
+              "newest",
+              "oldest",
+              "likes"
+            ],
+            "description": "Sort order"
+          },
+          "includeDeleted": {
+            "type": "boolean",
+            "description": "Whether to include soft-deleted comments"
+          },
+          "includeReplies": {
+            "type": "boolean",
+            "description": "Whether to include replies"
+          },
+          "user": {
+            "type": "string",
+            "description": "Filter by user ID"
+          }
+        }
       },
       "CommentsResponse": {
         "type": "object",
@@ -1496,6 +1059,854 @@
           "success"
         ]
       },
+      "CreateProductApiResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "success": {
+                "type": "boolean"
+              },
+              "productId": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "success",
+              "productId"
+            ]
+          },
+          "timestamp": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "success",
+          "data",
+          "timestamp"
+        ]
+      },
+      "CreateProductData": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "nullable": false
+          },
+          "price": {
+            "type": "number",
+            "nullable": false
+          }
+        },
+        "required": [
+          "name",
+          "price"
+        ]
+      },
+      "CreateProductOptions": {
+        "type": "object",
+        "properties": {
+          "notify": {
+            "type": "boolean",
+            "nullable": false
+          }
+        },
+        "required": [
+          "notify"
+        ]
+      },
+      "CreateProductRequest": {
+        "type": "object",
+        "properties": {
+          "product": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "nullable": false
+              },
+              "price": {
+                "type": "number",
+                "nullable": false
+              }
+            },
+            "required": [
+              "name",
+              "price"
+            ],
+            "nullable": false
+          },
+          "options": {
+            "type": "object",
+            "properties": {
+              "notify": {
+                "type": "boolean",
+                "nullable": false
+              }
+            },
+            "required": [
+              "notify"
+            ],
+            "nullable": true
+          }
+        },
+        "required": [
+          "product"
+        ]
+      },
+      "CreateProductResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "productId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "success",
+          "productId"
+        ]
+      },
+      "CreateReportBody": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "nullable": false
+          },
+          "from": {
+            "type": "string",
+            "description": "start date (ISO 8601)",
+            "nullable": false
+          },
+          "to": {
+            "type": "string",
+            "description": "end date (ISO 8601)",
+            "nullable": false
+          }
+        },
+        "required": [
+          "title",
+          "from",
+          "to"
+        ]
+      },
+      "CsvExportBody": {
+        "type": "string"
+      },
+      "DeleteCommentResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "Whether deletion was successful"
+          },
+          "message": {
+            "type": "string",
+            "description": "Success or error message"
+          }
+        },
+        "required": [
+          "success"
+        ]
+      },
+      "EmailNotification": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "email"
+            ],
+            "nullable": false
+          },
+          "to": {
+            "type": "string",
+            "description": "Recipient email address",
+            "nullable": false
+          },
+          "subject": {
+            "type": "string",
+            "description": "Email subject",
+            "nullable": false
+          },
+          "body": {
+            "type": "string",
+            "description": "Email body content",
+            "nullable": false
+          }
+        },
+        "required": [
+          "type",
+          "to",
+          "subject",
+          "body"
+        ]
+      },
+      "Envelope": {
+        "type": "object",
+        "properties": {
+          "data": {},
+          "meta": {}
+        },
+        "required": [
+          "data",
+          "meta"
+        ]
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "error"
+            ]
+          },
+          "error": {
+            "type": "string",
+            "description": "Error message"
+          },
+          "code": {
+            "type": "number",
+            "description": "Error code"
+          }
+        },
+        "required": [
+          "status",
+          "error",
+          "code"
+        ]
+      },
+      "ExportDownloadQuery": {
+        "type": "object",
+        "properties": {
+          "format": {
+            "type": "string",
+            "enum": [
+              "csv",
+              "ndjson"
+            ]
+          }
+        }
+      },
+      "ExportIdParam": {
+        "type": "object",
+        "properties": {
+          "exportId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "exportId"
+        ]
+      },
+      "LLMSResponse": {
+        "type": "object",
+        "properties": {
+          "llms": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "provider": {
+                  "type": "string"
+                },
+                "isDefault": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "id",
+                "name",
+                "provider",
+                "isDefault"
+              ]
+            }
+          }
+        },
+        "required": [
+          "llms"
+        ]
+      },
+      "LoginBody": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "description": "user email",
+            "nullable": false
+          },
+          "password": {
+            "type": "string",
+            "description": "user password",
+            "nullable": false
+          }
+        },
+        "required": [
+          "email",
+          "password"
+        ]
+      },
+      "LoginResponse": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "description": "auth token"
+          },
+          "refresh_token": {
+            "type": "string",
+            "description": "refresh token"
+          }
+        },
+        "required": [
+          "token",
+          "refresh_token"
+        ]
+      },
+      "MyApiSuccessResponseBody": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "httpCode": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "success",
+          "httpCode"
+        ]
+      },
+      "MyApiSuccessResponseBody<LLMSResponse>": {
+        "type": "object",
+        "properties": {
+          "llms": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "provider": {
+                  "type": "string"
+                },
+                "isDefault": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "id",
+                "name",
+                "provider",
+                "isDefault"
+              ]
+            }
+          },
+          "success": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "httpCode": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "llms",
+          "success",
+          "httpCode"
+        ]
+      },
+      "Notification": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "email"
+                ],
+                "nullable": false
+              },
+              "to": {
+                "type": "string",
+                "description": "Recipient email address",
+                "nullable": false
+              },
+              "subject": {
+                "type": "string",
+                "description": "Email subject",
+                "nullable": false
+              },
+              "body": {
+                "type": "string",
+                "description": "Email body content",
+                "nullable": false
+              }
+            },
+            "required": [
+              "type",
+              "to",
+              "subject",
+              "body"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "sms"
+                ],
+                "nullable": false
+              },
+              "phoneNumber": {
+                "type": "string",
+                "description": "Phone number with country code (e.g., +1234567890)",
+                "nullable": false
+              },
+              "message": {
+                "type": "string",
+                "description": "SMS message (max 160 characters)",
+                "nullable": false
+              }
+            },
+            "required": [
+              "type",
+              "phoneNumber",
+              "message"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "push"
+                ],
+                "nullable": false
+              },
+              "deviceId": {
+                "type": "string",
+                "description": "Device identifier for push notification",
+                "nullable": false
+              },
+              "title": {
+                "type": "string",
+                "description": "Notification title",
+                "nullable": false
+              },
+              "body": {
+                "type": "string",
+                "description": "Notification body",
+                "nullable": false
+              }
+            },
+            "required": [
+              "type",
+              "deviceId",
+              "title",
+              "body"
+            ]
+          }
+        ]
+      },
+      "Product": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "price": {
+            "type": "number"
+          },
+          "description": {
+            "type": "string"
+          },
+          "inStock": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "price",
+          "inStock"
+        ]
+      },
+      "ProductByIdResponse": {
+        "type": "object",
+        "properties": {
+          "product": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "price": {
+                "type": "number"
+              },
+              "description": {
+                "type": "string"
+              },
+              "inStock": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "id",
+              "name",
+              "price",
+              "inStock"
+            ]
+          },
+          "fetchedAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "product",
+          "fetchedAt"
+        ]
+      },
+      "ProductIdParam": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "ProductSummaryResponse": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "price": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "name",
+          "price"
+        ]
+      },
+      "PushNotification": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "push"
+            ],
+            "nullable": false
+          },
+          "deviceId": {
+            "type": "string",
+            "description": "Device identifier for push notification",
+            "nullable": false
+          },
+          "title": {
+            "type": "string",
+            "description": "Notification title",
+            "nullable": false
+          },
+          "body": {
+            "type": "string",
+            "description": "Notification body",
+            "nullable": false
+          }
+        },
+        "required": [
+          "type",
+          "deviceId",
+          "title",
+          "body"
+        ]
+      },
+      "Report": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "generatedAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "generatedAt"
+        ]
+      },
+      "ReportQuery": {
+        "type": "object",
+        "properties": {
+          "from": {
+            "type": "string",
+            "description": "start date (ISO 8601)"
+          },
+          "to": {
+            "type": "string",
+            "description": "end date (ISO 8601)"
+          }
+        }
+      },
+      "ReportsResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "title": {
+                  "type": "string"
+                },
+                "generatedAt": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "title",
+                "generatedAt"
+              ]
+            }
+          },
+          "total": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "data",
+          "total"
+        ]
+      },
+      "SessionActionInput": {
+        "type": "object",
+        "properties": {
+          "extendMinutes": {
+            "type": "number",
+            "nullable": true
+          },
+          "revokeReason": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "SessionEnvelope": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "userId": {
+                "type": "string"
+              },
+              "authChannel": {
+                "type": "string",
+                "enum": [
+                  "bearer",
+                  "header",
+                  "cookie"
+                ]
+              },
+              "device": {
+                "type": "string"
+              },
+              "ipAddress": {
+                "type": "string"
+              },
+              "lastSeenAt": {
+                "type": "string"
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "active",
+                  "revoked"
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "userId",
+              "authChannel",
+              "device",
+              "ipAddress",
+              "lastSeenAt",
+              "status"
+            ]
+          },
+          "meta": {}
+        },
+        "required": [
+          "data",
+          "meta"
+        ]
+      },
+      "SessionIdParam": {
+        "type": "object",
+        "properties": {
+          "sessionId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "sessionId"
+        ]
+      },
+      "SessionResource": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "userId": {
+            "type": "string"
+          },
+          "authChannel": {
+            "type": "string",
+            "enum": [
+              "bearer",
+              "header",
+              "cookie"
+            ]
+          },
+          "device": {
+            "type": "string"
+          },
+          "ipAddress": {
+            "type": "string"
+          },
+          "lastSeenAt": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "revoked"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "userId",
+          "authChannel",
+          "device",
+          "ipAddress",
+          "lastSeenAt",
+          "status"
+        ]
+      },
+      "SmsNotification": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "sms"
+            ],
+            "nullable": false
+          },
+          "phoneNumber": {
+            "type": "string",
+            "description": "Phone number with country code (e.g., +1234567890)",
+            "nullable": false
+          },
+          "message": {
+            "type": "string",
+            "description": "SMS message (max 160 characters)",
+            "nullable": false
+          }
+        },
+        "required": [
+          "type",
+          "phoneNumber",
+          "message"
+        ]
+      },
+      "SuccessResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "success"
+            ]
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "description": "Unique identifier"
+              },
+              "message": {
+                "type": "string",
+                "description": "Success message"
+              }
+            },
+            "required": [
+              "id",
+              "message"
+            ]
+          }
+        },
+        "required": [
+          "status",
+          "data"
+        ]
+      },
       "UpdateCommentBody": {
         "type": "object",
         "properties": {
@@ -1731,242 +2142,6 @@
           "success"
         ]
       },
-      "DeleteCommentResponse": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "description": "Whether deletion was successful"
-          },
-          "message": {
-            "type": "string",
-            "description": "Success or error message"
-          }
-        },
-        "required": [
-          "success"
-        ]
-      },
-      "CreateProductData": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "nullable": false
-          },
-          "price": {
-            "type": "number",
-            "nullable": false
-          }
-        },
-        "required": [
-          "name",
-          "price"
-        ]
-      },
-      "CreateProductOptions": {
-        "type": "object",
-        "properties": {
-          "notify": {
-            "type": "boolean",
-            "nullable": false
-          }
-        },
-        "required": [
-          "notify"
-        ]
-      },
-      "CreateProductRequest": {
-        "type": "object",
-        "properties": {
-          "product": {
-            "type": "object",
-            "properties": {
-              "name": {
-                "type": "string",
-                "nullable": false
-              },
-              "price": {
-                "type": "number",
-                "nullable": false
-              }
-            },
-            "required": [
-              "name",
-              "price"
-            ],
-            "nullable": false
-          },
-          "options": {
-            "type": "object",
-            "properties": {
-              "notify": {
-                "type": "boolean",
-                "nullable": false
-              }
-            },
-            "required": [
-              "notify"
-            ],
-            "nullable": true
-          }
-        },
-        "required": [
-          "product"
-        ]
-      },
-      "CreateProductResponse": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean"
-          },
-          "productId": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "success",
-          "productId"
-        ]
-      },
-      "CreateProductApiResponse": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean"
-          },
-          "data": {
-            "type": "object",
-            "properties": {
-              "success": {
-                "type": "boolean"
-              },
-              "productId": {
-                "type": "string"
-              }
-            },
-            "required": [
-              "success",
-              "productId"
-            ]
-          },
-          "timestamp": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "success",
-          "data",
-          "timestamp"
-        ]
-      },
-      "ProductIdParam": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "id"
-        ]
-      },
-      "Product": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          },
-          "price": {
-            "type": "number"
-          },
-          "description": {
-            "type": "string"
-          },
-          "inStock": {
-            "type": "boolean"
-          }
-        },
-        "required": [
-          "id",
-          "name",
-          "price",
-          "inStock"
-        ]
-      },
-      "ProductByIdResponse": {
-        "type": "object",
-        "properties": {
-          "product": {
-            "type": "object",
-            "properties": {
-              "id": {
-                "type": "string"
-              },
-              "name": {
-                "type": "string"
-              },
-              "price": {
-                "type": "number"
-              },
-              "description": {
-                "type": "string"
-              },
-              "inStock": {
-                "type": "boolean"
-              }
-            },
-            "required": [
-              "id",
-              "name",
-              "price",
-              "inStock"
-            ]
-          },
-          "fetchedAt": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "product",
-          "fetchedAt"
-        ]
-      },
-      "UpdateStockRequest": {
-        "type": "object",
-        "properties": {
-          "inStock": {
-            "type": "boolean",
-            "nullable": false
-          }
-        },
-        "required": [
-          "inStock"
-        ]
-      },
-      "UpdateStockResponse": {
-        "type": "object",
-        "properties": {
-          "updated": {
-            "type": "boolean"
-          },
-          "productId": {
-            "type": "string"
-          },
-          "timestamp": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "updated",
-          "productId",
-          "timestamp"
-        ]
-      },
       "UpdateStockApiResponse": {
         "type": "object",
         "properties": {
@@ -2002,249 +2177,43 @@
           "timestamp"
         ]
       },
-      "ProductSummaryResponse": {
+      "UpdateStockRequest": {
         "type": "object",
         "properties": {
-          "name": {
-            "type": "string"
-          },
-          "price": {
-            "type": "number"
-          }
-        },
-        "required": [
-          "name",
-          "price"
-        ]
-      },
-      "ReportQuery": {
-        "type": "object",
-        "properties": {
-          "from": {
-            "type": "string",
-            "description": "start date (ISO 8601)"
-          },
-          "to": {
-            "type": "string",
-            "description": "end date (ISO 8601)"
-          }
-        }
-      },
-      "Report": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "title": {
-            "type": "string"
-          },
-          "generatedAt": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "title",
-          "generatedAt"
-        ]
-      },
-      "ReportsResponse": {
-        "type": "object",
-        "properties": {
-          "data": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "id": {
-                  "type": "string"
-                },
-                "title": {
-                  "type": "string"
-                },
-                "generatedAt": {
-                  "type": "string"
-                }
-              },
-              "required": [
-                "id",
-                "title",
-                "generatedAt"
-              ]
-            }
-          },
-          "total": {
-            "type": "number"
-          }
-        },
-        "required": [
-          "data",
-          "total"
-        ]
-      },
-      "CreateReportBody": {
-        "type": "object",
-        "properties": {
-          "title": {
-            "type": "string",
-            "nullable": false
-          },
-          "from": {
-            "type": "string",
-            "description": "start date (ISO 8601)",
-            "nullable": false
-          },
-          "to": {
-            "type": "string",
-            "description": "end date (ISO 8601)",
+          "inStock": {
+            "type": "boolean",
             "nullable": false
           }
         },
         "required": [
-          "title",
-          "from",
-          "to"
+          "inStock"
         ]
       },
-      "SessionIdParam": {
+      "UpdateStockResponse": {
         "type": "object",
         "properties": {
-          "sessionId": {
+          "updated": {
+            "type": "boolean"
+          },
+          "productId": {
+            "type": "string"
+          },
+          "timestamp": {
             "type": "string"
           }
         },
         "required": [
-          "sessionId"
+          "updated",
+          "productId",
+          "timestamp"
         ]
       },
-      "Envelope": {
-        "type": "object",
-        "properties": {
-          "data": {},
-          "meta": {}
-        },
-        "required": [
-          "data",
-          "meta"
-        ]
-      },
-      "SessionResource": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "userId": {
-            "type": "string"
-          },
-          "authChannel": {
-            "type": "string",
-            "enum": [
-              "bearer",
-              "header",
-              "cookie"
-            ]
-          },
-          "device": {
-            "type": "string"
-          },
-          "ipAddress": {
-            "type": "string"
-          },
-          "lastSeenAt": {
-            "type": "string"
-          },
-          "status": {
-            "type": "string",
-            "enum": [
-              "active",
-              "revoked"
-            ]
-          }
-        },
-        "required": [
-          "id",
-          "userId",
-          "authChannel",
-          "device",
-          "ipAddress",
-          "lastSeenAt",
-          "status"
-        ]
-      },
-      "SessionEnvelope": {
-        "type": "object",
-        "properties": {
-          "data": {
-            "type": "object",
-            "properties": {
-              "id": {
-                "type": "string"
-              },
-              "userId": {
-                "type": "string"
-              },
-              "authChannel": {
-                "type": "string",
-                "enum": [
-                  "bearer",
-                  "header",
-                  "cookie"
-                ]
-              },
-              "device": {
-                "type": "string"
-              },
-              "ipAddress": {
-                "type": "string"
-              },
-              "lastSeenAt": {
-                "type": "string"
-              },
-              "status": {
-                "type": "string",
-                "enum": [
-                  "active",
-                  "revoked"
-                ]
-              }
-            },
-            "required": [
-              "id",
-              "userId",
-              "authChannel",
-              "device",
-              "ipAddress",
-              "lastSeenAt",
-              "status"
-            ]
-          },
-          "meta": {}
-        },
-        "required": [
-          "data",
-          "meta"
-        ]
-      },
-      "SessionActionInput": {
-        "type": "object",
-        "properties": {
-          "extendMinutes": {
-            "type": "number",
-            "nullable": true
-          },
-          "revokeReason": {
-            "type": "string",
-            "nullable": true
-          }
-        }
-      },
-      "File": {},
       "UploadFormData": {
         "type": "object",
         "properties": {
           "file": {
+            "type": "string",
+            "format": "binary",
             "description": "Image file (PNG/JPG, max 5MB)",
             "nullable": false
           },
@@ -2301,6 +2270,38 @@
           "url",
           "category",
           "uploadedAt"
+        ]
+      },
+      "User": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "User ID"
+          },
+          "name": {
+            "type": "string",
+            "description": "User's full name"
+          },
+          "avatar": {
+            "type": "string",
+            "description": "URL to user's avatar"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "admin",
+              "member",
+              "guest"
+            ],
+            "description": "User's role in the organization"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "avatar",
+          "role"
         ]
       },
       "UserIdParam": {
@@ -3419,6 +3420,11 @@
             "multipart/form-data": {
               "schema": {
                 "$ref": "#/components/schemas/UploadFormData"
+              },
+              "encoding": {
+                "file": {
+                  "contentType": "application/octet-stream"
+                }
               }
             }
           },

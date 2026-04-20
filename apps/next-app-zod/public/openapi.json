@@ -32,41 +32,388 @@
       }
     },
     "schemas": {
-      "LegacyEventCsv": {
-        "type": "string",
-        "description": "Legacy CSV export payload"
-      },
-      "EventStreamQuery": {
+      "AddressSchema": {
         "type": "object",
         "properties": {
-          "cursor": {
+          "street": {
             "type": "string",
-            "description": "Opaque cursor for the next event window"
+            "description": "Street name"
           },
-          "limit": {
-            "type": "integer",
-            "minimum": 1,
-            "maximum": 100,
-            "description": "Maximum events to stream"
+          "houseNumber": {
+            "type": "string",
+            "description": "House/apartment number"
           },
-          "product": {
+          "city": {
+            "type": "string",
+            "description": "City"
+          },
+          "postalCode": {
+            "type": "string",
+            "pattern": "^\\d{2}-\\d{3}$",
+            "description": "Postal code (format: XX-XXX)"
+          },
+          "country": {
+            "type": "string",
+            "default": "Poland",
+            "description": "Country"
+          }
+        },
+        "required": [
+          "street",
+          "houseNumber",
+          "city",
+          "postalCode",
+          "country"
+        ]
+      },
+      "AdminStatsSchema": {
+        "type": "object",
+        "properties": {
+          "totalUsers": {
+            "type": "integer"
+          },
+          "revenue": {
+            "type": "number"
+          },
+          "secretKey": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "totalUsers",
+          "revenue",
+          "secretKey"
+        ]
+      },
+      "ApiResponseSchema": {
+        "type": "object",
+        "discriminator": {
+          "propertyName": "status"
+        },
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/SuccessResponseSchema"
+          },
+          {
+            "$ref": "#/components/schemas/ErrorResponseSchema"
+          }
+        ]
+      },
+      "BankTransferPaymentSchema": {
+        "type": "object",
+        "properties": {
+          "type": {
             "type": "string",
             "enum": [
-              "catalog",
-              "billing",
-              "identity"
-            ],
-            "description": "Product event source"
+              "bank_transfer"
+            ]
           },
+          "accountNumber": {
+            "type": "string",
+            "description": "Bank account number"
+          },
+          "routingNumber": {
+            "type": "string",
+            "description": "Bank routing number"
+          }
+        },
+        "required": [
+          "type",
+          "accountNumber",
+          "routingNumber"
+        ]
+      },
+      "BaseSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Identifier"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "CartItemSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Cart item ID"
+          },
+          "productId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Product ID"
+          },
+          "name": {
+            "type": "string",
+            "description": "Product name"
+          },
+          "description": {
+            "type": "string",
+            "description": "Product description"
+          },
+          "price": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Unit price"
+          },
+          "quantity": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "description": "Quantity"
+          },
+          "total": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Total price (price * quantity)"
+          },
+          "imageUrl": {
+            "type": "string",
+            "format": "uri",
+            "description": "Product image URL"
+          },
+          "variant": {
+            "type": "string",
+            "description": "Product variant (e.g., size, color)"
+          }
+        },
+        "required": [
+          "id",
+          "productId",
+          "name",
+          "price",
+          "quantity",
+          "total"
+        ]
+      },
+      "CreateOrderBody": {
+        "type": "object",
+        "properties": {
+          "cartId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Cart ID"
+          },
+          "shippingAddressId": {
+            "type": "integer",
+            "description": "ID of shipping address from user profile"
+          },
+          "billingAddressId": {
+            "type": "integer",
+            "description": "ID of billing address from user profile"
+          },
+          "shippingAddress": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AddressSchema"
+              }
+            ],
+            "description": "New shipping address"
+          },
+          "billingAddress": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AddressSchema"
+              }
+            ],
+            "description": "New billing address"
+          },
+          "useShippingAsBilling": {
+            "type": "boolean",
+            "default": true,
+            "description": "Use shipping address as billing address"
+          },
+          "paymentMethodId": {
+            "type": "integer",
+            "description": "ID of saved payment method"
+          },
+          "paymentMethod": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PaymentMethodSchema"
+              }
+            ],
+            "description": "New payment method"
+          },
+          "notes": {
+            "type": "string",
+            "description": "Additional order notes"
+          }
+        },
+        "required": [
+          "cartId"
+        ]
+      },
+      "CreateOrderBodyOutput": {
+        "type": "object",
+        "properties": {
+          "cartId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Cart ID"
+          },
+          "shippingAddressId": {
+            "type": "integer",
+            "description": "ID of shipping address from user profile"
+          },
+          "billingAddressId": {
+            "type": "integer",
+            "description": "ID of billing address from user profile"
+          },
+          "shippingAddress": {
+            "type": "object",
+            "description": "New shipping address"
+          },
+          "billingAddress": {
+            "type": "object",
+            "description": "New billing address"
+          },
+          "useShippingAsBilling": {
+            "type": "boolean",
+            "default": true,
+            "description": "Use shipping address as billing address"
+          },
+          "paymentMethodId": {
+            "type": "integer",
+            "description": "ID of saved payment method"
+          },
+          "paymentMethod": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PaymentMethodSchema"
+              }
+            ],
+            "description": "New payment method"
+          },
+          "notes": {
+            "type": "string",
+            "description": "Additional order notes"
+          }
+        },
+        "required": [
+          "cartId"
+        ]
+      },
+      "CreditCardPaymentSchema": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "credit_card"
+            ]
+          },
+          "cardNumber": {
+            "type": "string",
+            "description": "Credit card number"
+          },
+          "expiryDate": {
+            "type": "string",
+            "pattern": "^\\d{2}\\/\\d{2}$",
+            "description": "Expiry date in MM/YY format"
+          },
+          "cvv": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 3,
+            "description": "CVV code"
+          }
+        },
+        "required": [
+          "type",
+          "cardNumber",
+          "expiryDate",
+          "cvv"
+        ]
+      },
+      "DoubleExtendedSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Identifier"
+          },
+          "name": {
+            "type": "string",
+            "description": "Name"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "Email address"
+          },
+          "age": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "description": "Age in years"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "email"
+        ]
+      },
+      "EmailNotificationSchema": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "email"
+            ]
+          },
+          "to": {
+            "type": "string",
+            "format": "email",
+            "description": "Recipient email address"
+          },
+          "subject": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Email subject"
+          },
+          "body": {
+            "type": "string",
+            "description": "Email body content"
+          }
+        },
+        "required": [
+          "type",
+          "to",
+          "subject",
+          "body"
+        ]
+      },
+      "ErrorResponseSchema": {
+        "type": "object",
+        "properties": {
           "status": {
             "type": "string",
             "enum": [
-              "active",
-              "paused"
-            ],
-            "description": "Filter by stream status"
+              "error"
+            ]
+          },
+          "error": {
+            "type": "string",
+            "description": "Error message"
+          },
+          "code": {
+            "type": "number",
+            "description": "Error code"
           }
-        }
+        },
+        "required": [
+          "status",
+          "error",
+          "code"
+        ]
       },
       "EventChunk": {
         "type": "object",
@@ -98,6 +445,7 @@
           },
           "emittedAt": {
             "type": "string",
+            "format": "date-time",
             "description": "Emission timestamp"
           },
           "payload": {
@@ -126,6 +474,33 @@
           "status",
           "emittedAt",
           "payload"
+        ]
+      },
+      "EventExportJob": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Background export job identifier"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "queued",
+              "running"
+            ],
+            "description": "Export job status"
+          },
+          "submittedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Submission timestamp"
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "submittedAt"
         ]
       },
       "EventSearchRequest": {
@@ -197,46 +572,37 @@
           "total"
         ]
       },
-      "EventExportJob": {
+      "EventStreamQuery": {
         "type": "object",
         "properties": {
-          "id": {
+          "cursor": {
             "type": "string",
-            "description": "Background export job identifier"
+            "description": "Opaque cursor for the next event window"
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100,
+            "description": "Maximum events to stream"
+          },
+          "product": {
+            "type": "string",
+            "enum": [
+              "catalog",
+              "billing",
+              "identity"
+            ],
+            "description": "Product event source"
           },
           "status": {
             "type": "string",
             "enum": [
-              "queued",
-              "running"
+              "active",
+              "paused"
             ],
-            "description": "Export job status"
-          },
-          "submittedAt": {
-            "type": "string",
-            "description": "Submission timestamp"
+            "description": "Filter by stream status"
           }
-        },
-        "required": [
-          "id",
-          "status",
-          "submittedAt"
-        ]
-      },
-      "NestedSchema": {
-        "type": "object",
-        "properties": {
-          "foo": {
-            "$ref": "#/components/schemas/BaseSchema"
-          },
-          "bar": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "foo",
-          "bar"
-        ]
+        }
       },
       "ExtendedSchema": {
         "type": "object",
@@ -256,47 +622,58 @@
           "name"
         ]
       },
-      "DoubleExtendedSchema": {
+      "LegacyEventCsv": {
+        "type": "string",
+        "description": "Legacy CSV export payload"
+      },
+      "LoadingStateSchema": {
+        "oneOf": [
+          {
+            "type": "string",
+            "enum": [
+              "loading"
+            ]
+          },
+          {
+            "type": "string",
+            "enum": [
+              "error"
+            ]
+          },
+          {
+            "$ref": "#/components/schemas/UserDataSchema"
+          }
+        ]
+      },
+      "MixedArraySchema": {
+        "type": "array",
+        "items": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "boolean"
+            }
+          ]
+        }
+      },
+      "NestedSchema": {
         "type": "object",
         "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid",
-            "description": "Identifier"
+          "foo": {
+            "$ref": "#/components/schemas/BaseSchema"
           },
-          "name": {
-            "type": "string",
-            "description": "Name"
-          },
-          "email": {
-            "type": "string",
-            "format": "email",
-            "description": "Email address"
-          },
-          "age": {
-            "type": "integer",
-            "exclusiveMinimum": 0,
-            "description": "Age in years"
+          "bar": {
+            "type": "string"
           }
         },
         "required": [
-          "id",
-          "name",
-          "email"
-        ]
-      },
-      "ApiResponseSchema": {
-        "type": "object",
-        "discriminator": {
-          "propertyName": "status"
-        },
-        "oneOf": [
-          {
-            "$ref": "#/components/schemas/SuccessResponseSchema"
-          },
-          {
-            "$ref": "#/components/schemas/ErrorResponseSchema"
-          }
+          "foo",
+          "bar"
         ]
       },
       "NotificationSchema": {
@@ -316,116 +693,66 @@
           }
         ]
       },
-      "OrdersQueryParams": {
-        "type": "object",
-        "properties": {
-          "page": {
-            "type": "integer",
-            "exclusiveMinimum": 0,
-            "default": 1,
-            "description": "Page number"
-          },
-          "limit": {
-            "type": "integer",
-            "exclusiveMinimum": 0,
-            "maximum": 100,
-            "default": 20,
-            "description": "Results per page"
-          },
-          "status": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/OrderStatusSchema"
-              }
-            ],
-            "description": "Filter by status"
-          },
-          "dateFrom": {
-            "type": "string",
-            "format": "date-time",
-            "description": "Filter orders from date"
-          },
-          "dateTo": {
-            "type": "string",
-            "format": "date-time",
-            "description": "Filter orders to date"
-          },
-          "sort": {
-            "type": "string",
-            "enum": [
-              "date_asc",
-              "date_desc",
-              "total_asc",
-              "total_desc"
-            ],
-            "default": "date_desc",
-            "description": "Sort results"
-          }
-        }
+      "NotificationTypeEnumSchema": {
+        "type": "string",
+        "enum": [
+          "email",
+          "sms",
+          "push"
+        ]
       },
-      "OrdersResponse": {
+      "NotificationTypeSchema": {
+        "type": "string",
+        "enum": [
+          "email",
+          "sms",
+          "push"
+        ]
+      },
+      "OptionalMessageAlternativeSchema": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "OptionalMessageSchema": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "OrderIdParams": {
         "type": "object",
         "properties": {
-          "orders": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/OrderSchema"
-            },
-            "description": "List of orders"
-          },
-          "pagination": {
-            "type": "object",
-            "properties": {
-              "total": {
-                "type": "integer",
-                "minimum": 0,
-                "description": "Total number of orders"
-              },
-              "pages": {
-                "type": "integer",
-                "exclusiveMinimum": 0,
-                "description": "Total number of pages"
-              },
-              "page": {
-                "type": "integer",
-                "exclusiveMinimum": 0,
-                "description": "Current page"
-              },
-              "limit": {
-                "type": "integer",
-                "exclusiveMinimum": 0,
-                "description": "Results per page"
-              }
-            },
-            "required": [
-              "total",
-              "pages",
-              "page",
-              "limit"
-            ],
-            "description": "Pagination information"
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Order ID"
           }
         },
         "required": [
-          "orders",
-          "pagination"
+          "id"
         ]
       },
-      "CreateOrderBody": {
+      "OrderSchema": {
         "type": "object",
         "properties": {
-          "cartId": {
+          "id": {
             "type": "string",
             "format": "uuid",
-            "description": "Cart ID"
+            "description": "Order ID"
           },
-          "shippingAddressId": {
-            "type": "integer",
-            "description": "ID of shipping address from user profile"
+          "userId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "User ID"
           },
-          "billingAddressId": {
-            "type": "integer",
-            "description": "ID of billing address from user profile"
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CartItemSchema"
+            },
+            "description": "Purchased products"
           },
           "shippingAddress": {
             "allOf": [
@@ -433,7 +760,7 @@
                 "$ref": "#/components/schemas/AddressSchema"
               }
             ],
-            "description": "New shipping address"
+            "description": "Shipping address"
           },
           "billingAddress": {
             "allOf": [
@@ -441,16 +768,7 @@
                 "$ref": "#/components/schemas/AddressSchema"
               }
             ],
-            "description": "New billing address"
-          },
-          "useShippingAsBilling": {
-            "type": "boolean",
-            "default": true,
-            "description": "Use shipping address as billing address"
-          },
-          "paymentMethodId": {
-            "type": "integer",
-            "description": "ID of saved payment method"
+            "description": "Billing address (can be the same as shipping address)"
           },
           "paymentMethod": {
             "allOf": [
@@ -458,18 +776,102 @@
                 "$ref": "#/components/schemas/PaymentMethodSchema"
               }
             ],
-            "description": "New payment method"
+            "description": "Payment method"
+          },
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/OrderStatusSchema"
+              }
+            ],
+            "description": "Order status"
+          },
+          "subtotal": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Subtotal (without discount and shipping)"
+          },
+          "discountAmount": {
+            "type": "number",
+            "minimum": 0,
+            "default": 0,
+            "description": "Discount amount"
+          },
+          "shippingCost": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Shipping cost"
+          },
+          "tax": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Tax"
+          },
+          "total": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Total amount"
           },
           "notes": {
             "type": "string",
-            "description": "Additional order notes"
+            "description": "Additional notes"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Order creation date"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Last update date"
+          },
+          "paymentDate": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "Payment date"
+          },
+          "shippingDate": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "Shipping date"
+          },
+          "deliveryDate": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "Delivery date"
           }
         },
         "required": [
-          "cartId"
+          "id",
+          "userId",
+          "items",
+          "shippingAddress",
+          "billingAddress",
+          "paymentMethod",
+          "status",
+          "subtotal",
+          "discountAmount",
+          "shippingCost",
+          "tax",
+          "total",
+          "createdAt",
+          "updatedAt",
+          "paymentDate",
+          "shippingDate",
+          "deliveryDate"
         ]
       },
-      "OrderSchema": {
+      "OrderSchemaOutput": {
         "type": "object",
         "properties": {
           "id": {
@@ -596,56 +998,363 @@
           "deliveryDate"
         ]
       },
-      "OrderIdParams": {
+      "OrdersQueryParams": {
         "type": "object",
         "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid",
-            "description": "Order ID"
-          }
-        },
-        "required": [
-          "id"
-        ]
-      },
-      "UpdateOrderStatusBody": {
-        "type": "object",
-        "properties": {
+          "page": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "default": 1,
+            "description": "Page number"
+          },
+          "limit": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 100,
+            "default": 20,
+            "description": "Results per page"
+          },
           "status": {
             "allOf": [
               {
                 "$ref": "#/components/schemas/OrderStatusSchema"
               }
             ],
-            "description": "New order status"
+            "description": "Filter by status"
           },
-          "notes": {
+          "dateFrom": {
             "type": "string",
-            "description": "Additional notes about the status change"
+            "format": "date-time",
+            "description": "Filter orders from date"
+          },
+          "dateTo": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Filter orders to date"
+          },
+          "sort": {
+            "type": "string",
+            "enum": [
+              "date_asc",
+              "date_desc",
+              "total_asc",
+              "total_desc"
+            ],
+            "default": "date_desc",
+            "description": "Sort results"
           }
-        },
-        "required": [
-          "status"
-        ]
+        }
       },
-      "AdminStatsSchema": {
+      "OrdersResponse": {
         "type": "object",
         "properties": {
-          "totalUsers": {
-            "type": "integer"
+          "orders": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderSchema"
+            },
+            "description": "List of orders"
           },
-          "revenue": {
-            "type": "number"
-          },
-          "secretKey": {
-            "type": "string"
+          "pagination": {
+            "type": "object",
+            "properties": {
+              "total": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "Total number of orders"
+              },
+              "pages": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "description": "Total number of pages"
+              },
+              "page": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "description": "Current page"
+              },
+              "limit": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "description": "Results per page"
+              }
+            },
+            "required": [
+              "total",
+              "pages",
+              "page",
+              "limit"
+            ],
+            "description": "Pagination information"
           }
         },
         "required": [
-          "totalUsers",
-          "revenue",
-          "secretKey"
+          "orders",
+          "pagination"
+        ]
+      },
+      "OrdersResponseOutput": {
+        "type": "object",
+        "properties": {
+          "orders": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderSchemaOutput"
+            },
+            "description": "List of orders"
+          },
+          "pagination": {
+            "type": "object",
+            "properties": {
+              "total": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "Total number of orders"
+              },
+              "pages": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "description": "Total number of pages"
+              },
+              "page": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "description": "Current page"
+              },
+              "limit": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "description": "Results per page"
+              }
+            },
+            "required": [
+              "total",
+              "pages",
+              "page",
+              "limit"
+            ],
+            "description": "Pagination information"
+          }
+        },
+        "required": [
+          "orders",
+          "pagination"
+        ]
+      },
+      "OrderStatusSchema": {
+        "type": "string",
+        "enum": [
+          "pending",
+          "payment_processing",
+          "paid",
+          "preparing",
+          "shipped",
+          "delivered",
+          "cancelled",
+          "refunded"
+        ],
+        "description": "Order status"
+      },
+      "PaginatedUsersSchema": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UserDetailedSchema"
+            },
+            "description": "Array of items"
+          },
+          "pagination": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              }
+            ],
+            "description": "Pagination metadata"
+          }
+        },
+        "required": [
+          "data",
+          "pagination"
+        ]
+      },
+      "PaginationMeta": {
+        "type": "object",
+        "properties": {
+          "nextCursor": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Cursor for the next page"
+          },
+          "hasMore": {
+            "type": "boolean",
+            "description": "Whether there are more items after this page"
+          },
+          "limit": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "description": "Number of items in this page"
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Total count of items"
+          }
+        },
+        "required": [
+          "nextCursor",
+          "hasMore",
+          "limit"
+        ]
+      },
+      "PaginationSchema": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1
+          }
+        },
+        "required": [
+          "page",
+          "limit"
+        ]
+      },
+      "PaymentMethodSchema": {
+        "type": "object",
+        "discriminator": {
+          "propertyName": "type"
+        },
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/CreditCardPaymentSchema"
+          },
+          {
+            "$ref": "#/components/schemas/PayPalPaymentSchema"
+          },
+          {
+            "$ref": "#/components/schemas/BankTransferPaymentSchema"
+          }
+        ]
+      },
+      "PayPalPaymentSchema": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "paypal"
+            ]
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "PayPal account email"
+          }
+        },
+        "required": [
+          "type",
+          "email"
+        ]
+      },
+      "PermissionSchema": {
+        "type": "string",
+        "enum": [
+          "read",
+          "write",
+          "admin"
+        ]
+      },
+      "ProcessingStatusSchema": {
+        "type": "string",
+        "enum": [
+          "pending",
+          "processing",
+          "completed",
+          "failed"
+        ]
+      },
+      "ProductCategorySchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Category identifier"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Category name"
+          },
+          "slug": {
+            "type": "string",
+            "description": "Category slug used in URLs"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "slug"
+        ]
+      },
+      "ProductError": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "enum": [
+              false
+            ],
+            "description": "Always false for errors"
+          },
+          "message": {
+            "type": "string",
+            "description": "Error message"
+          }
+        },
+        "required": [
+          "success",
+          "message"
+        ]
+      },
+      "ProductErrorSchema": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "enum": [
+              false
+            ],
+            "description": "Always false for errors"
+          },
+          "message": {
+            "type": "string",
+            "description": "Error message"
+          }
+        },
+        "required": [
+          "success",
+          "message"
+        ]
+      },
+      "ProductIdParams": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique product identifier"
+          }
+        },
+        "required": [
+          "id"
         ]
       },
       "ProductQueryParams": {
@@ -668,18 +1377,6 @@
         },
         "required": [
           "currency"
-        ]
-      },
-      "ProductIdParams": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "description": "Unique product identifier"
-          }
-        },
-        "required": [
-          "id"
         ]
       },
       "ProductResponseSchema": {
@@ -768,24 +1465,167 @@
           "status"
         ]
       },
-      "ProductError": {
+      "ProductVariantSchema": {
         "type": "object",
         "properties": {
-          "success": {
-            "type": "boolean",
-            "enum": [
-              false
-            ],
-            "description": "Always false for errors"
-          },
-          "message": {
+          "id": {
             "type": "string",
-            "description": "Error message"
+            "format": "uuid",
+            "description": "Variant identifier"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Variant name"
+          },
+          "sku": {
+            "type": "string",
+            "description": "Variant SKU code"
+          },
+          "price": {
+            "type": "number",
+            "exclusiveMinimum": 0,
+            "description": "Variant price"
+          },
+          "stock": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Stock quantity"
+          },
+          "attributes": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "propertyNames": {
+              "type": "string"
+            },
+            "description": "Variant attributes (color, size, etc.)"
           }
         },
         "required": [
-          "success",
+          "id",
+          "name",
+          "sku",
+          "price",
+          "stock",
+          "attributes"
+        ]
+      },
+      "PushNotificationSchema": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "push"
+            ]
+          },
+          "deviceId": {
+            "type": "string",
+            "description": "Device identifier for push notification"
+          },
+          "title": {
+            "type": "string",
+            "description": "Notification title"
+          },
+          "body": {
+            "type": "string",
+            "description": "Notification body"
+          }
+        },
+        "required": [
+          "type",
+          "deviceId",
+          "title",
+          "body"
+        ]
+      },
+      "SmsNotificationSchema": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "sms"
+            ]
+          },
+          "phoneNumber": {
+            "type": "string",
+            "description": "Phone number with country code (e.g., +1234567890)"
+          },
+          "message": {
+            "type": "string",
+            "maxLength": 160,
+            "description": "SMS message (max 160 characters)"
+          }
+        },
+        "required": [
+          "type",
+          "phoneNumber",
           "message"
+        ]
+      },
+      "StringOrNumberSchema": {
+        "oneOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "number"
+          }
+        ]
+      },
+      "SuccessResponseSchema": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "success"
+            ]
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "description": "Unique identifier"
+              },
+              "message": {
+                "type": "string",
+                "description": "Success message"
+              }
+            },
+            "required": [
+              "id",
+              "message"
+            ]
+          }
+        },
+        "required": [
+          "status",
+          "data"
+        ]
+      },
+      "UpdateOrderStatusBody": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/OrderStatusSchema"
+              }
+            ],
+            "description": "New order status"
+          },
+          "notes": {
+            "type": "string",
+            "description": "Additional notes about the status change"
+          }
+        },
+        "required": [
+          "status"
         ]
       },
       "UpdateProductSchema": {
@@ -833,6 +1673,55 @@
               "archived"
             ],
             "description": "Product status"
+          }
+        }
+      },
+      "UpdateUserBody": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 100,
+            "description": "User's full name"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "User's email address"
+          },
+          "phone": {
+            "type": "string",
+            "pattern": "^\\+\\d{1,3} \\d{3} \\d{3} \\d{3}$",
+            "description": "Phone number (format: +XX XXX XXX XXX)"
+          },
+          "preferences": {
+            "type": "object",
+            "properties": {
+              "language": {
+                "type": "string",
+                "enum": [
+                  "pl",
+                  "en",
+                  "de"
+                ],
+                "description": "Preferred language"
+              },
+              "theme": {
+                "type": "string",
+                "enum": [
+                  "light",
+                  "dark",
+                  "system"
+                ],
+                "description": "Preferred theme"
+              },
+              "notifications": {
+                "type": "boolean",
+                "description": "Whether notifications are enabled"
+              }
+            },
+            "description": "User preferences"
           }
         }
       },
@@ -893,6 +1782,7 @@
           },
           "uploadedAt": {
             "type": "string",
+            "format": "date-time",
             "description": "Upload timestamp"
           }
         },
@@ -906,26 +1796,63 @@
           "uploadedAt"
         ]
       },
-      "UserListParamsSchema": {
+      "UserBaseSchema": {
         "type": "object",
         "properties": {
-          "pagination": {
-            "$ref": "#/components/schemas/PaginationSchema"
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Unique user identifier"
           },
-          "filter": {
-            "type": "object",
-            "properties": {
-              "name": {
-                "type": "string"
-              }
-            },
-            "required": [
-              "name"
-            ]
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "User's email address"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 100,
+            "description": "User's full name"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "user",
+              "admin",
+              "moderator"
+            ],
+            "description": "User's role in the system"
           }
         },
         "required": [
-          "pagination"
+          "id",
+          "email",
+          "name",
+          "role"
+        ]
+      },
+      "UserDataSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "User ID"
+          },
+          "name": {
+            "type": "string",
+            "description": "User name"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "User email"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "email"
         ]
       },
       "UserDetailedSchema": {
@@ -1063,624 +1990,26 @@
           "id"
         ]
       },
-      "UpdateUserBody": {
+      "UserListParamsSchema": {
         "type": "object",
         "properties": {
-          "name": {
-            "type": "string",
-            "minLength": 2,
-            "maxLength": 100,
-            "description": "User's full name"
-          },
-          "email": {
-            "type": "string",
-            "format": "email",
-            "description": "User's email address"
-          },
-          "phone": {
-            "type": "string",
-            "pattern": "^\\+\\d{1,3} \\d{3} \\d{3} \\d{3}$",
-            "description": "Phone number (format: +XX XXX XXX XXX)"
-          },
-          "preferences": {
-            "type": "object",
-            "properties": {
-              "language": {
-                "type": "string",
-                "enum": [
-                  "pl",
-                  "en",
-                  "de"
-                ],
-                "description": "Preferred language"
-              },
-              "theme": {
-                "type": "string",
-                "enum": [
-                  "light",
-                  "dark",
-                  "system"
-                ],
-                "description": "Preferred theme"
-              },
-              "notifications": {
-                "type": "boolean",
-                "description": "Whether notifications are enabled"
-              }
-            },
-            "description": "User preferences"
-          }
-        }
-      },
-      "PaginationMeta": {
-        "type": "object",
-        "properties": {
-          "nextCursor": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "description": "Cursor for the next page"
-          },
-          "hasMore": {
-            "type": "boolean",
-            "description": "Whether there are more items after this page"
-          },
-          "limit": {
-            "type": "integer",
-            "exclusiveMinimum": 0,
-            "description": "Number of items in this page"
-          },
-          "total": {
-            "type": "integer",
-            "minimum": 0,
-            "description": "Total count of items"
-          }
-        },
-        "required": [
-          "nextCursor",
-          "hasMore",
-          "limit"
-        ]
-      },
-      "PaginatedUsersSchema": {
-        "type": "object",
-        "properties": {
-          "data": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/UserDetailedSchema"
-            },
-            "description": "Array of items"
-          },
           "pagination": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/PaginationMeta"
-              }
-            ],
-            "description": "Pagination metadata"
-          }
-        },
-        "required": [
-          "data",
-          "pagination"
-        ]
-      },
-      "BaseSchema": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid",
-            "description": "Identifier"
-          }
-        },
-        "required": [
-          "id"
-        ]
-      },
-      "PaginationSchema": {
-        "type": "object",
-        "properties": {
-          "page": {
-            "type": "integer",
-            "minimum": 1
+            "$ref": "#/components/schemas/PaginationSchema"
           },
-          "limit": {
-            "type": "integer",
-            "minimum": 1
-          }
-        },
-        "required": [
-          "page",
-          "limit"
-        ]
-      },
-      "CartItemSchema": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid",
-            "description": "Cart item ID"
-          },
-          "productId": {
-            "type": "string",
-            "format": "uuid",
-            "description": "Product ID"
-          },
-          "name": {
-            "type": "string",
-            "description": "Product name"
-          },
-          "description": {
-            "type": "string",
-            "description": "Product description"
-          },
-          "price": {
-            "type": "number",
-            "minimum": 0,
-            "description": "Unit price"
-          },
-          "quantity": {
-            "type": "integer",
-            "exclusiveMinimum": 0,
-            "description": "Quantity"
-          },
-          "total": {
-            "type": "number",
-            "minimum": 0,
-            "description": "Total price (price * quantity)"
-          },
-          "imageUrl": {
-            "type": "string",
-            "format": "uri",
-            "description": "Product image URL"
-          },
-          "variant": {
-            "type": "string",
-            "description": "Product variant (e.g., size, color)"
-          }
-        },
-        "required": [
-          "id",
-          "productId",
-          "name",
-          "price",
-          "quantity",
-          "total"
-        ]
-      },
-      "EmailNotificationSchema": {
-        "type": "object",
-        "properties": {
-          "type": {
-            "type": "string",
-            "enum": [
-              "email"
-            ]
-          },
-          "to": {
-            "type": "string",
-            "format": "email",
-            "description": "Recipient email address"
-          },
-          "subject": {
-            "type": "string",
-            "minLength": 1,
-            "description": "Email subject"
-          },
-          "body": {
-            "type": "string",
-            "description": "Email body content"
-          }
-        },
-        "required": [
-          "type",
-          "to",
-          "subject",
-          "body"
-        ]
-      },
-      "SmsNotificationSchema": {
-        "type": "object",
-        "properties": {
-          "type": {
-            "type": "string",
-            "enum": [
-              "sms"
-            ]
-          },
-          "phoneNumber": {
-            "type": "string",
-            "description": "Phone number with country code (e.g., +1234567890)"
-          },
-          "message": {
-            "type": "string",
-            "maxLength": 160,
-            "description": "SMS message (max 160 characters)"
-          }
-        },
-        "required": [
-          "type",
-          "phoneNumber",
-          "message"
-        ]
-      },
-      "PushNotificationSchema": {
-        "type": "object",
-        "properties": {
-          "type": {
-            "type": "string",
-            "enum": [
-              "push"
-            ]
-          },
-          "deviceId": {
-            "type": "string",
-            "description": "Device identifier for push notification"
-          },
-          "title": {
-            "type": "string",
-            "description": "Notification title"
-          },
-          "body": {
-            "type": "string",
-            "description": "Notification body"
-          }
-        },
-        "required": [
-          "type",
-          "deviceId",
-          "title",
-          "body"
-        ]
-      },
-      "NotificationTypeSchema": {
-        "type": "string",
-        "enum": [
-          "email",
-          "sms",
-          "push"
-        ]
-      },
-      "NotificationTypeEnumSchema": {
-        "type": "string",
-        "enum": [
-          "email",
-          "sms",
-          "push"
-        ]
-      },
-      "SuccessResponseSchema": {
-        "type": "object",
-        "properties": {
-          "status": {
-            "type": "string",
-            "enum": [
-              "success"
-            ]
-          },
-          "data": {
+          "filter": {
             "type": "object",
             "properties": {
-              "id": {
-                "type": "string",
-                "description": "Unique identifier"
-              },
-              "message": {
-                "type": "string",
-                "description": "Success message"
+              "name": {
+                "type": "string"
               }
             },
             "required": [
-              "id",
-              "message"
+              "name"
             ]
           }
         },
         "required": [
-          "status",
-          "data"
-        ]
-      },
-      "ErrorResponseSchema": {
-        "type": "object",
-        "properties": {
-          "status": {
-            "type": "string",
-            "enum": [
-              "error"
-            ]
-          },
-          "error": {
-            "type": "string",
-            "description": "Error message"
-          },
-          "code": {
-            "type": "number",
-            "description": "Error code"
-          }
-        },
-        "required": [
-          "status",
-          "error",
-          "code"
-        ]
-      },
-      "OptionalMessageSchema": {
-        "type": [
-          "string",
-          "null"
-        ]
-      },
-      "OptionalMessageAlternativeSchema": {
-        "type": [
-          "string",
-          "null"
-        ]
-      },
-      "ProcessingStatusSchema": {
-        "type": "string",
-        "enum": [
-          "pending",
-          "processing",
-          "completed",
-          "failed"
-        ]
-      },
-      "PermissionSchema": {
-        "type": "string",
-        "enum": [
-          "read",
-          "write",
-          "admin"
-        ]
-      },
-      "StringOrNumberSchema": {
-        "oneOf": [
-          {
-            "type": "string"
-          },
-          {
-            "type": "number"
-          }
-        ]
-      },
-      "MixedArraySchema": {
-        "type": "array",
-        "items": {
-          "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "number"
-            },
-            {
-              "type": "boolean"
-            }
-          ]
-        }
-      },
-      "UserDataSchema": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "description": "User ID"
-          },
-          "name": {
-            "type": "string",
-            "description": "User name"
-          },
-          "email": {
-            "type": "string",
-            "format": "email",
-            "description": "User email"
-          }
-        },
-        "required": [
-          "id",
-          "name",
-          "email"
-        ]
-      },
-      "LoadingStateSchema": {
-        "oneOf": [
-          {
-            "type": "string",
-            "enum": [
-              "loading"
-            ]
-          },
-          {
-            "type": "string",
-            "enum": [
-              "error"
-            ]
-          },
-          {
-            "$ref": "#/components/schemas/UserDataSchema"
-          }
-        ]
-      },
-      "CreditCardPaymentSchema": {
-        "type": "object",
-        "properties": {
-          "type": {
-            "type": "string",
-            "enum": [
-              "credit_card"
-            ]
-          },
-          "cardNumber": {
-            "type": "string",
-            "description": "Credit card number"
-          },
-          "expiryDate": {
-            "type": "string",
-            "pattern": "^\\d{2}\\/\\d{2}$",
-            "description": "Expiry date in MM/YY format"
-          },
-          "cvv": {
-            "type": "string",
-            "minLength": 3,
-            "maxLength": 3,
-            "description": "CVV code"
-          }
-        },
-        "required": [
-          "type",
-          "cardNumber",
-          "expiryDate",
-          "cvv"
-        ]
-      },
-      "PayPalPaymentSchema": {
-        "type": "object",
-        "properties": {
-          "type": {
-            "type": "string",
-            "enum": [
-              "paypal"
-            ]
-          },
-          "email": {
-            "type": "string",
-            "format": "email",
-            "description": "PayPal account email"
-          }
-        },
-        "required": [
-          "type",
-          "email"
-        ]
-      },
-      "BankTransferPaymentSchema": {
-        "type": "object",
-        "properties": {
-          "type": {
-            "type": "string",
-            "enum": [
-              "bank_transfer"
-            ]
-          },
-          "accountNumber": {
-            "type": "string",
-            "description": "Bank account number"
-          },
-          "routingNumber": {
-            "type": "string",
-            "description": "Bank routing number"
-          }
-        },
-        "required": [
-          "type",
-          "accountNumber",
-          "routingNumber"
-        ]
-      },
-      "PaymentMethodSchema": {
-        "type": "object",
-        "discriminator": {
-          "propertyName": "type"
-        },
-        "oneOf": [
-          {
-            "$ref": "#/components/schemas/CreditCardPaymentSchema"
-          },
-          {
-            "$ref": "#/components/schemas/PayPalPaymentSchema"
-          },
-          {
-            "$ref": "#/components/schemas/BankTransferPaymentSchema"
-          }
-        ]
-      },
-      "OrderStatusSchema": {
-        "type": "string",
-        "enum": [
-          "pending",
-          "payment_processing",
-          "paid",
-          "preparing",
-          "shipped",
-          "delivered",
-          "cancelled",
-          "refunded"
-        ],
-        "description": "Order status"
-      },
-      "UserBaseSchema": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid",
-            "description": "Unique user identifier"
-          },
-          "email": {
-            "type": "string",
-            "format": "email",
-            "description": "User's email address"
-          },
-          "name": {
-            "type": "string",
-            "minLength": 2,
-            "maxLength": 100,
-            "description": "User's full name"
-          },
-          "role": {
-            "type": "string",
-            "enum": [
-              "user",
-              "admin",
-              "moderator"
-            ],
-            "description": "User's role in the system"
-          }
-        },
-        "required": [
-          "id",
-          "email",
-          "name",
-          "role"
-        ]
-      },
-      "AddressSchema": {
-        "type": "object",
-        "properties": {
-          "street": {
-            "type": "string",
-            "description": "Street name"
-          },
-          "houseNumber": {
-            "type": "string",
-            "description": "House/apartment number"
-          },
-          "city": {
-            "type": "string",
-            "description": "City"
-          },
-          "postalCode": {
-            "type": "string",
-            "pattern": "^\\d{2}-\\d{3}$",
-            "description": "Postal code (format: XX-XXX)"
-          },
-          "country": {
-            "type": "string",
-            "default": "Poland",
-            "description": "Country"
-          }
-        },
-        "required": [
-          "street",
-          "houseNumber",
-          "city",
-          "postalCode",
-          "country"
+          "pagination"
         ]
       },
       "UserProfileSchema": {
@@ -1712,281 +2041,6 @@
         "required": [
           "id",
           "firstName"
-        ]
-      },
-      "OrderSchemaOutput": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid",
-            "description": "Order ID"
-          },
-          "userId": {
-            "type": "string",
-            "format": "uuid",
-            "description": "User ID"
-          },
-          "items": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/CartItemSchema"
-            },
-            "description": "Purchased products"
-          },
-          "shippingAddress": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/AddressSchema"
-              }
-            ],
-            "description": "Shipping address"
-          },
-          "billingAddress": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/AddressSchema"
-              }
-            ],
-            "description": "Billing address (can be the same as shipping address)"
-          },
-          "paymentMethod": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/PaymentMethodSchema"
-              }
-            ],
-            "description": "Payment method"
-          },
-          "status": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/OrderStatusSchema"
-              }
-            ],
-            "description": "Order status"
-          },
-          "subtotal": {
-            "type": "number",
-            "minimum": 0,
-            "description": "Subtotal (without discount and shipping)"
-          },
-          "discountAmount": {
-            "type": "number",
-            "minimum": 0,
-            "default": 0,
-            "description": "Discount amount"
-          },
-          "shippingCost": {
-            "type": "number",
-            "minimum": 0,
-            "description": "Shipping cost"
-          },
-          "tax": {
-            "type": "number",
-            "minimum": 0,
-            "description": "Tax"
-          },
-          "total": {
-            "type": "number",
-            "minimum": 0,
-            "description": "Total amount"
-          },
-          "notes": {
-            "type": "string",
-            "description": "Additional notes"
-          },
-          "createdAt": {
-            "type": "string",
-            "format": "date-time",
-            "description": "Order creation date"
-          },
-          "updatedAt": {
-            "type": "string",
-            "format": "date-time",
-            "description": "Last update date"
-          },
-          "paymentDate": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "format": "date-time",
-            "description": "Payment date"
-          },
-          "shippingDate": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "format": "date-time",
-            "description": "Shipping date"
-          },
-          "deliveryDate": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "format": "date-time",
-            "description": "Delivery date"
-          }
-        },
-        "required": [
-          "id",
-          "userId",
-          "items",
-          "shippingAddress",
-          "billingAddress",
-          "paymentMethod",
-          "status",
-          "subtotal",
-          "discountAmount",
-          "shippingCost",
-          "tax",
-          "total",
-          "createdAt",
-          "updatedAt",
-          "paymentDate",
-          "shippingDate",
-          "deliveryDate"
-        ]
-      },
-      "ProductCategorySchema": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid",
-            "description": "Category identifier"
-          },
-          "name": {
-            "type": "string",
-            "minLength": 1,
-            "description": "Category name"
-          },
-          "slug": {
-            "type": "string",
-            "description": "Category slug used in URLs"
-          }
-        },
-        "required": [
-          "id",
-          "name",
-          "slug"
-        ]
-      },
-      "ProductVariantSchema": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid",
-            "description": "Variant identifier"
-          },
-          "name": {
-            "type": "string",
-            "minLength": 1,
-            "description": "Variant name"
-          },
-          "sku": {
-            "type": "string",
-            "description": "Variant SKU code"
-          },
-          "price": {
-            "type": "number",
-            "exclusiveMinimum": 0,
-            "description": "Variant price"
-          },
-          "stock": {
-            "type": "integer",
-            "minimum": 0,
-            "description": "Stock quantity"
-          },
-          "attributes": {
-            "type": "object",
-            "additionalProperties": {
-              "type": "string"
-            },
-            "description": "Variant attributes (color, size, etc.)"
-          }
-        },
-        "required": [
-          "id",
-          "name",
-          "sku",
-          "price",
-          "stock",
-          "attributes"
-        ]
-      },
-      "ProductErrorSchema": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "enum": [
-              false
-            ],
-            "description": "Always false for errors"
-          },
-          "message": {
-            "type": "string",
-            "description": "Error message"
-          }
-        },
-        "required": [
-          "success",
-          "message"
-        ]
-      },
-      "CreateOrderBodyOutput": {
-        "type": "object",
-        "properties": {
-          "cartId": {
-            "type": "string",
-            "format": "uuid",
-            "description": "Cart ID"
-          },
-          "shippingAddressId": {
-            "type": "integer",
-            "description": "ID of shipping address from user profile"
-          },
-          "billingAddressId": {
-            "type": "integer",
-            "description": "ID of billing address from user profile"
-          },
-          "shippingAddress": {
-            "type": "object",
-            "description": "New shipping address"
-          },
-          "billingAddress": {
-            "type": "object",
-            "description": "New billing address"
-          },
-          "useShippingAsBilling": {
-            "type": "boolean",
-            "default": true,
-            "description": "Use shipping address as billing address"
-          },
-          "paymentMethodId": {
-            "type": "integer",
-            "description": "ID of saved payment method"
-          },
-          "paymentMethod": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/PaymentMethodSchema"
-              }
-            ],
-            "description": "New payment method"
-          },
-          "notes": {
-            "type": "string",
-            "description": "Additional order notes"
-          }
-        },
-        "required": [
-          "cartId"
         ]
       }
     },
@@ -2535,7 +2589,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/OrdersResponse"
+                  "$ref": "#/components/schemas/OrdersResponseOutput"
                 }
               }
             }
@@ -3270,15 +3324,15 @@
   },
   "tags": [
     {
-      "name": "Events v1",
-      "summary": "Legacy exports",
-      "kind": "maintenance",
-      "parent": "Platform"
-    },
-    {
       "name": "Events",
       "summary": "Event navigation",
       "kind": "nav",
+      "parent": "Platform"
+    },
+    {
+      "name": "Events v1",
+      "summary": "Legacy exports",
+      "kind": "maintenance",
       "parent": "Platform"
     },
     {

@@ -31,6 +31,12 @@ type OpenApiVersionCapabilities = {
   readonly supportsDocumentSelf: boolean;
   readonly supportsOauthMetadata: boolean;
   readonly supportsDeviceAuthorization: boolean;
+  readonly supportsCallbacks: boolean;
+  readonly supportsWebhooks: boolean;
+  readonly supportsDiscriminatorDefaultMapping: boolean;
+  readonly supportsContentEncoding: boolean;
+  readonly supportsConstKeyword: boolean;
+  readonly supportsMediaTypesComponent: boolean;
 };
 
 class DefaultOpenApiVersionProcessor implements OpenApiVersionProcessor {
@@ -118,10 +124,23 @@ class DefaultOpenApiVersionProcessor implements OpenApiVersionProcessor {
     }
 
     if (nextDocument.webhooks) {
-      nextDocument.webhooks = transformWebhookCollection(
-        nextDocument.webhooks,
-        this.capabilities,
-      ) as Record<string, unknown>;
+      if (!this.capabilities.supportsWebhooks) {
+        delete nextDocument.webhooks;
+      } else {
+        nextDocument.webhooks = transformWebhookCollection(
+          nextDocument.webhooks,
+          this.capabilities,
+        ) as Record<string, unknown>;
+      }
+    }
+
+    if (nextDocument.components) {
+      if (
+        !this.capabilities.supportsMediaTypesComponent &&
+        (nextDocument.components as Record<string, unknown>).mediaTypes
+      ) {
+        delete (nextDocument.components as Record<string, unknown>).mediaTypes;
+      }
     }
 
     return cleanSpec(nextDocument);
@@ -141,6 +160,12 @@ const OPENAPI_VERSION_PROCESSORS: Record<OpenApiVersion, OpenApiVersionProcessor
     supportsDocumentSelf: false,
     supportsOauthMetadata: false,
     supportsDeviceAuthorization: false,
+    supportsCallbacks: true,
+    supportsWebhooks: false,
+    supportsDiscriminatorDefaultMapping: false,
+    supportsContentEncoding: false,
+    supportsConstKeyword: false,
+    supportsMediaTypesComponent: false,
   }),
   "3.1": new DefaultOpenApiVersionProcessor("3.1", "3.1.0", {
     supportsJsonSchemaDialect: true,
@@ -154,6 +179,12 @@ const OPENAPI_VERSION_PROCESSORS: Record<OpenApiVersion, OpenApiVersionProcessor
     supportsDocumentSelf: false,
     supportsOauthMetadata: false,
     supportsDeviceAuthorization: false,
+    supportsCallbacks: true,
+    supportsWebhooks: true,
+    supportsDiscriminatorDefaultMapping: false,
+    supportsContentEncoding: true,
+    supportsConstKeyword: true,
+    supportsMediaTypesComponent: false,
   }),
   "3.2": new DefaultOpenApiVersionProcessor("3.2", "3.2.0", {
     supportsJsonSchemaDialect: true,
@@ -167,6 +198,12 @@ const OPENAPI_VERSION_PROCESSORS: Record<OpenApiVersion, OpenApiVersionProcessor
     supportsDocumentSelf: true,
     supportsOauthMetadata: true,
     supportsDeviceAuthorization: true,
+    supportsCallbacks: true,
+    supportsWebhooks: true,
+    supportsDiscriminatorDefaultMapping: true,
+    supportsContentEncoding: true,
+    supportsConstKeyword: true,
+    supportsMediaTypesComponent: true,
   }),
   "4.0": new DefaultOpenApiVersionProcessor("4.0", "4.0.0", {
     supportsJsonSchemaDialect: true,
@@ -180,6 +217,12 @@ const OPENAPI_VERSION_PROCESSORS: Record<OpenApiVersion, OpenApiVersionProcessor
     supportsDocumentSelf: true,
     supportsOauthMetadata: true,
     supportsDeviceAuthorization: true,
+    supportsCallbacks: true,
+    supportsWebhooks: true,
+    supportsDiscriminatorDefaultMapping: true,
+    supportsContentEncoding: true,
+    supportsConstKeyword: true,
+    supportsMediaTypesComponent: true,
   }),
 };
 
@@ -277,6 +320,10 @@ function transformOperation(operation: unknown, capabilities: OpenApiVersionCapa
         transformResponseDefinition(response, capabilities),
       ]),
     );
+  }
+
+  if (nextOperation.callbacks && !capabilities.supportsCallbacks) {
+    delete nextOperation.callbacks;
   }
 
   return nextOperation;
@@ -533,6 +580,16 @@ function transformSchema(
     ? upgradeSchemaForOpenApi31(nextSchema, mediaTypeName)
     : downgradeSchemaForOpenApi30(nextSchema, mediaTypeName);
 
+  if (
+    !capabilities.supportsDiscriminatorDefaultMapping &&
+    nextSchema.discriminator &&
+    nextSchema.discriminator.defaultMapping
+  ) {
+    const nextDiscriminator = { ...nextSchema.discriminator };
+    delete nextDiscriminator.defaultMapping;
+    nextSchema.discriminator = nextDiscriminator;
+  }
+
   return nextSchema;
 }
 
@@ -602,6 +659,17 @@ function upgradeSchemaForOpenApi31(schema: OpenApiSchema, mediaTypeName?: string
 function downgradeSchemaForOpenApi30(schema: OpenApiSchema, mediaTypeName?: string): OpenApiSchema {
   let nextSchema = structuredClone(schema);
 
+  if (typeof nextSchema.const !== "undefined") {
+    nextSchema.enum = [nextSchema.const as string | number | boolean | null];
+    delete nextSchema.const;
+  }
+
+  if (nextSchema.discriminator && nextSchema.discriminator.defaultMapping) {
+    const nextDiscriminator = { ...nextSchema.discriminator };
+    delete nextDiscriminator.defaultMapping;
+    nextSchema.discriminator = nextDiscriminator;
+  }
+
   if (Array.isArray(nextSchema.type) && nextSchema.type.includes("null")) {
     const nonNullTypes = nextSchema.type.filter((typeName) => typeName !== "null");
     if (nonNullTypes.length === 1 && typeof nonNullTypes[0] === "string") {
@@ -652,6 +720,25 @@ function downgradeSchemaForOpenApi30(schema: OpenApiSchema, mediaTypeName?: stri
   delete nextSchema.contentEncoding;
   delete nextSchema.contentMediaType;
   delete nextSchema.$schema;
+
+  // OpenAPI 3.0 does not support several JSON Schema 2020-12 keywords. Strip them so
+  // generated specs keep validating; the information is preserved in 3.1/3.2 output.
+  const unsupportedOpenApi30Keywords: readonly string[] = [
+    "propertyNames",
+    "dependentSchemas",
+    "dependentRequired",
+    "unevaluatedProperties",
+    "unevaluatedItems",
+    "patternProperties",
+    "contentSchema",
+    "prefixItems",
+    "$defs",
+  ];
+  for (const keyword of unsupportedOpenApi30Keywords) {
+    if (keyword in nextSchema) {
+      delete (nextSchema as Record<string, unknown>)[keyword];
+    }
+  }
 
   return nextSchema;
 }

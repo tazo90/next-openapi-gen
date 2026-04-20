@@ -220,6 +220,50 @@
   ],
   "components": {
     "schemas": {
+      "AssetUpload": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "avatar",
+              "report"
+            ]
+          },
+          "url": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "url"
+        ]
+      },
+      "AssetUploadInput": {
+        "type": "object",
+        "properties": {
+          "fileName": {
+            "type": "string",
+            "nullable": false
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "avatar",
+              "report"
+            ],
+            "nullable": false
+          }
+        },
+        "required": [
+          "fileName",
+          "kind"
+        ]
+      },
       "ReportIdParams": {
         "type": "object",
         "properties": {
@@ -258,60 +302,18 @@
           "updatedAt"
         ]
       },
-      "AssetUploadInput": {
+      "UpdateUserInput": {
         "type": "object",
         "properties": {
-          "fileName": {
+          "email": {
             "type": "string",
-            "nullable": false
+            "nullable": true
           },
-          "kind": {
+          "name": {
             "type": "string",
-            "enum": [
-              "avatar",
-              "report"
-            ],
-            "nullable": false
+            "nullable": true
           }
-        },
-        "required": [
-          "fileName",
-          "kind"
-        ]
-      },
-      "AssetUpload": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "kind": {
-            "type": "string",
-            "enum": [
-              "avatar",
-              "report"
-            ]
-          },
-          "url": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "kind",
-          "url"
-        ]
-      },
-      "UserIdParams": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "id"
-        ]
+        }
       },
       "User": {
         "type": "object",
@@ -336,18 +338,16 @@
           "role"
         ]
       },
-      "UpdateUserInput": {
+      "UserIdParams": {
         "type": "object",
         "properties": {
-          "email": {
-            "type": "string",
-            "nullable": true
-          },
-          "name": {
-            "type": "string",
-            "nullable": true
+          "id": {
+            "type": "string"
           }
-        }
+        },
+        "required": [
+          "id"
+        ]
       }
     },
     "responses": {

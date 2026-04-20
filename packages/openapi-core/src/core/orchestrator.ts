@@ -9,6 +9,7 @@ import type {
   OpenApiTemplate,
   ResolvedOpenApiConfig,
 } from "../shared/types.js";
+import { sortPathDefinitions } from "../routes/path-sort.js";
 import { RouteProcessor } from "../routes/route-processor.js";
 import {
   createErrorResponseComponent,
@@ -82,10 +83,10 @@ export function runGenerationOrchestrator({
     profile.scanRouteFilesMs + profile.processRouteFilesMs + profile.buildOperationsMs;
 
   phaseStartedAt = performance.now();
-  document.paths = {
+  document.paths = sortPathDefinitions({
     ...document.paths,
     ...routeProcessor.getPaths(),
-  };
+  });
   document.tags = mergeTagDefinitions(document.tags, routeProcessor.getTags());
   profile.sortAndMergePathsMs = performance.now() - phaseStartedAt;
   profile.buildPathsMs = profile.sortAndMergePathsMs;
@@ -132,11 +133,16 @@ export function runGenerationOrchestrator({
 
   phaseStartedAt = performance.now();
   const definedSchemas = routeProcessor.getSchemaProcessor().getDefinedSchemas();
-  if (definedSchemas && Object.keys(definedSchemas).length > 0) {
-    document.components.schemas = {
-      ...document.components.schemas,
-      ...definedSchemas,
-    };
+  const mergedSchemas: Record<string, unknown> = {
+    ...document.components.schemas,
+    ...definedSchemas,
+  };
+  if (Object.keys(mergedSchemas).length > 0) {
+    document.components.schemas = Object.fromEntries(
+      Object.entries(mergedSchemas).sort(([a], [b]) =>
+        a.localeCompare(b, "en", { sensitivity: "base" }),
+      ),
+    ) as typeof document.components.schemas;
   }
   profile.mergeSchemasMs = performance.now() - phaseStartedAt;
 

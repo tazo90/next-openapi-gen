@@ -13,6 +13,7 @@ import {
   processZodTuple,
   processZodUnion,
 } from "@workspace/openapi-core/schema/zod/node-helpers.js";
+import type { OpenApiSchema } from "@workspace/openapi-core/shared/types.js";
 import { parseTypeScriptFile } from "@workspace/openapi-core/shared/utils.js";
 
 function getFirstInitializer(source: string): t.Expression {
@@ -142,6 +143,41 @@ describe("Zod node helpers", () => {
       },
       oneOf: [{ type: "string" }],
     });
+
+    // Build a discriminator.mapping from variants that are `$ref`s with a literal
+    // discriminator value in their properties — this lets clients route responses
+    // without inspecting every variant inline.
+    const refA: OpenApiSchema = {
+      $ref: "#/components/schemas/Circle",
+      properties: { kind: { type: "string", enum: ["circle"] } },
+    } as OpenApiSchema;
+    const refB: OpenApiSchema = {
+      $ref: "#/components/schemas/Square",
+      properties: { kind: { type: "string", enum: ["square"] } },
+    } as OpenApiSchema;
+    let callIdx = 0;
+    const variants = [refA, refB];
+    const processVariants = (): OpenApiSchema => {
+      const schema = variants[callIdx] ?? { type: "object" };
+      callIdx += 1;
+      return schema;
+    };
+    expect(
+      processZodDiscriminatedUnion(
+        getFirstInitializer('z.discriminatedUnion("kind", [Circle, Square])') as t.CallExpression,
+        processVariants,
+      ),
+    ).toEqual({
+      type: "object",
+      discriminator: {
+        propertyName: "kind",
+        mapping: {
+          circle: "#/components/schemas/Circle",
+          square: "#/components/schemas/Square",
+        },
+      },
+      oneOf: [refA, refB],
+    });
     expect(
       processZodUnion(
         getFirstInitializer("z.union([z.literal('a'), z.literal('b')])") as t.CallExpression,
@@ -266,7 +302,7 @@ describe("Zod node helpers", () => {
     expect(
       processZodPrimitiveNode(getFirstInitializer("z.never()") as t.CallExpression, context),
     ).toEqual({
-      type: "string",
+      not: {},
     });
     expect(ensuredSchemas).toEqual(["UserSchema"]);
   });

@@ -67,16 +67,25 @@ export function createDefaultPathParamsSchema(paramNames: string[]): ParamSchema
 export function createRequestParamsSchema(
   params: OpenAPIDefinition,
   isPathParam: boolean = false,
+  forcedIn?: "query" | "path" | "header" | "cookie",
 ): ParamSchema[] {
   const queryParams: ParamSchema[] = [];
   const requiredProperties = new Set(Array.isArray(params.required) ? params.required : []);
 
   if (params.properties) {
     for (const [name, value] of Object.entries(params.properties)) {
+      const resolvedIn = forcedIn
+        ? forcedIn
+        : typeof value.in === "string"
+          ? value.in
+          : isPathParam
+            ? "path"
+            : "query";
+      const isPathLike = resolvedIn === "path";
       const param: ParamSchema = {
-        in: typeof value.in === "string" ? value.in : isPathParam ? "path" : "query",
+        in: resolvedIn,
         name,
-        required: isPathParam ? true : requiredProperties.has(name) || !!value.required,
+        required: isPathLike ? true : requiredProperties.has(name) || !!value.required,
       };
 
       if (value.content) {
@@ -114,7 +123,7 @@ export function createRequestParamsSchema(
         param.explode = true;
       }
 
-      if (isPathParam) {
+      if (isPathLike) {
         param.example = getExampleForParam(name, getPrimarySchemaType(value.type));
       } else if (typeof value.example !== "undefined") {
         param.example = value.example;

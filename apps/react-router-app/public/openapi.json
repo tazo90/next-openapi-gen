@@ -210,15 +210,23 @@
   ],
   "components": {
     "schemas": {
-      "ProjectIdParams": {
+      "ProfileSettings": {
         "type": "object",
         "properties": {
-          "projectId": {
+          "theme": {
+            "type": "string",
+            "enum": [
+              "light",
+              "dark"
+            ]
+          },
+          "locale": {
             "type": "string"
           }
         },
         "required": [
-          "projectId"
+          "theme",
+          "locale"
         ]
       },
       "Project": {
@@ -244,6 +252,17 @@
           "visibility"
         ]
       },
+      "ProjectIdParams": {
+        "type": "object",
+        "properties": {
+          "projectId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "projectId"
+        ]
+      },
       "ProjectMutationInput": {
         "type": "object",
         "properties": {
@@ -263,46 +282,6 @@
         "required": [
           "name",
           "visibility"
-        ]
-      },
-      "ProfileSettings": {
-        "type": "object",
-        "properties": {
-          "theme": {
-            "type": "string",
-            "enum": [
-              "light",
-              "dark"
-            ]
-          },
-          "locale": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "theme",
-          "locale"
-        ]
-      },
-      "UploadDraft": {
-        "type": "object",
-        "properties": {
-          "fileName": {
-            "type": "string",
-            "nullable": false
-          },
-          "folder": {
-            "type": "string",
-            "enum": [
-              "avatars",
-              "exports"
-            ],
-            "nullable": false
-          }
-        },
-        "required": [
-          "fileName",
-          "folder"
         ]
       },
       "UploadArtifact": {
@@ -326,6 +305,27 @@
           "id",
           "folder",
           "url"
+        ]
+      },
+      "UploadDraft": {
+        "type": "object",
+        "properties": {
+          "fileName": {
+            "type": "string",
+            "nullable": false
+          },
+          "folder": {
+            "type": "string",
+            "enum": [
+              "avatars",
+              "exports"
+            ],
+            "nullable": false
+          }
+        },
+        "required": [
+          "fileName",
+          "folder"
         ]
       }
     },
