@@ -1,87 +1,87 @@
 {
-  "generatedAt": "2026-04-20T09:18:50.859Z",
+  "generatedAt": "2026-04-20T14:57:05.547Z",
   "threshold": 0.5,
   "notes": "Mean-time ratio threshold for regression detection. Microbenchmarks are noisy; keep this value generous and rely on trend analysis for tighter signals.",
   "benchmarks": {
     "SchemaProcessor micro-benches > resolveTSNodeType — object literal (7 members, readonly + nested)": {
       "name": "resolveTSNodeType — object literal (7 members, readonly + nested)",
-      "hz": 153880.87112991963,
-      "mean": 0.006498533525688926
+      "hz": 154159.8091501589,
+      "mean": 0.0064867750259469574
     },
     "SchemaProcessor micro-benches > resolveTSNodeType — string-literal union": {
       "name": "resolveTSNodeType — string-literal union",
-      "hz": 375561.85878874577,
-      "mean": 0.002662677203763926
+      "hz": 307530.99560374196,
+      "mean": 0.0032517047526764236
     },
     "SchemaProcessor micro-benches > resolveTSNodeType — template literal enum (4 combos)": {
       "name": "resolveTSNodeType — template literal enum (4 combos)",
-      "hz": 400901.3705848141,
-      "mean": 0.0024943791001294205
+      "hz": 422953.5508233843,
+      "mean": 0.002364325817937339
     },
     "SchemaProcessor micro-benches > resolveTSNodeType — tuple with rest": {
       "name": "resolveTSNodeType — tuple with rest",
-      "hz": 326593.6048217637,
-      "mean": 0.0030619093124794753
+      "hz": 341798.1788993136,
+      "mean": 0.0029257031246341966
     },
     "SymbolResolver micro-benches > getIndex — second call (cached)": {
       "name": "getIndex — second call (cached)",
-      "hz": 13161.465381276312,
-      "mean": 0.0759793815529549
+      "hz": 10777.873747986805,
+      "mean": 0.09278267897569217
     },
     "SymbolResolver micro-benches > resolveEnumValues — as-const array": {
       "name": "resolveEnumValues — as-const array",
-      "hz": 12265.534547494884,
-      "mean": 0.08152926365563418
+      "hz": 9265.523974440113,
+      "mean": 0.10792697776818681
     },
     "SymbolResolver micro-benches > resolveEnumValues — enum declaration": {
       "name": "resolveEnumValues — enum declaration",
-      "hz": 10463.32559681211,
-      "mean": 0.09557190883027407
+      "hz": 10367.964831863317,
+      "mean": 0.09645094444444419
     },
     "SymbolResolver micro-benches > resolveLiteral — const literal": {
       "name": "resolveLiteral — const literal",
-      "hz": 13225.472585000249,
-      "mean": 0.07561166480615265
+      "hz": 9344.862283079068,
+      "mean": 0.1070106727854856
     },
     "SymbolResolver micro-benches > resolveMaskKeys — as-const mask object": {
       "name": "resolveMaskKeys — as-const mask object",
-      "hz": 12659.32923278134,
-      "mean": 0.0789931268562397
+      "hz": 9537.679038025224,
+      "mean": 0.10484731096665735
     },
     "zod-converter micro-benches > primitive chain (z.string().email()...)": {
       "name": "primitive chain (z.string().email()...)",
-      "hz": 76910.97170030866,
-      "mean": 0.01300204610463902
+      "hz": 75133.01876277695,
+      "mean": 0.013309727420341968
     },
     "zod-converter micro-benches > z.object with mixed primitives + nested object": {
       "name": "z.object with mixed primitives + nested object",
-      "hz": 4931.799265906251,
-      "mean": 0.2027657546634237
+      "hz": 24506.858813612776,
+      "mean": 0.040804903133670155
     },
     "zod-converter micro-benches > z.record(string, object)": {
       "name": "z.record(string, object)",
-      "hz": 7017.430402467248,
-      "mean": 0.14250230392714852
+      "hz": 116626.55243123366,
+      "mean": 0.008574376753438103
     },
     "zod-converter micro-benches > z.union over 3 discriminated object variants": {
       "name": "z.union over 3 discriminated object variants",
-      "hz": 6608.176909721693,
-      "mean": 0.151327667776091
+      "hz": 44253.00501543629,
+      "mean": 0.02259733547249912
     },
     "ZodRuntimeExporter micro-benches > exportSchema — flat z.object (6 fields)": {
       "name": "exportSchema — flat z.object (6 fields)",
-      "hz": 5938.965265959662,
-      "mean": 0.1683794996632991
+      "hz": 6052.802140582124,
+      "mean": 0.1652127356510328
     },
     "ZodRuntimeExporter micro-benches > exportSchema — nested object with array + record": {
       "name": "exportSchema — nested object with array + record",
-      "hz": 5203.35468429218,
-      "mean": 0.1921837085253456
+      "hz": 6169.219926817146,
+      "mean": 0.16209504797406774
     },
     "ZodRuntimeExporter micro-benches > exportSchema — z.union with 2 discriminated variants": {
       "name": "exportSchema — z.union with 2 discriminated variants",
-      "hz": 15919.427919438196,
-      "mean": 0.06281632763819131
+      "hz": 15033.425963662648,
+      "mean": 0.06651843714247863
     }
   }
 }

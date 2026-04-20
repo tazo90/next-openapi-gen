@@ -16,6 +16,9 @@
  *
  * Benchmarks are keyed by their suite + benchmark name. Duplicate entries
  * (e.g. from .pnpm-store mirrors) are deduplicated using the fastest `hz`.
+ * Root `test:bench:schema` uses `vitest bench --dir tests/bench/schema` so
+ * discovery does not pull mirrored paths under `.pnpm-store/`; otherwise the
+ * baseline can reflect cherry-picked fast runs while CI only executes once.
  * New benchmarks that aren't present in the baseline are reported but do
  * not fail the run.
  */
