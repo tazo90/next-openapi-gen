@@ -45,6 +45,106 @@
         }
       }
     },
+    "/users/{id}": {
+      "get": {
+        "operationId": "tanstackGetUserById",
+        "summary": "Get user",
+        "description": "",
+        "tags": [
+          "s Users, Identity",
+          "Users",
+          "Identity"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "description": "Trace identifier",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "links": {
+              "updateUser": {
+                "operationId": "tanstackUpdateUserById"
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          }
+        }
+      },
+      "post": {
+        "operationId": "tanstackUpdateUserById",
+        "summary": "Update a single user.",
+        "description": "",
+        "tags": [
+          "Users"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateUserInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          }
+        }
+      }
+    },
     "/uploads": {
       "get": {
         "operationId": "tanstackGetUploadInstructions",
@@ -114,96 +214,14 @@
           }
         }
       }
-    },
-    "/users/{id}": {
-      "get": {
-        "operationId": "tanstackGetUserById",
-        "summary": "Load a single user.",
-        "description": "",
-        "tags": [
-          "Users"
-        ],
-        "parameters": [
-          {
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "schema": {
-              "type": "string"
-            },
-            "example": "123"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/User"
-                }
-              }
-            }
-          },
-          "401": {
-            "$ref": "#/components/responses/401"
-          },
-          "403": {
-            "$ref": "#/components/responses/403"
-          }
-        }
-      },
-      "post": {
-        "operationId": "tanstackUpdateUserById",
-        "summary": "Update a single user.",
-        "description": "",
-        "tags": [
-          "Users"
-        ],
-        "parameters": [
-          {
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "schema": {
-              "type": "string"
-            },
-            "example": "123"
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateUserInput"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/User"
-                }
-              }
-            }
-          },
-          "401": {
-            "$ref": "#/components/responses/401"
-          },
-          "403": {
-            "$ref": "#/components/responses/403"
-          }
-        }
-      }
     }
   },
   "tags": [
     {
       "name": "Reports"
+    },
+    {
+      "name": "s Users, Identity"
     },
     {
       "name": "Uploads"
@@ -220,6 +238,50 @@
   ],
   "components": {
     "schemas": {
+      "AssetUpload": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "avatar",
+              "report"
+            ]
+          },
+          "url": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "url"
+        ]
+      },
+      "AssetUploadInput": {
+        "type": "object",
+        "properties": {
+          "fileName": {
+            "type": "string",
+            "nullable": false
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "avatar",
+              "report"
+            ],
+            "nullable": false
+          }
+        },
+        "required": [
+          "fileName",
+          "kind"
+        ]
+      },
       "ReportIdParams": {
         "type": "object",
         "properties": {
@@ -258,60 +320,18 @@
           "updatedAt"
         ]
       },
-      "AssetUploadInput": {
+      "UpdateUserInput": {
         "type": "object",
         "properties": {
-          "fileName": {
+          "email": {
             "type": "string",
-            "nullable": false
+            "nullable": true
           },
-          "kind": {
+          "name": {
             "type": "string",
-            "enum": [
-              "avatar",
-              "report"
-            ],
-            "nullable": false
+            "nullable": true
           }
-        },
-        "required": [
-          "fileName",
-          "kind"
-        ]
-      },
-      "AssetUpload": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "kind": {
-            "type": "string",
-            "enum": [
-              "avatar",
-              "report"
-            ]
-          },
-          "url": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "kind",
-          "url"
-        ]
-      },
-      "UserIdParams": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "id"
-        ]
+        }
       },
       "User": {
         "type": "object",
@@ -336,18 +356,16 @@
           "role"
         ]
       },
-      "UpdateUserInput": {
+      "UserIdParams": {
         "type": "object",
         "properties": {
-          "email": {
-            "type": "string",
-            "nullable": true
-          },
-          "name": {
-            "type": "string",
-            "nullable": true
+          "id": {
+            "type": "string"
           }
-        }
+        },
+        "required": [
+          "id"
+        ]
       }
     },
     "responses": {

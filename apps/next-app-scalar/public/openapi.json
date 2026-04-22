@@ -17,133 +17,13 @@
         "type": "http",
         "scheme": "bearer",
         "bearerFormat": "JWT"
+      },
+      "BasicAuth": {
+        "type": "http",
+        "scheme": "basic"
       }
     },
     "schemas": {
-      "LoginBody": {
-        "type": "object",
-        "properties": {
-          "email": {
-            "type": "string",
-            "description": "user email",
-            "nullable": false
-          },
-          "password": {
-            "type": "string",
-            "description": "user password",
-            "nullable": false
-          }
-        },
-        "required": [
-          "email",
-          "password"
-        ]
-      },
-      "LoginResponse": {
-        "type": "object",
-        "properties": {
-          "token": {
-            "type": "string",
-            "description": "auth token"
-          },
-          "refresh_token": {
-            "type": "string",
-            "description": "refresh token"
-          }
-        },
-        "required": [
-          "token",
-          "refresh_token"
-        ]
-      },
-      "CommentsQueryParams": {
-        "type": "object",
-        "properties": {
-          "page": {
-            "type": "number",
-            "description": "Page number for pagination"
-          },
-          "limit": {
-            "type": "number",
-            "description": "Number of comments per page"
-          },
-          "sort": {
-            "type": "string",
-            "enum": [
-              "newest",
-              "oldest",
-              "likes"
-            ],
-            "description": "Sort order"
-          },
-          "includeDeleted": {
-            "type": "boolean",
-            "description": "Whether to include soft-deleted comments"
-          },
-          "includeReplies": {
-            "type": "boolean",
-            "description": "Whether to include replies"
-          },
-          "user": {
-            "type": "string",
-            "description": "Filter by user ID"
-          }
-        }
-      },
-      "CommentPathParams": {
-        "type": "object",
-        "properties": {
-          "orgId": {
-            "type": "string",
-            "description": "Organization ID"
-          },
-          "projectId": {
-            "type": "string",
-            "description": "Project ID within the organization"
-          },
-          "taskId": {
-            "type": "string",
-            "description": "Task ID within the project"
-          }
-        },
-        "required": [
-          "orgId",
-          "projectId",
-          "taskId"
-        ]
-      },
-      "User": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "description": "User ID"
-          },
-          "name": {
-            "type": "string",
-            "description": "User's full name"
-          },
-          "avatar": {
-            "type": "string",
-            "description": "URL to user's avatar"
-          },
-          "role": {
-            "type": "string",
-            "enum": [
-              "admin",
-              "member",
-              "guest"
-            ],
-            "description": "User's role in the organization"
-          }
-        },
-        "required": [
-          "id",
-          "name",
-          "avatar",
-          "role"
-        ]
-      },
       "Attachment": {
         "type": "object",
         "properties": {
@@ -532,6 +412,62 @@
           "likedBy",
           "createdAt"
         ]
+      },
+      "CommentPathParams": {
+        "type": "object",
+        "properties": {
+          "orgId": {
+            "type": "string",
+            "description": "Organization ID"
+          },
+          "projectId": {
+            "type": "string",
+            "description": "Project ID within the organization"
+          },
+          "taskId": {
+            "type": "string",
+            "description": "Task ID within the project"
+          }
+        },
+        "required": [
+          "orgId",
+          "projectId",
+          "taskId"
+        ]
+      },
+      "CommentsQueryParams": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "number",
+            "description": "Page number for pagination"
+          },
+          "limit": {
+            "type": "number",
+            "description": "Number of comments per page"
+          },
+          "sort": {
+            "type": "string",
+            "enum": [
+              "newest",
+              "oldest",
+              "likes"
+            ],
+            "description": "Sort order"
+          },
+          "includeDeleted": {
+            "type": "boolean",
+            "description": "Whether to include soft-deleted comments"
+          },
+          "includeReplies": {
+            "type": "boolean",
+            "description": "Whether to include replies"
+          },
+          "user": {
+            "type": "string",
+            "description": "Filter by user ID"
+          }
+        }
       },
       "CommentsResponse": {
         "type": "object",
@@ -1057,6 +993,54 @@
           "success"
         ]
       },
+      "LoginBody": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "description": "user email",
+            "nullable": false
+          },
+          "password": {
+            "type": "string",
+            "description": "user password",
+            "nullable": false
+          }
+        },
+        "required": [
+          "email",
+          "password"
+        ]
+      },
+      "LoginResponse": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "description": "auth token"
+          },
+          "refresh_token": {
+            "type": "string",
+            "description": "refresh token"
+          }
+        },
+        "required": [
+          "token",
+          "refresh_token"
+        ]
+      },
+      "ReportExportQuery": {
+        "type": "object",
+        "properties": {
+          "format": {
+            "type": "string",
+            "enum": [
+              "csv",
+              "ndjson"
+            ]
+          }
+        }
+      },
       "UpdateCommentBody": {
         "type": "object",
         "properties": {
@@ -1292,28 +1276,36 @@
           "success"
         ]
       },
-      "ReportExportQuery": {
-        "type": "object",
-        "properties": {
-          "format": {
-            "type": "string",
-            "enum": [
-              "csv",
-              "ndjson"
-            ]
-          }
-        }
-      },
-      "UserIdParam": {
+      "User": {
         "type": "object",
         "properties": {
           "id": {
             "type": "string",
-            "description": "User's unique identifier"
+            "description": "User ID"
+          },
+          "name": {
+            "type": "string",
+            "description": "User's full name"
+          },
+          "avatar": {
+            "type": "string",
+            "description": "URL to user's avatar"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "admin",
+              "member",
+              "guest"
+            ],
+            "description": "User's role in the organization"
           }
         },
         "required": [
-          "id"
+          "id",
+          "name",
+          "avatar",
+          "role"
         ]
       },
       "UserAddress": {
@@ -1336,6 +1328,18 @@
           "line1",
           "city",
           "postalCode"
+        ]
+      },
+      "UserIdParam": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "User's unique identifier"
+          }
+        },
+        "required": [
+          "id"
         ]
       },
       "UserResponse": {
@@ -1455,13 +1459,19 @@
   "paths": {
     "/auth/login": {
       "post": {
-        "operationId": "post-auth-login",
-        "summary": "Authenticate as a user.",
+        "operationId": "scalarLogin",
+        "summary": "Sign in",
         "description": "Login a user",
         "tags": [
-          "Auth"
+          "Auth",
+          "Sessions"
         ],
         "parameters": [],
+        "security": [
+          {
+            "BasicAuth, BearerAuth": []
+          }
+        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -1479,6 +1489,19 @@
                 "schema": {
                   "$ref": "#/components/schemas/LoginResponse"
                 }
+              }
+            },
+            "headers": {
+              "Set-Cookie": {
+                "description": "Issued session cookie",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "links": {
+              "currentUser": {
+                "operationId": "scalarGetCurrentUser"
               }
             }
           },
@@ -1875,7 +1898,8 @@
         "summary": "Export reports",
         "description": "Keeps the Scalar smoke app aligned with the richer baseline route surface.",
         "tags": [
-          "Reports"
+          "Reports",
+          "Exports"
         ],
         "parameters": [
           {
@@ -1891,11 +1915,29 @@
             }
           }
         ],
+        "servers": [
+          {
+            "url": "https://api.example.com/v1,",
+            "description": "https://api-eu.example.com/v1"
+          }
+        ],
+        "externalDocs": {
+          "url": "https://docs.example.com/reports/csv",
+          "description": "CSV export reference"
+        },
         "responses": {
           "200": {
             "description": "Successful response",
             "content": {
               "text/csv": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "headers": {
+              "Content-Disposition": {
+                "description": "Attachment filename for the download",
                 "schema": {
                   "type": "string"
                 }
@@ -1913,7 +1955,7 @@
     },
     "/users/{id}": {
       "get": {
-        "operationId": "get-users-{id}",
+        "operationId": "scalarGetCurrentUser",
         "summary": "Get User by ID",
         "description": "Retrieves a user's profile information",
         "tags": [

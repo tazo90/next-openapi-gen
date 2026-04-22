@@ -239,7 +239,13 @@ export class ResponseProcessor {
   ): string | undefined {
     const primarySuccessResponse = inferredResponses?.find((response) => {
       const statusCode = response.statusCode;
-      return !statusCode || (Number(statusCode) >= 200 && Number(statusCode) < 300);
+      if (!statusCode) {
+        return true;
+      }
+      if (statusCode === "2XX") {
+        return true;
+      }
+      return Number(statusCode) >= 200 && Number(statusCode) < 300;
     });
 
     return primarySuccessResponse ? primarySuccessResponse.statusCode || "200" : undefined;

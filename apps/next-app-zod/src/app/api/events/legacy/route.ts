@@ -10,7 +10,7 @@ import { legacyEventExamples } from "@/schemas/event";
  * @response LegacyEventCsv
  * @responseContentType text/csv
  * @examples response:legacyEventExamples
- * @deprecated
+ * @deprecated Use GET /api/events with Accept: text/csv; scheduled for removal 2026-12-01.
  * @operationId zodDownloadLegacyEvents
  * @openapi
  */

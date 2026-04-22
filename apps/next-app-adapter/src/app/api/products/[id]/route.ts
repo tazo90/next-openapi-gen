@@ -8,10 +8,12 @@ type ProductRouteContext = {
 
 /**
  * Get catalog item by ID.
+ * @summary Get catalog item
  * @description Demonstrates generation triggered by the Next adapter build hook.
  * @pathParams CatalogItemIdParams
  * @response CatalogItem
  * @tag Catalog
+ * @tags Adapter
  * @openapi
  */
 export async function GET(_request: Request, { params }: ProductRouteContext) {

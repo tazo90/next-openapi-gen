@@ -19,6 +19,16 @@ const appRouterZodCoverageFixture = getProjectFixturePath(
   "app-router",
   "zod-only-coverage",
 );
+const appRouterZodFullCoverageFixture = getProjectFixturePath(
+  "next",
+  "app-router",
+  "zod-full-coverage",
+);
+const appRouterTypescriptFullCoverageFixture = getProjectFixturePath(
+  "next",
+  "app-router",
+  "ts-full-coverage",
+);
 
 describe("OpenAPI document validation", () => {
   it.each(["3.0", "3.1", "3.2"] as const)(
@@ -99,6 +109,42 @@ describe("OpenAPI document validation", () => {
 
       try {
         await expectValidSpec(spec);
+      } finally {
+        project.cleanup();
+      }
+    },
+  );
+
+  it.each(["3.0", "3.1", "3.2"] as const)(
+    "validates generated zod-full-coverage fixture for OpenAPI %s",
+    async (openapiVersion) => {
+      const { project, spec } = generateFixtureSpec({
+        fixturePath: appRouterZodFullCoverageFixture,
+        openapiVersion,
+      });
+
+      try {
+        await expectValidSpec(spec);
+        expect(spec.paths).toBeDefined();
+        expect(Object.keys(spec.paths ?? {}).length).toBeGreaterThan(0);
+      } finally {
+        project.cleanup();
+      }
+    },
+  );
+
+  it.each(["3.0", "3.1", "3.2"] as const)(
+    "validates generated ts-full-coverage fixture for OpenAPI %s",
+    async (openapiVersion) => {
+      const { project, spec } = generateFixtureSpec({
+        fixturePath: appRouterTypescriptFullCoverageFixture,
+        openapiVersion,
+      });
+
+      try {
+        await expectValidSpec(spec);
+        expect(spec.paths).toBeDefined();
+        expect(Object.keys(spec.paths ?? {}).length).toBeGreaterThan(0);
       } finally {
         project.cleanup();
       }

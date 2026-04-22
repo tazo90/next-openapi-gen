@@ -56,10 +56,30 @@ export function parseJSDocBlock(commentValue: string, filePath?: string): DataTy
   result.isOpenApi = normalizedComment.includes("@openapi");
   result.isIgnored = normalizedComment.includes("@ignore");
   result.deprecated = normalizedComment.includes("@deprecated");
+  if (result.deprecated) {
+    const deprecatedMatch = normalizedComment.match(/^[ \t]*\*?[ \t]*@deprecated[ \t]+([^\n\r]+)/m);
+    const deprecatedValue = deprecatedMatch?.[1]?.trim();
+    if (deprecatedValue) {
+      result.deprecationReason = deprecatedValue;
+    }
+  }
+
+  const webhookValue = extractLineValue(normalizedComment, "@webhook");
+  if (normalizedComment.match(/@webhook(\s|$)/)) {
+    result.isWebhook = true;
+    if (webhookValue) {
+      result.webhookName = webhookValue;
+    }
+  }
 
   const firstLine = normalizedComment.split("\n")[0] ?? "";
   if (!firstLine.trim().startsWith("@")) {
     result.summary = firstLine.trim();
+  }
+
+  const explicitSummary = extractLineValue(normalizedComment, "@summary");
+  if (explicitSummary) {
+    result.summary = explicitSummary;
   }
 
   result.description = extractLineValue(normalizedComment, "@description");
@@ -80,6 +100,8 @@ export function parseJSDocBlock(commentValue: string, filePath?: string): DataTy
     extractTypeFromComment(normalizedComment, "@params");
   result.pathParamsType = extractTypeFromComment(normalizedComment, "@pathParams");
   result.bodyType = extractTypeFromComment(normalizedComment, "@body");
+  result.headerType = extractTypeFromComment(normalizedComment, "@header");
+  result.cookieType = extractTypeFromComment(normalizedComment, "@cookie");
 
   const authValue = extractLineValue(normalizedComment, "@auth");
   if (authValue) {
@@ -127,7 +149,255 @@ export function parseJSDocBlock(commentValue: string, filePath?: string): DataTy
     result.diagnostics = examples.diagnostics;
   }
 
+  const additionalTags = extractListValue(normalizedComment, "@tags");
+  if (additionalTags.length > 0) {
+    result.tags = additionalTags;
+  }
+
+  const servers = parseServersTag(normalizedComment);
+  if (servers.length > 0) {
+    result.servers = servers;
+  }
+
+  const externalDocs = parseExternalDocsTag(normalizedComment);
+  if (externalDocs) {
+    result.externalDocs = externalDocs;
+  }
+
+  const security = parseSecurityTag(normalizedComment);
+  if (security.length > 0) {
+    result.security = security;
+  }
+
+  const responseHeaders = parseResponseHeaderTags(normalizedComment);
+  if (responseHeaders.length > 0) {
+    result.responseHeaders = responseHeaders;
+  }
+
+  const responseLinks = parseLinkTags(normalizedComment);
+  if (responseLinks.length > 0) {
+    result.responseLinks = responseLinks;
+  }
+
+  const callbacks = parseCallbackTags(normalizedComment);
+  if (callbacks.length > 0) {
+    result.callbacks = callbacks;
+  }
+
+  const override = parseOpenApiOverrideTag(normalizedComment);
+  if (override) {
+    result.openapiOverride = override;
+  }
+
   return result;
+}
+
+function extractListValue(commentValue: string, tag: string): string[] {
+  const raw = extractLineValue(commentValue, tag);
+  if (!raw) {
+    return [];
+  }
+  return raw
+    .split(",")
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+}
+
+function parseServersTag(commentValue: string): import("./types.js").OpenApiServer[] {
+  const matches = [...commentValue.matchAll(/^\s*\*?\s*@servers?\s+([^\n\r]+)/gm)];
+  const servers: import("./types.js").OpenApiServer[] = [];
+  for (const match of matches) {
+    const raw = match[1]?.trim();
+    if (!raw) {
+      continue;
+    }
+    // format: <url> [description...]
+    const spaceIdx = raw.indexOf(" ");
+    const url = spaceIdx === -1 ? raw : raw.slice(0, spaceIdx).trim();
+    const description = spaceIdx === -1 ? undefined : raw.slice(spaceIdx + 1).trim();
+    if (!url) {
+      continue;
+    }
+    const server: import("./types.js").OpenApiServer = { url };
+    if (description) {
+      server.description = description.replace(/^["']|["']$/g, "");
+    }
+    servers.push(server);
+  }
+  return servers;
+}
+
+function parseExternalDocsTag(
+  commentValue: string,
+): import("./types.js").JSDocExternalDocs | undefined {
+  const match = commentValue.match(/^\s*\*?\s*@externalDocs\s+([^\n\r]+)/m);
+  const raw = match?.[1]?.trim();
+  if (!raw) {
+    return undefined;
+  }
+  const spaceIdx = raw.indexOf(" ");
+  const url = spaceIdx === -1 ? raw : raw.slice(0, spaceIdx).trim();
+  const description = spaceIdx === -1 ? undefined : raw.slice(spaceIdx + 1).trim();
+  if (!url) {
+    return undefined;
+  }
+  return description ? { url, description: description.replace(/^["']|["']$/g, "") } : { url };
+}
+
+function parseSecurityTag(commentValue: string): import("./types.js").OpenApiSecurityRequirement[] {
+  const matches = [...commentValue.matchAll(/^\s*\*?\s*@security\s+([^\n\r]+)/gm)];
+  const requirements: import("./types.js").OpenApiSecurityRequirement[] = [];
+  for (const match of matches) {
+    const raw = match[1]?.trim();
+    if (!raw) {
+      continue;
+    }
+    // format: <scheme>[:scope1,scope2][; <scheme2>[:scope...]]
+    const entry: import("./types.js").OpenApiSecurityRequirement = {};
+    const segments = raw
+      .split(";")
+      .map((segment) => segment.trim())
+      .filter(Boolean);
+    for (const segment of segments) {
+      const [schemeRaw, scopesRaw] = segment.split(":");
+      const scheme = schemeRaw?.trim();
+      if (!scheme) {
+        continue;
+      }
+      const scopes = scopesRaw
+        ? scopesRaw
+            .split(",")
+            .map((scope) => scope.trim())
+            .filter(Boolean)
+        : [];
+      entry[scheme] = scopes;
+    }
+    if (Object.keys(entry).length > 0) {
+      requirements.push(entry);
+    }
+  }
+  return requirements;
+}
+
+function parseResponseHeaderTags(commentValue: string): import("./types.js").JSDocResponseHeader[] {
+  const matches = [...commentValue.matchAll(/^\s*\*?\s*@responseHeader\s+([^\n\r]+)/gm)];
+  const headers: import("./types.js").JSDocResponseHeader[] = [];
+  for (const match of matches) {
+    const raw = match[1]?.trim();
+    if (!raw) {
+      continue;
+    }
+    // format: <status> <name> <schemaRef|primitiveType> [description...]
+    const tokens = raw.split(/\s+/);
+    if (tokens.length < 3 || !tokens[0] || !tokens[1] || !tokens[2]) {
+      continue;
+    }
+    const [status, name, type, ...rest] = tokens;
+    const description = rest.length > 0 ? rest.join(" ") : undefined;
+    const schema = parameterTypeTokenToSchema(type);
+    const header: import("./types.js").JSDocResponseHeader = { status, name };
+    if (schema) {
+      header.schema = schema;
+    }
+    if (description) {
+      header.description = description;
+    }
+    headers.push(header);
+  }
+  return headers;
+}
+
+function parameterTypeTokenToSchema(
+  type: string,
+): import("./types.js").OpenApiSchemaLike | undefined {
+  const primitive = type.toLowerCase();
+  if (
+    primitive === "string" ||
+    primitive === "number" ||
+    primitive === "integer" ||
+    primitive === "boolean"
+  ) {
+    return { type: primitive };
+  }
+  // Treat anything else as a component schema reference
+  if (/^[A-Za-z_$][\w$]*$/.test(type)) {
+    return { $ref: `#/components/schemas/${type}` };
+  }
+  return undefined;
+}
+
+function parseLinkTags(commentValue: string): import("./types.js").JSDocResponseLink[] {
+  const matches = [...commentValue.matchAll(/^\s*\*?\s*@link\s+([^\n\r]+)/gm)];
+  const links: import("./types.js").JSDocResponseLink[] = [];
+  for (const match of matches) {
+    const raw = match[1]?.trim();
+    if (!raw) {
+      continue;
+    }
+    // format: <status> <name> <operationId|ref> [parametersJson]
+    const statusMatch = raw.match(/^(\S+)\s+(\S+)\s+(\S+)(?:\s+(\{[\s\S]*\}))?$/);
+    if (!statusMatch) {
+      continue;
+    }
+    const [, status, name, target, paramsJson] = statusMatch;
+    if (!status || !name || !target) {
+      continue;
+    }
+    const link: import("./types.js").JSDocResponseLink = { status, name };
+    if (target.startsWith("#/") || target.startsWith("/")) {
+      link.operationRef = target;
+    } else {
+      link.operationId = target;
+    }
+    if (paramsJson) {
+      const parsed = parseJsonValue(paramsJson);
+      if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+        link.parameters = parsed as Record<string, JsonValue>;
+      }
+    }
+    links.push(link);
+  }
+  return links;
+}
+
+function parseCallbackTags(commentValue: string): import("./types.js").JSDocCallback[] {
+  const matches = [...commentValue.matchAll(/^\s*\*?\s*@callback\s+([^\n\r]+)/gm)];
+  const callbacks: import("./types.js").JSDocCallback[] = [];
+  for (const match of matches) {
+    const raw = match[1]?.trim();
+    if (!raw) {
+      continue;
+    }
+    // format: <name> <runtimeExpression> [reference]
+    const tokens = raw.split(/\s+/);
+    if (tokens.length < 2 || !tokens[0] || !tokens[1]) {
+      continue;
+    }
+    const [name, expression, reference] = tokens;
+    const callback: import("./types.js").JSDocCallback = { name, expression };
+    if (reference) {
+      callback.reference = reference;
+    }
+    callbacks.push(callback);
+  }
+  return callbacks;
+}
+
+export function parseOpenApiOverrideTag(
+  commentValue: string,
+): Record<string, JsonValue> | undefined {
+  const match = commentValue.match(
+    /@openapi-override\s+(\{[\s\S]*?\})\s*(?=\n\s*(?:\*\s*)?@|\n?$)/,
+  );
+  const raw = match?.[1]?.trim();
+  if (!raw) {
+    return undefined;
+  }
+  const parsed = parseJsonValue(raw);
+  if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+    return parsed as Record<string, JsonValue>;
+  }
+  return undefined;
 }
 
 export function extractTypeFromComment(commentValue: string, tag: string): string {
@@ -150,7 +420,7 @@ export function parseResponseTag(commentValue: string): {
     return null;
   }
 
-  if (/^\d{3}$/.test(rawValue)) {
+  if (isStatusCodeToken(rawValue)) {
     return {
       responseDescription: "",
       responseType: "",
@@ -163,7 +433,7 @@ export function parseResponseTag(commentValue: string): {
   let responseType = rawValue;
   let responseDescription = "";
 
-  if (segments[0] && /^\d{3}$/.test(segments[0])) {
+  if (segments[0] && isStatusCodeToken(segments[0])) {
     successCode = segments.shift() || "";
     const remainingValue = segments.join(":").trim();
     if (isInlineResponseType(remainingValue)) {
@@ -203,6 +473,16 @@ function isInlineResponseType(value: string): boolean {
   return trimmed.startsWith("{") || trimmed.startsWith("[");
 }
 
+function isStatusCodeToken(value: string): boolean {
+  if (/^\d{3}$/.test(value)) {
+    return true;
+  }
+  if (/^[1-5]XX$/.test(value)) {
+    return true;
+  }
+  return value === "default";
+}
+
 function createEmptyDataTypes(): DataTypes {
   return {
     tag: "",
@@ -217,9 +497,14 @@ function createEmptyDataTypes(): DataTypes {
     querystringType: "",
     querystringName: "",
     bodyType: "",
+    headerType: "",
+    cookieType: "",
     isOpenApi: false,
     isIgnored: false,
+    isWebhook: false,
+    webhookName: "",
     deprecated: false,
+    deprecationReason: "",
     bodyDescription: "",
     contentType: "",
     responseType: "",

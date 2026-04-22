@@ -1,0 +1,17 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "App Router TypeScript Full Coverage",
+    "version": "1.0.0",
+    "description": "Fixture exercising the full TypeScript feature catalog"
+  },
+  "apiDir": "./src/app/api",
+  "schemaDir": "./src",
+  "schemaType": "typescript",
+  "docsUrl": "api-docs",
+  "ui": "scalar",
+  "outputDir": "./public",
+  "outputFile": "openapi.json",
+  "includeOpenApiRoutes": true,
+  "debug": false
+}

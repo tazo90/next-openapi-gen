@@ -38,6 +38,6 @@ export default defineConfig({
     globals: true,
     environment: "node",
     include: ["tests/bench/**/*.bench.ts", "tests/bench/**/*.test.ts"],
-    exclude: ["**/.pnpm-store/**"],
+    exclude: ["**/.pnpm-store/**", "**/node_modules/**", ".pnpm-store/**"],
   },
 });

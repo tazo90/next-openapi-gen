@@ -453,4 +453,173 @@ describe("OperationProcessor", () => {
       },
     });
   });
+
+  it("emits @servers, @externalDocs, @security, @tags plural, and deprecation reason", () => {
+    const schemaProcessor = {
+      getSchemaContent: vi.fn<MockFn>(() => ({
+        params: undefined,
+        querystring: undefined,
+        pathParams: undefined,
+        body: undefined,
+        responses: undefined,
+      })),
+      createRequestParamsSchema: vi.fn<MockFn>(() => []),
+      createDefaultPathParamsSchema: vi.fn<MockFn>(),
+      detectContentType: vi.fn<MockFn>(),
+      createRequestBodySchema: vi.fn<MockFn>(),
+      createResponseSchema: vi.fn<MockFn>(() => ({ 200: { description: "OK" } })),
+      ensureSchemaResolved: vi.fn<MockFn>(),
+      getSchemaReferenceName: vi.fn<MockFn>((name: string) => name),
+    };
+    const responseProcessor = {
+      supportsRequestBody: vi.fn<MockFn>(() => false),
+      processResponses: vi.fn<MockFn>(() => ({ 200: { description: "OK" } })),
+    };
+
+    const processor = new OperationProcessor(schemaProcessor as never, responseProcessor as never);
+    const result = processor.processOperation("GET", "/events", {
+      tag: "Events",
+      tags: ["Platform", "Streaming"],
+      servers: [
+        { url: "https://api.example.com", description: "Primary" },
+        { url: "https://staging.example.com" },
+      ],
+      externalDocs: { url: "https://docs.example.com", description: "External" },
+      security: [{ BearerAuth: ["read:events"] }, { ApiKeyAuth: [] }],
+      deprecated: true,
+      deprecationReason: "Use /v2/events",
+    });
+
+    expect(result.definition.tags).toEqual(["Events", "Platform", "Streaming"]);
+    expect(result.definition.servers).toEqual([
+      { url: "https://api.example.com", description: "Primary" },
+      { url: "https://staging.example.com" },
+    ]);
+    expect(result.definition.externalDocs).toEqual({
+      url: "https://docs.example.com",
+      description: "External",
+    });
+    expect(result.definition.security).toEqual([
+      { BearerAuth: ["read:events"] },
+      { ApiKeyAuth: [] },
+    ]);
+    expect(result.definition.deprecated).toBe(true);
+    expect(result.definition.description).toContain("Use /v2/events");
+  });
+
+  it("emits header/cookie parameters from @header/@cookie JSDoc types", () => {
+    const schemaProcessor = {
+      getSchemaContent: vi.fn<MockFn>(({ paramsType }: { paramsType?: string }) => {
+        if (paramsType === "RequestHeaders") {
+          return {
+            params: {
+              type: "object",
+              properties: { "X-Api-Key": { type: "string" } },
+              required: ["X-Api-Key"],
+            },
+            querystring: undefined,
+            pathParams: undefined,
+            body: undefined,
+            responses: undefined,
+          };
+        }
+        if (paramsType === "SessionCookies") {
+          return {
+            params: {
+              type: "object",
+              properties: { session: { type: "string" } },
+            },
+            querystring: undefined,
+            pathParams: undefined,
+            body: undefined,
+            responses: undefined,
+          };
+        }
+        return {
+          params: undefined,
+          querystring: undefined,
+          pathParams: undefined,
+          body: undefined,
+          responses: undefined,
+        };
+      }),
+      createRequestParamsSchema: vi.fn<MockFn>(
+        (_schema: unknown, _isPath: boolean, forcedIn?: "query" | "path" | "header" | "cookie") => {
+          if (forcedIn === "header") {
+            return [
+              { in: "header", name: "X-Api-Key", required: true, schema: { type: "string" } },
+            ];
+          }
+          if (forcedIn === "cookie") {
+            return [{ in: "cookie", name: "session", required: false, schema: { type: "string" } }];
+          }
+          return [];
+        },
+      ),
+      createDefaultPathParamsSchema: vi.fn<MockFn>(),
+      detectContentType: vi.fn<MockFn>(),
+      createRequestBodySchema: vi.fn<MockFn>(),
+      createResponseSchema: vi.fn<MockFn>(() => ({ 200: { description: "OK" } })),
+      ensureSchemaResolved: vi.fn<MockFn>(),
+      getSchemaReferenceName: vi.fn<MockFn>((name: string) => name),
+    };
+    const responseProcessor = {
+      supportsRequestBody: vi.fn<MockFn>(() => false),
+      processResponses: vi.fn<MockFn>(() => ({ 200: { description: "OK" } })),
+    };
+
+    const processor = new OperationProcessor(schemaProcessor as never, responseProcessor as never);
+    const result = processor.processOperation("GET", "/secure", {
+      headerType: "RequestHeaders",
+      cookieType: "SessionCookies",
+    });
+
+    expect(result.definition.parameters).toContainEqual({
+      in: "header",
+      name: "X-Api-Key",
+      required: true,
+      schema: { type: "string" },
+    });
+    expect(result.definition.parameters).toContainEqual({
+      in: "cookie",
+      name: "session",
+      required: false,
+      schema: { type: "string" },
+    });
+  });
+
+  it("applies @openapi-override as a last-step deep merge on the definition", () => {
+    const schemaProcessor = {
+      getSchemaContent: vi.fn<MockFn>(() => ({
+        params: undefined,
+        querystring: undefined,
+        pathParams: undefined,
+        body: undefined,
+        responses: undefined,
+      })),
+      createRequestParamsSchema: vi.fn<MockFn>(() => []),
+      createDefaultPathParamsSchema: vi.fn<MockFn>(),
+      detectContentType: vi.fn<MockFn>(),
+      createRequestBodySchema: vi.fn<MockFn>(),
+      createResponseSchema: vi.fn<MockFn>(() => ({ 200: { description: "OK" } })),
+      ensureSchemaResolved: vi.fn<MockFn>(),
+      getSchemaReferenceName: vi.fn<MockFn>((name: string) => name),
+    };
+    const responseProcessor = {
+      supportsRequestBody: vi.fn<MockFn>(() => false),
+      processResponses: vi.fn<MockFn>(() => ({ 200: { description: "OK" } })),
+    };
+
+    const processor = new OperationProcessor(schemaProcessor as never, responseProcessor as never);
+    const result = processor.processOperation("GET", "/custom", {
+      tag: "Custom",
+      openapiOverride: {
+        "x-internal": true,
+        "x-rate-limit": 100,
+      },
+    });
+
+    expect((result.definition as Record<string, unknown>)["x-internal"]).toBe(true);
+    expect((result.definition as Record<string, unknown>)["x-rate-limit"]).toBe(100);
+  });
 });

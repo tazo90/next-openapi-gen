@@ -18,7 +18,9 @@
         "summary": "List authors",
         "description": "Lists authors with filtering and sorting to broaden the drizzle-zod example beyond a single resource.",
         "tags": [
-          "Authors"
+          "Authors",
+          "Blog",
+          "Editorial"
         ],
         "parameters": [
           {
@@ -78,6 +80,14 @@
                   "items": {
                     "$ref": "#/components/schemas/AuthorResponseSchema"
                   }
+                }
+              }
+            },
+            "headers": {
+              "X-Total-Count": {
+                "description": "Total authors matching the query",
+                "schema": {
+                  "type": "integer"
                 }
               }
             }
@@ -388,10 +398,11 @@
     "/posts/{id}": {
       "get": {
         "operationId": "get-posts-{id}",
-        "summary": "Get post by ID",
+        "summary": "Get post",
         "description": "Retrieve a single blog post by its ID",
         "tags": [
-          "Posts"
+          "Posts",
+          "Blog"
         ],
         "parameters": [
           {
@@ -414,6 +425,20 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PostResponseSchema"
+                }
+              }
+            },
+            "headers": {
+              "ETag": {
+                "description": "Strong ETag for optimistic concurrency",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Last-Modified": {
+                "description": "Timestamp the post was last modified",
+                "schema": {
+                  "type": "string"
                 }
               }
             }
@@ -530,32 +555,45 @@
   ],
   "components": {
     "schemas": {
-      "AuthorsQueryParams": {
+      "AuthorBatchStatusUpdateSchema": {
         "type": "object",
         "properties": {
-          "page": {
-            "type": "string",
-            "pattern": "^\\d+$",
-            "description": "Page number"
+          "authorIds": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "minimum": 0,
+              "exclusiveMinimum": true
+            },
+            "minItems": 1,
+            "description": "Author IDs to update"
           },
-          "limit": {
-            "type": "string",
-            "pattern": "^\\d+$",
-            "description": "Items per page"
-          },
-          "search": {
-            "type": "string",
-            "description": "Case-insensitive author search"
-          },
-          "sort": {
+          "status": {
             "type": "string",
             "enum": [
-              "name",
-              "recent"
+              "featured",
+              "standard"
             ],
-            "description": "Sort mode"
+            "description": "Visibility bucket to assign"
           }
-        }
+        },
+        "required": [
+          "authorIds",
+          "status"
+        ]
+      },
+      "AuthorIdParams": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^\\d+$",
+            "description": "Author ID"
+          }
+        },
+        "required": [
+          "id"
+        ]
       },
       "AuthorResponseSchema": {
         "type": "object",
@@ -601,6 +639,33 @@
           "createdAt"
         ]
       },
+      "AuthorsQueryParams": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "string",
+            "pattern": "^\\d+$",
+            "description": "Page number"
+          },
+          "limit": {
+            "type": "string",
+            "pattern": "^\\d+$",
+            "description": "Items per page"
+          },
+          "search": {
+            "type": "string",
+            "description": "Case-insensitive author search"
+          },
+          "sort": {
+            "type": "string",
+            "enum": [
+              "name",
+              "recent"
+            ],
+            "description": "Sort mode"
+          }
+        }
+      },
       "CreateAuthorSchema": {
         "type": "object",
         "properties": {
@@ -626,95 +691,62 @@
           "name"
         ]
       },
-      "AuthorBatchStatusUpdateSchema": {
+      "CreatePostSchema": {
         "type": "object",
         "properties": {
-          "authorIds": {
-            "type": "array",
-            "items": {
-              "type": "integer",
-              "minimum": 0,
-              "exclusiveMinimum": true
-            },
-            "minItems": 1,
-            "description": "Author IDs to update"
-          },
-          "status": {
+          "title": {
             "type": "string",
-            "enum": [
-              "featured",
-              "standard"
-            ],
-            "description": "Visibility bucket to assign"
+            "minLength": 5,
+            "maxLength": 255,
+            "description": "Post title"
+          },
+          "slug": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 255,
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+            "description": "URL-friendly slug"
+          },
+          "excerpt": {
+            "type": "string",
+            "maxLength": 500,
+            "description": "Short excerpt of the post"
+          },
+          "content": {
+            "type": "string",
+            "minLength": 10,
+            "description": "Post content in markdown"
+          },
+          "published": {
+            "type": "boolean",
+            "description": "Whether the post is published"
+          },
+          "authorId": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true,
+            "description": "ID of the post author"
           }
         },
         "required": [
-          "authorIds",
-          "status"
+          "title",
+          "slug",
+          "content",
+          "authorId"
         ]
       },
-      "AuthorIdParams": {
+      "PostIdParams": {
         "type": "object",
         "properties": {
           "id": {
             "type": "string",
             "pattern": "^\\d+$",
-            "description": "Author ID"
+            "description": "Post ID"
           }
         },
         "required": [
           "id"
         ]
-      },
-      "UpdateAuthorSchema": {
-        "type": "object",
-        "properties": {
-          "avatarUrl": {
-            "type": "string",
-            "format": "uri",
-            "description": "Author avatar URL"
-          },
-          "bio": {
-            "type": "string",
-            "maxLength": 280,
-            "description": "Author biography"
-          },
-          "name": {
-            "type": "string",
-            "minLength": 2,
-            "maxLength": 100,
-            "description": "Author display name"
-          }
-        },
-        "required": []
-      },
-      "PostsQueryParams": {
-        "type": "object",
-        "properties": {
-          "page": {
-            "type": "string",
-            "pattern": "^\\d+$",
-            "description": "Page number"
-          },
-          "limit": {
-            "type": "string",
-            "pattern": "^\\d+$",
-            "description": "Items per page"
-          },
-          "published": {
-            "type": "string",
-            "enum": [
-              "true",
-              "false"
-            ],
-            "description": "Filter by publication status"
-          },
-          "authorId": {
-            "type": "string",
-            "pattern": "^\\d+$",
-            "description": "Filter by author ID"
-          }
-        }
       },
       "PostResponseSchema": {
         "type": "object",
@@ -777,62 +809,54 @@
           "updatedAt"
         ]
       },
-      "CreatePostSchema": {
+      "PostsQueryParams": {
         "type": "object",
         "properties": {
-          "title": {
-            "type": "string",
-            "minLength": 5,
-            "maxLength": 255,
-            "description": "Post title"
-          },
-          "slug": {
-            "type": "string",
-            "minLength": 3,
-            "maxLength": 255,
-            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
-            "description": "URL-friendly slug"
-          },
-          "excerpt": {
-            "type": "string",
-            "maxLength": 500,
-            "description": "Short excerpt of the post"
-          },
-          "content": {
-            "type": "string",
-            "minLength": 10,
-            "description": "Post content in markdown"
-          },
-          "published": {
-            "type": "boolean",
-            "description": "Whether the post is published"
-          },
-          "authorId": {
-            "type": "integer",
-            "minimum": 0,
-            "exclusiveMinimum": true,
-            "description": "ID of the post author"
-          }
-        },
-        "required": [
-          "title",
-          "slug",
-          "content",
-          "authorId"
-        ]
-      },
-      "PostIdParams": {
-        "type": "object",
-        "properties": {
-          "id": {
+          "page": {
             "type": "string",
             "pattern": "^\\d+$",
-            "description": "Post ID"
+            "description": "Page number"
+          },
+          "limit": {
+            "type": "string",
+            "pattern": "^\\d+$",
+            "description": "Items per page"
+          },
+          "published": {
+            "type": "string",
+            "enum": [
+              "true",
+              "false"
+            ],
+            "description": "Filter by publication status"
+          },
+          "authorId": {
+            "type": "string",
+            "pattern": "^\\d+$",
+            "description": "Filter by author ID"
           }
-        },
-        "required": [
-          "id"
-        ]
+        }
+      },
+      "UpdateAuthorSchema": {
+        "type": "object",
+        "properties": {
+          "avatarUrl": {
+            "type": "string",
+            "format": "uri",
+            "description": "Author avatar URL"
+          },
+          "bio": {
+            "type": "string",
+            "maxLength": 280,
+            "description": "Author biography"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 100,
+            "description": "Author display name"
+          }
+        }
       },
       "UpdatePostSchema": {
         "type": "object",
@@ -862,8 +886,7 @@
             "type": "boolean",
             "description": "Publication status"
           }
-        },
-        "required": []
+        }
       }
     },
     "responses": {

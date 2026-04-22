@@ -4,6 +4,10 @@ components:
     Role:
       type: object
       description: User role definition from protobuf
+      xml:
+        name: role
+        namespace: "https://example.com/schemas/identity"
+        prefix: idn
       properties:
         id:
           type: string

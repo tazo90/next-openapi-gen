@@ -3,11 +3,15 @@ import { PostIdParams, PostResponseSchema, UpdatePostSchema } from "@/schemas/po
 
 /**
  * Get post by ID
+ * @summary Get post
  * @description Retrieve a single blog post by its ID
  * @pathParams PostIdParams
  * @response PostResponseSchema
  * @responseDescription Single blog post
+ * @responseHeader 200 ETag string Strong ETag for optimistic concurrency
+ * @responseHeader 200 Last-Modified string Timestamp the post was last modified
  * @tag Posts
+ * @tags Blog
  * @openapi
  */
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {

@@ -12,10 +12,12 @@ type ProjectRouteContext = {
 
 /**
  * Get project by ID.
+ * @summary Get project
  * @description Demonstrates using next.config.ts to point the adapter at a typed config file.
  * @pathParams ProjectRecordIdParams
  * @response ProjectRecord
  * @tag Projects
+ * @tags Config
  * @openapi
  */
 export async function GET(_request: Request, { params }: ProjectRouteContext) {

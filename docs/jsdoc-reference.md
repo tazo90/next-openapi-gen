@@ -14,30 +14,42 @@ explicit `@response` metadata always wins over inferred responses.
 | Tag                       | Purpose                                                                 |
 | ------------------------- | ----------------------------------------------------------------------- |
 | `@description`            | Operation description                                                   |
+| `@summary`                | Operation summary (overrides the first JSDoc line)                      |
 | `@operationId`            | Override the generated operation ID                                     |
 | `@pathParams`             | Path parameter schema or type                                           |
 | `@params`                 | Query parameter schema or type                                          |
 | `@queryParams`            | Alias for `@params` when tooling conflicts with `@params`               |
 | `@querystring`            | OpenAPI `3.2` querystring schema with an optional parameter name        |
+| `@header`                 | Header parameter schema or type (`in: header`)                          |
+| `@cookie`                 | Cookie parameter schema or type (`in: cookie`)                          |
 | `@body`                   | Request body schema or type                                             |
 | `@bodyDescription`        | Request body description                                                |
 | `@examples`               | Inline, serialized, external, or exported examples                      |
 | `@response`               | Response schema, code, and optional description                         |
 | `@responseDescription`    | Response description without redefining the schema                      |
 | `@responseContentType`    | Override the response media type                                        |
+| `@responseHeader`         | Add a response header (`status name type [description]`)                |
 | `@responseItem`           | OpenAPI `3.2` sequential media item schema                              |
 | `@responseItemEncoding`   | OpenAPI `3.2` sequential media item encoding                            |
 | `@responsePrefixEncoding` | OpenAPI `3.2` sequential media prefix encoding                          |
 | `@responseSet`            | Use a named response set from `next.openapi.json`                       |
 | `@add`                    | Add extra responses to the operation                                    |
 | `@contentType`            | Request content type such as `multipart/form-data`                      |
-| `@auth`                   | Operation security requirement(s)                                       |
+| `@auth`                   | Operation security requirement(s) via preset names                      |
+| `@security`               | Explicit security requirements (`Scheme1, Scheme2:scope1\|scope2`)      |
+| `@link`                   | OpenAPI response link (`status name operationId\|#/components/...`)     |
+| `@callback`               | OpenAPI callback (`name runtimeExpression [reference]`)                 |
+| `@webhook`                | Mark the handler as a webhook (optional webhook name)                   |
+| `@servers`                | Operation-level servers (comma-separated URLs)                          |
+| `@externalDocs`           | Operation-level external documentation (`url [description]`)            |
 | `@tag`                    | Operation tag                                                           |
+| `@tags`                   | Additional operation tags (comma-separated)                             |
 | `@tagSummary`             | OpenAPI `3.2` tag summary                                               |
 | `@tagKind`                | OpenAPI `3.2` tag kind                                                  |
 | `@tagParent`              | OpenAPI `3.2` tag parent                                                |
-| `@deprecated`             | Mark the operation as deprecated                                        |
+| `@deprecated`             | Mark the operation as deprecated (optional reason on same line)         |
 | `@openapi`                | Explicitly include the operation when `includeOpenApiRoutes` is enabled |
+| `@openapi-override`       | Deep-merge extra OpenAPI fields onto the operation (JSON object)        |
 | `@ignore`                 | Exclude the operation from generation                                   |
 | `@method`                 | Required HTTP method tag for Pages Router handlers                      |
 
@@ -282,6 +294,167 @@ export async function GET() {
   return Response.json({ ok: true });
 }
 ```
+
+## Header and cookie parameters
+
+Use `@header` and `@cookie` to document request headers and cookies. The
+referenced schema is emitted as one OpenAPI parameter per property, with `in`
+set to `header` or `cookie`.
+
+```ts
+const RequestHeaders = z.object({
+  "X-Api-Key": z.string().describe("API key"),
+  "X-Request-Id": z.string().uuid().optional(),
+});
+
+const SessionCookies = z.object({
+  session: z.string().describe("Opaque session cookie"),
+});
+
+/**
+ * @header RequestHeaders
+ * @cookie SessionCookies
+ * @response UserResponse
+ * @openapi
+ */
+export async function GET() {
+  return Response.json({ ok: true });
+}
+```
+
+## Servers, external docs, and security
+
+Operation-level `servers`, `externalDocs`, and `security` requirements can be
+declared directly on the route.
+
+```ts
+/**
+ * Subscribe to events
+ * @servers https://api.example.com, https://staging.example.com
+ * @externalDocs https://docs.example.com/events Event docs
+ * @security BearerAuth, ApiKeyAuth:read:events|write:events
+ * @openapi
+ */
+export async function POST() {
+  return Response.json({ ok: true });
+}
+```
+
+`@security` accepts comma-separated security requirements; use `Scheme:scope1|scope2`
+to attach scopes to a scheme. `@auth` remains available for preset-based
+shortcuts such as `bearer`, `basic`, and `apikey`.
+
+## Response headers and links
+
+Document response headers with `@responseHeader` and add OpenAPI links with
+`@link`. Both annotations attach to the response identified by the status code.
+
+```ts
+/**
+ * Create a user
+ * @response 201:UserResponse
+ * @responseHeader 201 Location string Newly created user URL
+ * @responseHeader 429 Retry-After integer Seconds to wait
+ * @link 201 GetUser #/components/links/GetUser
+ * @openapi
+ */
+export async function POST() {
+  return Response.json({ ok: true }, { status: 201 });
+}
+```
+
+## Webhooks and callbacks
+
+Mark a handler as a webhook (OpenAPI `3.1`+ `webhooks` section) with
+`@webhook`, and declare operation-level callbacks with `@callback`.
+
+```ts
+/**
+ * @webhook newEvent
+ * @body EventPayload
+ * @openapi
+ */
+export async function POST() {
+  return Response.json({ ok: true });
+}
+
+/**
+ * Subscribe with a callback URL
+ * @body SubscriptionRequest
+ * @callback onEvent {$request.body#callbackUrl} EventPayload
+ * @openapi
+ */
+export async function POST() {
+  return Response.json({ ok: true });
+}
+```
+
+## Wildcard and default status codes
+
+`@response` accepts OpenAPI `3.x` wildcard status codes and `default`.
+
+```ts
+/**
+ * @response 2XX:UserResponse Any successful response
+ * @response 4XX:ErrorResponse Any client error
+ * @response default:ErrorResponse Fallback
+ * @openapi
+ */
+export async function GET() {
+  return Response.json({ ok: true });
+}
+```
+
+## Escape hatch: openapi-override
+
+`@openapi-override` takes a JSON object that is deep-merged onto the final
+operation definition. Use this sparingly for vendor extensions or fields not
+covered by a dedicated tag.
+
+```ts
+/**
+ * Priority endpoint
+ * @response UserResponse
+ * @openapi-override {"x-internal": true, "x-rate-limit": 100}
+ * @openapi
+ */
+export async function GET() {
+  return Response.json({ ok: true });
+}
+```
+
+`@openapi-override` also works at the property level inside TypeScript type
+declarations — the JSON object is merged onto the property schema after
+inference, so it is the officially supported escape hatch for attributes the
+generator cannot infer (custom formats, vendor extensions, tightened
+constraints, etc.):
+
+```ts
+type User = {
+  id: string;
+  /**
+   * @openapi-override { "format": "email", "maxLength": 320 }
+   */
+  email: string;
+};
+```
+
+## Automatic inference
+
+The generator infers OpenAPI fields from the schema where possible, so you do
+not have to annotate them explicitly.
+
+- `z.discriminatedUnion("kind", [...])` emits `discriminator.propertyName` and
+  a `mapping` built from each variant's literal `kind` value when variants are
+  stored as `$ref`.
+- `z.readonly()` and TypeScript `Readonly<T>` emit `readOnly: true` on the
+  schema.
+- `z.object({ file: z.custom<File>() })` combined with
+  `@contentType multipart/form-data` produces per-part `encoding` entries that
+  map file properties to `application/octet-stream` or the declared
+  `contentMediaType`.
+- Typed `NextResponse.json(...)` and `Response.json(...)` returns in App
+  Router handlers are inferred as response schemas when `@response` is absent.
 
 ## OpenAPI 3.2 features
 

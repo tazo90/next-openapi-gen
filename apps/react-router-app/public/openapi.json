@@ -9,10 +9,12 @@
     "/projects/{projectId}": {
       "get": {
         "operationId": "reactRouterGetProjectById",
-        "summary": "Load a project.",
+        "summary": "Get project",
         "description": "",
         "tags": [
-          "Projects"
+          "s Projects, Workspace",
+          "Projects",
+          "Workspace"
         ],
         "parameters": [
           {
@@ -33,6 +35,19 @@
                 "schema": {
                   "$ref": "#/components/schemas/Project"
                 }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "description": "Trace identifier",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "links": {
+              "updateProject": {
+                "operationId": "reactRouterUpdateProjectById"
               }
             }
           },
@@ -196,6 +211,9 @@
       "name": "Projects"
     },
     {
+      "name": "s Projects, Workspace"
+    },
+    {
       "name": "Settings"
     },
     {
@@ -210,15 +228,23 @@
   ],
   "components": {
     "schemas": {
-      "ProjectIdParams": {
+      "ProfileSettings": {
         "type": "object",
         "properties": {
-          "projectId": {
+          "theme": {
+            "type": "string",
+            "enum": [
+              "light",
+              "dark"
+            ]
+          },
+          "locale": {
             "type": "string"
           }
         },
         "required": [
-          "projectId"
+          "theme",
+          "locale"
         ]
       },
       "Project": {
@@ -244,6 +270,17 @@
           "visibility"
         ]
       },
+      "ProjectIdParams": {
+        "type": "object",
+        "properties": {
+          "projectId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "projectId"
+        ]
+      },
       "ProjectMutationInput": {
         "type": "object",
         "properties": {
@@ -263,46 +300,6 @@
         "required": [
           "name",
           "visibility"
-        ]
-      },
-      "ProfileSettings": {
-        "type": "object",
-        "properties": {
-          "theme": {
-            "type": "string",
-            "enum": [
-              "light",
-              "dark"
-            ]
-          },
-          "locale": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "theme",
-          "locale"
-        ]
-      },
-      "UploadDraft": {
-        "type": "object",
-        "properties": {
-          "fileName": {
-            "type": "string",
-            "nullable": false
-          },
-          "folder": {
-            "type": "string",
-            "enum": [
-              "avatars",
-              "exports"
-            ],
-            "nullable": false
-          }
-        },
-        "required": [
-          "fileName",
-          "folder"
         ]
       },
       "UploadArtifact": {
@@ -326,6 +323,27 @@
           "id",
           "folder",
           "url"
+        ]
+      },
+      "UploadDraft": {
+        "type": "object",
+        "properties": {
+          "fileName": {
+            "type": "string",
+            "nullable": false
+          },
+          "folder": {
+            "type": "string",
+            "enum": [
+              "avatars",
+              "exports"
+            ],
+            "nullable": false
+          }
+        },
+        "required": [
+          "fileName",
+          "folder"
         ]
       }
     },

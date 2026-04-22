@@ -2,9 +2,13 @@ import type { Project, ProjectIdParams, ProjectMutationInput } from "../../schem
 
 /**
  * Load a project.
+ * @summary Get project
+ * @tags Projects, Workspace
  * @operationId reactRouterGetProjectById
  * @pathParams ProjectIdParams
  * @response Project
+ * @responseHeader 200 X-Request-Id string Trace identifier
+ * @link 200 updateProject reactRouterUpdateProjectById
  * @tag Projects
  * @responseSet auth
  * @openapi

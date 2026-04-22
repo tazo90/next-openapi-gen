@@ -10,11 +10,13 @@ import type { NextApiRequest, NextApiResponse } from "next";
  */
 /**
  * Update user
+ * @summary Update user (legacy)
  * @description Update an existing user's information
  * @pathParams UserIdParamsSchema
  * @body UpdateUserSchema
  * @response UserSchema
  * @method PUT
+ * @deprecated Use PATCH /api/v2/users/{id} instead; scheduled for removal 2026-12-01.
  * @openapi
  */
 /**

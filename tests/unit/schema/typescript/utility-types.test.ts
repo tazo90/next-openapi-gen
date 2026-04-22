@@ -243,7 +243,7 @@ describe("TypeScript utility type helpers", () => {
         t.tsTypeReference(t.identifier("Awaited"), t.tsTypeParameterInstantiation([])),
         context,
       ),
-    ).toEqual({ type: "object" });
+    ).toEqual({});
     expect(
       resolveUtilityTypeReference(
         t.tsTypeReference(

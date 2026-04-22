@@ -19,10 +19,13 @@ const LoginResponse = z.object({
 
 /**
  * User login
+ * @summary Sign in
  * @description Authenticate user and return access token
  * @body LoginRequest
  * @response LoginResponse
  * @tag Authentication
+ * @tags Sandbox
+ * @openapi-override {"x-internal": true, "x-rate-limit": 100}
  * @openapi
  */
 export async function POST(request: NextRequest) {

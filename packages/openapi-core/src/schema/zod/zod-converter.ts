@@ -6,12 +6,12 @@ import * as t from "@babel/types";
 import { traverse } from "../../shared/babel-traverse.js";
 import { parseTypeScriptFile } from "../../shared/utils.js";
 import { logger } from "../../shared/logger.js";
+import { SymbolResolver } from "../../shared/symbol-resolver.js";
 import { DrizzleZodProcessor } from "./drizzle-zod-processor.js";
 import {
   expandFactoryCall,
   extractReturnNode,
   parseFileWithCache,
-  resolveImportPath,
   substituteParameters,
 } from "./converter-runtime.js";
 import {
@@ -69,6 +69,10 @@ export class ZodSchemaConverter {
   schemaFilesCache: Map<string, string[]> = new Map();
   preprocessedFiles: Set<string> = new Set();
   schemaVariantRefs: Map<string, string> = new Map();
+  /** Reverse index: schema name -> file(s) that declare it. Populated during pre-scan. */
+  schemaNameToFiles: Map<string, Set<string>> = new Map();
+  /** Per-file import alias for the `zod` module (`import { z as zod }` sets this to `"zod"`). */
+  zodImportAlias: Map<string, string> = new Map();
 
   // Current processing context (set during file processing)
   currentFilePath?: string;
@@ -77,6 +81,8 @@ export class ZodSchemaConverter {
   currentContentType: ContentType = "response";
   private readonly fileAccess: ZodConverterFileAccess;
   private readonly runtimeExporter = new ZodRuntimeExporter();
+  /** Shared symbol resolver — replaces ad-hoc per-call AST traversals. */
+  readonly symbolResolver: SymbolResolver;
 
   constructor(
     schemaDir: string | string[],
@@ -87,6 +93,10 @@ export class ZodSchemaConverter {
     this.schemaDirs = dirs.map((d) => path.resolve(d));
     this.apiDir = apiDir ? path.resolve(apiDir) : undefined;
     this.fileAccess = fileAccess;
+    this.symbolResolver = new SymbolResolver(
+      fileAccess as Pick<typeof fs, "existsSync" | "readFileSync">,
+      this.fileASTCache,
+    );
   }
 
   /**
@@ -127,6 +137,19 @@ export class ZodSchemaConverter {
     this.processingSchemas.add(schemaName);
 
     try {
+      // Fast path: reverse-index hit from a previous pass
+      const indexedFiles = this.schemaNameToFiles.get(schemaName);
+      if (indexedFiles && indexedFiles.size > 0) {
+        for (const filePath of indexedFiles) {
+          this.processFileForZodSchema(filePath, schemaName);
+          const indexedSchema = this.getStoredSchema(schemaName, this.currentContentType, false);
+          if (indexedSchema) {
+            logger.debug(`Found Zod schema '${schemaName}' via reverse index: ${filePath}`);
+            return indexedSchema;
+          }
+        }
+      }
+
       // Find all route files and process them first
       const routeFiles = this.findRouteFiles();
 
@@ -354,6 +377,7 @@ export class ZodSchemaConverter {
           this.drizzleZodImports.add(importName);
         });
         this.fileImportsCache.set(filePath, importedModules);
+        this.zodImportAlias.set(filePath, resolution.zodLocalName);
       }
 
       // Set current processing context for use by processZodNode during factory expansion
@@ -361,10 +385,18 @@ export class ZodSchemaConverter {
       this.currentAST = ast;
       this.currentImports = importedModules;
 
-      // Look for all exported Zod schemas
+      // Look for all exported Zod schemas — short-circuit once we have a stored result.
+      const shouldSkip = (path: { stop: () => void }): boolean => {
+        if (this.getStoredSchema(schemaName, this.currentContentType, false)) {
+          path.stop();
+          return true;
+        }
+        return false;
+      };
       traverse(ast, {
         // For export const SchemaName = z.object({...})
         ExportNamedDeclaration: (path: NodePath<t.ExportNamedDeclaration>) => {
+          if (shouldSkip(path)) return;
           if (t.isVariableDeclaration(path.node.declaration)) {
             path.node.declaration.declarations.forEach((declaration: t.VariableDeclarator) => {
               if (
@@ -400,7 +432,7 @@ export class ZodSchemaConverter {
                   t.isCallExpression(declaration.init) &&
                   t.isMemberExpression(declaration.init.callee) &&
                   t.isIdentifier(declaration.init.callee.object) &&
-                  declaration.init.callee.object.name === "z"
+                  this.isZodLocalName(declaration.init.callee.object.name)
                 ) {
                   const schema = this.processZodNode(declaration.init);
                   if (schema) {
@@ -482,6 +514,7 @@ export class ZodSchemaConverter {
 
         // For const SchemaName = z.object({...})
         VariableDeclarator: (path: NodePath<t.VariableDeclarator>) => {
+          if (shouldSkip(path)) return;
           if (t.isIdentifier(path.node.id) && path.node.id.name === schemaName && path.node.init) {
             // Check if this is any Zod schema (including chained calls)
             if (this.isZodSchema(path.node.init)) {
@@ -510,33 +543,129 @@ export class ZodSchemaConverter {
                 schema = processChainedCall(node.callee.object, baseSchema);
               }
 
-              // Now apply the current method
-              switch (methodName) {
-                case "omit":
-                  if (node.arguments.length > 0 && t.isObjectExpression(node.arguments[0])) {
-                    node.arguments[0].properties.forEach((prop) => {
-                      if (
-                        t.isObjectProperty(prop) &&
-                        t.isBooleanLiteral(prop.value) &&
-                        prop.value.value === true
-                      ) {
-                        const key = t.isIdentifier(prop.key)
-                          ? prop.key.name
-                          : t.isStringLiteral(prop.key)
-                            ? prop.key.value
-                            : null;
+              // Extract a mask argument: `{ id: true }`, `["id"] as const`, or an identifier
+              // pointing to either. Returns the list of picked/omitted keys.
+              const extractMaskKeys = (arg: t.Node | undefined): string[] => {
+                if (!arg) return [];
+                if (t.isTSAsExpression(arg) || t.isTSSatisfiesExpression(arg)) {
+                  return extractMaskKeys(arg.expression);
+                }
+                if (t.isObjectExpression(arg)) {
+                  const keys: string[] = [];
+                  arg.properties.forEach((prop) => {
+                    if (
+                      t.isObjectProperty(prop) &&
+                      t.isBooleanLiteral(prop.value) &&
+                      prop.value.value === true
+                    ) {
+                      const key = t.isIdentifier(prop.key)
+                        ? prop.key.name
+                        : t.isStringLiteral(prop.key)
+                          ? prop.key.value
+                          : null;
+                      if (key) keys.push(key);
+                    }
+                  });
+                  return keys;
+                }
+                if (t.isArrayExpression(arg)) {
+                  return arg.elements
+                    .filter((el): el is t.StringLiteral => !!el && t.isStringLiteral(el))
+                    .map((el) => el.value);
+                }
+                if (t.isIdentifier(arg)) {
+                  const resolved = this.resolveMaskKeys(arg.name);
+                  if (resolved && resolved.length > 0) return resolved;
+                  const arrayValues = this.resolveConstArrayValues(arg.name);
+                  if (arrayValues && arrayValues.length > 0) {
+                    return arrayValues.filter((v): v is string => typeof v === "string");
+                  }
+                }
+                return [];
+              };
 
-                        if (key && schema.properties) {
-                          logger.debug(`Removing property: ${key}`);
-                          delete schema.properties[key];
-                          if (schema.required) {
-                            schema.required = schema.required.filter((r) => r !== key);
-                          }
+              // Extract an `extend`/`merge` argument: object literal or identifier pointing to
+              // one. Returns an ObjectExpression for downstream property processing.
+              const extractShapeArgument = (arg: t.Node | undefined): t.ObjectExpression | null => {
+                if (!arg) return null;
+                if (t.isObjectExpression(arg)) return arg;
+                if (t.isTSAsExpression(arg) || t.isTSSatisfiesExpression(arg)) {
+                  return extractShapeArgument(arg.expression);
+                }
+                if (t.isIdentifier(arg)) {
+                  const constObj = this.resolveConstObjectNode(arg.name);
+                  if (constObj) return constObj;
+                  const schemaNode = this.resolveObjectSchemaNode(arg.name);
+                  if (
+                    schemaNode &&
+                    schemaNode.arguments.length > 0 &&
+                    t.isObjectExpression(schemaNode.arguments[0])
+                  ) {
+                    return schemaNode.arguments[0];
+                  }
+                }
+                return null;
+              };
+
+              const applyShapeExtension = (shape: t.ObjectExpression) => {
+                const extensionProperties: Record<string, OpenApiSchema> = {};
+                const extensionRequired: string[] = [];
+
+                shape.properties.forEach((prop) => {
+                  if (t.isObjectProperty(prop)) {
+                    const key = t.isIdentifier(prop.key)
+                      ? prop.key.name
+                      : t.isStringLiteral(prop.key)
+                        ? prop.key.value
+                        : null;
+
+                    if (key) {
+                      const propSchema = this.processZodNode(prop.value);
+                      if (propSchema) {
+                        extensionProperties[key] = propSchema;
+
+                        const isOptional =
+                          // @ts-ignore
+                          this.isOptional(prop.value) || this.hasOptionalMethod(prop.value);
+
+                        if (!isOptional) {
+                          extensionRequired.push(key);
                         }
                       }
-                    });
+                    }
                   }
+                });
+
+                if (schema.properties) {
+                  schema.properties = {
+                    ...schema.properties,
+                    ...extensionProperties,
+                  };
+                } else {
+                  schema.properties = extensionProperties;
+                }
+
+                if (extensionRequired.length > 0) {
+                  schema.required = [...(schema.required || []), ...extensionRequired];
+                  schema.required = [...new Set(schema.required)];
+                }
+              };
+
+              // Now apply the current method
+              switch (methodName) {
+                case "omit": {
+                  const keys = extractMaskKeys(node.arguments[0]);
+                  keys.forEach((key) => {
+                    if (schema.properties && key in schema.properties) {
+                      logger.debug(`Removing property: ${key}`);
+                      delete schema.properties[key];
+                      if (schema.required) {
+                        schema.required = schema.required.filter((r) => r !== key);
+                      }
+                    }
+                  });
                   break;
+                }
 
                 case "partial":
                   // All fields become optional (T | undefined), not nullable
@@ -545,42 +674,24 @@ export class ZodSchemaConverter {
                   }
                   break;
 
-                case "pick":
-                  if (node.arguments.length > 0 && t.isObjectExpression(node.arguments[0])) {
-                    const keysToPick: string[] = [];
-                    node.arguments[0].properties.forEach((prop) => {
-                      if (
-                        t.isObjectProperty(prop) &&
-                        t.isBooleanLiteral(prop.value) &&
-                        prop.value.value === true
-                      ) {
-                        const key = t.isIdentifier(prop.key)
-                          ? prop.key.name
-                          : t.isStringLiteral(prop.key)
-                            ? prop.key.value
-                            : null;
-                        if (key) keysToPick.push(key);
+                case "pick": {
+                  const keysToPick = extractMaskKeys(node.arguments[0]);
+                  if (keysToPick.length > 0 && schema.properties) {
+                    const existingProperties = schema.properties;
+                    const newProperties: Record<string, OpenApiSchema> = {};
+                    keysToPick.forEach((key) => {
+                      if (existingProperties[key]) {
+                        newProperties[key] = existingProperties[key];
                       }
                     });
+                    schema.properties = newProperties;
 
-                    // Keep only selected properties
-                    if (schema.properties) {
-                      const existingProperties = schema.properties;
-                      const newProperties: Record<string, OpenApiSchema> = {};
-                      keysToPick.forEach((key) => {
-                        if (existingProperties[key]) {
-                          newProperties[key] = existingProperties[key];
-                        }
-                      });
-                      schema.properties = newProperties;
-
-                      // Update required
-                      if (schema.required) {
-                        schema.required = schema.required.filter((key) => keysToPick.includes(key));
-                      }
+                    if (schema.required) {
+                      schema.required = schema.required.filter((key) => keysToPick.includes(key));
                     }
                   }
                   break;
+                }
 
                 case "required":
                   // All fields become required — preserve genuine nullable flags
@@ -590,55 +701,13 @@ export class ZodSchemaConverter {
                   break;
 
                 case "extend":
-                  // Extend the schema with new properties
-                  if (node.arguments.length > 0 && t.isObjectExpression(node.arguments[0])) {
-                    const extensionProperties: Record<string, OpenApiSchema> = {};
-                    const extensionRequired: string[] = [];
-
-                    node.arguments[0].properties.forEach((prop) => {
-                      if (t.isObjectProperty(prop)) {
-                        const key = t.isIdentifier(prop.key)
-                          ? prop.key.name
-                          : t.isStringLiteral(prop.key)
-                            ? prop.key.value
-                            : null;
-
-                        if (key) {
-                          // Process the Zod type for this property
-                          const propSchema = this.processZodNode(prop.value);
-                          if (propSchema) {
-                            extensionProperties[key] = propSchema;
-
-                            const isOptional =
-                              // @ts-ignore
-                              this.isOptional(prop.value) || this.hasOptionalMethod(prop.value);
-
-                            if (!isOptional) {
-                              extensionRequired.push(key);
-                            }
-                          }
-                        }
-                      }
-                    });
-
-                    // Merge with existing schema
-                    if (schema.properties) {
-                      schema.properties = {
-                        ...schema.properties,
-                        ...extensionProperties,
-                      };
-                    } else {
-                      schema.properties = extensionProperties;
-                    }
-
-                    // Merge required arrays
-                    if (extensionRequired.length > 0) {
-                      schema.required = [...(schema.required || []), ...extensionRequired];
-                      // Deduplicate
-                      schema.required = [...new Set(schema.required)];
-                    }
-                  }
+                case "merge": {
+                  // `.merge(OtherSchema)` is an alias of `.extend(Other.shape)` in Zod 3; in
+                  // Zod 4 it's folded into `.extend`. Both accept an identifier or literal.
+                  const shapeArg = extractShapeArgument(node.arguments[0]);
+                  if (shapeArg) applyShapeExtension(shapeArg);
                   break;
+                }
               }
 
               return schema;
@@ -660,7 +729,7 @@ export class ZodSchemaConverter {
             if (t.isCallExpression(path.node.init)) {
               const baseSchemaName = findBaseSchema(path.node.init);
 
-              if (baseSchemaName && baseSchemaName !== "z") {
+              if (baseSchemaName && !this.isZodLocalName(baseSchemaName)) {
                 logger.debug(`Found chained call starting from: ${baseSchemaName}`);
 
                 // First make sure the underlying schema is processed
@@ -791,7 +860,7 @@ export class ZodSchemaConverter {
                 t.isCallExpression(declaration.init) &&
                 t.isMemberExpression(declaration.init.callee) &&
                 t.isIdentifier(declaration.init.callee.object) &&
-                declaration.init.callee.object.name === "z"
+                this.isZodLocalName(declaration.init.callee.object.name)
               ) {
                 const schemaName = declaration.id.name;
                 if (!this.getStoredSchema(schemaName) && !this.processingSchemas.has(schemaName)) {
@@ -866,7 +935,7 @@ export class ZodSchemaConverter {
       t.isMemberExpression(node.callee) &&
       t.isMemberExpression(node.callee.object) &&
       t.isIdentifier(node.callee.object.object) &&
-      node.callee.object.object.name === "z" &&
+      this.isZodLocalName(node.callee.object.object.name) &&
       t.isIdentifier(node.callee.object.property) &&
       node.callee.object.property.name === "coerce" &&
       t.isIdentifier(node.callee.property)
@@ -894,7 +963,7 @@ export class ZodSchemaConverter {
         currentObject = currentObject.object;
       }
 
-      if (t.isIdentifier(currentObject, { name: "z" })) {
+      if (t.isIdentifier(currentObject) && this.isZodLocalName(currentObject.name)) {
         return this.processZodPrimitive(node);
       }
     }
@@ -904,7 +973,7 @@ export class ZodSchemaConverter {
       t.isCallExpression(node) &&
       t.isMemberExpression(node.callee) &&
       t.isIdentifier(node.callee.object) &&
-      node.callee.object.name === "z" &&
+      this.isZodLocalName(node.callee.object.name) &&
       t.isIdentifier(node.callee.property)
     ) {
       const methodName = node.callee.property.name;
@@ -932,7 +1001,7 @@ export class ZodSchemaConverter {
       t.isMemberExpression(node.callee) &&
       t.isIdentifier(node.callee.object) &&
       t.isIdentifier(node.callee.property) &&
-      node.callee.object.name !== "z" // Make sure it's not a z.* call
+      !this.isZodLocalName(node.callee.object.name) // Make sure it's not a z.* call
     ) {
       const schemaName = node.callee.object.name;
       const methodName = node.callee.property.name;
@@ -984,7 +1053,7 @@ export class ZodSchemaConverter {
       t.isCallExpression(node) &&
       t.isMemberExpression(node.callee) &&
       t.isIdentifier(node.callee.object) &&
-      node.callee.object.name === "z" &&
+      this.isZodLocalName(node.callee.object.name) &&
       t.isIdentifier(node.callee.property) &&
       node.callee.property.name === "lazy" &&
       node.arguments.length > 0
@@ -1076,24 +1145,32 @@ export class ZodSchemaConverter {
   }
 
   /**
-   * Process a Zod literal schema: z.literal("value")
+   * Process a Zod literal schema: z.literal("value") (identifier args resolved via SymbolResolver).
    */
   processZodLiteral(node: t.CallExpression): OpenApiSchema {
-    return processZodLiteral(node);
+    return processZodLiteral(node, this.buildPrimitiveHelperContext());
   }
 
   /**
    * Process a Zod discriminated union: z.discriminatedUnion("type", [schema1, schema2])
    */
   processZodDiscriminatedUnion(node: t.CallExpression): OpenApiSchema {
-    return processZodDiscriminatedUnion(node, (element) => this.processZodNode(element));
+    return processZodDiscriminatedUnion(
+      node,
+      (element) => this.processZodNode(element),
+      this.buildPrimitiveHelperContext(),
+    );
   }
 
   /**
    * Process a Zod tuple schema: z.tuple([z.string(), z.number()])
    */
   processZodTuple(node: t.CallExpression): OpenApiSchema {
-    return processZodTuple(node, (element) => this.processZodNode(element));
+    return processZodTuple(
+      node,
+      (element) => this.processZodNode(element),
+      this.buildPrimitiveHelperContext(),
+    );
   }
 
   /**
@@ -1107,22 +1184,102 @@ export class ZodSchemaConverter {
    * Process a Zod union schema: z.union([schema1, schema2])
    */
   processZodUnion(node: t.CallExpression): OpenApiSchema {
-    return processZodUnion(node, (element) => this.processZodNode(element));
+    return processZodUnion(
+      node,
+      (element) => this.processZodNode(element),
+      this.buildPrimitiveHelperContext(),
+    );
   }
 
   /**
-   * Process a Zod object schema: z.object({...})
+   * Build the shared PrimitiveHelperContext used across node-helpers.ts. Kept
+   * in one place so the set of identifier resolvers stays in sync.
+   */
+  private buildPrimitiveHelperContext() {
+    return {
+      processNode: (currentNode: t.Expression | t.SpreadElement) =>
+        this.processZodNode(currentNode),
+      processObject: (currentNode: t.CallExpression) => this.processZodObject(currentNode),
+      ensureSchema: (schemaName: string) => {
+        if (!this.getStoredSchema(schemaName)) {
+          this.convertZodSchemaToOpenApi(schemaName);
+        }
+      },
+      getReferenceSchema: (schemaName: string) => ({
+        $ref: `#/components/schemas/${this.getSchemaReferenceName(schemaName)}`,
+      }),
+      resolveEnumValues: (name: string) => this.resolveEnumValues(name),
+      resolveLiteralValue: (name: string) => this.resolveLiteralValue(name),
+      resolveConstArrayValues: (name: string) => this.resolveConstArrayValues(name),
+      resolveObjectSchemaNode: (name: string) => this.resolveObjectSchemaNode(name),
+      zodLocalName: this.currentFilePath
+        ? (this.zodImportAlias.get(this.currentFilePath) ?? "z")
+        : "z",
+    };
+  }
+
+  /**
+   * Process a Zod object schema: z.object({...}) — with support for an identifier
+   * argument (`z.object(shape)` where `shape` is a `const` object declared elsewhere)
+   * and `SpreadElement` members (`{ ...Base, id: z.string() }`).
    */
   processZodObject(node: t.CallExpression): OpenApiSchema {
-    if (node.arguments.length === 0 || !t.isObjectExpression(node.arguments[0])) {
+    if (node.arguments.length === 0) {
       return { type: "object" };
     }
 
-    const objectExpression = node.arguments[0];
+    const rawArg = node.arguments[0];
+    let objectExpression: t.ObjectExpression | null = null;
+
+    if (t.isObjectExpression(rawArg)) {
+      objectExpression = rawArg;
+    } else if (t.isIdentifier(rawArg)) {
+      // Case 1: identifier refers to another `z.object({...})` call — inline its shape.
+      const referenced = this.resolveObjectSchemaNode(rawArg.name);
+      if (referenced && t.isCallExpression(referenced) && referenced.arguments.length > 0) {
+        const refArg = referenced.arguments[0];
+        if (t.isObjectExpression(refArg)) {
+          objectExpression = refArg;
+        }
+      }
+      // Case 2: identifier refers to a `const shape = {...}` object literal.
+      if (!objectExpression) {
+        const constObj = this.resolveConstObjectNode(rawArg.name);
+        if (constObj) objectExpression = constObj;
+      }
+      // Case 3: identifier refers to a schema symbol — emit a $ref.
+      if (!objectExpression) {
+        this.convertZodSchemaToOpenApi(rawArg.name);
+        if (this.getStoredSchema(rawArg.name)) {
+          return {
+            $ref: `#/components/schemas/${this.getSchemaReferenceName(rawArg.name)}`,
+          };
+        }
+        return { type: "object" };
+      }
+    }
+
+    if (!objectExpression) {
+      return { type: "object" };
+    }
+
     const properties: Record<string, OpenApiSchema> = {};
     const required: string[] = [];
 
-    objectExpression.properties.forEach((prop, index) => {
+    // Inline spread members (`{ ...BaseShape, id: z.string() }`).
+    const inlinedProperties: t.ObjectExpression["properties"] = [];
+    for (const prop of objectExpression.properties) {
+      if (t.isSpreadElement(prop)) {
+        const spreadProps = this.resolveSpreadMembers(prop.argument);
+        if (spreadProps) {
+          inlinedProperties.push(...spreadProps);
+        }
+        continue;
+      }
+      inlinedProperties.push(prop);
+    }
+
+    inlinedProperties.forEach((prop, index) => {
       if (t.isObjectProperty(prop)) {
         let propName: string | undefined;
 
@@ -1139,7 +1296,8 @@ export class ZodSchemaConverter {
         if (
           t.isCallExpression(prop.value) &&
           t.isMemberExpression(prop.value.callee) &&
-          t.isIdentifier(prop.value.callee.object)
+          t.isIdentifier(prop.value.callee.object) &&
+          !this.isZodLocalName(prop.value.callee.object.name)
         ) {
           const schemaName = prop.value.callee.object.name;
           // @ts-ignore
@@ -1200,7 +1358,7 @@ export class ZodSchemaConverter {
           t.isCallExpression(prop.value) &&
           t.isMemberExpression(prop.value.callee) &&
           t.isIdentifier(prop.value.callee.object) &&
-          prop.value.callee.object.name === "z" &&
+          this.isZodLocalName(prop.value.callee.object.name) &&
           t.isIdentifier(prop.value.callee.property) &&
           prop.value.callee.property.name === "array" &&
           prop.value.arguments.length > 0 &&
@@ -1258,108 +1416,164 @@ export class ZodSchemaConverter {
   }
 
   /**
-   * Process a Zod primitive schema: z.string(), z.number(), etc.
+   * Process a Zod primitive schema: z.string(), z.number(), etc. Identifier-argument
+   * resolution (enums, literals, const arrays, object shapes, import aliases) is
+   * centralized in {@link ZodSchemaConverter.buildPrimitiveHelperContext}.
    */
   processZodPrimitive(node: t.CallExpression): OpenApiSchema {
-    return processZodPrimitiveNode(node, {
-      processNode: (currentNode) => this.processZodNode(currentNode),
-      processObject: (currentNode) => this.processZodObject(currentNode),
-      ensureSchema: (schemaName) => {
-        if (!this.getStoredSchema(schemaName)) {
-          this.convertZodSchemaToOpenApi(schemaName);
-        }
-      },
-      getReferenceSchema: (schemaName) => ({
-        $ref: `#/components/schemas/${this.getSchemaReferenceName(schemaName)}`,
-      }),
-      resolveEnumValues: (name) => this.resolveEnumValues(name),
-    });
+    return processZodPrimitiveNode(node, this.buildPrimitiveHelperContext());
   }
 
   /**
    * Resolve enum values from a TS enum declaration or an `as const` object by identifier name.
-   * Searches the current file first, then follows imports.
+   * Searches the current file first, then follows imports and `export * from "..."` via the
+   * shared {@link SymbolResolver}.
    */
   private resolveEnumValues(name: string): (string | number)[] | null {
-    const extractFromAST = (ast: t.File): (string | number)[] | null => {
-      let result: (string | number)[] | null = null;
+    if (!this.currentFilePath || !this.currentAST) return null;
+    this.symbolResolver.primeAST(this.currentFilePath, this.currentAST);
+    return this.symbolResolver.resolveEnumValues(this.currentFilePath, name);
+  }
 
-      traverse(ast, {
-        TSEnumDeclaration: (nodePath: NodePath<t.TSEnumDeclaration>) => {
-          if (result) return;
-          if (nodePath.node.id && t.isIdentifier(nodePath.node.id, { name })) {
-            const values: (string | number)[] = [];
-            for (const member of nodePath.node.members) {
-              if (t.isTSEnumMember(member) && member.initializer) {
-                if (t.isStringLiteral(member.initializer)) {
-                  values.push(member.initializer.value);
-                } else if (t.isNumericLiteral(member.initializer)) {
-                  values.push(member.initializer.value);
-                }
-              }
-            }
-            if (values.length > 0) {
-              result = values;
-            }
-          }
-        },
-        VariableDeclarator: (nodePath: NodePath<t.VariableDeclarator>) => {
-          if (result) return;
-          if (!t.isIdentifier(nodePath.node.id, { name }) || !nodePath.node.init) return;
+  /** Resolve an identifier referring to a mask literal (`{ id: true, name: true }`). */
+  private resolveMaskKeys(name: string): string[] | null {
+    if (!this.currentFilePath) return null;
+    return this.symbolResolver.resolveMaskKeys(this.currentFilePath, name);
+  }
 
-          // Unwrap `as const` / `satisfies` wrappers
-          let initNode: t.Node = nodePath.node.init;
-          if (t.isTSAsExpression(initNode) || t.isTSSatisfiesExpression(initNode)) {
-            initNode = initNode.expression;
-          }
+  /**
+   * Returns true when `name` is the local binding for the `z` import in the
+   * currently-processed file, accounting for renames like `import { z as zod }`.
+   * Always returns true for the canonical `"z"` — callers should use this
+   * instead of comparing to `"z"` directly.
+   */
+  private isZodLocalName(name: string | undefined): boolean {
+    if (!name) return false;
+    if (name === "z") return true;
+    const alias = this.currentFilePath ? this.zodImportAlias.get(this.currentFilePath) : undefined;
+    return alias === name;
+  }
 
-          if (t.isObjectExpression(initNode)) {
-            const values: (string | number)[] = [];
-            for (const prop of initNode.properties) {
-              if (t.isObjectProperty(prop)) {
-                if (t.isStringLiteral(prop.value)) {
-                  values.push(prop.value.value);
-                } else if (t.isNumericLiteral(prop.value)) {
-                  values.push(prop.value.value);
-                }
-              }
-            }
-            if (values.length > 0) {
-              result = values;
-            }
-          } else if (t.isArrayExpression(initNode)) {
-            const values: (string | number)[] = [];
-            for (const element of initNode.elements) {
-              if (t.isStringLiteral(element)) {
-                values.push(element.value);
-              } else if (t.isNumericLiteral(element)) {
-                values.push(element.value);
-              }
-            }
-            if (values.length > 0) {
-              result = values;
-            }
-          }
-        },
-      });
+  /**
+   * Extract mask keys from a `.pick(...)`/`.omit(...)` argument node.
+   *
+   * Accepts object literals (`{ id: true }`), readonly arrays (`["id"] as const`),
+   * and identifiers pointing to either. Identifier resolution goes through the
+   * shared `SymbolResolver` cache.
+   */
+  private extractMaskKeysFromNode(arg: t.Node | t.SpreadElement | undefined): string[] {
+    if (!arg || t.isSpreadElement(arg)) return [];
+    if (t.isTSAsExpression(arg) || t.isTSSatisfiesExpression(arg)) {
+      return this.extractMaskKeysFromNode(arg.expression);
+    }
+    if (t.isObjectExpression(arg)) {
+      const keys: string[] = [];
+      for (const prop of arg.properties) {
+        if (
+          t.isObjectProperty(prop) &&
+          t.isBooleanLiteral(prop.value) &&
+          prop.value.value === true
+        ) {
+          if (t.isIdentifier(prop.key)) keys.push(prop.key.name);
+          else if (t.isStringLiteral(prop.key)) keys.push(prop.key.value);
+        }
+      }
+      return keys;
+    }
+    if (t.isArrayExpression(arg)) {
+      const keys: string[] = [];
+      for (const element of arg.elements) {
+        if (element && t.isStringLiteral(element)) keys.push(element.value);
+      }
+      return keys;
+    }
+    if (t.isIdentifier(arg)) {
+      const resolved = this.resolveMaskKeys(arg.name);
+      if (resolved && resolved.length > 0) return resolved;
+      const arrayValues = this.resolveConstArrayValues(arg.name);
+      if (arrayValues) {
+        return arrayValues.filter((value): value is string => typeof value === "string");
+      }
+    }
+    return [];
+  }
 
-      return result;
-    };
+  /** Resolve an identifier referring to a `const` object literal. */
+  private resolveConstObjectNode(name: string): t.ObjectExpression | null {
+    if (!this.currentFilePath) return null;
+    if (this.currentAST) this.symbolResolver.primeAST(this.currentFilePath, this.currentAST);
+    return this.symbolResolver.resolveConstObject(this.currentFilePath, name);
+  }
 
-    // Search in current file first
-    if (this.currentAST) {
-      const values = extractFromAST(this.currentAST);
-      if (values) return values;
+  /** Resolve an identifier referring to a `const` array literal. */
+  private resolveConstArrayValues(name: string): (string | number)[] | null {
+    if (!this.currentFilePath) return null;
+    if (this.currentAST) this.symbolResolver.primeAST(this.currentFilePath, this.currentAST);
+    return this.symbolResolver.resolveConstArrayValues(this.currentFilePath, name);
+  }
+
+  /** Resolve a literal value for a `const x = "foo" | 42 | true | null`. */
+  private resolveLiteralValue(name: string): string | number | boolean | null | undefined {
+    if (!this.currentFilePath) return undefined;
+    if (this.currentAST) this.symbolResolver.primeAST(this.currentFilePath, this.currentAST);
+    return this.symbolResolver.resolveLiteral(this.currentFilePath, name);
+  }
+
+  /**
+   * Resolve an identifier referring to a `z.object({...})` (or similar) call expression.
+   * This lets callers inline the referenced object's shape.
+   */
+  private resolveObjectSchemaNode(name: string): t.CallExpression | null {
+    if (!this.currentFilePath) return null;
+    if (this.currentAST) this.symbolResolver.primeAST(this.currentFilePath, this.currentAST);
+    const decl = this.symbolResolver.resolveDeclaration(this.currentFilePath, name);
+    if (!decl) return null;
+    const node = decl.node;
+    if (t.isVariableDeclarator(node) && node.init && t.isCallExpression(node.init)) {
+      return node.init;
+    }
+    if (t.isCallExpression(node)) return node;
+    return null;
+  }
+
+  /**
+   * Resolve a spread argument (`...X`) inside a `z.object({...})` shape to the
+   * concrete list of object-literal properties. Supports:
+   *   - `...BaseShape` where `BaseShape` is a `const` object literal.
+   *   - `...Base.shape` where `Base` is a `z.object({...})` call (Zod 3/4 API).
+   * Returns `null` when the spread cannot be resolved statically.
+   */
+  private resolveSpreadMembers(argument: t.Expression): t.ObjectExpression["properties"] | null {
+    // `{ ...BaseShape }` — identifier to a const object literal.
+    if (t.isIdentifier(argument)) {
+      const constObj = this.resolveConstObjectNode(argument.name);
+      if (constObj) return constObj.properties;
+      const schemaNode = this.resolveObjectSchemaNode(argument.name);
+      if (
+        schemaNode &&
+        schemaNode.arguments.length > 0 &&
+        t.isObjectExpression(schemaNode.arguments[0])
+      ) {
+        return schemaNode.arguments[0].properties;
+      }
+      return null;
     }
 
-    // Follow imports
-    if (this.currentImports && this.currentFilePath && this.currentImports[name]) {
-      const resolvedPath = this.resolveImportPath(this.currentFilePath, this.currentImports[name]);
-      if (resolvedPath) {
-        const importedAST = this.parseFileWithCache(resolvedPath);
-        if (importedAST) {
-          return extractFromAST(importedAST);
-        }
+    // `{ ...Base.shape }` — property access on a z.object() identifier.
+    if (
+      t.isMemberExpression(argument) &&
+      !argument.computed &&
+      t.isIdentifier(argument.property) &&
+      argument.property.name === "shape" &&
+      t.isIdentifier(argument.object)
+    ) {
+      const schemaNode = this.resolveObjectSchemaNode(argument.object.name);
+      if (
+        schemaNode &&
+        schemaNode.arguments.length > 0 &&
+        t.isObjectExpression(schemaNode.arguments[0])
+      ) {
+        return schemaNode.arguments[0].properties;
       }
     }
 
@@ -1474,30 +1688,6 @@ export class ZodSchemaConverter {
 
     // Apply the current method
     switch (methodName) {
-      case "omit":
-        if (node.arguments.length > 0 && t.isObjectExpression(node.arguments[0])) {
-          node.arguments[0].properties.forEach((prop) => {
-            if (
-              t.isObjectProperty(prop) &&
-              t.isBooleanLiteral(prop.value) &&
-              prop.value.value === true
-            ) {
-              const key = t.isIdentifier(prop.key)
-                ? prop.key.name
-                : t.isStringLiteral(prop.key)
-                  ? prop.key.value
-                  : null;
-
-              if (key && schema.properties) {
-                delete schema.properties[key];
-                if (schema.required) {
-                  schema.required = schema.required.filter((requiredKey) => requiredKey !== key);
-                }
-              }
-            }
-          });
-        }
-        break;
       case "optional":
         // optional means T | undefined — not in required array, no nullable flag
         // Required array exclusion is handled by hasOptionalMethod() in processZodObject()
@@ -1563,6 +1753,34 @@ export class ZodSchemaConverter {
           }
         }
         break;
+      case "nonempty":
+        // `z.array(...).nonempty()` → at least one item.
+        if (schema.type === "array") {
+          schema.minItems = Math.max(schema.minItems ?? 0, 1);
+        } else if (schema.type === "string") {
+          schema.minLength = Math.max(schema.minLength ?? 0, 1);
+        }
+        break;
+      case "rest":
+        // `z.tuple([...]).rest(schema)` — tuple is now open-ended. Drop the
+        // fixed `maxItems` and set a rest-items schema for downstream consumers.
+        if (schema.type === "array") {
+          delete schema.maxItems;
+          const firstArgument = node.arguments[0];
+          if (firstArgument && !t.isArgumentPlaceholder(firstArgument)) {
+            const restSchema = this.processZodNode(firstArgument);
+            if (restSchema) {
+              // Only set `items` when the tuple used `prefixItems`; otherwise
+              // `items` is already the tuple element schema and must not be
+              // overwritten.
+              const hasPrefixItems = Array.isArray(
+                (schema as { prefixItems?: unknown[] }).prefixItems,
+              );
+              if (hasPrefixItems) schema.items = restSchema;
+            }
+          }
+        }
+        break;
       case "email":
         schema.format = "email";
         break;
@@ -1588,6 +1806,29 @@ export class ZodSchemaConverter {
       case "duration":
       case "iso.duration":
         schema.format = "duration";
+        break;
+      case "cuid2":
+      case "ulid":
+      case "nanoid":
+      case "jwt":
+      case "base64":
+      case "base64url":
+      case "emoji":
+      case "ip":
+      case "cidr":
+      case "cidrv4":
+      case "cidrv6":
+      case "e164":
+        schema.format = methodName;
+        break;
+      case "datetime":
+        schema.format = "date-time";
+        break;
+      case "date":
+        schema.format = "date";
+        break;
+      case "time":
+        schema.format = "time";
         break;
       case "regex":
         if (node.arguments.length > 0 && t.isRegExpLiteral(node.arguments[0])) {
@@ -1759,6 +2000,114 @@ export class ZodSchemaConverter {
       case "transform":
         // Transform doesn't change the schema validation, only the output format
         break;
+      case "readonly":
+        // `z.readonly()` → JSON Schema `readOnly: true`. Harmless on primitives too.
+        schema.readOnly = true;
+        break;
+      case "brand":
+        // `z.brand<"X">()` is a purely compile-time marker in Zod and doesn't affect the
+        // wire format. Pass through the schema unchanged.
+        break;
+      case "passthrough":
+      case "catchall":
+        // Zod object modes that allow unknown properties. Map to
+        // `additionalProperties: true` (or the catchall schema) so consumers can see it.
+        if (schema.type === "object") {
+          if (methodName === "catchall" && node.arguments.length > 0) {
+            const firstArgument = node.arguments[0];
+            if (firstArgument && !t.isArgumentPlaceholder(firstArgument)) {
+              schema.additionalProperties = this.processZodNode(firstArgument);
+            } else {
+              schema.additionalProperties = true;
+            }
+          } else {
+            schema.additionalProperties = true;
+          }
+        }
+        break;
+      case "strict":
+        // Zod `.strict()` — forbid unknown properties.
+        if (schema.type === "object") {
+          schema.additionalProperties = false;
+        }
+        break;
+      case "strip":
+        // Zod default behavior — strip unknown properties. OpenAPI default
+        // (unset `additionalProperties`) already reflects this.
+        break;
+      case "deepPartial":
+        // Recursively mark all nested object properties as optional.
+        this.applyDeepPartial(schema);
+        break;
+      case "pick": {
+        // `.pick({ a: true, b: true })` — keep only the listed keys.
+        const keys = this.extractMaskKeysFromNode(node.arguments[0]);
+        if (keys.length > 0 && schema.type === "object" && schema.properties) {
+          const keep = new Set(keys);
+          const next: Record<string, OpenApiSchema> = {};
+          for (const [key, value] of Object.entries(schema.properties)) {
+            if (keep.has(key) && value) next[key] = value;
+          }
+          schema.properties = next;
+          if (schema.required) {
+            schema.required = schema.required.filter((key) => keep.has(key));
+            if (schema.required.length === 0) schema.required = [];
+          }
+        }
+        break;
+      }
+      case "omit": {
+        // `.omit({ a: true })` / mask identifiers — drop the listed keys.
+        const keys = this.extractMaskKeysFromNode(node.arguments[0]);
+        if (keys.length > 0 && schema.type === "object" && schema.properties) {
+          for (const key of keys) {
+            if (schema.properties[key]) delete schema.properties[key];
+          }
+          if (schema.required) {
+            const omit = new Set(keys);
+            schema.required = schema.required.filter((key) => !omit.has(key));
+            if (schema.required.length === 0) schema.required = [];
+          }
+        }
+        break;
+      }
+      case "partial":
+        // `.partial()` or `.partial({ a: true })` — mark the listed keys (or all
+        // keys) optional by pulling them out of `required`.
+        if (schema.type === "object" && schema.properties) {
+          const partialKeys = this.extractMaskKeysFromNode(node.arguments[0]);
+          if (partialKeys.length === 0) {
+            delete schema.required;
+          } else if (schema.required) {
+            const drop = new Set(partialKeys);
+            schema.required = schema.required.filter((key) => !drop.has(key));
+            if (schema.required.length === 0) delete schema.required;
+          }
+        }
+        break;
+      case "required":
+        // `.required()` — every property becomes required.
+        if (schema.type === "object" && schema.properties) {
+          schema.required = Object.keys(schema.properties);
+        }
+        break;
+      case "merge": {
+        // `.merge(OtherObjectSchema)` — inline the other object's properties.
+        // In Zod 4 this is equivalent to `.extend(other.shape)`.
+        const firstArgument = node.arguments[0];
+        if (firstArgument && !t.isArgumentPlaceholder(firstArgument)) {
+          const other = this.processZodNode(firstArgument);
+          if (other && other.type === "object" && other.properties) {
+            schema.properties = { ...schema.properties, ...other.properties };
+            if (other.required && other.required.length > 0) {
+              schema.required = Array.from(
+                new Set([...(schema.required ?? []), ...other.required]),
+              );
+            }
+          }
+        }
+        break;
+      }
       case "pipe":
         if (node.arguments.length > 0) {
           const firstArgument = node.arguments[0];
@@ -1799,6 +2148,22 @@ export class ZodSchemaConverter {
     }
 
     return schema;
+  }
+
+  /** Recursively clear `required` arrays on nested object schemas. */
+  private applyDeepPartial(schema: OpenApiSchema): void {
+    if (!schema || typeof schema !== "object") return;
+    if (schema.type === "object" && schema.properties) {
+      delete schema.required;
+      for (const key of Object.keys(schema.properties)) {
+        const child = schema.properties[key];
+        if (child) this.applyDeepPartial(child);
+      }
+    }
+    if (schema.items) this.applyDeepPartial(schema.items as OpenApiSchema);
+    if (Array.isArray(schema.allOf)) schema.allOf.forEach((s) => this.applyDeepPartial(s));
+    if (Array.isArray(schema.anyOf)) schema.anyOf.forEach((s) => this.applyDeepPartial(s));
+    if (Array.isArray(schema.oneOf)) schema.oneOf.forEach((s) => this.applyDeepPartial(s));
   }
 
   /**
@@ -1881,13 +2246,14 @@ export class ZodSchemaConverter {
     try {
       const ast = this.getParsedFile(filePath, content);
 
-      const { importedModules, drizzleZodImports } = collectImportMetadata(ast);
+      const { importedModules, drizzleZodImports, zodLocalName } = collectImportMetadata(ast);
       drizzleZodImports.forEach((importName) => {
         this.drizzleZodImports.add(importName);
       });
 
-      // Cache imports for this file
+      // Cache imports + alias for this file
       this.fileImportsCache.set(filePath, importedModules);
+      this.zodImportAlias.set(filePath, zodLocalName);
 
       // Set current processing context for factory function expansion
       this.currentFilePath = filePath;
@@ -1903,14 +2269,17 @@ export class ZodSchemaConverter {
                 const schemaName = declaration.id.name;
 
                 // Check if is Zos schema
-                if (this.isZodSchema(declaration.init) && !this.getStoredSchema(schemaName)) {
-                  logger.debug(`Pre-processing Zod schema: ${schemaName}`);
-                  this.processingSchemas.add(schemaName);
-                  const schema = this.processZodNode(declaration.init);
-                  if (schema) {
-                    this.storeResolvedSchema(schemaName, schema);
+                if (this.isZodSchema(declaration.init)) {
+                  this.indexSchemaName(schemaName, filePath);
+                  if (!this.getStoredSchema(schemaName)) {
+                    logger.debug(`Pre-processing Zod schema: ${schemaName}`);
+                    this.processingSchemas.add(schemaName);
+                    const schema = this.processZodNode(declaration.init);
+                    if (schema) {
+                      this.storeResolvedSchema(schemaName, schema);
+                    }
+                    this.processingSchemas.delete(schemaName);
                   }
-                  this.processingSchemas.delete(schemaName);
                 }
               }
             });
@@ -1921,18 +2290,17 @@ export class ZodSchemaConverter {
           path.node.declarations.forEach((declaration: t.VariableDeclarator) => {
             if (t.isIdentifier(declaration.id) && declaration.init) {
               const schemaName = declaration.id.name;
-              if (
-                this.isZodSchema(declaration.init) &&
-                !this.getStoredSchema(schemaName) &&
-                !this.processingSchemas.has(schemaName)
-              ) {
-                logger.debug(`Pre-processing Zod schema: ${schemaName}`);
-                this.processingSchemas.add(schemaName);
-                const schema = this.processZodNode(declaration.init);
-                if (schema) {
-                  this.storeResolvedSchema(schemaName, schema);
+              if (this.isZodSchema(declaration.init)) {
+                this.indexSchemaName(schemaName, filePath);
+                if (!this.getStoredSchema(schemaName) && !this.processingSchemas.has(schemaName)) {
+                  logger.debug(`Pre-processing Zod schema: ${schemaName}`);
+                  this.processingSchemas.add(schemaName);
+                  const schema = this.processZodNode(declaration.init);
+                  if (schema) {
+                    this.storeResolvedSchema(schemaName, schema);
+                  }
+                  this.processingSchemas.delete(schemaName);
                 }
-                this.processingSchemas.delete(schemaName);
               }
             }
           });
@@ -1946,10 +2314,25 @@ export class ZodSchemaConverter {
   }
 
   /**
+   * Register the reverse lookup `schemaName -> filePath` so subsequent
+   * `convertZodSchemaToOpenApi` calls can skip the directory scan when the name
+   * was already seen.
+   */
+  private indexSchemaName(schemaName: string, filePath: string): void {
+    let bucket = this.schemaNameToFiles.get(schemaName);
+    if (!bucket) {
+      bucket = new Set();
+      this.schemaNameToFiles.set(schemaName, bucket);
+    }
+    bucket.add(filePath);
+  }
+
+  /**
    * Check if node is Zod schema
    */
   isZodSchema(node: t.Node): boolean {
-    return isZodSchemaNode(node, this.drizzleZodImports);
+    const alias = this.currentFilePath ? this.zodImportAlias.get(this.currentFilePath) : undefined;
+    return isZodSchemaNode(node, this.drizzleZodImports, alias ?? "z");
   }
 
   /**
@@ -1995,9 +2378,13 @@ export class ZodSchemaConverter {
   }
 
   /**
-   * Parse a file with caching (also caches imports)
+   * Parse a file with caching (also caches imports). Routes through the shared
+   * {@link SymbolResolver} so the AST is cached once across both the Zod and TS paths.
    */
   parseFileWithCache(filePath: string): t.File | null {
+    // Delegate to the existing helper so we also keep drizzleZodImports / fileImportsCache
+    // populated for legacy callers; the AST is shared via fileASTCache (which the resolver
+    // references by identity).
     return parseFileWithCache(
       filePath,
       this.fileAccess,
@@ -2008,10 +2395,11 @@ export class ZodSchemaConverter {
   }
 
   /**
-   * Resolve import path relative to current file
+   * Resolve import path relative to current file. Uses the shared resolver's memoized
+   * path cache so repeated lookups are O(1).
    */
   resolveImportPath(currentFilePath: string, importSource: string): string | null {
-    return resolveImportPath(currentFilePath, importSource, this.fileAccess);
+    return this.symbolResolver.resolveImportPath(currentFilePath, importSource);
   }
 
   /**

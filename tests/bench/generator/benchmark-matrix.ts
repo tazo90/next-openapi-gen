@@ -60,6 +60,16 @@ const nextAppRouterZodOnlyCoverage = getProjectFixturePath(
   "app-router",
   "zod-only-coverage",
 );
+const nextAppRouterZodFullCoverage = getProjectFixturePath(
+  "next",
+  "app-router",
+  "zod-full-coverage",
+);
+const nextAppRouterTypescriptFullCoverage = getProjectFixturePath(
+  "next",
+  "app-router",
+  "ts-full-coverage",
+);
 const nextPagesRouterCoreFlow = getProjectFixturePath("next", "pages-router", "core-flow");
 const nextPagesRouterZodFlow = getProjectFixturePath("next", "pages-router", "zod-flow");
 const tanstackCoreFlow = getProjectFixturePath("tanstack", "core-flow");
@@ -110,6 +120,24 @@ export const BENCHMARK_SCENARIOS: readonly BenchmarkScenario[] = [
     frameworkKind: FrameworkKind.Nextjs,
     router: "app",
     schemaFlavor: "zod",
+  }),
+  ...createVersionedScenarios({
+    idPrefix: "next-app-zod-full",
+    fixturePath: nextAppRouterZodFullCoverage,
+    fixtureName: "next/app-router/zod-full-coverage",
+    packageEntry: "./next",
+    frameworkKind: FrameworkKind.Nextjs,
+    router: "app",
+    schemaFlavor: "zod",
+  }),
+  ...createVersionedScenarios({
+    idPrefix: "next-app-ts-full",
+    fixturePath: nextAppRouterTypescriptFullCoverage,
+    fixtureName: "next/app-router/ts-full-coverage",
+    packageEntry: "./next",
+    frameworkKind: FrameworkKind.Nextjs,
+    router: "app",
+    schemaFlavor: "typescript",
   }),
   ...createVersionedScenarios({
     idPrefix: "next-app-drizzle-zod",

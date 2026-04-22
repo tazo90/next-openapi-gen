@@ -280,7 +280,9 @@ export class RouteProcessor {
   }
 
   public getTags(): OpenApiTagDefinition[] {
-    return Object.values(this.tagDefinitions);
+    return Object.values(this.tagDefinitions).sort((a, b) =>
+      a.name.localeCompare(b.name, "en", { sensitivity: "base" }),
+    );
   }
 
   public getSwaggerPaths(): Record<string, OpenApiPathDefinition> {

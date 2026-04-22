@@ -28,6 +28,21 @@ export const UserIdParamsSchema = z.object({
   id: z.string().describe("User ID"),
 });
 
+export const UserRequestHeadersSchema = z.object({
+  "X-Tenant-Id": z.string().describe("Tenant identifier"),
+  "X-Request-Id": z.string().uuid().optional().describe("Request trace id"),
+});
+
+export const UserCookiesSchema = z.object({
+  session: z.string().describe("Session cookie"),
+  locale: z.enum(["en", "de", "pl"]).optional().describe("UI locale"),
+});
+
+export const UserErrorResponseSchema = z.object({
+  code: z.string().describe("Machine-readable error code"),
+  message: z.string().describe("Human-readable error message"),
+});
+
 export type User = z.infer<typeof UserSchema>;
 export type CreateUser = z.infer<typeof CreateUserSchema>;
 export type UpdateUser = z.infer<typeof UpdateUserSchema>;

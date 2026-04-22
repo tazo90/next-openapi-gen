@@ -10,8 +10,10 @@ import {
 
 /**
  * Stream platform events
+ * @summary Event stream
  * @description Streams event records with first-class OpenAPI 3.2 querystring and sequential media metadata.
  * @tag Events
+ * @tags Platform, Observability
  * @tagSummary Event navigation
  * @tagKind nav
  * @tagParent Platform
@@ -20,9 +22,12 @@ import {
  * @responseItem EventChunk
  * @responseItemEncoding {"headers":{"content-type":"application/json"}}
  * @responsePrefixEncoding [{"type":"text","text":"event: message\ndata: "},{"type":"text","text":"\n\n"}]
+ * @responseHeader 200 X-Stream-Id string Opaque stream identifier for reconnects
  * @examples querystring:eventStreamQueryExamples
  * @examples response:eventStreamResponseExamples
- * @auth bearer
+ * @servers https://api.example.com/v1, https://staging.example.com/v1
+ * @externalDocs https://docs.example.com/events Event streaming guide
+ * @security BearerAuth
  * @operationId zodStreamPlatformEvents
  * @openapi
  */

@@ -38,7 +38,9 @@ export function scanRouteFiles(
 ): void {
   let files = state.directoryCache[rootDir];
   if (!files) {
-    files = fs.readdirSync(rootDir);
+    files = fs
+      .readdirSync(rootDir)
+      .sort((a, b) => a.localeCompare(b, "en", { sensitivity: "base" }));
     state.directoryCache[rootDir] = files;
   }
 

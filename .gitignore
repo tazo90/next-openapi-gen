@@ -21,6 +21,7 @@ coverage/
 playwright-report/
 test-results/
 blob-report/
+tests/bench/schema/current.json
 
 # Caches
 .turbo/

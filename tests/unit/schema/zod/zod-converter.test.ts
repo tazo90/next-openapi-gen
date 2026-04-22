@@ -105,7 +105,8 @@ describe("ZodSchemaConverter", () => {
     });
     expect(converter.processZodNode(parseInitializer("z.map(z.string(), z.number())"))).toEqual({
       type: "object",
-      additionalProperties: true,
+      additionalProperties: { type: "number" },
+      propertyNames: { type: "string" },
     });
     expect(converter.processZodNode(parseInitializer("z.set(z.string())"))).toEqual({
       type: "array",
@@ -113,6 +114,18 @@ describe("ZodSchemaConverter", () => {
       uniqueItems: true,
     });
     expect(converter.processZodNode(parseInitializer("z.custom<File>()"))).toEqual({
+      type: "string",
+      format: "binary",
+    });
+    expect(converter.processZodNode(parseInitializer("z.custom<Blob>()"))).toEqual({
+      type: "string",
+      format: "binary",
+    });
+    expect(converter.processZodNode(parseInitializer("z.custom<Buffer>()"))).toEqual({
+      type: "string",
+      format: "binary",
+    });
+    expect(converter.processZodNode(parseInitializer("z.custom<Uint8Array>()"))).toEqual({
       type: "string",
       format: "binary",
     });

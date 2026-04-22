@@ -103,6 +103,35 @@ describe("OpenAPI version processor", () => {
     });
   });
 
+  it("strips JSON Schema 2020-12 keywords unsupported by OpenAPI 3.0", () => {
+    const finalized = getOpenApiVersionProcessor("3.0").finalize(
+      createDocumentFromTemplate({
+        openapi: "3.2.0",
+        info: { title: "Fixture", version: "1.0.0" },
+        components: {
+          schemas: {
+            TypedMap: {
+              type: "object",
+              additionalProperties: { type: "number" },
+              propertyNames: { type: "string", pattern: "^[a-z]+$" },
+              patternProperties: { "^x-": { type: "string" } },
+              dependentSchemas: { a: { required: ["b"] } },
+              dependentRequired: { a: ["b"] },
+              unevaluatedProperties: false,
+              contentSchema: { type: "object" },
+              $defs: { Nested: { type: "string" } },
+            },
+          },
+        },
+      }),
+    );
+
+    expect(finalized.components?.schemas?.TypedMap).toEqual({
+      type: "object",
+      additionalProperties: { type: "number" },
+    });
+  });
+
   it("preserves 3.2-only features and strips them for older versions", () => {
     const document = createDocumentFromTemplate({
       openapi: "3.2.0",
@@ -259,4 +288,136 @@ describe("OpenAPI version processor", () => {
       "oauth2MetadataUrl",
     );
   });
+
+  it("downgrades OpenAPI 3.2 operation-level callbacks and webhooks for older versions", () => {
+    const documentWithCallbacks = () =>
+      createDocumentFromTemplate({
+        openapi: "3.2.0",
+        info: { title: "Fixture", version: "1.0.0" },
+        paths: {
+          "/subscribe": {
+            post: {
+              operationId: "post-subscribe",
+              tags: ["events"],
+              responses: {
+                "2XX": { description: "Accepted" },
+              },
+              callbacks: {
+                onEvent: {
+                  "{$request.body#callbackUrl}": {
+                    post: {
+                      operationId: "callback-onEvent",
+                      responses: { "200": { description: "OK" } },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        webhooks: {
+          newEvent: {
+            post: {
+              operationId: "webhook-newEvent",
+              responses: { "200": { description: "OK" } },
+            },
+          },
+        },
+      });
+
+    const finalized32 = getOpenApiVersionProcessor("3.2").finalize(documentWithCallbacks());
+    expect(finalized32.webhooks).toBeDefined();
+    expect(finalized32.paths?.["/subscribe"]?.post?.callbacks).toBeDefined();
+
+    const finalized31 = getOpenApiVersionProcessor("3.1").finalize(documentWithCallbacks());
+    expect(finalized31.webhooks).toBeDefined();
+    expect(finalized31.paths?.["/subscribe"]?.post?.callbacks).toBeDefined();
+
+    const finalized30 = getOpenApiVersionProcessor("3.0").finalize(documentWithCallbacks());
+    expect(finalized30.webhooks).toBeUndefined();
+    expect(finalized30.paths?.["/subscribe"]?.post?.callbacks).toBeDefined();
+  });
+
+  it("downgrades const keyword and discriminator.defaultMapping for older versions", () => {
+    const document = () =>
+      createDocumentFromTemplate({
+        openapi: "3.2.0",
+        info: { title: "Fixture", version: "1.0.0" },
+        components: {
+          schemas: {
+            Shape: {
+              oneOf: [{ $ref: "#/components/schemas/Circle" }],
+              discriminator: {
+                propertyName: "kind",
+                mapping: { circle: "#/components/schemas/Circle" },
+                defaultMapping: "#/components/schemas/Shape",
+              },
+            },
+            Kind: {
+              type: "string",
+              const: "circle",
+            },
+            Circle: {
+              type: "object",
+              properties: { kind: { const: "circle" } },
+            },
+          },
+        },
+      });
+
+    const finalized32 = getOpenApiVersionProcessor("3.2").finalize(document());
+    const shape32 = finalized32.components?.schemas?.Shape as OpenApiSchemaWithDiscriminator;
+    expect(shape32.discriminator?.defaultMapping).toBe("#/components/schemas/Shape");
+    const kind32 = finalized32.components?.schemas?.Kind as { const?: unknown; enum?: unknown };
+    expect(kind32.const).toBe("circle");
+
+    const finalized31 = getOpenApiVersionProcessor("3.1").finalize(document());
+    const shape31 = finalized31.components?.schemas?.Shape as OpenApiSchemaWithDiscriminator;
+    expect(shape31.discriminator?.defaultMapping).toBeUndefined();
+    const kind31 = finalized31.components?.schemas?.Kind as { const?: unknown; enum?: unknown };
+    expect(kind31.const).toBe("circle");
+
+    const finalized30 = getOpenApiVersionProcessor("3.0").finalize(document());
+    const shape30 = finalized30.components?.schemas?.Shape as OpenApiSchemaWithDiscriminator;
+    expect(shape30.discriminator?.defaultMapping).toBeUndefined();
+    const kind30 = finalized30.components?.schemas?.Kind as { const?: unknown; enum?: unknown };
+    expect(kind30.const).toBeUndefined();
+    expect(kind30.enum).toEqual(["circle"]);
+  });
+
+  it("strips components.mediaTypes when not supported by target version", () => {
+    const document = () =>
+      createDocumentFromTemplate({
+        openapi: "3.2.0",
+        info: { title: "Fixture", version: "1.0.0" },
+        components: {
+          mediaTypes: {
+            Json: { schema: { type: "object" } },
+          },
+        } as never,
+      });
+
+    const finalized32 = getOpenApiVersionProcessor("3.2").finalize(document());
+    expect(
+      (finalized32.components as Record<string, unknown> | undefined)?.mediaTypes,
+    ).toBeDefined();
+
+    const finalized31 = getOpenApiVersionProcessor("3.1").finalize(document());
+    expect(
+      (finalized31.components as Record<string, unknown> | undefined)?.mediaTypes,
+    ).toBeUndefined();
+
+    const finalized30 = getOpenApiVersionProcessor("3.0").finalize(document());
+    expect(
+      (finalized30.components as Record<string, unknown> | undefined)?.mediaTypes,
+    ).toBeUndefined();
+  });
 });
+
+type OpenApiSchemaWithDiscriminator = {
+  discriminator?: {
+    propertyName: string;
+    mapping?: Record<string, string>;
+    defaultMapping?: string;
+  };
+};

@@ -6,7 +6,7 @@ import * as ts from "typescript";
 import { processCustomSchemaFiles } from "../core/custom-schema-file-processor.js";
 import { CustomSchemaProcessor } from "../core/custom-schema-processor.js";
 import { mergeSchemaDefinitionLayers } from "../core/schema-definition-processor.js";
-import { parseTypeScriptFile } from "../../shared/utils.js";
+import { parseTypeScriptFile, parseOpenApiOverrideTag } from "../../shared/utils.js";
 import { getTypeScriptProject } from "../../shared/typescript-project.js";
 import { ZodSchemaConverter } from "../zod/zod-converter.js";
 import { ZodSchemaProcessor } from "../zod/zod-schema-processor.js";
@@ -42,6 +42,7 @@ import {
 } from "./schema-discovery.js";
 import { extractFunctionParameters, extractFunctionReturnType } from "./function-nodes.js";
 import { resolveUtilityTypeReference } from "./utility-types.js";
+import { SymbolResolver } from "../../shared/symbol-resolver.js";
 import type {
   ContentType,
   OpenApiExampleMap,
@@ -83,6 +84,7 @@ export class SchemaProcessor {
   private schemaTypes: SchemaType[];
   private isResolvingPickOmitBase: boolean = false;
   private readonly fileAccess: SchemaProcessorFileAccess;
+  private readonly symbolResolver: SymbolResolver;
 
   // Track imports per file for resolving ReturnType<typeof func>
   private importMap: Record<string, Record<string, string>> = {}; // { filePath: { importName: importPath } }
@@ -117,6 +119,13 @@ export class SchemaProcessor {
     if (this.schemaTypes.includes("zod")) {
       this.zodSchemaConverter = new ZodSchemaConverter(schemaDir, apiDir);
       this.zodSchemaProcessor = new ZodSchemaProcessor(this.zodSchemaConverter);
+      // Share the AST cache across TS + Zod converters so each file is parsed once.
+      this.symbolResolver = this.zodSchemaConverter.symbolResolver;
+    } else {
+      this.symbolResolver = new SymbolResolver(
+        this.fileAccess as Pick<typeof fs, "existsSync" | "readFileSync">,
+        this.fileASTCache,
+      );
     }
   }
 
@@ -294,9 +303,15 @@ export class SchemaProcessor {
 
   /**
    * Resolve an import path relative to the current file
-   * Converts import paths like "../app/api/products/route.utils" to absolute file paths
+   * Converts import paths like "../app/api/products/route.utils" to absolute file paths.
+   * Uses the shared {@link SymbolResolver} so repeated lookups are cached (including
+   * negative results) and the same module graph is shared with the Zod converter.
    */
   private resolveImportPath(importPath: string, fromFilePath: string): string | null {
+    const viaResolver = this.symbolResolver.resolveImportPath(fromFilePath, importPath);
+    if (viaResolver !== null) return viaResolver;
+    // Fall back to the legacy helper for non-relative imports (the resolver only handles
+    // relative paths).
     return resolveImportPath(importPath, fromFilePath, this.fileAccess);
   }
 
@@ -338,7 +353,14 @@ export class SchemaProcessor {
       }
 
       const typeDefEntry = this.typeDefinitions[typeName.toString()];
-      if (!typeDefEntry) return {};
+      if (!typeDefEntry) {
+        // Emit a diagnostic so consumers can debug unresolved identifiers instead of silently
+        // falling back to an empty schema.
+        logger.debug(
+          `resolveType: no TypeScript definition found for "${typeName}" in ${this.currentFilePath}; returning empty schema`,
+        );
+        return {};
+      }
       const typeNode = typeDefEntry.node || typeDefEntry; // Support both old and new format
 
       if (typeDefEntry.filePath && this.shouldUseTypeScriptChecker(typeNode)) {
@@ -422,6 +444,7 @@ export class SchemaProcessor {
                 ...options,
               };
 
+              applyPropertyOpenApiOverride(member, property);
               properties[propName] = property;
               if (!member.optional) {
                 required.push(propName);
@@ -472,6 +495,134 @@ export class SchemaProcessor {
 
   private isDateNode(node: any): boolean {
     return isDateNode(node);
+  }
+
+  private isBinaryNode(node: any): boolean {
+    // Match TS references to common runtime binary types so `File`, `Blob`, etc. become
+    // `{ type: "string", format: "binary" }` instead of falling back to `{}`.
+    if (!t.isTSTypeReference(node)) return false;
+    const typeName = node.typeName;
+    if (!t.isIdentifier(typeName)) return false;
+    return (
+      typeName.name === "File" ||
+      typeName.name === "Blob" ||
+      typeName.name === "Buffer" ||
+      typeName.name === "ArrayBuffer" ||
+      typeName.name === "Uint8Array" ||
+      typeName.name === "ReadableStream"
+    );
+  }
+
+  /**
+   * Resolve an interpolation type inside a template literal into a concrete list of
+   * string values, or `null` when the type cannot be fully materialised.
+   */
+  private enumerateTemplateLiteralType(node: t.Node | null | undefined): string[] | null {
+    if (!node) return null;
+    if (t.isTSLiteralType(node)) {
+      const literal = node.literal;
+      if (t.isStringLiteral(literal)) return [literal.value];
+      if (t.isNumericLiteral(literal)) return [String(literal.value)];
+      if (t.isBooleanLiteral(literal)) return [String(literal.value)];
+      return null;
+    }
+    if (t.isTSUnionType(node)) {
+      const values: string[] = [];
+      for (const sub of node.types) {
+        const resolved = this.enumerateTemplateLiteralType(sub);
+        if (!resolved) return null;
+        values.push(...resolved);
+      }
+      return values;
+    }
+    return null;
+  }
+
+  private tryResolveTemplateLiteralEnum(node: t.TSTemplateLiteralType): OpenAPIDefinition | null {
+    const { quasis, types } = node;
+    if (types.length === 0) {
+      // `\`literal\`` — emit as a single-value string enum.
+      return { type: "string", enum: [quasis.map((q) => q.value.cooked ?? "").join("")] };
+    }
+    const groups: string[][] = [];
+    for (const interpolation of types) {
+      const resolved = this.enumerateTemplateLiteralType(interpolation);
+      if (!resolved) return null;
+      groups.push(resolved);
+    }
+    const staticParts = quasis.map((q) => q.value.cooked ?? "");
+    let combinations: string[] = [staticParts[0] ?? ""];
+    for (let i = 0; i < groups.length; i++) {
+      const group = groups[i];
+      if (!group) continue;
+      const next: string[] = [];
+      for (const prefix of combinations) {
+        for (const insert of group) {
+          next.push(`${prefix}${insert}${staticParts[i + 1] ?? ""}`);
+        }
+      }
+      combinations = next;
+    }
+    return { type: "string", enum: combinations };
+  }
+
+  private tryBuildTemplateLiteralPattern(node: t.TSTemplateLiteralType): string | null {
+    const { quasis, types } = node;
+    const parts: string[] = [];
+    const escapeRegex = (source: string) => source.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    for (let i = 0; i < quasis.length; i++) {
+      const quasi = quasis[i];
+      if (!quasi) continue;
+      parts.push(escapeRegex(quasi.value.cooked ?? ""));
+      if (i < types.length) {
+        const interpolation = types[i];
+        if (!interpolation) return null;
+        if (
+          t.isTSStringKeyword(interpolation) ||
+          (t.isTSTypeReference(interpolation) &&
+            t.isIdentifier(interpolation.typeName, { name: "Uppercase" }))
+        ) {
+          parts.push(".+");
+        } else if (t.isTSNumberKeyword(interpolation)) {
+          parts.push("\\d+");
+        } else {
+          return null;
+        }
+      }
+    }
+    return `^${parts.join("")}$`;
+  }
+
+  /**
+   * Follow `$ref` back to its target schema (if known) and return the properties
+   * map, so callers like `keyof` can enumerate the keys. Returns `null` when no
+   * properties are reachable.
+   */
+  private unwrapSchemaProperties(
+    schema: OpenAPIDefinition | undefined,
+  ): Record<string, OpenAPIDefinition> | null {
+    if (!schema) return null;
+    if (schema.properties) return schema.properties;
+    if (schema.$ref && schema.$ref.startsWith("#/components/schemas/")) {
+      const refName = schema.$ref.replace("#/components/schemas/", "");
+      const target = this.openapiDefinitions[refName] ?? this.typeDefinitions[refName];
+      if (target && !t.isNode?.(target as any)) {
+        const resolved = this.openapiDefinitions[refName];
+        if (resolved && resolved.properties) return resolved.properties;
+      }
+      // If we haven't emitted the definition yet, try to resolve on demand.
+      const onDemand = this.resolveType(refName);
+      if (onDemand && onDemand.properties) return onDemand.properties;
+    }
+    if (Array.isArray(schema.allOf)) {
+      const merged: Record<string, OpenAPIDefinition> = {};
+      for (const item of schema.allOf) {
+        const props = this.unwrapSchemaProperties(item);
+        if (props) Object.assign(merged, props);
+      }
+      if (Object.keys(merged).length > 0) return merged;
+    }
+    return null;
   }
 
   private shouldUseTypeScriptChecker(node: t.Node): boolean {
@@ -735,10 +886,17 @@ export class SchemaProcessor {
     if (t.isTSStringKeyword(node)) return { type: "string" };
     if (t.isTSNumberKeyword(node)) return { type: "number" };
     if (t.isTSBooleanKeyword(node)) return { type: "boolean" };
-    if (t.isTSAnyKeyword(node) || t.isTSUnknownKeyword(node)) return { type: "object" };
+    if (t.isTSBigIntKeyword(node)) return { type: "integer", format: "int64" };
+    if (t.isTSSymbolKeyword(node)) return { type: "string" };
+    if (t.isTSObjectKeyword(node)) return { type: "object", additionalProperties: true };
+    if (t.isTSNeverKeyword(node)) return { not: {} };
+    // `any` / `unknown` mean "literally any value" — the empty JSON Schema (`{}`) is the
+    // exact representation. Emitting `{ type: "object" }` was wrong for scalar values.
+    if (t.isTSAnyKeyword(node) || t.isTSUnknownKeyword(node)) return {};
     if (t.isTSVoidKeyword(node) || t.isTSNullKeyword(node) || t.isTSUndefinedKeyword(node))
       return { type: "null" };
     if (this.isDateNode(node)) return { type: "string", format: "date-time" };
+    if (this.isBinaryNode(node)) return { type: "string", format: "binary" };
 
     // Handle literal types like "admin" | "member" | "guest"
     if (t.isTSLiteralType(node)) {
@@ -757,6 +915,20 @@ export class SchemaProcessor {
           type: "boolean",
           enum: [node.literal.value],
         };
+      } else if (t.isTemplateLiteral(node.literal)) {
+        // Babel sometimes represents template-literal types as `TSLiteralType`
+        // wrapping a regular `TemplateLiteral`. Reuse the enumeration helpers
+        // by translating to the TS-specific shape expected by them.
+        const template = node.literal;
+        const synthetic = {
+          type: "TSTemplateLiteralType",
+          quasis: template.quasis,
+          types: template.expressions,
+        } as unknown as t.TSTemplateLiteralType;
+        const literalEnum = this.tryResolveTemplateLiteralEnum(synthetic);
+        if (literalEnum) return literalEnum;
+        const pattern = this.tryBuildTemplateLiteralPattern(synthetic);
+        return pattern ? { type: "string", pattern } : { type: "string" };
       }
     }
 
@@ -819,7 +991,13 @@ export class SchemaProcessor {
     }
 
     if (t.isTSTemplateLiteralType(node)) {
-      return { type: "string" };
+      // When all interpolated types are unions of string/number literal types, we can
+      // materialise the full cartesian product as an enum. Otherwise emit a pattern based
+      // on the template shape (or just `type: "string"` as a last resort).
+      const literalEnum = this.tryResolveTemplateLiteralEnum(node);
+      if (literalEnum) return literalEnum;
+      const pattern = this.tryBuildTemplateLiteralPattern(node);
+      return pattern ? { type: "string", pattern } : { type: "string" };
     }
 
     if (t.isTSConditionalType(node)) {
@@ -870,15 +1048,26 @@ export class SchemaProcessor {
     }
 
     if (t.isTSTypeOperator(node) && node.operator === "keyof") {
+      // For `keyof` on a `$ref` target, follow the ref to the underlying definition to
+      // compute the key list (the ref target hasn't had its properties copied onto the
+      // schema yet).
       const sourceSchema = this.resolveTSNodeType(node.typeAnnotation);
-      if (sourceSchema.properties) {
-        return {
-          type: "string",
-          enum: Object.keys(sourceSchema.properties),
-        };
+      const resolved = this.unwrapSchemaProperties(sourceSchema);
+      if (resolved) {
+        return { type: "string", enum: Object.keys(resolved) };
       }
-
       return { type: "string" };
+    }
+
+    if (t.isTSTypeOperator(node) && node.operator === "readonly") {
+      // `readonly T[]` / `readonly [A, B]` — emit the underlying schema with `readOnly: true`.
+      const inner = this.resolveTSNodeType(node.typeAnnotation);
+      return { ...inner, readOnly: true };
+    }
+
+    if (t.isTSTypeOperator(node) && node.operator === "unique") {
+      // `unique symbol` — not expressible in OpenAPI; emit the underlying schema.
+      return this.resolveTSNodeType(node.typeAnnotation);
     }
 
     if (t.isTSTypeReference(node) && t.isIdentifier(node.typeName)) {
@@ -889,13 +1078,12 @@ export class SchemaProcessor {
         return { type: "string", format: "date-time" };
       }
 
-      // Handle Promise<T> - in OpenAPI, promises are transparent (we document the resolved value)
-      if (typeName === "Promise") {
+      // Handle Promise<T> / Awaited<T> — unwrap to the resolved value.
+      if (typeName === "Promise" || typeName === "Awaited") {
         if (node.typeParameters && node.typeParameters.params.length > 0) {
-          // Return the inner type directly - promises are async wrappers
           return this.resolveTSNodeType(node.typeParameters.params[0]);
         }
-        return { type: "object" }; // Promise with no type parameter
+        return {};
       }
 
       if (typeName === "Array" || typeName === "ReadonlyArray") {
@@ -905,19 +1093,33 @@ export class SchemaProcessor {
             items: this.resolveTSNodeType(node.typeParameters.params[0]),
           };
         }
-        return { type: "array", items: { type: "object" } };
+        // Unknown element type — emit `type: "array"` without forcing `items: {type: object}`.
+        return { type: "array" };
       }
 
       if (typeName === "Record") {
         if (node.typeParameters && node.typeParameters.params.length > 1) {
-          const _keyType = this.resolveTSNodeType(node.typeParameters.params[0]);
+          const keyType = this.resolveTSNodeType(node.typeParameters.params[0]);
           const valueType = this.resolveTSNodeType(node.typeParameters.params[1]);
 
-          return {
+          const schema: OpenAPIDefinition = {
             type: "object",
             additionalProperties: valueType,
           };
+          // If the key is a non-trivial schema (e.g. a pattern or literal union), surface it
+          // as `propertyNames` so consumers can discover the shape of allowed keys.
+          if (keyType && typeof keyType === "object" && keyType.type !== undefined) {
+            const isTrivialStringKey =
+              keyType.type === "string" && !keyType.enum && !keyType.pattern && !keyType.format;
+            if (!isTrivialStringKey) schema.propertyNames = keyType;
+          }
+          return schema;
         }
+        // Missing the value type — `Record<K>` is a TS error, but avoid emitting an
+        // over-specific additionalProperties: true silently.
+        logger.debug(
+          `Record<...> used with ${node.typeParameters?.params.length ?? 0} type parameters; expected 2`,
+        );
         return { type: "object", additionalProperties: true };
       }
 
@@ -927,6 +1129,7 @@ export class SchemaProcessor {
         importMap: this.importMap,
         typeDefinitions: this.typeDefinitions,
         fileAccess: this.fileAccess,
+        symbolResolver: this.symbolResolver,
         resolveImportPath: (importPath, fromFilePath) =>
           this.resolveImportPath(importPath, fromFilePath),
         resolveTSNodeType: (currentNode) => this.resolveTSNodeType(currentNode),
@@ -963,90 +1166,145 @@ export class SchemaProcessor {
       };
     }
 
+    if (t.isTSTupleType(node)) {
+      // Walk tuple members, unwrapping `TSNamedTupleMember` and handling a trailing
+      // `TSRestType` by turning it into an unbounded `items` schema.
+      const prefixItems: OpenAPIDefinition[] = [];
+      let restItems: OpenAPIDefinition | null = null;
+      let minItems = 0;
+      for (const element of node.elementTypes) {
+        const unwrapped = t.isTSNamedTupleMember(element) ? element.elementType : element;
+        if (t.isTSRestType(unwrapped)) {
+          const inner = unwrapped.typeAnnotation;
+          restItems = t.isTSArrayType(inner)
+            ? this.resolveTSNodeType(inner.elementType)
+            : this.resolveTSNodeType(inner);
+          break;
+        }
+        const optional =
+          (t.isTSNamedTupleMember(element) && element.optional === true) ||
+          t.isTSOptionalType(unwrapped);
+        const actualNode = t.isTSOptionalType(unwrapped) ? unwrapped.typeAnnotation : unwrapped;
+        prefixItems.push(this.resolveTSNodeType(actualNode));
+        if (!optional) minItems++;
+      }
+      if (restItems !== null) {
+        return {
+          type: "array",
+          ...(prefixItems.length > 0 ? { prefixItems } : {}),
+          items: restItems,
+          minItems: prefixItems.length - (prefixItems.length - minItems),
+        };
+      }
+      return {
+        type: "array",
+        prefixItems,
+        items: false,
+        minItems,
+        maxItems: prefixItems.length,
+      };
+    }
+
+    if (t.isTSFunctionType(node) || t.isTSConstructorType(node)) {
+      // Functions / constructors are not transportable — describe as empty schema.
+      return {};
+    }
+
     if (t.isTSTypeLiteral(node)) {
       const properties: Record<string, any> = {};
       const required: string[] = [];
+      let additionalProperties: OpenAPIDefinition | boolean | undefined;
       node.members.forEach((member: any) => {
-        if (t.isTSPropertySignature(member) && t.isIdentifier(member.key)) {
-          const propName = member.key.name;
+        if (t.isTSPropertySignature(member)) {
+          const key = member.key;
+          const propName = t.isIdentifier(key)
+            ? key.name
+            : t.isStringLiteral(key)
+              ? key.value
+              : null;
+          if (!propName) return;
           const property = {
             ...this.resolveTSNodeType(member.typeAnnotation?.typeAnnotation),
             ...this.getPropertyOptions(member),
           };
+          // `readonly foo: string` — surface it in the emitted schema.
+          if (member.readonly === true) property.readOnly = true;
+          // Allow property-level `@openapi-override { ... }` JSDoc to merge raw OpenAPI into
+          // the resolved schema — the explicit escape hatch for anything we can't infer.
+          applyPropertyOpenApiOverride(member, property);
           properties[propName] = property;
           if (!member.optional) {
             required.push(propName);
           }
+          return;
+        }
+        if (t.isTSIndexSignature(member)) {
+          // `{ [key: string]: Value }` — describe as additionalProperties.
+          const valueType = member.typeAnnotation?.typeAnnotation
+            ? this.resolveTSNodeType(member.typeAnnotation.typeAnnotation)
+            : true;
+          additionalProperties = valueType as OpenAPIDefinition | boolean;
         }
       });
-      return required.length > 0
-        ? { type: "object", properties, required }
-        : { type: "object", properties };
+      const result: OpenAPIDefinition = { type: "object", properties };
+      if (required.length > 0) result.required = required;
+      if (additionalProperties !== undefined) result.additionalProperties = additionalProperties;
+      return result;
     }
 
     if (t.isTSUnionType(node)) {
-      // Handle union types with literal types, like "admin" | "member" | "guest"
-      const literals = node.types.filter((type: any) => t.isTSLiteralType(type));
+      // Split null/undefined/void "nullable" markers from the real members so we
+      // can attach `nullable: true` to whatever shape we emit below.
+      const isNullish = (type: any) =>
+        t.isTSNullKeyword(type) || t.isTSUndefinedKeyword(type) || t.isTSVoidKeyword(type);
+      const nullable = node.types.some((type: any) => t.isTSNullKeyword(type));
+      const nonNullableTypes = node.types.filter((type: any) => !isNullish(type));
 
-      // Check if all union elements are literals
-      if (literals.length === node.types.length) {
-        // All union members are literals, convert to enum
-        const enumValues = literals
+      // Collapse homogeneous literal unions into `{ type, enum }` — this works
+      // even when the original union mixes in `null`/`undefined` thanks to the
+      // filtering above.
+      const allLiterals =
+        nonNullableTypes.length > 0 &&
+        nonNullableTypes.every((type: any) => t.isTSLiteralType(type));
+      if (allLiterals) {
+        const enumValues = nonNullableTypes
           .map((type: any) => {
-            if (t.isTSLiteralType(type) && t.isStringLiteral(type.literal)) {
-              return type.literal.value;
-            } else if (t.isTSLiteralType(type) && t.isNumericLiteral(type.literal)) {
-              return type.literal.value;
-            } else if (t.isTSLiteralType(type) && t.isBooleanLiteral(type.literal)) {
-              return type.literal.value;
+            if (t.isTSLiteralType(type)) {
+              const literal = type.literal;
+              if (t.isStringLiteral(literal)) return literal.value;
+              if (t.isNumericLiteral(literal)) return literal.value;
+              if (t.isBooleanLiteral(literal)) return literal.value;
             }
             return null;
           })
           .filter((value: any) => value !== null);
-
         if (enumValues.length > 0) {
-          // Check if all enum values are of the same type
           const firstType = typeof enumValues[0];
           const sameType = enumValues.every((val: any) => typeof val === firstType);
-
           if (sameType) {
-            return {
-              type: firstType,
-              enum: enumValues,
-            };
+            const out: OpenAPIDefinition = { type: firstType, enum: enumValues };
+            if (nullable) out.nullable = true;
+            return out;
           }
         }
       }
 
-      // Handling null | undefined in type union
-      const nullableTypes = node.types.filter(
-        (type: any) =>
-          t.isTSNullKeyword(type) || t.isTSUndefinedKeyword(type) || t.isTSVoidKeyword(type),
-      );
-
-      const nonNullableTypes = node.types.filter(
-        (type: any) =>
-          !t.isTSNullKeyword(type) && !t.isTSUndefinedKeyword(type) && !t.isTSVoidKeyword(type),
-      );
-
-      // If a type can be null/undefined, we mark it as nullable
-      if (nullableTypes.length > 0 && nonNullableTypes.length === 1) {
+      // Single non-nullable member + nullable marker → `{ ...member, nullable: true }`.
+      if (nullable && nonNullableTypes.length === 1) {
         const mainType = this.resolveTSNodeType(nonNullableTypes[0]);
-        return {
-          ...mainType,
-          nullable: true,
-        };
+        return { ...mainType, nullable: true };
       }
 
-      // Standard union type support via oneOf
-      return {
-        oneOf: node.types
-          .filter(
-            (type: any) =>
-              !t.isTSNullKeyword(type) && !t.isTSUndefinedKeyword(type) && !t.isTSVoidKeyword(type),
-          )
-          .map((subNode: any) => this.resolveTSNodeType(subNode)),
-      };
+      // Single non-nullable member, nullish marker was `undefined`/`void` → pass through.
+      if (!nullable && nonNullableTypes.length === 1) {
+        return this.resolveTSNodeType(nonNullableTypes[0]);
+      }
+
+      // Fallback: standard oneOf, skipping null/undefined/void members.
+      const oneOf = nonNullableTypes.map((subNode: any) => this.resolveTSNodeType(subNode));
+      const out: OpenAPIDefinition = { oneOf };
+      if (nullable) out.nullable = true;
+      return out;
     }
 
     if (t.isTSIntersectionType(node)) {
@@ -1195,8 +1453,9 @@ export class SchemaProcessor {
   public createRequestParamsSchema(
     params: OpenAPIDefinition,
     isPathParam: boolean = false,
+    forcedIn?: "query" | "path" | "header" | "cookie",
   ): ParamSchema[] {
-    return createRequestParamsSchema(params, isPathParam);
+    return createRequestParamsSchema(params, isPathParam, forcedIn);
   }
 
   public createRequestBodySchema(
@@ -1698,5 +1957,16 @@ export class SchemaProcessor {
    */
   private extractFunctionParameters(funcNode: any): any[] {
     return extractFunctionParameters(funcNode);
+  }
+}
+
+function applyPropertyOpenApiOverride(member: any, property: Record<string, any>): void {
+  const leadingComments: any[] | undefined = member?.leadingComments;
+  if (!leadingComments || leadingComments.length === 0) return;
+  for (const comment of leadingComments) {
+    const override = parseOpenApiOverrideTag(comment.value ?? "");
+    if (override) {
+      Object.assign(property, override);
+    }
   }
 }

@@ -53,4 +53,66 @@ describe("route path sorting helpers", () => {
       },
     });
   });
+
+  it("sorts same-tag same-depth paths alphabetically by segment", () => {
+    const paths = {
+      "/users/settings": {
+        get: { tags: ["Users"] },
+      },
+      "/users-paginated": {
+        get: { tags: ["Users"] },
+      },
+      "/users/{id}": {
+        get: { tags: ["Users"] },
+      },
+      "/users": {
+        get: { tags: ["Users"] },
+      },
+    };
+
+    expect(Object.keys(sortPathDefinitions(paths))).toEqual([
+      "/users",
+      "/users-paginated",
+      "/users/{id}",
+      "/users/settings",
+    ]);
+  });
+
+  it("reorders methods inside a path into HTTP-semantic order", () => {
+    const paths = {
+      "/items": {
+        delete: { tags: ["Items"] },
+        post: { tags: ["Items"] },
+        get: { tags: ["Items"] },
+        patch: { tags: ["Items"] },
+        put: { tags: ["Items"] },
+      },
+    };
+
+    expect(Object.keys(sortPathDefinitions(paths)["/items"]!)).toEqual([
+      "get",
+      "post",
+      "put",
+      "patch",
+      "delete",
+    ]);
+  });
+
+  it("places unknown methods after known ones, alphabetically", () => {
+    const paths = {
+      "/items": {
+        zebra: { tags: ["Items"] },
+        get: { tags: ["Items"] },
+        custom: { tags: ["Items"] },
+        post: { tags: ["Items"] },
+      },
+    };
+
+    expect(Object.keys(sortPathDefinitions(paths as never)["/items"]!)).toEqual([
+      "get",
+      "post",
+      "custom",
+      "zebra",
+    ]);
+  });
 });

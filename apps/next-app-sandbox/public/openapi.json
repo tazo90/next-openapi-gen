@@ -20,21 +20,6 @@
       }
     },
     "schemas": {
-      "AdminAuditQuery": {
-        "type": "object",
-        "properties": {
-          "actorId": {
-            "type": "string",
-            "description": "Filter by actor"
-          },
-          "limit": {
-            "type": "integer",
-            "minimum": 0,
-            "exclusiveMinimum": true,
-            "description": "Maximum audit rows"
-          }
-        }
-      },
       "AdminAuditEntry": {
         "type": "object",
         "properties": {
@@ -48,6 +33,7 @@
           },
           "occurredAt": {
             "type": "string",
+            "format": "date-time",
             "description": "Timestamp"
           },
           "resourceId": {
@@ -61,33 +47,18 @@
           "occurredAt"
         ]
       },
-      "AdminUserQuery": {
+      "AdminAuditQuery": {
         "type": "object",
         "properties": {
-          "page": {
-            "type": "number",
-            "description": "Page number"
+          "actorId": {
+            "type": "string",
+            "description": "Filter by actor"
           },
           "limit": {
-            "type": "number",
-            "description": "Items per page"
-          },
-          "role": {
-            "type": "string",
-            "enum": [
-              "admin",
-              "user"
-            ],
-            "description": "Filter by role"
-          },
-          "status": {
-            "type": "string",
-            "enum": [
-              "active",
-              "inactive",
-              "banned"
-            ],
-            "description": "Filter by status"
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true,
+            "description": "Maximum audit rows"
           }
         }
       },
@@ -174,6 +145,95 @@
           "pagination"
         ]
       },
+      "AdminUserQuery": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "number",
+            "description": "Page number"
+          },
+          "limit": {
+            "type": "number",
+            "description": "Items per page"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "admin",
+              "user"
+            ],
+            "description": "Filter by role"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "inactive",
+              "banned"
+            ],
+            "description": "Filter by status"
+          }
+        }
+      },
+      "CoerceBody": {
+        "type": "object",
+        "properties": {
+          "traceId": {
+            "$ref": "#/components/schemas/TraceId"
+          },
+          "amount": {
+            "type": "number",
+            "minimum": 0
+          },
+          "email": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "traceId",
+          "amount",
+          "email"
+        ]
+      },
+      "CoerceQuery": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "default": 10,
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 1000
+          },
+          "active": {
+            "type": "boolean"
+          },
+          "since": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "count"
+        ]
+      },
+      "CoerceResponse": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "echoed": {
+            "$ref": "#/components/schemas/CoerceBody"
+          }
+        },
+        "required": [
+          "ok",
+          "echoed"
+        ]
+      },
       "DashboardResponse": {
         "type": "object",
         "properties": {
@@ -204,35 +264,28 @@
           "userId"
         ]
       },
-      "UserSettings": {
+      "GetUserProfilePathParams": {
         "type": "object",
         "properties": {
-          "theme": {
+          "id": {
             "type": "string",
-            "enum": [
-              "light",
-              "dark"
-            ],
-            "description": "UI theme preference"
-          },
-          "notifications": {
-            "type": "boolean",
-            "description": "Enable notifications"
-          },
-          "language": {
-            "type": "string",
-            "description": "Preferred language"
-          },
-          "timezone": {
-            "type": "string",
-            "description": "User timezone"
+            "description": "User ID"
           }
         },
         "required": [
-          "theme",
-          "notifications",
-          "language",
-          "timezone"
+          "id"
+        ]
+      },
+      "Image": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "description": "The url"
+          }
+        },
+        "required": [
+          "url"
         ]
       },
       "LoginRequest": {
@@ -291,19 +344,6 @@
           "user"
         ]
       },
-      "ProfileFilters": {
-        "type": "object",
-        "properties": {
-          "includeHidden": {
-            "type": "boolean",
-            "description": "Include hidden profiles"
-          },
-          "q": {
-            "type": "string",
-            "description": "Search term"
-          }
-        }
-      },
       "ProfileDraft": {
         "type": "object",
         "properties": {
@@ -346,42 +386,18 @@
           "avatar"
         ]
       },
-      "User": {
+      "ProfileFilters": {
         "type": "object",
         "properties": {
-          "name": {
+          "includeHidden": {
+            "type": "boolean",
+            "description": "Include hidden profiles"
+          },
+          "q": {
             "type": "string",
-            "description": "Full name of the user"
-          },
-          "profileImage": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/Image"
-              }
-            ],
-            "description": "The profile image"
-          },
-          "avatar": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/Image"
-              }
-            ],
-            "description": "The avatar image"
-          },
-          "banner": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/Image"
-              }
-            ],
-            "description": "The banner image"
+            "description": "Search term"
           }
-        },
-        "required": [
-          "name",
-          "avatar"
-        ]
+        }
       },
       "SearchQueryParams": {
         "type": "object",
@@ -450,16 +466,45 @@
           "total"
         ]
       },
-      "GetUserProfilePathParams": {
+      "TraceId": {
+        "type": "string",
+        "format": "nanoid"
+      },
+      "User": {
         "type": "object",
         "properties": {
-          "id": {
+          "name": {
             "type": "string",
-            "description": "User ID"
+            "description": "Full name of the user"
+          },
+          "profileImage": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Image"
+              }
+            ],
+            "description": "The profile image"
+          },
+          "avatar": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Image"
+              }
+            ],
+            "description": "The avatar image"
+          },
+          "banner": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Image"
+              }
+            ],
+            "description": "The banner image"
           }
         },
         "required": [
-          "id"
+          "name",
+          "avatar"
         ]
       },
       "Users": {
@@ -478,16 +523,35 @@
           "name"
         ]
       },
-      "Image": {
+      "UserSettings": {
         "type": "object",
         "properties": {
-          "url": {
+          "theme": {
             "type": "string",
-            "description": "The url"
+            "enum": [
+              "light",
+              "dark"
+            ],
+            "description": "UI theme preference"
+          },
+          "notifications": {
+            "type": "boolean",
+            "description": "Enable notifications"
+          },
+          "language": {
+            "type": "string",
+            "description": "Preferred language"
+          },
+          "timezone": {
+            "type": "string",
+            "description": "User timezone"
           }
         },
         "required": [
-          "url"
+          "theme",
+          "notifications",
+          "language",
+          "timezone"
         ]
       }
     },
@@ -699,10 +763,11 @@
     "/auth": {
       "post": {
         "operationId": "post-auth",
-        "summary": "User login",
+        "summary": "Sign in",
         "description": "Authenticate user and return access token",
         "tags": [
-          "Authentication"
+          "Authentication",
+          "Sandbox"
         ],
         "parameters": [],
         "requestBody": {
@@ -731,7 +796,9 @@
           "500": {
             "$ref": "#/components/responses/500"
           }
-        }
+        },
+        "x-internal": true,
+        "x-rate-limit": 100
       }
     },
     "/dashboard": {
@@ -796,6 +863,74 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/DashboardResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    },
+    "/coerce": {
+      "post": {
+        "operationId": "sandboxCoerceEdgeCases",
+        "summary": "Coercion edge cases",
+        "description": "Exercises `z.coerce`, `z.preprocess`, `z.brand<>`, `.transform()`, and `.pipe()` together.",
+        "tags": [
+          "Edge cases",
+          "Sandbox"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "count",
+            "required": true,
+            "schema": {
+              "default": 10,
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 1000
+            }
+          },
+          {
+            "in": "query",
+            "name": "active",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
+            "name": "since",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CoerceBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CoerceResponse"
                 }
               }
             }
@@ -1187,16 +1322,19 @@
       "name": "Admin"
     },
     {
-      "name": "Dashboard"
-    },
-    {
-      "name": "Settings"
-    },
-    {
       "name": "Authentication"
     },
     {
+      "name": "Dashboard"
+    },
+    {
+      "name": "Edge cases"
+    },
+    {
       "name": "Profiles"
+    },
+    {
+      "name": "Settings"
     },
     {
       "name": "Test-optional"

@@ -35,11 +35,17 @@ export async function GET(_request: NextRequest) {
 
 /**
  * Register a webhook endpoint
+ * @summary Register webhook
  * @description Creates a webhook endpoint while the preserved OpenAPI fragments contribute callbacks, links, examples, and discriminator mappings.
  * @body CreateWebhookEndpointSchema
  * @response WebhookEndpointSchema
  * @examples body:webhookRegistrationExamples
  * @tag Integrations
+ * @tags Webhooks, Platform
+ * @callback webhookDelivery {$request.body#/deliveryUrl} WebhookEnvelope
+ * @link 200 deliveryAttempts getWebhookDeliveryAttempts
+ * @servers https://api.example.com/v1, https://api-eu.example.com/v1
+ * @externalDocs https://docs.example.com/integrations/webhooks Webhook authoring guide
  * @auth bearer
  * @operationId mixedRegisterWebhookEndpoint
  * @openapi

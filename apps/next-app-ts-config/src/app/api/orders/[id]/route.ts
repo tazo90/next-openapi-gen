@@ -8,10 +8,12 @@ type OrderRouteContext = {
 
 /**
  * Get order by ID.
+ * @summary Get order
  * @description Demonstrates default typed-config discovery through openapi-gen.config.ts.
  * @pathParams OrderRecordIdParams
  * @response OrderRecord
  * @tag Orders
+ * @tags Config
  * @openapi
  */
 export async function GET(_request: Request, { params }: OrderRouteContext) {

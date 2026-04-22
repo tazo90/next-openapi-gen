@@ -602,18 +602,14 @@ describe("SchemaProcessor helper seams", () => {
 
     expect(
       (processor as any).resolveTSNodeType(t.tsTypeReference(t.identifier("Promise"))),
-    ).toEqual({
-      type: "object",
-    });
+    ).toEqual({});
     expect((processor as any).resolveTSNodeType(t.tsTypeReference(t.identifier("Array")))).toEqual({
       type: "array",
-      items: { type: "object" },
     });
     expect(
       (processor as any).resolveTSNodeType(t.tsTypeReference(t.identifier("ReadonlyArray"))),
     ).toEqual({
       type: "array",
-      items: { type: "object" },
     });
     expect((processor as any).resolveTSNodeType(t.tsTypeReference(t.identifier("Record")))).toEqual(
       {
