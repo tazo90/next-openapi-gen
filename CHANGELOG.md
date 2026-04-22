@@ -1,3 +1,9 @@
+# [1.1.0](https://github.com/tazo90/next-openapi-gen/compare/v1.0.7...v1.1.0) (2026-04-22)
+
+### ✨ Features
+
+- more type improvements and sample update ([#120](https://github.com/tazo90/next-openapi-gen/issues/120)) ([bb2b065](https://github.com/tazo90/next-openapi-gen/commit/bb2b0651b8b2e06095b4a404171258d7973c3b5b)) by [@martijn00](https://github.com/martijn00)
+
 ## [1.0.7](https://github.com/tazo90/next-openapi-gen/compare/v1.0.6...v1.0.7) (2026-04-18)
 
 ### 🐛 Bug Fixes
