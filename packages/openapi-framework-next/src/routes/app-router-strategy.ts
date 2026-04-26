@@ -44,7 +44,7 @@ export class AppRouterStrategy implements RouterStrategy {
       return false;
     }
 
-    return /export\s+(?:async\s+)?function\s+(GET|POST|PUT|PATCH|DELETE)\b|export\s+const\s+(GET|POST|PUT|PATCH|DELETE)\s*=/.test(
+    return /export\s+(?:async\s+)?function\s+(GET|POST|PUT|PATCH|DELETE)\b|export\s+const\s+(GET|POST|PUT|PATCH|DELETE)\b(?:\s*:\s*(?:=>|[^=;])+)?\s*=(?!=|>)/.test(
       content,
     );
   }
