@@ -95,6 +95,47 @@ describe("AppRouterStrategy", () => {
     expect(strategy.precheckFile(routeFile)).toBe(false);
   });
 
+  it.each([
+    [
+      "without context",
+      `export const GET: RouteHandler = async (_request) => {
+        return Response.json({ ok: true });
+      };`,
+    ],
+    [
+      "with context",
+      `export const GET: RouteHandler = async (_request, _context) => {
+        return Response.json({ ok: true });
+      };`,
+    ],
+    [
+      "with typed path params",
+      `export const GET: RouteHandler<PathParams> = async (_request, _context) => {
+        return Response.json({ ok: true });
+      };`,
+    ],
+  ])("precheckFile accepts typed const route handlers %s", (_label, handlerSource) => {
+    strategy = new AppRouterStrategy(baseConfig);
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-app-precheck-typed-const-"));
+    roots.push(root);
+    const routeFile = path.join(root, "route.ts");
+    fs.writeFileSync(
+      routeFile,
+      `
+      type RouteHandler<TParams = unknown> = (
+        request: Request,
+        context: { params: Promise<TParams> },
+      ) => Promise<Response>;
+
+      type PathParams = { id: string };
+
+      ${handlerSource}
+      `,
+    );
+
+    expect(strategy.precheckFile(routeFile)).toBe(true);
+  });
+
   it("reuses readFile cache across repeated precheckFile calls", () => {
     strategy = new AppRouterStrategy(baseConfig);
     const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-app-readfile-cache-"));
