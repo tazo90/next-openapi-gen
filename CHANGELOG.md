@@ -1,3 +1,9 @@
+## [1.1.1](https://github.com/tazo90/next-openapi-gen/compare/v1.1.0...v1.1.1) (2026-04-28)
+
+### 🐛 Bug Fixes
+
+- detect typed const app route handlers ([#121](https://github.com/tazo90/next-openapi-gen/issues/121)) ([6c09e63](https://github.com/tazo90/next-openapi-gen/commit/6c09e63edf4decbeae4daf9317c6c7d236ffea5f)) by [@ivanlewin](https://github.com/ivanlewin)
+
 # [1.1.0](https://github.com/tazo90/next-openapi-gen/compare/v1.0.7...v1.1.0) (2026-04-22)
 
 ### ✨ Features
