@@ -473,4 +473,33 @@ describe("SchemaProcessor", () => {
     expect((processor as any).extractFunctionParameters(anonymousNode)).toHaveLength(1);
     expect((processor as any).extractFunctionParameters(t.identifier("noop"))).toEqual([]);
   });
+
+  it("resolves types from outside schemaDir via TypeScript checker fallback", () => {
+    // Regression: types defined in node_modules or a shared workspace package that is not
+    // covered by schemaDir were silently resolved to `{}`. The fix uses the importMap to
+    // find a scanned file that imports the type, then delegates to resolveTypeWithTypeScriptChecker.
+    const fixtureDir = path.resolve(__dirname, "../../../fixtures/external-type-resolution");
+    // schemaDir is only "src/" — shared-types.ts lives at the fixture root (outside src/)
+    const schemaDir = path.join(fixtureDir, "src");
+    const processor = new SchemaProcessor(schemaDir, "typescript");
+
+    const userSchema = processor.findSchemaDefinition("ExternalUser", "response");
+    expect(userSchema).toMatchObject({
+      type: "object",
+      properties: expect.objectContaining({
+        id: expect.objectContaining({ type: expect.stringMatching(/number|integer/) }),
+        name: { type: "string" },
+        email: { type: "string" },
+      }),
+    });
+
+    const errorSchema = processor.findSchemaDefinition("ExternalApiError", "response");
+    expect(errorSchema).toMatchObject({
+      type: "object",
+      properties: expect.objectContaining({
+        message: { type: "string" },
+        statusCode: expect.objectContaining({ type: expect.stringMatching(/number|integer/) }),
+      }),
+    });
+  });
 });

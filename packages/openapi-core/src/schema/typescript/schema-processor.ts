@@ -354,8 +354,22 @@ export class SchemaProcessor {
 
       const typeDefEntry = this.typeDefinitions[typeName.toString()];
       if (!typeDefEntry) {
-        // Emit a diagnostic so consumers can debug unresolved identifiers instead of silently
-        // falling back to an empty schema.
+        // The type is not defined in any of the scanned schema dirs. It may come from
+        // node_modules or a directory not covered by schemaDir (e.g. a shared package
+        // whose types are `z.infer<typeof schema>` aliases). As a fallback, look for any
+        // scanned file that imports this type and use the TypeScript language service to
+        // resolve it — the compiler already knows the full shape of imported types.
+        const contextFile = this.findFileImportingType(typeName);
+        if (contextFile) {
+          logger.debug(
+            `resolveType: "${typeName}" not in schema dirs; attempting TypeScript checker fallback via ${contextFile}`,
+          );
+          const checkerSchema = this.resolveTypeWithTypeScriptChecker(typeName, contextFile);
+          if (checkerSchema && Object.keys(checkerSchema).length > 0) {
+            this.openapiDefinitions[typeName] = checkerSchema;
+            return checkerSchema;
+          }
+        }
         logger.debug(
           `resolveType: no TypeScript definition found for "${typeName}" in ${this.currentFilePath}; returning empty schema`,
         );
@@ -625,6 +639,20 @@ export class SchemaProcessor {
     return null;
   }
 
+  /**
+   * Return the path of the first scanned file that imports `typeName`, or `null` when none is
+   * found. Used as a fallback context for {@link resolveTypeWithTypeScriptChecker} when the type
+   * is not defined in any schema-dir file (e.g. comes from node_modules or a shared package).
+   */
+  private findFileImportingType(typeName: string): string | null {
+    for (const [filePath, imports] of Object.entries(this.importMap)) {
+      if (Object.prototype.hasOwnProperty.call(imports, typeName)) {
+        return filePath;
+      }
+    }
+    return null;
+  }
+
   private shouldUseTypeScriptChecker(node: t.Node): boolean {
     return (
       t.isTSConditionalType(node) ||
@@ -737,7 +765,21 @@ export class SchemaProcessor {
       return { type: "object" };
     }
 
-    seen.add(seenKey);
+    // Only track non-trivial types in `seen`. Primitives (string, number, boolean, null, etc.)
+    // may appear on multiple properties of the same object without being circular — adding them
+    // to `seen` would incorrectly turn their second occurrence into `{ type: "object" }`.
+    if (
+      !(
+        type.flags &
+        (primitiveLikeFlags |
+          ts.TypeFlags.Any |
+          ts.TypeFlags.Never |
+          ts.TypeFlags.Unknown |
+          ts.TypeFlags.Void)
+      )
+    ) {
+      seen.add(seenKey);
+    }
 
     if (type.isStringLiteral()) {
       return { type: "string", enum: [type.value] };
