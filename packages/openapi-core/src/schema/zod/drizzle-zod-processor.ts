@@ -640,6 +640,17 @@ export class DrizzleZodProcessor {
         }
         break;
 
+      case "meta": {
+        const firstArg = args[0];
+        if (firstArg && !t.isSpreadElement(firstArg) && !t.isArgumentPlaceholder(firstArg)) {
+          const metadata = DrizzleZodProcessor.extractStaticObject(firstArg);
+          if (metadata) {
+            Object.assign(result, metadata);
+          }
+        }
+        break;
+      }
+
       case "default":
         if (args.length > 0) {
           // Extract default value
@@ -662,5 +673,44 @@ export class DrizzleZodProcessor {
    */
   static isDrizzleZodHelper(name: string): boolean {
     return this.DRIZZLE_ZOD_HELPERS.includes(name);
+  }
+
+  private static extractStaticObject(node: t.Node): Record<string, unknown> | null {
+    if (!t.isObjectExpression(node)) return null;
+    const out: Record<string, unknown> = {};
+    for (const prop of node.properties) {
+      if (!t.isObjectProperty(prop)) return null;
+      const key = t.isIdentifier(prop.key)
+        ? prop.key.name
+        : t.isStringLiteral(prop.key)
+          ? prop.key.value
+          : null;
+      if (!key) return null;
+      const val = DrizzleZodProcessor.extractStaticValue(prop.value);
+      if (typeof val === "undefined") return null;
+      out[key] = val;
+    }
+    return out;
+  }
+
+  private static extractStaticValue(node: t.Node): unknown {
+    if (t.isStringLiteral(node)) return node.value;
+    if (t.isNumericLiteral(node)) return node.value;
+    if (t.isBooleanLiteral(node)) return node.value;
+    if (t.isNullLiteral(node)) return null;
+    if (t.isArrayExpression(node)) {
+      const values: unknown[] = [];
+      for (const el of node.elements) {
+        if (!el || t.isSpreadElement(el) || t.isArgumentPlaceholder(el)) return undefined;
+        const v = DrizzleZodProcessor.extractStaticValue(el);
+        if (typeof v === "undefined") return undefined;
+        values.push(v);
+      }
+      return values;
+    }
+    if (t.isObjectExpression(node)) {
+      return DrizzleZodProcessor.extractStaticObject(node);
+    }
+    return undefined;
   }
 }
