@@ -162,6 +162,28 @@ For more adoption patterns, see
 
 When you target modern OpenAPI output, the Zod path can also split request and response component refs when a supported Zod 4 schema emits different input and output JSON Schema shapes, while the TypeScript path can use selective checker fallback for mapped, conditional, template-literal, and import-based named types.
 
+### Add OpenAPI metadata directly in Zod schemas
+
+Use `.describe()` for a quick description, or Zod v4's `.meta()` to attach `description`, `examples`, `example`, `deprecated`, `title`, and custom `x-*` extensions without any JSDoc:
+
+```ts
+// .describe() → description field
+z.string().describe("ISO 639-1 language code");
+// → { type: "string", description: "ISO 639-1 language code" }
+
+// .meta() → description + examples (and any other OpenAPI key)
+z.number()
+  .int()
+  .positive()
+  .meta({
+    description: "PIM ID of the slider",
+    examples: [42, 1337],
+  });
+// → { type: "integer", exclusiveMinimum: 0, description: "PIM ID of the slider", examples: [42, 1337] }
+```
+
+Both work inside `z.object({...})` properties, in drizzle-zod override callbacks, and at the top level of named schemas. See [docs/zod4-support-matrix.md](./docs/zod4-support-matrix.md) for the full supported metadata surface.
+
 ### Generate docs from Drizzle schemas
 
 `next-openapi-gen` works well with `drizzle-zod`, so your database schema, validation, and API docs can share the same source of truth.

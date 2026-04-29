@@ -71,7 +71,7 @@ export const PostResponseSchema = createSelectSchema(posts, {
   excerpt: (schema) => schema.describe("Post excerpt"),
   content: (schema) => schema.describe("Full post content"),
   published: (schema) => schema.describe("Publication status"),
-  viewCount: (schema) => schema.describe("Number of views"),
+  viewCount: (schema) => schema.meta({ description: "Number of views", examples: [0, 42, 1337] }),
   createdAt: (schema) => schema.describe("Creation timestamp"),
   updatedAt: (schema) => schema.describe("Last update timestamp"),
 });
