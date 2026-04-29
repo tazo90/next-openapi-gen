@@ -856,7 +856,8 @@
             "maxLength": 100,
             "description": "Author display name"
           }
-        }
+        },
+        "required": []
       },
       "UpdatePostSchema": {
         "type": "object",
@@ -886,7 +887,8 @@
             "type": "boolean",
             "description": "Publication status"
           }
-        }
+        },
+        "required": []
       }
     },
     "responses": {
