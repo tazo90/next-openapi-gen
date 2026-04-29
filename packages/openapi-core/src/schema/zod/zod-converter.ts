@@ -978,8 +978,12 @@ export class ZodSchemaConverter {
     ) {
       const methodName = node.callee.property.name;
 
-      if (methodName === "object" && node.arguments.length > 0) {
-        return this.processZodObject(node);
+      if ((methodName === "object" || methodName === "strictObject") && node.arguments.length > 0) {
+        const schema = this.processZodObject(node);
+        if (methodName === "strictObject") {
+          schema.additionalProperties = false;
+        }
+        return schema;
       } else if (methodName === "union" && node.arguments.length > 0) {
         return this.processZodUnion(node);
       } else if (methodName === "intersection" && node.arguments.length > 0) {

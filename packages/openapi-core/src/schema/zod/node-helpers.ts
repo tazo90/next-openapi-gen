@@ -728,8 +728,12 @@ export function processZodPrimitiveNode(
       };
       break;
     }
+    case "strictObject":
     case "object":
       schema = node.arguments.length > 0 ? context.processObject(node) : { type: "object" };
+      if (zodType === "strictObject") {
+        schema.additionalProperties = false;
+      }
       break;
     case "templateLiteral":
       schema = { type: "string" };
