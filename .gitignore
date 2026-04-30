@@ -40,6 +40,9 @@ out/
 build/
 *.tsbuildinfo
 
+# Git worktrees
+.worktrees/
+
 # Misc
 .DS_Store
 *.pem
