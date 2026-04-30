@@ -88,6 +88,8 @@ export class SchemaProcessor {
 
   // Track imports per file for resolving ReturnType<typeof func>
   private importMap: Record<string, Record<string, string>> = {}; // { filePath: { importName: importPath } }
+  // Inverted index: typeName → first filePath that imports it (O(1) lookup for findFileImportingType)
+  private typeToFileIndex: Map<string, string> = new Map();
   private currentFilePath: string = ""; // Track the file being processed
 
   constructor(
@@ -299,6 +301,13 @@ export class SchemaProcessor {
 
   private collectImports(ast: t.File, filePath: string): void {
     collectImports(ast, filePath, this.importMap);
+    const normalizedPath = path.normalize(filePath);
+    const entries = this.importMap[normalizedPath] ?? {};
+    for (const typeName of Object.keys(entries)) {
+      if (!this.typeToFileIndex.has(typeName)) {
+        this.typeToFileIndex.set(typeName, normalizedPath);
+      }
+    }
   }
 
   /**
@@ -645,12 +654,7 @@ export class SchemaProcessor {
    * is not defined in any schema-dir file (e.g. comes from node_modules or a shared package).
    */
   private findFileImportingType(typeName: string): string | null {
-    for (const [filePath, imports] of Object.entries(this.importMap)) {
-      if (Object.prototype.hasOwnProperty.call(imports, typeName)) {
-        return filePath;
-      }
-    }
-    return null;
+    return this.typeToFileIndex.get(typeName) ?? null;
   }
 
   private shouldUseTypeScriptChecker(node: t.Node): boolean {
