@@ -112,6 +112,10 @@ export class ZodRuntimeExporter {
         return node.arguments[0] && isProcessableNode(node.arguments[0])
           ? z.array(this.buildSchema(node.arguments[0]) ?? z.unknown())
           : z.array(z.unknown());
+      case "strictObject": {
+        const base = this.buildObject(node);
+        return base && typeof (base as any).strict === "function" ? (base as any).strict() : base;
+      }
       case "object":
         return this.buildObject(node);
       case "record":

@@ -43,6 +43,30 @@ describe("Zod features › object modes", () => {
     });
   });
 
+  it("z.strictObject() emits additionalProperties: false", () => {
+    const schema = convert(
+      `z.strictObject({ id: z.string(), name: z.string().optional() })`,
+      roots,
+    );
+    expect(schema).toMatchObject({
+      type: "object",
+      properties: {
+        id: { type: "string" },
+        name: { type: "string" },
+      },
+      required: ["id"],
+      additionalProperties: false,
+    });
+  });
+
+  it("z.strictObject() without arguments emits plain object", () => {
+    const schema = convert(`z.strictObject({})`, roots);
+    expect(schema).toMatchObject({
+      type: "object",
+      additionalProperties: false,
+    });
+  });
+
   it("strip() is a no-op (explicit default)", () => {
     const schema = convert(`${base}.strip()`, roots);
     expect(schema).toMatchObject({ type: "object" });
