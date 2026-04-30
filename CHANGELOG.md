@@ -1,3 +1,19 @@
+# [1.2.0](https://github.com/tazo90/next-openapi-gen/compare/v1.1.1...v1.2.0) (2026-04-30)
+
+### ⚡ Performance Improvements
+
+- **schema:** O(1) inverted index for findFileImportingType ([#125](https://github.com/tazo90/next-openapi-gen/issues/125)) ([3339a8a](https://github.com/tazo90/next-openapi-gen/commit/3339a8a70c3d71a7629b96459080d910f2fe47a8))
+
+### 🐛 Bug Fixes
+
+- **schema:** resolve external types via TypeScript checker fallback ([#122](https://github.com/tazo90/next-openapi-gen/issues/122)) ([bb03d00](https://github.com/tazo90/next-openapi-gen/commit/bb03d00fc0ec8509499f8b6497cff316735a5550))
+- **zod:** add z.strictObject support in schema processor ([#123](https://github.com/tazo90/next-openapi-gen/issues/123)) ([652e97b](https://github.com/tazo90/next-openapi-gen/commit/652e97b1d590cbe573f77da35f8f43d84a7b3113))
+- **zod:** support .meta() and .describe() as idiomatic OpenAPI annotations ([#124](https://github.com/tazo90/next-openapi-gen/issues/124)) ([6081ad3](https://github.com/tazo90/next-openapi-gen/commit/6081ad36a6c49d5b3ee49b7fa319bb4d6e63517c))
+
+### 🔨 Chores
+
+- **bench:** update baseline to current CI runner measurements ([#126](https://github.com/tazo90/next-openapi-gen/issues/126)) ([e2e7fbf](https://github.com/tazo90/next-openapi-gen/commit/e2e7fbf93f5b47d3dbda644b550f83835ba67f6a))
+
 ## [1.1.1](https://github.com/tazo90/next-openapi-gen/compare/v1.1.0...v1.1.1) (2026-04-28)
 
 ### 🐛 Bug Fixes
