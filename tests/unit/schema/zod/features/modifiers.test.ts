@@ -94,4 +94,67 @@ describe("Zod features › modifiers", () => {
     const schema = convert("z.string().pipe(z.string().email())", roots);
     expect(schema).toMatchObject({ type: "string", format: "email" });
   });
+
+  it(".describe() with a concrete example sets description", () => {
+    expect(convert('z.string().describe("ISO 639-1 language code")', roots)).toMatchObject({
+      type: "string",
+      description: "ISO 639-1 language code",
+    });
+  });
+
+  describe(".meta() metadata (Zod v4)", () => {
+    it("description maps to schema.description", () => {
+      expect(
+        convert('z.string().meta({ description: "ISO 639-1 language code" })', roots),
+      ).toMatchObject({ type: "string", description: "ISO 639-1 language code" });
+    });
+
+    it("examples maps to schema.examples", () => {
+      expect(convert('z.string().meta({ examples: ["en", "de"] })', roots)).toMatchObject({
+        type: "string",
+        examples: ["en", "de"],
+      });
+    });
+
+    it("description + examples on int().positive() chain", () => {
+      expect(
+        convert(
+          'z.number().int().positive().meta({ description: "PIM ID of the slider", examples: [42, 1337] })',
+          roots,
+        ),
+      ).toMatchObject({
+        type: "integer",
+        exclusiveMinimum: 0,
+        description: "PIM ID of the slider",
+        examples: [42, 1337],
+      });
+    });
+
+    it("description on object property with .meta()", () => {
+      expect(
+        convert(
+          'z.object({ id: z.number().int().positive().meta({ description: "PIM ID", examples: [42, 1337] }) })',
+          roots,
+        ),
+      ).toMatchObject({
+        type: "object",
+        properties: {
+          id: {
+            type: "integer",
+            exclusiveMinimum: 0,
+            description: "PIM ID",
+            examples: [42, 1337],
+          },
+        },
+        required: ["id"],
+      });
+    });
+
+    it("numeric example values are preserved", () => {
+      expect(convert("z.number().meta({ examples: [0, 42, 1337] })", roots)).toMatchObject({
+        type: "number",
+        examples: [0, 42, 1337],
+      });
+    });
+  });
 });

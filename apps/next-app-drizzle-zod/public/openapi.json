@@ -780,7 +780,8 @@
           },
           "viewCount": {
             "type": "integer",
-            "description": "Number of views"
+            "description": "Number of views",
+            "example": 0
           },
           "authorId": {
             "type": "integer"
