@@ -75,6 +75,9 @@ export class ZodSchemaConverter {
   schemaNameToFiles: Map<string, Set<string>> = new Map();
   /** Per-file import alias for the `zod` module (`import { z as zod }` sets this to `"zod"`). */
   zodImportAlias: Map<string, string> = new Map();
+  /** Schema variable names whose component name was overridden via .meta({ id }). These must
+   *  NOT be copied back under the original variable name in the OpenAPI components object. */
+  metaIdSchemaNames: Set<string> = new Set();
   // Current processing context (set during file processing)
   currentFilePath?: string;
   currentAST?: t.File;
@@ -196,8 +199,14 @@ export class ZodSchemaConverter {
       this.processingSchemas.delete(schemaName);
       if (mappedSchemaName && requestedSchemaName !== schemaName) {
         const resolvedReference = this.getSchemaReferenceName(schemaName, this.currentContentType);
-        // Copy schema under alias name so OpenAPI components use the alias
-        if (this.zodSchemas[resolvedReference] && !this.zodSchemas[requestedSchemaName]) {
+        // Copy schema under alias name so OpenAPI components use the alias — but only for
+        // type-alias mappings (z.infer<typeof X>), not for .meta({ id }) overrides which
+        // intentionally rename the component and must not reintroduce the original name.
+        if (
+          !this.metaIdSchemaNames.has(requestedSchemaName) &&
+          this.zodSchemas[resolvedReference] &&
+          !this.zodSchemas[requestedSchemaName]
+        ) {
           this.zodSchemas[requestedSchemaName] = this.zodSchemas[resolvedReference];
         }
         this.schemaVariantRefs.set(
@@ -2411,11 +2420,20 @@ export class ZodSchemaConverter {
     if (finalName !== schemaName) {
       this.indexSchemaName(finalName, filePath);
     }
-    if (!this.getStoredSchema(finalName)) {
+    if (!this.zodSchemas[finalName]) {
       if (overrideId && overrideId !== schemaName) {
         this.typeToSchemaMapping[schemaName] = overrideId;
+        this.metaIdSchemaNames.add(schemaName);
+        // Remove any reverse mapping that would create a cycle (e.g. from z.infer<typeof X> type aliases)
+        if (this.typeToSchemaMapping[overrideId] === schemaName) {
+          delete this.typeToSchemaMapping[overrideId];
+        }
       }
-      this.storeResolvedSchema(finalName, schema);
+      // Store directly under finalName, bypassing storeResolvedSchema's typeToSchemaMapping
+      // lookup which might contain a reverse-mapping for finalName (from z.infer<> type aliases).
+      const variantKey = this.getVariantKey(finalName, this.currentContentType);
+      this.zodSchemas[finalName] = schema;
+      this.schemaVariantRefs.set(variantKey, finalName);
     } else {
       logger.warn(
         `Schema component name '${overrideId ?? finalName}' conflicts with an existing schema, ignoring .meta({ id }) on '${schemaName}'`,

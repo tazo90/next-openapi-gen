@@ -26,16 +26,18 @@ export const UserBaseSchema = z.object({
   role: z.enum(["user", "admin", "moderator"]).describe("User's role in the system"),
 });
 
-export const AddressSchema = z.object({
-  street: z.string().describe("Street name"),
-  houseNumber: z.string().describe("House/apartment number"),
-  city: z.string().describe("City"),
-  postalCode: z
-    .string()
-    .regex(/^\d{2}-\d{3}$/)
-    .describe("Postal code (format: XX-XXX)"),
-  country: z.string().default("Poland").describe("Country"),
-});
+export const AddressSchema = z
+  .object({
+    street: z.string().describe("Street name"),
+    houseNumber: z.string().describe("House/apartment number"),
+    city: z.string().describe("City"),
+    postalCode: z
+      .string()
+      .regex(/^\d{2}-\d{3}$/)
+      .describe("Postal code (format: XX-XXX)"),
+    country: z.string().default("Poland").describe("Country"),
+  })
+  .meta({ id: "Address" });
 
 export const UserDetailedSchema = UserBaseSchema.extend({
   phone: z

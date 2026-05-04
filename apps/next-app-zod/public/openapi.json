@@ -41,7 +41,7 @@
       }
     },
     "schemas": {
-      "AddressSchema": {
+      "Address": {
         "type": "object",
         "properties": {
           "street": {
@@ -62,17 +62,16 @@
             "description": "Postal code (format: XX-XXX)"
           },
           "country": {
-            "type": "string",
             "default": "Poland",
-            "description": "Country"
+            "description": "Country",
+            "type": "string"
           }
         },
         "required": [
           "street",
           "houseNumber",
           "city",
-          "postalCode",
-          "country"
+          "postalCode"
         ]
       },
       "AdminStatsSchema": {
@@ -271,7 +270,7 @@
           "shippingAddress": {
             "allOf": [
               {
-                "$ref": "#/components/schemas/AddressSchema"
+                "$ref": "#/components/schemas/Address"
               }
             ],
             "description": "New shipping address"
@@ -279,7 +278,7 @@
           "billingAddress": {
             "allOf": [
               {
-                "$ref": "#/components/schemas/AddressSchema"
+                "$ref": "#/components/schemas/Address"
               }
             ],
             "description": "New billing address"
@@ -1164,7 +1163,7 @@
           "shippingAddress": {
             "allOf": [
               {
-                "$ref": "#/components/schemas/AddressSchema"
+                "$ref": "#/components/schemas/Address"
               }
             ],
             "description": "Shipping address"
@@ -1172,7 +1171,7 @@
           "billingAddress": {
             "allOf": [
               {
-                "$ref": "#/components/schemas/AddressSchema"
+                "$ref": "#/components/schemas/Address"
               }
             ],
             "description": "Billing address (can be the same as shipping address)"
@@ -2567,7 +2566,7 @@
           "addresses": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/AddressSchema"
+              "$ref": "#/components/schemas/Address"
             },
             "description": "List of user addresses"
           },
