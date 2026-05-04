@@ -1,3 +1,17 @@
+## [1.2.2](https://github.com/tazo90/next-openapi-gen/compare/v1.2.1...v1.2.2) (2026-05-04)
+
+### ✨ Features
+
+- support custom schema component names via Zod .meta({ id }) and TypeScript [@id](https://github.com/id) JSDoc tag ([#134](https://github.com/tazo90/next-openapi-gen/issues/134)) ([4f44a6f](https://github.com/tazo90/next-openapi-gen/commit/4f44a6f4f5cb9d360e190e880afd671e23604dc4)) by [@daniel-rose](https://github.com/daniel-rose)
+
+### 🐛 Bug Fixes
+
+- **typescript:** skip duplicated CommentLine leading comment when trailing comment exists ([2ba7a17](https://github.com/tazo90/next-openapi-gen/commit/2ba7a17b10eea508232c5cec867f71b8f64623d3)) by [@tazo90](https://github.com/tazo90)
+
+### 🔨 Chores
+
+- update changelog ([51c58be](https://github.com/tazo90/next-openapi-gen/commit/51c58bea29745cd7015d0185f699668d53829a49)) by [@tazo90](https://github.com/tazo90)
+
 ## [1.2.1](https://github.com/tazo90/next-openapi-gen/compare/v1.2.0...v1.2.1) (2026-05-04)
 
 ### 🐛 Bug Fixes
