@@ -58,7 +58,9 @@ export class ZodSchemaConverter {
   apiDir: string | undefined;
   zodSchemas: Record<string, OpenApiSchema> = {};
   processingSchemas: Set<string> = new Set();
-  processedModules: Set<string> = new Set();
+  /** Memoization guard for processFileForZodSchema. Keys: `${filePath}|${schemaName}`.
+   * Prevents infinite recursion when re-export files reference schemas via z.infer<typeof X>. */
+  processedFileSchemaPairs: Set<string> = new Set();
   typeToSchemaMapping: Record<string, string> = {};
   drizzleZodImports: Set<string> = new Set();
   factoryCache: Map<string, t.Node> = new Map(); // Cache for analyzed factory functions
@@ -347,6 +349,12 @@ export class ZodSchemaConverter {
    * Process a file to find Zod schema definitions
    */
   processFileForZodSchema(filePath: string, schemaName: string): void {
+    const visitKey = `${filePath}|${schemaName}|${this.currentContentType}`;
+    if (this.processedFileSchemaPairs.has(visitKey)) {
+      return;
+    }
+    this.processedFileSchemaPairs.add(visitKey);
+
     try {
       const content = this.fileAccess.readFileSync(filePath, "utf-8");
 
@@ -829,8 +837,9 @@ export class ZodSchemaConverter {
                 const param = path.node.typeAnnotation.typeParameters.params[0];
                 if (t.isTSTypeQuery(param) && t.isIdentifier(param.exprName)) {
                   const referencedSchemaName = param.exprName.name;
-                  // Find the referenced schema
-                  this.processFileForZodSchema(filePath, referencedSchemaName);
+                  if (!this.getStoredSchema(referencedSchemaName)) {
+                    this.processFileForZodSchema(filePath, referencedSchemaName);
+                  }
                 }
               }
             }
