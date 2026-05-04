@@ -102,7 +102,9 @@ export function resolveImportPath(
   return null;
 }
 
-function collectInterfaceBodyComments(interfaceDecl: any): Array<{ type: string; value: string }> {
+function collectFirstMemberLeadingComments(
+  interfaceDecl: any,
+): Array<{ type: string; value: string }> {
   const body = interfaceDecl?.body;
   if (!body) return [];
   const firstMember = body.body?.[0];
@@ -155,7 +157,7 @@ export function collectAllExportedDefinitions(
           ...(path.parentPath?.node?.leadingComments ?? []),
           ...(path.node.leadingComments ?? []),
           ...(path.node.trailingComments ?? []),
-          ...collectInterfaceBodyComments(path.node),
+          ...collectFirstMemberLeadingComments(path.node),
         ];
         registerDefinition(name, { node: path.node, filePath: currentFile }, allComments);
       }
@@ -180,7 +182,7 @@ export function collectAllExportedDefinitions(
             ...(path.node.leadingComments ?? []),
             ...(interfaceDecl.leadingComments ?? []),
             ...(interfaceDecl.trailingComments ?? []),
-            ...collectInterfaceBodyComments(interfaceDecl),
+            ...collectFirstMemberLeadingComments(interfaceDecl),
           ];
           registerDefinition(name, { node: interfaceDecl, filePath: currentFile }, allComments);
         }

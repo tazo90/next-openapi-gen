@@ -280,6 +280,8 @@ export class SchemaProcessor {
     }
 
     this.collectImports(ast, filePath);
+
+    const aliasesBeforeFile = new Set(Object.keys(this.schemaIdAliases));
     this.collectAllExportedDefinitions(ast, filePath);
 
     collectTopLevelDefinitionNames(ast).forEach((name) => {
@@ -294,7 +296,8 @@ export class SchemaProcessor {
       this.schemaDefinitionIndex[name] = [filePath];
     });
 
-    Object.entries(this.schemaIdAliases).forEach(([, aliasName]) => {
+    Object.entries(this.schemaIdAliases).forEach(([originalName, aliasName]) => {
+      if (aliasesBeforeFile.has(originalName)) return;
       if (!this.schemaDefinitionIndex[aliasName]) {
         this.schemaDefinitionIndex[aliasName] = [];
       }
@@ -1408,7 +1411,9 @@ export class SchemaProcessor {
 
     // Case where a type is a reference to another defined type
     if (t.isTSTypeReference(node) && t.isIdentifier(node.typeName)) {
-      return { $ref: `#/components/schemas/${node.typeName.name}` };
+      const refName = node.typeName.name;
+      const aliasedName = this.schemaIdAliases[refName] ?? refName;
+      return { $ref: `#/components/schemas/${aliasedName}` };
     }
 
     logger.debug("Unrecognized TypeScript type node:", node);
