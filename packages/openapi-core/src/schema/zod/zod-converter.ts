@@ -75,7 +75,6 @@ export class ZodSchemaConverter {
   schemaNameToFiles: Map<string, Set<string>> = new Map();
   /** Per-file import alias for the `zod` module (`import { z as zod }` sets this to `"zod"`). */
   zodImportAlias: Map<string, string> = new Map();
-
   // Current processing context (set during file processing)
   currentFilePath?: string;
   currentAST?: t.File;
@@ -859,6 +858,9 @@ export class ZodSchemaConverter {
       const content = this.fileAccess.readFileSync(filePath, "utf-8");
       const ast = parseTypeScriptFile(content);
 
+      this.currentFilePath = filePath;
+      this.currentAST = ast;
+
       traverse(ast, {
         ExportNamedDeclaration: (path: NodePath<t.ExportNamedDeclaration>) => {
           if (t.isVariableDeclaration(path.node.declaration)) {
@@ -879,6 +881,21 @@ export class ZodSchemaConverter {
                     this.storeResolvedSchema(schemaName, schema);
                   }
                   this.processingSchemas.delete(schemaName);
+                }
+              } else if (t.isIdentifier(declaration.id) && declaration.init) {
+                const schemaName = declaration.id.name;
+                const overrideId = this.extractMetaIdFromNode(declaration.init);
+                if (
+                  overrideId &&
+                  !this.getStoredSchema(schemaName) &&
+                  !this.processingSchemas.has(schemaName)
+                ) {
+                  this.processingSchemas.add(schemaName);
+                  const schema = this.processZodNode(declaration.init);
+                  this.processingSchemas.delete(schemaName);
+                  if (schema) {
+                    this.applyMetaIdOverride(schemaName, schema, overrideId, filePath);
+                  }
                 }
               }
             });
@@ -1657,6 +1674,23 @@ export class ZodSchemaConverter {
     return undefined;
   }
 
+  private extractMetaIdFromNode(node: t.Node): string | null {
+    if (!t.isCallExpression(node)) return null;
+    if (t.isMemberExpression(node.callee) && t.isIdentifier(node.callee.property)) {
+      if (node.callee.property.name === "meta" && node.arguments.length > 0) {
+        const metadata = this.extractStaticJsonValue(node.arguments[0]);
+        if (metadata && typeof metadata === "object" && !Array.isArray(metadata)) {
+          const id = (metadata as Record<string, unknown>).id;
+          if (typeof id === "string" && id.length > 0) return id;
+        }
+      }
+      if (t.isCallExpression(node.callee.object)) {
+        return this.extractMetaIdFromNode(node.callee.object);
+      }
+    }
+    return null;
+  }
+
   private shouldUseRuntimeExport(node: t.Node): boolean {
     if (!t.isCallExpression(node)) {
       return false;
@@ -1941,7 +1975,9 @@ export class ZodSchemaConverter {
         if (node.arguments.length > 0) {
           const metadata = this.extractStaticJsonValue(node.arguments[0]);
           if (metadata && typeof metadata === "object" && !Array.isArray(metadata)) {
-            Object.assign(schema, metadata);
+            const { id: _id, ...rest } = metadata as Record<string, unknown>;
+            Object.assign(schema, rest);
+            // _id is handled by extractMetaIdFromNode at the call site
           }
         }
         break;
@@ -2273,6 +2309,12 @@ export class ZodSchemaConverter {
       this.currentAST = ast;
       this.currentImports = importedModules;
 
+      // Mark file as preprocessed BEFORE traversal so recursive lookups (e.g. when
+      // resolving cross-references like `SafeRedirectPathSchema.optional()` inside
+      // another schema in the same file) don't re-enter preprocessing on a half-built
+      // state and emit spurious "conflicts with an existing schema" warnings.
+      this.preprocessedFiles.add(filePath);
+
       // Collect all exported Zod schemas
       traverse(ast, {
         ExportNamedDeclaration: (path: NodePath<t.ExportNamedDeclaration>) => {
@@ -2281,17 +2323,21 @@ export class ZodSchemaConverter {
               if (t.isIdentifier(declaration.id) && declaration.init) {
                 const schemaName = declaration.id.name;
 
-                // Check if is Zos schema
+                // Check if is Zod schema
                 if (this.isZodSchema(declaration.init)) {
-                  this.indexSchemaName(schemaName, filePath);
                   if (!this.getStoredSchema(schemaName)) {
                     logger.debug(`Pre-processing Zod schema: ${schemaName}`);
                     this.processingSchemas.add(schemaName);
                     const schema = this.processZodNode(declaration.init);
-                    if (schema) {
-                      this.storeResolvedSchema(schemaName, schema);
-                    }
                     this.processingSchemas.delete(schemaName);
+                    if (schema) {
+                      const overrideId = this.extractMetaIdFromNode(declaration.init);
+                      this.applyMetaIdOverride(schemaName, schema, overrideId, filePath);
+                    } else {
+                      this.indexSchemaName(schemaName, filePath);
+                    }
+                  } else {
+                    this.indexSchemaName(schemaName, filePath);
                   }
                 }
               }
@@ -2304,23 +2350,25 @@ export class ZodSchemaConverter {
             if (t.isIdentifier(declaration.id) && declaration.init) {
               const schemaName = declaration.id.name;
               if (this.isZodSchema(declaration.init)) {
-                this.indexSchemaName(schemaName, filePath);
                 if (!this.getStoredSchema(schemaName) && !this.processingSchemas.has(schemaName)) {
                   logger.debug(`Pre-processing Zod schema: ${schemaName}`);
                   this.processingSchemas.add(schemaName);
                   const schema = this.processZodNode(declaration.init);
-                  if (schema) {
-                    this.storeResolvedSchema(schemaName, schema);
-                  }
                   this.processingSchemas.delete(schemaName);
+                  if (schema) {
+                    const overrideId = this.extractMetaIdFromNode(declaration.init);
+                    this.applyMetaIdOverride(schemaName, schema, overrideId, filePath);
+                  } else {
+                    this.indexSchemaName(schemaName, filePath);
+                  }
+                } else {
+                  this.indexSchemaName(schemaName, filePath);
                 }
               }
             }
           });
         },
       });
-
-      this.preprocessedFiles.add(filePath);
     } catch (error) {
       logger.error(`Error pre-processing file ${filePath}: ${error}`);
     }
@@ -2338,6 +2386,29 @@ export class ZodSchemaConverter {
       this.schemaNameToFiles.set(schemaName, bucket);
     }
     bucket.add(filePath);
+  }
+
+  private applyMetaIdOverride(
+    schemaName: string,
+    schema: OpenApiSchema,
+    overrideId: string | null,
+    filePath: string,
+  ): void {
+    const finalName = overrideId && overrideId !== schemaName ? overrideId : schemaName;
+    this.indexSchemaName(schemaName, filePath);
+    if (finalName !== schemaName) {
+      this.indexSchemaName(finalName, filePath);
+    }
+    if (!this.getStoredSchema(finalName)) {
+      if (overrideId && overrideId !== schemaName) {
+        this.typeToSchemaMapping[schemaName] = overrideId;
+      }
+      this.storeResolvedSchema(finalName, schema);
+    } else {
+      logger.warn(
+        `Schema component name '${overrideId ?? finalName}' conflicts with an existing schema, ignoring .meta({ id }) on '${schemaName}'`,
+      );
+    }
   }
 
   /**

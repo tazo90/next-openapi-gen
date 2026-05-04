@@ -645,7 +645,8 @@ export class DrizzleZodProcessor {
         if (firstArg && !t.isSpreadElement(firstArg) && !t.isArgumentPlaceholder(firstArg)) {
           const metadata = DrizzleZodProcessor.extractStaticObject(firstArg);
           if (metadata) {
-            Object.assign(result, metadata);
+            const { id: _id, ...rest } = metadata as Record<string, unknown>;
+            Object.assign(result, rest);
           }
         }
         break;

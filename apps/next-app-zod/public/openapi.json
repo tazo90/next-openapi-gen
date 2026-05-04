@@ -1035,20 +1035,10 @@
             "description": "Purchased products"
           },
           "shippingAddress": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/AddressSchema"
-              }
-            ],
-            "description": "Shipping address"
+            "type": "object"
           },
           "billingAddress": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/AddressSchema"
-              }
-            ],
-            "description": "Billing address (can be the same as shipping address)"
+            "type": "object"
           },
           "paymentMethod": {
             "allOf": [
@@ -1172,10 +1162,20 @@
             "description": "Purchased products"
           },
           "shippingAddress": {
-            "type": "object"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AddressSchema"
+              }
+            ],
+            "description": "Shipping address"
           },
           "billingAddress": {
-            "type": "object"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AddressSchema"
+              }
+            ],
+            "description": "Billing address (can be the same as shipping address)"
           },
           "paymentMethod": {
             "allOf": [
@@ -1804,12 +1804,13 @@
           "failed"
         ]
       },
-      "ProductCategorySchema": {
+      "ProductCategory": {
         "type": "object",
         "properties": {
           "id": {
             "type": "string",
             "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
             "description": "Category identifier"
           },
           "name": {
@@ -1940,14 +1941,14 @@
           "categories": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/ProductCategorySchema"
+              "$ref": "#/components/schemas/ProductCategory"
             },
             "description": "Product categories"
           },
           "variants": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/ProductVariantSchema"
+              "$ref": "#/components/schemas/ProductVariant"
             },
             "description": "Product variants"
           },
@@ -1988,12 +1989,13 @@
           "status"
         ]
       },
-      "ProductVariantSchema": {
+      "ProductVariant": {
         "type": "object",
         "properties": {
           "id": {
             "type": "string",
             "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
             "description": "Variant identifier"
           },
           "name": {
@@ -2013,14 +2015,15 @@
           "stock": {
             "type": "integer",
             "minimum": 0,
+            "maximum": 9007199254740991,
             "description": "Stock quantity"
           },
           "attributes": {
             "type": "object",
-            "additionalProperties": {
+            "propertyNames": {
               "type": "string"
             },
-            "propertyNames": {
+            "additionalProperties": {
               "type": "string"
             },
             "description": "Variant attributes (color, size, etc.)"

@@ -83,6 +83,7 @@ export class SchemaProcessor {
   private zodSchemaProcessor: ZodSchemaProcessor | null = null;
   private schemaTypes: SchemaType[];
   private isResolvingPickOmitBase: boolean = false;
+  private schemaIdAliases: Record<string, string> = {};
   private readonly fileAccess: SchemaProcessorFileAccess;
   private readonly symbolResolver: SymbolResolver;
 
@@ -142,6 +143,7 @@ export class SchemaProcessor {
     const filteredSchemas: Record<string, OpenAPIDefinition> = {};
     Object.entries(this.openapiDefinitions).forEach(([key, value]) => {
       if (
+        !this.schemaIdAliases[key] &&
         !this.isGenericTypeParameter(key) &&
         !this.isInvalidSchemaName(key) &&
         !this.isBuiltInUtilityType(key) &&
@@ -165,6 +167,12 @@ export class SchemaProcessor {
     // Check if the schemaName is a generic type (contains < and >)
     if (schemaName.includes("<") && schemaName.includes(">")) {
       return this.resolveGenericTypeFromString(schemaName);
+    }
+
+    // Redirect original name to its @id override
+    const overrideId = this.schemaIdAliases[schemaName];
+    if (overrideId) {
+      return this.findSchemaDefinition(overrideId, contentType);
     }
 
     if (this.openapiDefinitions[schemaName]) {
@@ -272,6 +280,8 @@ export class SchemaProcessor {
     }
 
     this.collectImports(ast, filePath);
+
+    const aliasesBeforeFile = new Set(Object.keys(this.schemaIdAliases));
     this.collectAllExportedDefinitions(ast, filePath);
 
     collectTopLevelDefinitionNames(ast).forEach((name) => {
@@ -284,6 +294,16 @@ export class SchemaProcessor {
       }
 
       this.schemaDefinitionIndex[name] = [filePath];
+    });
+
+    Object.entries(this.schemaIdAliases).forEach(([originalName, aliasName]) => {
+      if (aliasesBeforeFile.has(originalName)) return;
+      if (!this.schemaDefinitionIndex[aliasName]) {
+        this.schemaDefinitionIndex[aliasName] = [];
+      }
+      if (!this.schemaDefinitionIndex[aliasName]!.includes(filePath)) {
+        this.schemaDefinitionIndex[aliasName]!.push(filePath);
+      }
     });
   }
 
@@ -329,7 +349,12 @@ export class SchemaProcessor {
    * Used when processing imported files to ensure all referenced types are available
    */
   private collectAllExportedDefinitions(ast: any, filePath?: string): void {
-    collectAllExportedDefinitions(ast, this.typeDefinitions, filePath || this.currentFilePath);
+    collectAllExportedDefinitions(
+      ast,
+      this.typeDefinitions,
+      filePath || this.currentFilePath,
+      this.schemaIdAliases,
+    );
   }
 
   private collectTypeDefinitions(ast: any, schemaName: string, filePath?: string): void {
@@ -1169,6 +1194,20 @@ export class SchemaProcessor {
         return { type: "object", additionalProperties: true };
       }
 
+      // When the original type name is hidden behind an `@id` alias and the
+      // aliased schema has already been resolved, emit a `$ref` to the alias
+      // instead of falling through to `resolveUtilityTypeReference` which would
+      // inline the type. This preserves cross-type references like
+      // `type Response = { audio: AudioInterface }` when `AudioInterface`
+      // carries an `@id Audio` override.
+      if (
+        (!node.typeParameters || node.typeParameters.params.length === 0) &&
+        this.schemaIdAliases[typeName] &&
+        this.openapiDefinitions[this.schemaIdAliases[typeName]!]
+      ) {
+        return { $ref: `#/components/schemas/${this.schemaIdAliases[typeName]}` };
+      }
+
       const utilityType = resolveUtilityTypeReference(node, {
         currentFilePath: this.currentFilePath,
         contentType: this.contentType,
@@ -1386,7 +1425,9 @@ export class SchemaProcessor {
 
     // Case where a type is a reference to another defined type
     if (t.isTSTypeReference(node) && t.isIdentifier(node.typeName)) {
-      return { $ref: `#/components/schemas/${node.typeName.name}` };
+      const refName = node.typeName.name;
+      const aliasedName = this.schemaIdAliases[refName] ?? refName;
+      return { $ref: `#/components/schemas/${aliasedName}` };
     }
 
     logger.debug("Unrecognized TypeScript type node:", node);
@@ -1620,7 +1661,8 @@ export class SchemaProcessor {
       return this.zodSchemaConverter.getSchemaReferenceName(baseTypeName, contentType);
     }
 
-    return baseTypeName;
+    const aliasedName = this.schemaIdAliases[baseTypeName] ?? baseTypeName;
+    return aliasedName;
   }
 
   /**
