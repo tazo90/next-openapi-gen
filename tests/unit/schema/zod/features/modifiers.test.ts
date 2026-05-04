@@ -156,5 +156,20 @@ describe("Zod features › modifiers", () => {
         examples: [0, 42, 1337],
       });
     });
+
+    it("id does not appear in schema body", () => {
+      expect(convert('z.string().meta({ id: "Foo", description: "bar" })', roots)).toMatchObject({
+        type: "string",
+        description: "bar",
+      });
+      const result = convert('z.string().meta({ id: "Foo", description: "bar" })', roots);
+      expect(result).not.toHaveProperty("id");
+    });
+
+    it("id only meta does not pollute schema body", () => {
+      const result = convert('z.string().meta({ id: "MyComponent" })', roots);
+      expect(result).not.toHaveProperty("id");
+      expect(result).toMatchObject({ type: "string" });
+    });
   });
 });

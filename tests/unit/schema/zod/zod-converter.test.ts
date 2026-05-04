@@ -485,4 +485,92 @@ describe("ZodSchemaConverter", () => {
       required: ["status"],
     });
   });
+
+  describe(".meta({ id }) component name override", () => {
+    it("uses the id as the component name for an exported schema", () => {
+      const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-zod-meta-id-export-"));
+      roots.push(root);
+
+      fs.writeFileSync(
+        path.join(root, "schemas.ts"),
+        [
+          'import { z } from "zod";',
+          'export const audioSchema = z.object({ url: z.string() }).meta({ id: "Audio" });',
+        ].join("\n"),
+      );
+
+      const converter = new ZodSchemaConverter(root);
+      converter.processAllSchemasInFile(path.join(root, "schemas.ts"));
+
+      expect(converter.zodSchemas["Audio"]).toMatchObject({
+        type: "object",
+        properties: { url: { type: "string" } },
+        required: ["url"],
+      });
+      expect(converter.zodSchemas).not.toHaveProperty("audioSchema");
+    });
+
+    it("sets typeToSchemaMapping[varName] = id when names differ", () => {
+      const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-zod-meta-id-mapping-"));
+      roots.push(root);
+
+      fs.writeFileSync(
+        path.join(root, "schemas.ts"),
+        [
+          'import { z } from "zod";',
+          'export const audioSchema = z.object({ url: z.string() }).meta({ id: "Audio" });',
+        ].join("\n"),
+      );
+
+      const converter = new ZodSchemaConverter(root);
+      converter.processAllSchemasInFile(path.join(root, "schemas.ts"));
+
+      expect(converter.typeToSchemaMapping["audioSchema"]).toBe("Audio");
+    });
+
+    it("keeps extra meta fields in schema body but excludes id", () => {
+      const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-zod-meta-id-extra-"));
+      roots.push(root);
+
+      fs.writeFileSync(
+        path.join(root, "schemas.ts"),
+        [
+          'import { z } from "zod";',
+          'export const audioSchema = z.object({ url: z.string() }).meta({ id: "Audio", description: "An audio file" });',
+        ].join("\n"),
+      );
+
+      const converter = new ZodSchemaConverter(root);
+      converter.processAllSchemasInFile(path.join(root, "schemas.ts"));
+
+      expect(converter.zodSchemas["Audio"]).toMatchObject({
+        type: "object",
+        description: "An audio file",
+      });
+      expect(converter.zodSchemas["Audio"]).not.toHaveProperty("id");
+    });
+
+    it("preserves old behaviour when no .meta({ id }) is present", () => {
+      const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-zod-meta-id-none-"));
+      roots.push(root);
+
+      fs.writeFileSync(
+        path.join(root, "schemas.ts"),
+        [
+          'import { z } from "zod";',
+          "export const UserSchema = z.object({ name: z.string() });",
+        ].join("\n"),
+      );
+
+      const converter = new ZodSchemaConverter(root);
+      converter.processAllSchemasInFile(path.join(root, "schemas.ts"));
+
+      expect(converter.zodSchemas["UserSchema"]).toEqual({
+        type: "object",
+        properties: { name: { type: "string" } },
+        required: ["name"],
+      });
+      expect(converter.typeToSchemaMapping).not.toHaveProperty("UserSchema");
+    });
+  });
 });

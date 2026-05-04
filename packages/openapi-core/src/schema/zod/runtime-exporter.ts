@@ -329,8 +329,10 @@ export class ZodRuntimeExporter {
       case "deprecated":
         return schema.meta({ deprecated: true });
       case "meta": {
-        const metadata = node.arguments[0] ? this.buildMetadataObject(node.arguments[0]) : null;
-        return metadata ? schema.meta(metadata) : schema;
+        const rawMetadata = node.arguments[0] ? this.buildMetadataObject(node.arguments[0]) : null;
+        if (!rawMetadata) return schema;
+        const { id: _id, ...metadata } = rawMetadata as Record<string, unknown>;
+        return Object.keys(metadata).length > 0 ? schema.meta(metadata) : schema;
       }
       case "default":
       case "prefault":
