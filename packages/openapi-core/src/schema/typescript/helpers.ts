@@ -118,18 +118,61 @@ export function extractKeysFromLiteralType(node: any): string[] {
   return [];
 }
 
-export function getPropertyOptions(node: any, contentType: ContentType): PropertyOptions {
-  const isOptional = !!node.optional;
+function parsePropertyComment(
+  commentValue: string,
+): Omit<PropertyOptions, "required" | "nullable"> {
+  // Normalize JSDoc block: strip leading `*` from each line, then collapse to a single line.
+  const text = commentValue
+    .split("\n")
+    .map((line) => line.replace(/^\s*\*\s?/, "").trim())
+    .filter((line) => line.length > 0)
+    .join(" ")
+    .trim();
 
-  let description = null;
-  if (node.trailingComments && node.trailingComments.length) {
-    description = node.trailingComments[0].value.trim();
+  const result: Omit<PropertyOptions, "required" | "nullable"> = {};
+  let remaining = text;
+
+  const formatMatch = remaining.match(/@format\s+(\S+)/);
+  if (formatMatch?.[1]) {
+    result.format = formatMatch[1];
+    remaining = remaining.replace(formatMatch[0], "").trim();
   }
 
+  // @example value — capture until next @tag or end of string
+  const exampleMatch = remaining.match(/@example\s+(.+?)(?=\s*@\w|$)/);
+  if (exampleMatch?.[1]) {
+    const raw = exampleMatch[1].trim();
+    try {
+      result.example = JSON.parse(raw);
+    } catch {
+      result.example = raw;
+    }
+    remaining = remaining.replace(exampleMatch[0], "").trim();
+  }
+
+  // Strip any remaining unrecognised @tags
+  remaining = remaining.replace(/@\w+(?:\s+\S+)*/g, "").trim();
+
+  if (remaining) {
+    result.description = remaining;
+  }
+
+  return result;
+}
+
+export function getPropertyOptions(node: any, contentType: ContentType): PropertyOptions {
+  const isOptional = !!node.optional;
   const options: PropertyOptions = {};
 
-  if (description) {
-    options.description = description;
+  // Prefer leading JSDoc-style comments (`/** ... */` or `// ...` above the property);
+  // fall back to a trailing inline comment (`prop: T; // ...`) when no leading comment
+  // is attached. Leading takes precedence so canonical JSDoc wins, while trailing-only
+  // codebases continue to work without migration.
+  const leadingComment = node.leadingComments?.[node.leadingComments.length - 1];
+  const trailingComment = node.trailingComments?.[0];
+  const sourceComment = leadingComment ?? trailingComment;
+  if (sourceComment) {
+    Object.assign(options, parsePropertyComment(sourceComment.value));
   }
 
   if (contentType === "body") {

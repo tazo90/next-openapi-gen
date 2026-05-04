@@ -498,7 +498,7 @@ describe("SchemaProcessor helper seams", () => {
       t.tsTypeAnnotation(t.tsStringKeyword()),
     );
     property.optional = true;
-    property.trailingComments = [{ type: "CommentLine", value: " display name" }] as never;
+    property.leadingComments = [{ type: "CommentLine", value: " display name" }] as never;
     (processor as any).contentType = "body";
     expect((processor as any).getPropertyOptions(property)).toEqual({
       description: "display name",

@@ -44,7 +44,8 @@ describe("TypeScript schema helpers", () => {
       t.tsTypeAnnotation(t.tsStringKeyword()),
     );
     property.optional = true;
-    property.trailingComments = [{ type: "CommentLine", value: " display name" }] as never;
+    // JSDoc comments precede their property (leading), not follow it (trailing).
+    property.leadingComments = [{ type: "CommentLine", value: " display name" }] as never;
 
     expect(getPropertyOptions(property, "body")).toEqual({
       description: "display name",
@@ -59,6 +60,81 @@ describe("TypeScript schema helpers", () => {
         ]),
       ),
     ).toEqual(["a", "b"]);
+  });
+
+  it("parses @example and @format JSDoc tags from property leading comments", () => {
+    const makeProperty = (commentValue: string, commentType = "CommentBlock") => {
+      const prop = t.tsPropertySignature(
+        t.identifier("x"),
+        t.tsTypeAnnotation(t.tsStringKeyword()),
+      );
+      prop.leadingComments = [{ type: commentType, value: commentValue }] as never;
+      return prop;
+    };
+
+    // /** @example "alive" */ → example only, no description
+    expect(getPropertyOptions(makeProperty('* @example "alive" '), "response")).toEqual({
+      example: "alive",
+    });
+
+    // /** @format date-time @example "2025-11-26T22:00:00.000Z" */
+    expect(
+      getPropertyOptions(
+        makeProperty('* @format date-time @example "2025-11-26T22:00:00.000Z" '),
+        "response",
+      ),
+    ).toEqual({
+      format: "date-time",
+      example: "2025-11-26T22:00:00.000Z",
+    });
+
+    // /** Process uptime in seconds @example 123.45 */ → description + numeric example
+    expect(
+      getPropertyOptions(makeProperty("* Process uptime in seconds @example 123.45 "), "response"),
+    ).toEqual({
+      description: "Process uptime in seconds",
+      example: 123.45,
+    });
+
+    // No comment → empty options (except nullable for body)
+    const bare = t.tsPropertySignature(t.identifier("y"), t.tsTypeAnnotation(t.tsStringKeyword()));
+    expect(getPropertyOptions(bare, "response")).toEqual({});
+  });
+
+  it("falls back to trailing comments when no leading comment is attached", () => {
+    // Backward compatibility: `name: string; // description` keeps working.
+    const trailingOnly = t.tsPropertySignature(
+      t.identifier("email"),
+      t.tsTypeAnnotation(t.tsStringKeyword()),
+    );
+    trailingOnly.trailingComments = [{ type: "CommentLine", value: " user email" }] as never;
+    expect(getPropertyOptions(trailingOnly, "response")).toEqual({
+      description: "user email",
+    });
+
+    // Leading wins over trailing when both are present.
+    const both = t.tsPropertySignature(
+      t.identifier("token"),
+      t.tsTypeAnnotation(t.tsStringKeyword()),
+    );
+    both.leadingComments = [{ type: "CommentLine", value: " auth token" }] as never;
+    both.trailingComments = [{ type: "CommentLine", value: " ignored" }] as never;
+    expect(getPropertyOptions(both, "response")).toEqual({
+      description: "auth token",
+    });
+
+    // Trailing comments parse @example and @format just like leading ones.
+    const trailingWithTags = t.tsPropertySignature(
+      t.identifier("uptime"),
+      t.tsTypeAnnotation(t.tsNumberKeyword()),
+    );
+    trailingWithTags.trailingComments = [
+      { type: "CommentLine", value: " Process uptime in seconds @example 123.45" },
+    ] as never;
+    expect(getPropertyOptions(trailingWithTags, "response")).toEqual({
+      description: "Process uptime in seconds",
+      example: 123.45,
+    });
   });
 
   it("detects dates, examples, content types, and form-data conversion", () => {

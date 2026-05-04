@@ -269,6 +269,8 @@ export type PropertyOptions = {
   description?: string;
   required?: boolean;
   nullable?: boolean;
+  example?: unknown;
+  format?: string;
 };
 
 export type ParamSchema = {

@@ -68,6 +68,33 @@ describe("TypeScript and Zod regression scenarios", () => {
     });
   });
 
+  describe("TypeScript property JSDoc (issue #129)", () => {
+    it("maps each property to its own leading JSDoc comment, not the next property's comment", () => {
+      // Regression for https://github.com/tazo90/next-openapi-gen/issues/129:
+      // trailingComments caused an off-by-one — every property received the comment
+      // of the *next* property.  The fix switches to leadingComments.
+      const processor = new SchemaProcessor(
+        path.join(process.cwd(), "tests", "fixtures", "ts-property-jsdoc"),
+        "typescript",
+      );
+
+      const schema = processor.findSchemaDefinition("AliveResponse", "");
+
+      expect(schema.type).toBe("object");
+      expect(schema.properties?.status).toMatchObject({ type: "string", example: "alive" });
+      expect(schema.properties?.timestamp).toMatchObject({
+        type: "string",
+        format: "date-time",
+        example: "2025-11-26T22:00:00.000Z",
+      });
+      expect(schema.properties?.uptime).toMatchObject({
+        type: "number",
+        description: "Process uptime in seconds",
+        example: 123.45,
+      });
+    });
+  });
+
   describe("Zod fixtures", () => {
     it("supports discriminated unions from zod fixtures", () => {
       const converter = new ZodSchemaConverter(
