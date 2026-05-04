@@ -88,6 +88,22 @@ describe("@id JSDoc tag — component name override", () => {
       expect(typeDefinitions["PlainInterface"]).toBeDefined();
     });
 
+    it("registers alias for enum with @id JSDoc", () => {
+      const ast = parseTypeScriptFile(`
+        /** @id Color */
+        export enum ColorEnum { Red = "red", Blue = "blue" }
+      `);
+      const typeDefinitions: Record<string, any> = {};
+      const schemaIdAliases: Record<string, string> = {};
+
+      collectAllExportedDefinitions(ast, typeDefinitions, "fixtures.ts", schemaIdAliases);
+
+      expect(schemaIdAliases["ColorEnum"]).toBe("Color");
+      expect(typeDefinitions["ColorEnum"]).toBeDefined();
+      expect(typeDefinitions["Color"]).toBeDefined();
+      expect(t.isTSEnumDeclaration(typeDefinitions["Color"].node)).toBe(true);
+    });
+
     it("works without schemaIdAliases parameter (backward compatible)", () => {
       const ast = parseTypeScriptFile(`
         /** @id Renamed */

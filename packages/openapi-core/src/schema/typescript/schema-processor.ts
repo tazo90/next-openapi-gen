@@ -1642,7 +1642,8 @@ export class SchemaProcessor {
       return this.zodSchemaConverter.getSchemaReferenceName(baseTypeName, contentType);
     }
 
-    return baseTypeName;
+    const aliasedName = this.schemaIdAliases[baseTypeName] ?? baseTypeName;
+    return aliasedName;
   }
 
   /**

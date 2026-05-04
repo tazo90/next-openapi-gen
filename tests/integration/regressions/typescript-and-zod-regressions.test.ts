@@ -111,6 +111,13 @@ describe("TypeScript and Zod regression scenarios", () => {
       const defined = processor.getDefinedSchemas();
       expect(defined["Audio"]).toBeDefined();
       expect(defined["AudioInterface"]).toBeUndefined();
+
+      // Cross-type reference: Response.audio should point to the overridden name "Audio",
+      // not the original "AudioInterface"
+      const responseSchema = processor.findSchemaDefinition("Response", "response");
+      expect(responseSchema.properties?.["audio"]).toEqual({
+        $ref: "#/components/schemas/Audio",
+      });
     });
   });
 
