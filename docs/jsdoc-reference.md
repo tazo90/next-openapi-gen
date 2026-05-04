@@ -405,6 +405,53 @@ export async function GET() {
 }
 ```
 
+## TypeScript property comments
+
+Property descriptions on TypeScript `type` and `interface` declarations come
+from comments. Both styles are supported and can be mixed freely in the same
+type:
+
+```ts
+type LoginBody = {
+  /** User email address */
+  email: string;
+
+  password: string; // user password
+};
+```
+
+- **Leading** (`/** ... */` or `// ...` on the line above the property) —
+  canonical JSDoc style; takes precedence when both are present on the same
+  property.
+- **Trailing** (`prop: T; // ...`) — concise inline form; used as a fallback
+  when no leading comment is attached.
+
+Both forms support the same set of JSDoc tags:
+
+| Tag        | Effect on the generated property schema                                          |
+| ---------- | -------------------------------------------------------------------------------- |
+| `@example` | Sets `example` — JSON-parsed when possible (strings, numbers, booleans, objects) |
+| `@format`  | Sets `format` (e.g. `date-time`, `email`, `uri`)                                 |
+
+```ts
+type Health = {
+  /** @example "alive" */
+  status: string;
+
+  /** Process uptime in seconds @example 123.45 */
+  uptime: number;
+
+  /** @format date-time @example "2025-11-26T22:00:00.000Z" */
+  startedAt: string;
+
+  // Trailing comments parse the same tags
+  region: string; // @example "eu-central-1"
+};
+```
+
+For Zod schemas, use `.describe()` / `.meta()` instead — see the
+[README](../README.md#add-openapi-metadata-directly-in-zod-schemas).
+
 ## Escape hatch: openapi-override
 
 `@openapi-override` takes a JSON object that is deep-merged onto the final

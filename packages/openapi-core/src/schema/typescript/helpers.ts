@@ -164,11 +164,15 @@ export function getPropertyOptions(node: any, contentType: ContentType): Propert
   const isOptional = !!node.optional;
   const options: PropertyOptions = {};
 
-  // JSDoc comments precede their property (leading), not follow it (trailing).
-  // Using trailingComments caused an off-by-one: each property received the
-  // comment of the *next* property.
-  if (node.leadingComments && node.leadingComments.length) {
-    Object.assign(options, parsePropertyComment(node.leadingComments[0].value));
+  // Prefer leading JSDoc-style comments (`/** ... */` or `// ...` above the property);
+  // fall back to a trailing inline comment (`prop: T; // ...`) when no leading comment
+  // is attached. Leading takes precedence so canonical JSDoc wins, while trailing-only
+  // codebases continue to work without migration.
+  const leadingComment = node.leadingComments?.[node.leadingComments.length - 1];
+  const trailingComment = node.trailingComments?.[0];
+  const sourceComment = leadingComment ?? trailingComment;
+  if (sourceComment) {
+    Object.assign(options, parsePropertyComment(sourceComment.value));
   }
 
   if (contentType === "body") {

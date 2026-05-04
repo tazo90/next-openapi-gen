@@ -101,6 +101,42 @@ describe("TypeScript schema helpers", () => {
     expect(getPropertyOptions(bare, "response")).toEqual({});
   });
 
+  it("falls back to trailing comments when no leading comment is attached", () => {
+    // Backward compatibility: `name: string; // description` keeps working.
+    const trailingOnly = t.tsPropertySignature(
+      t.identifier("email"),
+      t.tsTypeAnnotation(t.tsStringKeyword()),
+    );
+    trailingOnly.trailingComments = [{ type: "CommentLine", value: " user email" }] as never;
+    expect(getPropertyOptions(trailingOnly, "response")).toEqual({
+      description: "user email",
+    });
+
+    // Leading wins over trailing when both are present.
+    const both = t.tsPropertySignature(
+      t.identifier("token"),
+      t.tsTypeAnnotation(t.tsStringKeyword()),
+    );
+    both.leadingComments = [{ type: "CommentLine", value: " auth token" }] as never;
+    both.trailingComments = [{ type: "CommentLine", value: " ignored" }] as never;
+    expect(getPropertyOptions(both, "response")).toEqual({
+      description: "auth token",
+    });
+
+    // Trailing comments parse @example and @format just like leading ones.
+    const trailingWithTags = t.tsPropertySignature(
+      t.identifier("uptime"),
+      t.tsTypeAnnotation(t.tsNumberKeyword()),
+    );
+    trailingWithTags.trailingComments = [
+      { type: "CommentLine", value: " Process uptime in seconds @example 123.45" },
+    ] as never;
+    expect(getPropertyOptions(trailingWithTags, "response")).toEqual({
+      description: "Process uptime in seconds",
+      example: 123.45,
+    });
+  });
+
   it("detects dates, examples, content types, and form-data conversion", () => {
     expect(isDateString(t.stringLiteral("2026-03-27T10:00:00Z"))).toBe(true);
     expect(isDateObject(t.newExpression(t.identifier("Date"), []))).toBe(true);
