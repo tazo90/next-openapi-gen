@@ -500,7 +500,7 @@ describe("ZodSchemaConverter", () => {
       );
 
       const converter = new ZodSchemaConverter(root);
-      converter.processAllSchemasInFile(path.join(root, "schemas.ts"));
+      converter.convertZodSchemaToOpenApi("audioSchema");
 
       expect(converter.zodSchemas["Audio"]).toMatchObject({
         type: "object",
@@ -523,7 +523,7 @@ describe("ZodSchemaConverter", () => {
       );
 
       const converter = new ZodSchemaConverter(root);
-      converter.processAllSchemasInFile(path.join(root, "schemas.ts"));
+      converter.convertZodSchemaToOpenApi("audioSchema");
 
       expect(converter.typeToSchemaMapping["audioSchema"]).toBe("Audio");
     });
@@ -541,7 +541,7 @@ describe("ZodSchemaConverter", () => {
       );
 
       const converter = new ZodSchemaConverter(root);
-      converter.processAllSchemasInFile(path.join(root, "schemas.ts"));
+      converter.convertZodSchemaToOpenApi("audioSchema");
 
       expect(converter.zodSchemas["Audio"]).toMatchObject({
         type: "object",
@@ -563,7 +563,7 @@ describe("ZodSchemaConverter", () => {
       );
 
       const converter = new ZodSchemaConverter(root);
-      converter.processAllSchemasInFile(path.join(root, "schemas.ts"));
+      converter.convertZodSchemaToOpenApi("UserSchema");
 
       expect(converter.zodSchemas["UserSchema"]).toEqual({
         type: "object",
@@ -571,6 +571,30 @@ describe("ZodSchemaConverter", () => {
         required: ["name"],
       });
       expect(converter.typeToSchemaMapping).not.toHaveProperty("UserSchema");
+    });
+
+    it("ignores duplicate id and keeps the first schema when two schemas share the same .meta({ id })", () => {
+      const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-zod-meta-id-conflict-"));
+      roots.push(root);
+
+      fs.writeFileSync(
+        path.join(root, "schemas.ts"),
+        [
+          'import { z } from "zod";',
+          'export const firstSchema = z.object({ a: z.string() }).meta({ id: "Shared" });',
+          'export const secondSchema = z.object({ b: z.number() }).meta({ id: "Shared" });',
+        ].join("\n"),
+      );
+
+      const converter = new ZodSchemaConverter(root);
+      converter.convertZodSchemaToOpenApi("firstSchema");
+      converter.convertZodSchemaToOpenApi("secondSchema");
+
+      expect(converter.zodSchemas["Shared"]).toMatchObject({
+        type: "object",
+        properties: { a: { type: "string" } },
+      });
+      expect(converter.zodSchemas["Shared"]).not.toHaveProperty("properties.b");
     });
   });
 });

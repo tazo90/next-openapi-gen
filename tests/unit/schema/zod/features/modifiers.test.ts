@@ -158,11 +158,8 @@ describe("Zod features › modifiers", () => {
     });
 
     it("id does not appear in schema body", () => {
-      expect(convert('z.string().meta({ id: "Foo", description: "bar" })', roots)).toMatchObject({
-        type: "string",
-        description: "bar",
-      });
       const result = convert('z.string().meta({ id: "Foo", description: "bar" })', roots);
+      expect(result).toMatchObject({ type: "string", description: "bar" });
       expect(result).not.toHaveProperty("id");
     });
 
