@@ -78,5 +78,22 @@ describe("TypeScript and Zod regression scenarios", () => {
       expect(schema?.oneOf).toHaveLength(3);
       expect(schema?.discriminator?.propertyName).toBe("type");
     });
+
+    it("does not infinite-recurse on re-export files using z.infer<typeof schema>", () => {
+      // Regression for https://github.com/tazo90/next-openapi-gen/issues/127:
+      // scanning a schemaDir that contains a barrel file with only
+      // `import type { X }` + `export type Y = z.infer<typeof X>` caused unbounded
+      // recursion in processFileForZodSchema → RangeError / heap OOM.
+      const converter = new ZodSchemaConverter(
+        path.join(process.cwd(), "tests", "fixtures", "zod-reexport-recursion"),
+      );
+
+      const schema = converter.convertZodSchemaToOpenApi("apiErrorSchema");
+
+      expect(schema).toBeDefined();
+      expect(schema?.type).toBe("object");
+      expect(schema?.properties?.message).toEqual({ type: "string" });
+      expect(schema?.properties?.issues).toBeDefined();
+    });
   });
 });
