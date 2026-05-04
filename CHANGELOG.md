@@ -2,8 +2,8 @@
 
 ### 🐛 Bug Fixes
 
-- **typescript:** correct property JSDoc comment offset and parse @example/[@format](https://github.com/format) tags ([#130](https://github.com/tazo90/next-openapi-gen/issues/130)) ([4c4f64d](https://github.com/tazo90/next-openapi-gen/commit/4c4f64dc7da35e7f943a5290e7fa883f4fd1b620)), closes [#129](https://github.com/tazo90/next-openapi-gen/issues/129)
-- **zod:** prevent infinite recursion on re-export files using z.infer<typeof schema> ([#128](https://github.com/tazo90/next-openapi-gen/issues/128)) ([0d701e8](https://github.com/tazo90/next-openapi-gen/commit/0d701e8393ca335760fc57c3887d8eaf58c25aca)), closes [#127](https://github.com/tazo90/next-openapi-gen/issues/127)
+- **typescript:** correct property JSDoc comment offset and parse @example/[@format](https://github.com/format) tags ([#130](https://github.com/tazo90/next-openapi-gen/issues/130)) ([4c4f64d](https://github.com/tazo90/next-openapi-gen/commit/4c4f64dc7da35e7f943a5290e7fa883f4fd1b620)), closes [#129](https://github.com/tazo90/next-openapi-gen/issues/129) by [@daniel-rose](https://github.com/daniel-rose)
+- **zod:** prevent infinite recursion on re-export files using z.infer<typeof schema> ([#128](https://github.com/tazo90/next-openapi-gen/issues/128)) ([0d701e8](https://github.com/tazo90/next-openapi-gen/commit/0d701e8393ca335760fc57c3887d8eaf58c25aca)), closes [#127](https://github.com/tazo90/next-openapi-gen/issues/127) by [@daniel-rose](https://github.com/daniel-rose)
 
 # [1.2.0](https://github.com/tazo90/next-openapi-gen/compare/v1.1.1...v1.2.0) (2026-04-30)
 
