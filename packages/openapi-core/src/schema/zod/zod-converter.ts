@@ -118,7 +118,19 @@ export class ZodSchemaConverter {
 
     // Check mapped types
     const requestedSchemaName = schemaName;
-    const mappedSchemaName = this.typeToSchemaMapping[schemaName];
+    let mappedSchemaName = this.typeToSchemaMapping[schemaName];
+
+    // Reverse-convention fallback (issue #131): when `Slider = z.infer<typeof sliderSchema>`
+    // lives outside any scanned file, no mapping exists. Derive the candidate schema name
+    // from the type name and verify it is present in schemaDirs before committing.
+    if (!mappedSchemaName) {
+      const candidate = this.deriveSchemaNameByConvention(schemaName);
+      if (candidate && this.locateSchemaByConvention(candidate)) {
+        this.typeToSchemaMapping[schemaName] = candidate;
+        mappedSchemaName = candidate;
+      }
+    }
+
     if (mappedSchemaName) {
       logger.debug(`Type '${schemaName}' is mapped to schema '${mappedSchemaName}'`);
       schemaName = mappedSchemaName;
@@ -2409,6 +2421,45 @@ export class ZodSchemaConverter {
         `Schema component name '${overrideId ?? finalName}' conflicts with an existing schema, ignoring .meta({ id }) on '${schemaName}'`,
       );
     }
+  }
+
+  /**
+   * Derives the conventional Zod schema name from a TypeScript type name.
+   * e.g. "Slider" → "sliderSchema", "SliderItem" → "sliderItemSchema".
+   * Returns null when the input is already a schema name or is not PascalCase.
+   */
+  private deriveSchemaNameByConvention(typeName: string): string | null {
+    if (!typeName || !/^[A-Z]/.test(typeName) || typeName.endsWith("Schema")) {
+      return null;
+    }
+    return typeName[0]!.toLowerCase() + typeName.slice(1) + "Schema";
+  }
+
+  /**
+   * Checks whether a Zod schema with the given name is present in schemaDirs
+   * WITHOUT populating the processed-schema cache. A file-content substring check
+   * (the same heuristic used by processFileForZodSchema) is sufficient here: we
+   * only want to know whether the candidate *might* live in schemaDirs so that the
+   * convention mapping can be registered; the actual processing happens later in
+   * the normal convertZodSchemaToOpenApi lookup flow.
+   */
+  private locateSchemaByConvention(candidate: string): boolean {
+    if (this.schemaNameToFiles.has(candidate)) {
+      return true;
+    }
+    for (const dir of this.schemaDirs) {
+      for (const filePath of this.getSchemaFiles(dir)) {
+        try {
+          const content = this.fileAccess.readFileSync(filePath, "utf-8");
+          if (content.includes(candidate)) {
+            return true;
+          }
+        } catch {
+          // ignore unreadable files
+        }
+      }
+    }
+    return false;
   }
 
   /**
