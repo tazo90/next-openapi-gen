@@ -112,15 +112,34 @@ describe("TypeScript schema helpers", () => {
       description: "user email",
     });
 
-    // Leading wins over trailing when both are present.
+    // CommentBlock (JSDoc) leading wins over trailing inline comment.
+    // In real Babel ASTs a JSDoc block above a property appears as CommentBlock in
+    // leadingComments, while the trailing slot holds the *next* property's JSDoc.
     const both = t.tsPropertySignature(
       t.identifier("token"),
       t.tsTypeAnnotation(t.tsStringKeyword()),
     );
-    both.leadingComments = [{ type: "CommentLine", value: " auth token" }] as never;
+    both.leadingComments = [{ type: "CommentBlock", value: "* auth token" }] as never;
     both.trailingComments = [{ type: "CommentLine", value: " ignored" }] as never;
     expect(getPropertyOptions(both, "response")).toEqual({
       description: "auth token",
+    });
+
+    // CommentLine in leadingComments is treated as a Babel duplicate of the previous
+    // property's trailing inline comment and is therefore ignored when trailingComments
+    // is also present — the trailing comment (current property's own inline doc) wins.
+    const lineLeadingPlusTailing = t.tsPropertySignature(
+      t.identifier("name"),
+      t.tsTypeAnnotation(t.tsStringKeyword()),
+    );
+    lineLeadingPlusTailing.leadingComments = [
+      { type: "CommentLine", value: " prev prop comment (Babel duplicate)" },
+    ] as never;
+    lineLeadingPlusTailing.trailingComments = [
+      { type: "CommentLine", value: " real description" },
+    ] as never;
+    expect(getPropertyOptions(lineLeadingPlusTailing, "response")).toEqual({
+      description: "real description",
     });
 
     // Trailing comments parse @example and @format just like leading ones.

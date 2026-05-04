@@ -164,11 +164,27 @@ export function getPropertyOptions(node: any, contentType: ContentType): Propert
   const isOptional = !!node.optional;
   const options: PropertyOptions = {};
 
-  // Prefer leading JSDoc-style comments (`/** ... */` or `// ...` above the property);
-  // fall back to a trailing inline comment (`prop: T; // ...`) when no leading comment
-  // is attached. Leading takes precedence so canonical JSDoc wins, while trailing-only
-  // codebases continue to work without migration.
-  const leadingComment = node.leadingComments?.[node.leadingComments.length - 1];
+  // Comment attachment in Babel's AST is asymmetric for the three styles:
+  //
+  //   1. Trailing inline:  `prop: T; // comment`
+  //      → comment is trailingComment of `prop` AND leadingComment of the next node.
+  //        If a node has both leading CommentLine AND trailing comments, the leading
+  //        CommentLine is always the previous property's trailing duplicate — ignore it.
+  //
+  //   2. CommentLine above:  `// comment\nprop: T;`
+  //      → leadingComment only (not duplicated), trailingComments is empty.
+  //
+  //   3. CommentBlock (JSDoc):  `/** comment */\nprop: T;`
+  //      → leadingComment of current node (preferred source), also appears as
+  //        trailingComment of the previous node — so always prefer leadingComments
+  //        when the comment type is CommentBlock.
+  //
+  // Strategy: prefer CommentBlock leading unconditionally; accept CommentLine leading
+  // only when there are no trailing comments (meaning it is a real "above" comment,
+  // not a Babel-duplicated artifact); fall back to the first trailing comment.
+  const leadingComment = node.leadingComments?.findLast(
+    (c: { type: string }) => c.type === "CommentBlock" || !node.trailingComments?.length,
+  );
   const trailingComment = node.trailingComments?.[0];
   const sourceComment = leadingComment ?? trailingComment;
   if (sourceComment) {

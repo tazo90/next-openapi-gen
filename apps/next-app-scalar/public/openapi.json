@@ -727,7 +727,8 @@
               "page",
               "limit",
               "pages"
-            ]
+            ],
+            "description": "List of comments"
           },
           "permissions": {
             "type": "object",
@@ -1381,7 +1382,8 @@
               "line1",
               "city",
               "postalCode"
-            ]
+            ],
+            "description": "User's role in the system"
           }
         },
         "required": [

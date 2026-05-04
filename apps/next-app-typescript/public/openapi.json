@@ -233,7 +233,8 @@
         "type": "object",
         "properties": {
           "session": {
-            "type": "string"
+            "type": "string",
+            "description": "Session token"
           }
         },
         "required": [
@@ -905,7 +906,8 @@
               "page",
               "limit",
               "pages"
-            ]
+            ],
+            "description": "List of comments"
           },
           "permissions": {
             "type": "object",
@@ -963,11 +965,12 @@
               "json",
               "parquet"
             ],
-            "description": "*\n   * @openapi-override { \"format\": \"email\", \"maxLength\": 320 }",
+            "description": "-override { \"format\": \"email\", \"maxLength\": 320 }",
             "nullable": false
           },
           "notify": {
             "type": "string",
+            "description": "-override { \"format\": \"email\", \"maxLength\": 320 }",
             "nullable": false,
             "format": "email",
             "maxLength": 320
@@ -1471,17 +1474,18 @@
         "properties": {
           "id": {
             "type": "string",
-            "description": "*\n   * @openapi-override { \"format\": \"email\", \"maxLength\": 320 }"
+            "description": "-override { \"format\": \"email\", \"maxLength\": 320 }"
           },
           "customerEmail": {
             "type": "string",
-            "description": "*\n   * Monetary amount in the smallest currency unit — emitted as\n   * `integer` with `format: int64` via `bigint`.",
+            "description": "-override { \"format\": \"email\", \"maxLength\": 320 }",
             "format": "email",
             "maxLength": 320
           },
           "amountMinor": {
             "type": "integer",
-            "format": "int64"
+            "format": "int64",
+            "description": "Monetary amount in the smallest currency unit — emitted as `integer` with `format: int64` via `bigint`."
           },
           "status": {
             "type": "string",
@@ -1502,7 +1506,8 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "string"
+            "type": "string",
+            "description": "Invoice identifier"
           }
         },
         "required": [
@@ -1514,17 +1519,18 @@
         "properties": {
           "id": {
             "type": "string",
-            "description": "*\n   * @openapi-override { \"format\": \"email\", \"maxLength\": 320 }"
+            "description": "-override { \"format\": \"email\", \"maxLength\": 320 }"
           },
           "customerEmail": {
             "type": "string",
-            "description": "*\n   * Monetary amount in the smallest currency unit — emitted as\n   * `integer` with `format: int64` via `bigint`.",
+            "description": "-override { \"format\": \"email\", \"maxLength\": 320 }",
             "format": "email",
             "maxLength": 320
           },
           "amountMinor": {
             "type": "integer",
-            "format": "int64"
+            "format": "int64",
+            "description": "Monetary amount in the smallest currency unit — emitted as `integer` with `format: int64` via `bigint`."
           },
           "status": {
             "type": "string",
@@ -1573,17 +1579,18 @@
               "properties": {
                 "id": {
                   "type": "string",
-                  "description": "*\n   * @openapi-override { \"format\": \"email\", \"maxLength\": 320 }"
+                  "description": "-override { \"format\": \"email\", \"maxLength\": 320 }"
                 },
                 "customerEmail": {
                   "type": "string",
-                  "description": "*\n   * Monetary amount in the smallest currency unit — emitted as\n   * `integer` with `format: int64` via `bigint`.",
+                  "description": "-override { \"format\": \"email\", \"maxLength\": 320 }",
                   "format": "email",
                   "maxLength": 320
                 },
                 "amountMinor": {
                   "type": "integer",
-                  "format": "int64"
+                  "format": "int64",
+                  "description": "Monetary amount in the smallest currency unit — emitted as `integer` with `format: int64` via `bigint`."
                 },
                 "status": {
                   "type": "string",
@@ -2590,7 +2597,8 @@
             "type": [
               "string",
               "null"
-            ]
+            ],
+            "description": "Image file (PNG/JPG, max 5MB)"
           },
           "category": {
             "type": "string",
@@ -2627,7 +2635,8 @@
             "description": "File category"
           },
           "description": {
-            "type": "string"
+            "type": "string",
+            "description": "File category"
           },
           "uploadedAt": {
             "type": "string"
@@ -2992,8 +3001,10 @@
             "name": "session",
             "required": true,
             "schema": {
-              "type": "string"
-            }
+              "type": "string",
+              "description": "Session token"
+            },
+            "description": "Session token"
           }
         ],
         "security": [
@@ -3109,8 +3120,10 @@
             "name": "id",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "description": "Invoice identifier"
             },
+            "description": "Invoice identifier",
             "example": "123"
           }
         ],
