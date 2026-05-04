@@ -184,6 +184,23 @@ z.number()
 
 Both work inside `z.object({...})` properties, in drizzle-zod override callbacks, and at the top level of named schemas. See [docs/zod4-support-matrix.md](./docs/zod4-support-matrix.md) for the full supported metadata surface.
 
+### Decouple component names from source identifiers
+
+Use `.meta({ id })` for Zod schemas or `/** @id */` for TypeScript types to set the OpenAPI component name independently of the export name — useful when enforcing PascalCase naming or migrating from another generator without renaming existing exports:
+
+```ts
+// Zod: use .meta({ id }) to decouple the component name from the variable name
+export const audioSchema = z.object({ ... }).meta({ id: "Audio" });
+// → components.schemas.Audio (not: audioSchema)
+
+// TypeScript: use /** @id */ at the declaration level
+/** @id Audio */
+export interface AudioInterface { ... }
+// → components.schemas.Audio (not: AudioInterface)
+```
+
+Existing `@body audioSchema` or `@response audioSchema` references in route handlers continue to work — the generator resolves them transparently to the override name. See [docs/jsdoc-reference.md#component-naming](./docs/jsdoc-reference.md#component-naming) for details.
+
 ### Generate docs from Drizzle schemas
 
 `next-openapi-gen` works well with `drizzle-zod`, so your database schema, validation, and API docs can share the same source of truth.

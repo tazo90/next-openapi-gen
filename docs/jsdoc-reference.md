@@ -11,47 +11,48 @@ explicit `@response` metadata always wins over inferred responses.
 
 ## Tag reference
 
-| Tag                       | Purpose                                                                 |
-| ------------------------- | ----------------------------------------------------------------------- |
-| `@description`            | Operation description                                                   |
-| `@summary`                | Operation summary (overrides the first JSDoc line)                      |
-| `@operationId`            | Override the generated operation ID                                     |
-| `@pathParams`             | Path parameter schema or type                                           |
-| `@params`                 | Query parameter schema or type                                          |
-| `@queryParams`            | Alias for `@params` when tooling conflicts with `@params`               |
-| `@querystring`            | OpenAPI `3.2` querystring schema with an optional parameter name        |
-| `@header`                 | Header parameter schema or type (`in: header`)                          |
-| `@cookie`                 | Cookie parameter schema or type (`in: cookie`)                          |
-| `@body`                   | Request body schema or type                                             |
-| `@bodyDescription`        | Request body description                                                |
-| `@examples`               | Inline, serialized, external, or exported examples                      |
-| `@response`               | Response schema, code, and optional description                         |
-| `@responseDescription`    | Response description without redefining the schema                      |
-| `@responseContentType`    | Override the response media type                                        |
-| `@responseHeader`         | Add a response header (`status name type [description]`)                |
-| `@responseItem`           | OpenAPI `3.2` sequential media item schema                              |
-| `@responseItemEncoding`   | OpenAPI `3.2` sequential media item encoding                            |
-| `@responsePrefixEncoding` | OpenAPI `3.2` sequential media prefix encoding                          |
-| `@responseSet`            | Use a named response set from `next.openapi.json`                       |
-| `@add`                    | Add extra responses to the operation                                    |
-| `@contentType`            | Request content type such as `multipart/form-data`                      |
-| `@auth`                   | Operation security requirement(s) via preset names                      |
-| `@security`               | Explicit security requirements (`Scheme1, Scheme2:scope1\|scope2`)      |
-| `@link`                   | OpenAPI response link (`status name operationId\|#/components/...`)     |
-| `@callback`               | OpenAPI callback (`name runtimeExpression [reference]`)                 |
-| `@webhook`                | Mark the handler as a webhook (optional webhook name)                   |
-| `@servers`                | Operation-level servers (comma-separated URLs)                          |
-| `@externalDocs`           | Operation-level external documentation (`url [description]`)            |
-| `@tag`                    | Operation tag                                                           |
-| `@tags`                   | Additional operation tags (comma-separated)                             |
-| `@tagSummary`             | OpenAPI `3.2` tag summary                                               |
-| `@tagKind`                | OpenAPI `3.2` tag kind                                                  |
-| `@tagParent`              | OpenAPI `3.2` tag parent                                                |
-| `@deprecated`             | Mark the operation as deprecated (optional reason on same line)         |
-| `@openapi`                | Explicitly include the operation when `includeOpenApiRoutes` is enabled |
-| `@openapi-override`       | Deep-merge extra OpenAPI fields onto the operation (JSON object)        |
-| `@ignore`                 | Exclude the operation from generation                                   |
-| `@method`                 | Required HTTP method tag for Pages Router handlers                      |
+| Tag                       | Purpose                                                                                   |
+| ------------------------- | ----------------------------------------------------------------------------------------- |
+| `@description`            | Operation description                                                                     |
+| `@summary`                | Operation summary (overrides the first JSDoc line)                                        |
+| `@operationId`            | Override the generated operation ID                                                       |
+| `@pathParams`             | Path parameter schema or type                                                             |
+| `@params`                 | Query parameter schema or type                                                            |
+| `@queryParams`            | Alias for `@params` when tooling conflicts with `@params`                                 |
+| `@querystring`            | OpenAPI `3.2` querystring schema with an optional parameter name                          |
+| `@header`                 | Header parameter schema or type (`in: header`)                                            |
+| `@cookie`                 | Cookie parameter schema or type (`in: cookie`)                                            |
+| `@body`                   | Request body schema or type                                                               |
+| `@bodyDescription`        | Request body description                                                                  |
+| `@examples`               | Inline, serialized, external, or exported examples                                        |
+| `@response`               | Response schema, code, and optional description                                           |
+| `@responseDescription`    | Response description without redefining the schema                                        |
+| `@responseContentType`    | Override the response media type                                                          |
+| `@responseHeader`         | Add a response header (`status name type [description]`)                                  |
+| `@responseItem`           | OpenAPI `3.2` sequential media item schema                                                |
+| `@responseItemEncoding`   | OpenAPI `3.2` sequential media item encoding                                              |
+| `@responsePrefixEncoding` | OpenAPI `3.2` sequential media prefix encoding                                            |
+| `@responseSet`            | Use a named response set from `next.openapi.json`                                         |
+| `@add`                    | Add extra responses to the operation                                                      |
+| `@contentType`            | Request content type such as `multipart/form-data`                                        |
+| `@auth`                   | Operation security requirement(s) via preset names                                        |
+| `@security`               | Explicit security requirements (`Scheme1, Scheme2:scope1\|scope2`)                        |
+| `@link`                   | OpenAPI response link (`status name operationId\|#/components/...`)                       |
+| `@callback`               | OpenAPI callback (`name runtimeExpression [reference]`)                                   |
+| `@webhook`                | Mark the handler as a webhook (optional webhook name)                                     |
+| `@servers`                | Operation-level servers (comma-separated URLs)                                            |
+| `@externalDocs`           | Operation-level external documentation (`url [description]`)                              |
+| `@tag`                    | Operation tag                                                                             |
+| `@tags`                   | Additional operation tags (comma-separated)                                               |
+| `@tagSummary`             | OpenAPI `3.2` tag summary                                                                 |
+| `@tagKind`                | OpenAPI `3.2` tag kind                                                                    |
+| `@tagParent`              | OpenAPI `3.2` tag parent                                                                  |
+| `@deprecated`             | Mark the operation as deprecated (optional reason on same line)                           |
+| `@openapi`                | Explicitly include the operation when `includeOpenApiRoutes` is enabled                   |
+| `@openapi-override`       | Deep-merge extra OpenAPI fields onto the operation (JSON object)                          |
+| `@ignore`                 | Exclude the operation from generation                                                     |
+| `@method`                 | Required HTTP method tag for Pages Router handlers                                        |
+| `@id`                     | Override the generated OpenAPI component name for TypeScript types, interfaces, and enums |
 
 ## Common patterns
 
@@ -560,6 +561,56 @@ export async function PUT() {
   `NextResponse.json(...)` or `Response.json(...)` returns.
 - Inference is best-effort, not a replacement for explicit documentation when
   you need exact component names and response metadata.
+
+## Component naming
+
+By default, component names in the OpenAPI spec are derived from the export identifier. Use the following
+mechanisms to decouple the component name from the source identifier — useful when migrating from
+another generator or when enforcing consistent PascalCase naming.
+
+### Zod — `.meta({ id })`
+
+Use the Zod v4 `.meta({ id })` field to set the component name explicitly:
+
+```ts
+export const audioSchema = z
+  .object({
+    url: z.url(),
+    title: z.string().nullable().optional(),
+  })
+  .meta({ id: "Audio" });
+```
+
+The value of `id` becomes the key in `components.schemas`. Existing `@body audioSchema` or
+`@response audioSchema` references in route handlers continue to work — the generator resolves them
+transparently to the override name.
+
+The `id` field is **not** emitted into the schema body.
+
+### TypeScript — `@id`
+
+Add `/** @id ComponentName */` as a leading JSDoc comment on any `interface`, `type`, or `enum`
+declaration:
+
+```ts
+/** @id Audio */
+export interface AudioInterface {
+  url: string;
+  title?: string | null;
+}
+```
+
+An inline trailing comment is also supported:
+
+```ts
+export interface AudioInterface {
+  // @id Audio
+  url: string;
+}
+```
+
+In both cases, the component is registered as `Audio` and cross-type references resolve correctly
+to `#/components/schemas/Audio`.
 
 ## Related guides
 
