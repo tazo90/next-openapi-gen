@@ -1,3 +1,10 @@
+## [1.2.3](https://github.com/tazo90/next-openapi-gen/compare/v1.2.2...v1.2.3) (2026-05-04)
+
+### 🐛 Bug Fixes
+
+- **zod:** prevent duplicate component when .meta({ id }) conflicts with z.infer<> reverse mapping ([#135](https://github.com/tazo90/next-openapi-gen/issues/135)) ([ad5a66a](https://github.com/tazo90/next-openapi-gen/commit/ad5a66a8e0123933466e034b7aa2812bfa292db6)) by [@daniel-rose](https://github.com/daniel-rose)
+- **zod:** resolve cross-file schemas via reverse naming convention ([#131](https://github.com/tazo90/next-openapi-gen/issues/131)) ([#132](https://github.com/tazo90/next-openapi-gen/issues/132)) ([90e790d](https://github.com/tazo90/next-openapi-gen/commit/90e790dc77c82b798524ff12d4fe1d2e2bda30e1)) by [@daniel-rose](https://github.com/daniel-rose)
+
 ## [1.2.2](https://github.com/tazo90/next-openapi-gen/compare/v1.2.1...v1.2.2) (2026-05-04)
 
 ### ✨ Features
