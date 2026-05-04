@@ -175,5 +175,20 @@ describe("TypeScript and Zod regression scenarios", () => {
       expect(schema?.properties?.message).toEqual({ type: "string" });
       expect(schema?.properties?.issues).toBeDefined();
     });
+
+    it("links cross-file Zod schema via reverse naming convention (issue #131)", () => {
+      const converter = new ZodSchemaConverter(
+        path.join(process.cwd(), "tests", "fixtures", "zod-cross-file-convention", "schemas"),
+      );
+      const schema = converter.convertZodSchemaToOpenApi("Slider");
+
+      expect(schema?.type).toBe("object");
+      expect(schema?.properties?.pimId).toMatchObject({
+        type: "integer",
+        description: "Slider PIM ID",
+      });
+      expect(schema?.properties?.language).toMatchObject({ type: "string" });
+      expect(converter.getSchemaReferenceName("Slider")).toBe("Slider");
+    });
   });
 });
