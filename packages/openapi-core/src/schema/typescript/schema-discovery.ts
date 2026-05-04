@@ -4,6 +4,7 @@ import * as t from "@babel/types";
 
 import { traverse } from "../../shared/babel-traverse.js";
 import { resolveTypeScriptModule } from "../../shared/typescript-project.js";
+import { extractSchemaIdFromComments } from "../../shared/utils.js";
 
 type TypeDefinitions = Record<string, any>;
 
@@ -101,38 +102,73 @@ export function resolveImportPath(
   return null;
 }
 
+function collectInterfaceBodyComments(interfaceDecl: any): Array<{ type: string; value: string }> {
+  const body = interfaceDecl?.body;
+  if (!body) return [];
+  const firstMember = body.body?.[0];
+  return firstMember?.leadingComments ?? [];
+}
+
 export function collectAllExportedDefinitions(
   ast: any,
   typeDefinitions: TypeDefinitions,
   currentFile: string,
+  schemaIdAliases?: Record<string, string>,
 ): void {
+  function registerDefinition(
+    name: string,
+    entry: { node: any; filePath: string },
+    allComments: ReadonlyArray<{ type: string; value: string }> | null | undefined,
+  ): void {
+    if (!typeDefinitions[name]) {
+      typeDefinitions[name] = entry;
+    }
+    const overrideId = extractSchemaIdFromComments(allComments);
+    if (overrideId && schemaIdAliases) {
+      schemaIdAliases[name] = overrideId;
+      if (!typeDefinitions[overrideId]) {
+        typeDefinitions[overrideId] = entry;
+      }
+    }
+  }
+
   traverse(ast, {
     TSTypeAliasDeclaration: (path: any) => {
       if (path.node.id && t.isIdentifier(path.node.id)) {
         const name = path.node.id.name;
-        if (!typeDefinitions[name]) {
-          const node =
-            path.node.typeParameters && path.node.typeParameters.params.length > 0
-              ? path.node
-              : path.node.typeAnnotation;
-          typeDefinitions[name] = { node, filePath: currentFile };
-        }
+        const node =
+          path.node.typeParameters && path.node.typeParameters.params.length > 0
+            ? path.node
+            : path.node.typeAnnotation;
+        const allComments = [
+          ...(path.parentPath?.node?.leadingComments ?? []),
+          ...(path.node.leadingComments ?? []),
+          ...(path.node.trailingComments ?? []),
+        ];
+        registerDefinition(name, { node, filePath: currentFile }, allComments);
       }
     },
     TSInterfaceDeclaration: (path: any) => {
       if (path.node.id && t.isIdentifier(path.node.id)) {
         const name = path.node.id.name;
-        if (!typeDefinitions[name]) {
-          typeDefinitions[name] = { node: path.node, filePath: currentFile };
-        }
+        const allComments = [
+          ...(path.parentPath?.node?.leadingComments ?? []),
+          ...(path.node.leadingComments ?? []),
+          ...(path.node.trailingComments ?? []),
+          ...collectInterfaceBodyComments(path.node),
+        ];
+        registerDefinition(name, { node: path.node, filePath: currentFile }, allComments);
       }
     },
     TSEnumDeclaration: (path: any) => {
       if (path.node.id && t.isIdentifier(path.node.id)) {
         const name = path.node.id.name;
-        if (!typeDefinitions[name]) {
-          typeDefinitions[name] = { node: path.node, filePath: currentFile };
-        }
+        const allComments = [
+          ...(path.parentPath?.node?.leadingComments ?? []),
+          ...(path.node.leadingComments ?? []),
+          ...(path.node.trailingComments ?? []),
+        ];
+        registerDefinition(name, { node: path.node, filePath: currentFile }, allComments);
       }
     },
     ExportNamedDeclaration: (path: any) => {
@@ -140,9 +176,13 @@ export function collectAllExportedDefinitions(
         const interfaceDecl = path.node.declaration;
         if (interfaceDecl.id && t.isIdentifier(interfaceDecl.id)) {
           const name = interfaceDecl.id.name;
-          if (!typeDefinitions[name]) {
-            typeDefinitions[name] = { node: interfaceDecl, filePath: currentFile };
-          }
+          const allComments = [
+            ...(path.node.leadingComments ?? []),
+            ...(interfaceDecl.leadingComments ?? []),
+            ...(interfaceDecl.trailingComments ?? []),
+            ...collectInterfaceBodyComments(interfaceDecl),
+          ];
+          registerDefinition(name, { node: interfaceDecl, filePath: currentFile }, allComments);
         }
       }
 
@@ -150,13 +190,16 @@ export function collectAllExportedDefinitions(
         const typeDecl = path.node.declaration;
         if (typeDecl.id && t.isIdentifier(typeDecl.id)) {
           const name = typeDecl.id.name;
-          if (!typeDefinitions[name]) {
-            const node =
-              typeDecl.typeParameters && typeDecl.typeParameters.params.length > 0
-                ? typeDecl
-                : typeDecl.typeAnnotation;
-            typeDefinitions[name] = { node, filePath: currentFile };
-          }
+          const node =
+            typeDecl.typeParameters && typeDecl.typeParameters.params.length > 0
+              ? typeDecl
+              : typeDecl.typeAnnotation;
+          const allComments = [
+            ...(path.node.leadingComments ?? []),
+            ...(typeDecl.leadingComments ?? []),
+            ...(typeDecl.trailingComments ?? []),
+          ];
+          registerDefinition(name, { node, filePath: currentFile }, allComments);
         }
       }
     },

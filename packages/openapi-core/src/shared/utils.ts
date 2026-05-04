@@ -562,6 +562,18 @@ export function cleanComment(commentValue: string): string {
   return commentValue.replace(/\*\s*/g, "").trim();
 }
 
+export function extractSchemaIdFromComments(
+  comments: ReadonlyArray<{ type: string; value: string }> | null | undefined,
+): string | null {
+  if (!comments) return null;
+  for (const comment of comments) {
+    const cleaned = cleanComment(comment.value);
+    const id = extractTokenValue(cleaned, "@id");
+    if (id) return id;
+  }
+  return null;
+}
+
 function extractLineValue(commentValue: string, tag: string): string {
   return commentValue.match(new RegExp(`${escapeRegExp(tag)}\\s*(.*)`, "m"))?.[1]?.trim() || "";
 }

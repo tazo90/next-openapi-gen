@@ -1,11 +1,19 @@
+import fs from "node:fs";
+import os from "node:os";
 import path from "path";
 
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { SchemaProcessor } from "@workspace/openapi-core/schema/typescript/schema-processor.js";
 import { ZodSchemaConverter } from "@workspace/openapi-core/schema/zod/zod-converter.js";
 
 describe("TypeScript and Zod regression scenarios", () => {
+  const roots: string[] = [];
+
+  afterEach(() => {
+    roots.splice(0).forEach((root) => fs.rmSync(root, { recursive: true, force: true }));
+  });
+
   describe("TypeScript fixtures", () => {
     let utilityProcessor: SchemaProcessor;
     let unionProcessor: SchemaProcessor;
@@ -65,6 +73,44 @@ describe("TypeScript and Zod regression scenarios", () => {
           timestamp: { type: "string" },
         },
       });
+    });
+
+    it("resolves schema under @id override name and hides original name from getDefinedSchemas", () => {
+      const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-regression-schema-id-"));
+      roots.push(root);
+
+      fs.writeFileSync(
+        path.join(root, "schemas.ts"),
+        [
+          "/** @id Audio */",
+          "export interface AudioInterface {",
+          "  url: string;",
+          "  title?: string;",
+          "}",
+          "",
+          "export type Response = { audio: AudioInterface };",
+        ].join("\n"),
+      );
+
+      const processor = new SchemaProcessor(root, "typescript");
+
+      const audioSchema = processor.findSchemaDefinition("Audio", "response");
+      expect(audioSchema).toEqual({
+        type: "object",
+        properties: {
+          url: { type: "string" },
+          title: { type: "string" },
+        },
+        required: ["url"],
+      });
+
+      const redirected = processor.findSchemaDefinition("AudioInterface", "response");
+      expect(redirected).toEqual(audioSchema);
+
+      processor.findSchemaDefinition("Audio", "response");
+      const defined = processor.getDefinedSchemas();
+      expect(defined["Audio"]).toBeDefined();
+      expect(defined["AudioInterface"]).toBeUndefined();
     });
   });
 

@@ -83,6 +83,7 @@ export class SchemaProcessor {
   private zodSchemaProcessor: ZodSchemaProcessor | null = null;
   private schemaTypes: SchemaType[];
   private isResolvingPickOmitBase: boolean = false;
+  private schemaIdAliases: Record<string, string> = {};
   private readonly fileAccess: SchemaProcessorFileAccess;
   private readonly symbolResolver: SymbolResolver;
 
@@ -142,6 +143,7 @@ export class SchemaProcessor {
     const filteredSchemas: Record<string, OpenAPIDefinition> = {};
     Object.entries(this.openapiDefinitions).forEach(([key, value]) => {
       if (
+        !this.schemaIdAliases[key] &&
         !this.isGenericTypeParameter(key) &&
         !this.isInvalidSchemaName(key) &&
         !this.isBuiltInUtilityType(key) &&
@@ -165,6 +167,12 @@ export class SchemaProcessor {
     // Check if the schemaName is a generic type (contains < and >)
     if (schemaName.includes("<") && schemaName.includes(">")) {
       return this.resolveGenericTypeFromString(schemaName);
+    }
+
+    // Redirect original name to its @id override
+    const overrideId = this.schemaIdAliases[schemaName];
+    if (overrideId) {
+      return this.findSchemaDefinition(overrideId, contentType);
     }
 
     if (this.openapiDefinitions[schemaName]) {
@@ -285,6 +293,15 @@ export class SchemaProcessor {
 
       this.schemaDefinitionIndex[name] = [filePath];
     });
+
+    Object.entries(this.schemaIdAliases).forEach(([, aliasName]) => {
+      if (!this.schemaDefinitionIndex[aliasName]) {
+        this.schemaDefinitionIndex[aliasName] = [];
+      }
+      if (!this.schemaDefinitionIndex[aliasName]!.includes(filePath)) {
+        this.schemaDefinitionIndex[aliasName]!.push(filePath);
+      }
+    });
   }
 
   private getParsedSchemaFile(filePath: string): t.File {
@@ -329,7 +346,12 @@ export class SchemaProcessor {
    * Used when processing imported files to ensure all referenced types are available
    */
   private collectAllExportedDefinitions(ast: any, filePath?: string): void {
-    collectAllExportedDefinitions(ast, this.typeDefinitions, filePath || this.currentFilePath);
+    collectAllExportedDefinitions(
+      ast,
+      this.typeDefinitions,
+      filePath || this.currentFilePath,
+      this.schemaIdAliases,
+    );
   }
 
   private collectTypeDefinitions(ast: any, schemaName: string, filePath?: string): void {
