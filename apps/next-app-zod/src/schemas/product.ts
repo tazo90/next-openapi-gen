@@ -12,21 +12,27 @@ export const ProductQueryParams = z.object({
 });
 
 // Define schema for product category
-export const ProductCategorySchema = z.object({
-  id: z.string().uuid().describe("Category identifier"),
-  name: z.string().min(1).describe("Category name"),
-  slug: z.string().describe("Category slug used in URLs"),
-});
+// .meta({ id }) overrides the component name: "ProductCategorySchema" → "ProductCategory"
+export const ProductCategorySchema = z
+  .object({
+    id: z.string().uuid().describe("Category identifier"),
+    name: z.string().min(1).describe("Category name"),
+    slug: z.string().describe("Category slug used in URLs"),
+  })
+  .meta({ id: "ProductCategory" });
 
 // Define schema for product variant
-export const ProductVariantSchema = z.object({
-  id: z.string().uuid().describe("Variant identifier"),
-  name: z.string().min(1).describe("Variant name"),
-  sku: z.string().describe("Variant SKU code"),
-  price: z.number().positive().describe("Variant price"),
-  stock: z.number().int().nonnegative().describe("Stock quantity"),
-  attributes: z.record(z.string(), z.string()).describe("Variant attributes (color, size, etc.)"),
-});
+// .meta({ id }) overrides the component name: "ProductVariantSchema" → "ProductVariant"
+export const ProductVariantSchema = z
+  .object({
+    id: z.string().uuid().describe("Variant identifier"),
+    name: z.string().min(1).describe("Variant name"),
+    sku: z.string().describe("Variant SKU code"),
+    price: z.number().positive().describe("Variant price"),
+    stock: z.number().int().nonnegative().describe("Stock quantity"),
+    attributes: z.record(z.string(), z.string()).describe("Variant attributes (color, size, etc.)"),
+  })
+  .meta({ id: "ProductVariant" });
 
 // Define main product schema
 export const ProductResponseSchema = z.object({
