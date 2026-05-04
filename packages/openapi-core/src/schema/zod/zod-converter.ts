@@ -2309,6 +2309,12 @@ export class ZodSchemaConverter {
       this.currentAST = ast;
       this.currentImports = importedModules;
 
+      // Mark file as preprocessed BEFORE traversal so recursive lookups (e.g. when
+      // resolving cross-references like `SafeRedirectPathSchema.optional()` inside
+      // another schema in the same file) don't re-enter preprocessing on a half-built
+      // state and emit spurious "conflicts with an existing schema" warnings.
+      this.preprocessedFiles.add(filePath);
+
       // Collect all exported Zod schemas
       traverse(ast, {
         ExportNamedDeclaration: (path: NodePath<t.ExportNamedDeclaration>) => {
@@ -2363,8 +2369,6 @@ export class ZodSchemaConverter {
           });
         },
       });
-
-      this.preprocessedFiles.add(filePath);
     } catch (error) {
       logger.error(`Error pre-processing file ${filePath}: ${error}`);
     }

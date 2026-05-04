@@ -1194,6 +1194,20 @@ export class SchemaProcessor {
         return { type: "object", additionalProperties: true };
       }
 
+      // When the original type name is hidden behind an `@id` alias and the
+      // aliased schema has already been resolved, emit a `$ref` to the alias
+      // instead of falling through to `resolveUtilityTypeReference` which would
+      // inline the type. This preserves cross-type references like
+      // `type Response = { audio: AudioInterface }` when `AudioInterface`
+      // carries an `@id Audio` override.
+      if (
+        (!node.typeParameters || node.typeParameters.params.length === 0) &&
+        this.schemaIdAliases[typeName] &&
+        this.openapiDefinitions[this.schemaIdAliases[typeName]!]
+      ) {
+        return { $ref: `#/components/schemas/${this.schemaIdAliases[typeName]}` };
+      }
+
       const utilityType = resolveUtilityTypeReference(node, {
         currentFilePath: this.currentFilePath,
         contentType: this.contentType,
