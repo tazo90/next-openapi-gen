@@ -1011,6 +1011,7 @@ const INTERNAL_OPENAPI_CONFIG_KEYS = [
   "next",
   "diagnostics",
   "debug",
+  "authPresets",
 ] as const;
 
 export const DEFAULT_AUTH_PRESET_REPLACEMENTS: Record<string, string> = {
