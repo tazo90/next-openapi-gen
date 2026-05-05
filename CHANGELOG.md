@@ -1,3 +1,14 @@
+# [1.3.0](https://github.com/tazo90/next-openapi-gen/compare/v1.2.3...v1.3.0) (2026-05-05)
+
+### ✨ Features
+
+- support configurable [@auth](https://github.com/auth) preset mappings via authPresets config ([#136](https://github.com/tazo90/next-openapi-gen/issues/136)) ([2f66fc4](https://github.com/tazo90/next-openapi-gen/commit/2f66fc478705cd1e3a46b027eef103e5df6a1bf3)) by [@daniel-rose](https://github.com/daniel-rose)
+
+### 🐛 Bug Fixes
+
+- **zod:** detect integer literals in z.literal() and z.union() ([#144](https://github.com/tazo90/next-openapi-gen/issues/144)) ([e339b16](https://github.com/tazo90/next-openapi-gen/commit/e339b1689d287e20bc3703c0d270836e17f9653e)) by [@daniel-rose](https://github.com/daniel-rose)
+- **zod:** resolve .meta({ id }) references inside z.array() and z.tuple() ([#140](https://github.com/tazo90/next-openapi-gen/issues/140)) ([29a8e72](https://github.com/tazo90/next-openapi-gen/commit/29a8e72b063b743b08f50b65ef79665141975523)) by [@daniel-rose](https://github.com/daniel-rose)
+
 ## [1.2.3](https://github.com/tazo90/next-openapi-gen/compare/v1.2.2...v1.2.3) (2026-05-04)
 
 ### 🐛 Bug Fixes
