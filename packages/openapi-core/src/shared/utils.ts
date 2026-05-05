@@ -1025,6 +1025,7 @@ const INTERNAL_OPENAPI_CONFIG_KEYS = [
   "diagnostics",
   "debug",
   "authPresets",
+  "excludeSchemas",
 ] as const;
 
 export const DEFAULT_AUTH_PRESET_REPLACEMENTS: Record<string, string> = {
