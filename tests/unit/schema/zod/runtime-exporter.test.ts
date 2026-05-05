@@ -226,6 +226,29 @@ describe("ZodRuntimeExporter", () => {
         prefixItems: [{ type: "string" }, { type: "number" }],
       });
     });
+
+    it("returns null for z.array(identifierReference) so AST path can resolve the $ref", () => {
+      expect(
+        exporter.exportSchema(parseInitializer("z.array(someSchema)"), { contentType: "response" }),
+      ).toBeNull();
+    });
+
+    it("returns null for z.array(identifierReference).meta({...}) so AST path resolves the $ref", () => {
+      expect(
+        exporter.exportSchema(
+          parseInitializer('z.array(someSchema).meta({ description: "items" })'),
+          { contentType: "response" },
+        ),
+      ).toBeNull();
+    });
+
+    it("returns null for z.tuple([identifierReference]) so AST path resolves the $ref", () => {
+      expect(
+        exporter.exportSchema(parseInitializer("z.tuple([someSchema])"), {
+          contentType: "response",
+        }),
+      ).toBeNull();
+    });
   });
 
   describe("union and intersection", () => {

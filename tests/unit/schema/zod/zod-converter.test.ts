@@ -596,5 +596,52 @@ describe("ZodSchemaConverter", () => {
       });
       expect(converter.zodSchemas["Shared"]).not.toHaveProperty("properties.b");
     });
+
+    it("emits $ref to meta-id name when schema is referenced inside z.array()", () => {
+      const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-zod-meta-id-array-"));
+      roots.push(root);
+
+      fs.writeFileSync(
+        path.join(root, "schemas.ts"),
+        [
+          'import { z } from "zod";',
+          'export const apiErrorIssueSchema = z.object({ path: z.string(), message: z.string() }).meta({ id: "ApiErrorIssue" });',
+          'export const apiErrorSchema = z.object({ message: z.string(), issues: z.array(apiErrorIssueSchema) }).meta({ id: "ApiError" });',
+        ].join("\n"),
+      );
+
+      const converter = new ZodSchemaConverter(root);
+      converter.convertZodSchemaToOpenApi("apiErrorSchema");
+
+      expect(converter.zodSchemas["ApiError"]).toBeDefined();
+      expect(converter.zodSchemas["ApiError"]?.properties?.issues).toMatchObject({
+        type: "array",
+        items: { $ref: "#/components/schemas/ApiErrorIssue" },
+      });
+      expect(converter.zodSchemas["ApiErrorIssue"]).toBeDefined();
+    });
+
+    it("emits $ref to meta-id name when schema is referenced inside z.array().optional()", () => {
+      const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-zod-meta-id-array-opt-"));
+      roots.push(root);
+
+      fs.writeFileSync(
+        path.join(root, "schemas.ts"),
+        [
+          'import { z } from "zod";',
+          'export const apiErrorIssueSchema = z.object({ path: z.string() }).meta({ id: "ApiErrorIssue" });',
+          'export const apiErrorSchema = z.object({ issues: z.array(apiErrorIssueSchema).optional() }).meta({ id: "ApiError" });',
+        ].join("\n"),
+      );
+
+      const converter = new ZodSchemaConverter(root);
+      converter.convertZodSchemaToOpenApi("apiErrorSchema");
+
+      expect(converter.zodSchemas["ApiError"]).toBeDefined();
+      expect(converter.zodSchemas["ApiError"]?.properties?.issues).toMatchObject({
+        type: "array",
+        items: { $ref: "#/components/schemas/ApiErrorIssue" },
+      });
+    });
   });
 });
