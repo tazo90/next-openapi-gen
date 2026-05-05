@@ -108,10 +108,17 @@ export class ZodRuntimeExporter {
           : null;
       case "enum":
         return this.buildEnum(node);
-      case "array":
-        return node.arguments[0] && isProcessableNode(node.arguments[0])
-          ? z.array(this.buildSchema(node.arguments[0]) ?? z.unknown())
-          : z.array(z.unknown());
+      case "array": {
+        const arg = node.arguments[0];
+        if (!arg || !isProcessableNode(arg)) {
+          return z.array(z.unknown());
+        }
+        const itemSchema = this.buildSchema(arg);
+        if (!itemSchema) {
+          return null;
+        }
+        return z.array(itemSchema);
+      }
       case "strictObject": {
         const base = this.buildObject(node);
         return base && typeof (base as any).strict === "function" ? (base as any).strict() : base;
@@ -274,13 +281,17 @@ export class ZodRuntimeExporter {
       return z.tuple([]);
     }
 
-    const items = node.arguments[0].elements.flatMap((element) => {
+    const items: z.ZodTypeAny[] = [];
+    for (const element of node.arguments[0].elements) {
       if (!isProcessableNode(element)) {
-        return [];
+        return null;
       }
       const schema = this.buildSchema(element);
-      return schema ? [schema] : [];
-    });
+      if (!schema) {
+        return null;
+      }
+      items.push(schema);
+    }
 
     return z.tuple(items as []);
   }
