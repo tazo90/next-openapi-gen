@@ -56,7 +56,7 @@ export function processZodLiteral(
     return { type: "string", enum: [arg.value] };
   }
   if (t.isNumericLiteral(arg)) {
-    return { type: "number", enum: [arg.value] };
+    return { type: Number.isInteger(arg.value) ? "integer" : "number", enum: [arg.value] };
   }
   if (t.isBooleanLiteral(arg)) {
     return { type: "boolean", enum: [arg.value] };
@@ -74,7 +74,8 @@ export function processZodLiteral(
   if (t.isIdentifier(arg) && context?.resolveLiteralValue) {
     const value = context.resolveLiteralValue(arg.name);
     if (typeof value === "string") return { type: "string", enum: [value] };
-    if (typeof value === "number") return { type: "number", enum: [value] };
+    if (typeof value === "number")
+      return { type: Number.isInteger(value) ? "integer" : "number", enum: [value] };
     if (typeof value === "boolean") return { type: "boolean", enum: [value] };
     if (value === null) return { type: "null", enum: [null] };
   }
@@ -203,7 +204,7 @@ export function processZodTuple(
       if (values && values.length > 0) {
         const prefixItems: OpenApiSchema[] = values.map((value) =>
           typeof value === "number"
-            ? { type: "number", enum: [value] }
+            ? { type: Number.isInteger(value) ? "integer" : "number", enum: [value] }
             : { type: "string", enum: [value] },
         );
         return {
@@ -268,7 +269,12 @@ export function processZodUnion(
     if (t.isIdentifier(node.arguments[0]) && context?.resolveConstArrayValues) {
       const values = context.resolveConstArrayValues(node.arguments[0].name);
       if (values && values.length > 0) {
-        const type = typeof values[0] === "number" ? "number" : "string";
+        const type =
+          typeof values[0] === "number"
+            ? Number.isInteger(values[0])
+              ? "integer"
+              : "number"
+            : "string";
         return { type, enum: values };
       }
     }

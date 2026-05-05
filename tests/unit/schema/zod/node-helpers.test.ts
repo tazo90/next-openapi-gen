@@ -67,7 +67,7 @@ describe("Zod node helpers", () => {
       enum: ["x"],
     });
     expect(processZodLiteral(getFirstInitializer("z.literal(2)") as t.CallExpression)).toEqual({
-      type: "number",
+      type: "integer",
       enum: [2],
     });
     expect(processZodLiteral(getFirstInitializer("z.literal(true)") as t.CallExpression)).toEqual({
