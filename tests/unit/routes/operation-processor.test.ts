@@ -69,7 +69,7 @@ describe("OperationProcessor", () => {
       "POST",
       "/users/{id}",
       {
-        auth: "BearerAuth,ApiKeyAuth",
+        auth: "bearer,apikey",
         deprecated: true,
         summary: "Create user",
         description: "Creates a user",
@@ -279,7 +279,7 @@ describe("OperationProcessor", () => {
         tag: "Users",
         summary: "Create user",
         description: "Creates a user",
-        auth: "BearerAuth,ApiKeyAuth",
+        auth: "bearer,apikey",
         deprecated: true,
         paramsType: "UserQuery",
         bodyType: "CreateUserBody",
@@ -621,5 +621,51 @@ describe("OperationProcessor", () => {
 
     expect((result.definition as Record<string, unknown>)["x-internal"]).toBe(true);
     expect((result.definition as Record<string, unknown>)["x-rate-limit"]).toBe(100);
+  });
+
+  it("applies custom authPresets, with user keys winning over defaults", () => {
+    const schemaProcessor = {
+      getSchemaContent: vi.fn<MockFn>(() => ({
+        params: undefined,
+        pathParams: undefined,
+        body: undefined,
+        responses: undefined,
+      })),
+      createRequestParamsSchema: vi.fn<MockFn>(() => []),
+      createDefaultPathParamsSchema: vi.fn<MockFn>(),
+      detectContentType: vi.fn<MockFn>(),
+      createResponseSchema: vi.fn<MockFn>(() => ({})),
+      ensureSchemaResolved: vi.fn<MockFn>(),
+      getSchemaReferenceName: vi.fn<MockFn>((name: string) => name),
+    };
+    const responseProcessor = {
+      supportsRequestBody: vi.fn<MockFn>(() => false),
+      processResponses: vi.fn<MockFn>(() => ({})),
+    };
+
+    const processor = new OperationProcessor(schemaProcessor as never, responseProcessor as never, {
+      authPresets: { bearer: "JwtAuth", oauth2: "OAuth2Flow" },
+    });
+
+    const withOverride = processor.processOperation("GET", "/a", { tag: "A", auth: "bearer" });
+    expect(withOverride.definition.security).toEqual([{ JwtAuth: [] }]);
+
+    const withNewPreset = processor.processOperation("GET", "/b", {
+      tag: "B",
+      auth: "bearer,oauth2",
+    });
+    expect(withNewPreset.definition.security).toEqual([{ JwtAuth: [] }, { OAuth2Flow: [] }]);
+
+    const passThrough = processor.processOperation("GET", "/c", {
+      tag: "C",
+      auth: "MyCustomScheme",
+    });
+    expect(passThrough.definition.security).toEqual([{ MyCustomScheme: [] }]);
+
+    const withSecurity = processor.processOperation("GET", "/d", {
+      tag: "D",
+      security: [{ bearer: ["read"] }],
+    });
+    expect(withSecurity.definition.security).toEqual([{ JwtAuth: ["read"] }]);
   });
 });

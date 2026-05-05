@@ -72,7 +72,7 @@ describe("shared utils", () => {
       tagSummary: "",
       tagKind: "",
       tagParent: "",
-      auth: "BasicAuth",
+      auth: "basic",
       summary: "Create a user",
       description: "Creates a user record",
       paramsType: "UserQuery",
@@ -149,7 +149,7 @@ describe("shared utils", () => {
       export async function GET() {}
     `);
 
-    expect(data?.auth).toBe("ApiKeyAuth");
+    expect(data?.auth).toBe("apikey");
     expect(data?.responseType).toBe("");
     expect(data?.successCode).toBe("");
   });
@@ -196,7 +196,7 @@ describe("shared utils", () => {
       export async function POST() {}
     `);
 
-    expect(bearerData?.auth).toBe("BearerAuth");
+    expect(bearerData?.auth).toBe("bearer");
     expect(emptyAuthData?.auth).toBe("");
   });
 
@@ -368,6 +368,15 @@ describe("shared utils", () => {
   it("normalizes auth preset casing while keeping unknown entries", () => {
     expect(performAuthPresetReplacements("BEARER, apiKey, custom-scheme")).toBe(
       "BearerAuth,ApiKeyAuth,custom-scheme",
+    );
+  });
+
+  it("applies custom presets when provided, with user keys winning over defaults", () => {
+    const custom = { bearer: "JwtAuth", oauth2: "OAuth2Auth" };
+    expect(performAuthPresetReplacements("bearer", custom)).toBe("JwtAuth");
+    expect(performAuthPresetReplacements("bearer,oauth2", custom)).toBe("JwtAuth,OAuth2Auth");
+    expect(performAuthPresetReplacements("bearer,CustomScheme", custom)).toBe(
+      "JwtAuth,CustomScheme",
     );
   });
 

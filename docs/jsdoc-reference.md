@@ -186,6 +186,39 @@ Comma-separated values produce alternative security requirements. For example,
 Advanced `securitySchemes` objects should still be modeled in templates or
 reusable OpenAPI fragments.
 
+**Built-in presets** map the following lowercase keywords to scheme names:
+
+| Keyword  | Default scheme name |
+| -------- | ------------------- |
+| `bearer` | `BearerAuth`        |
+| `basic`  | `BasicAuth`         |
+| `apikey` | `ApiKeyAuth`        |
+
+You can override these or add new presets via the `authPresets` config option:
+
+```ts
+// openapi-gen.config.ts
+export default defineConfig({
+  authPresets: {
+    bearer: "JwtAuth", // override default BearerAuth
+    oauth2: "OAuth2Auth", // add a new preset
+  },
+  components: {
+    securitySchemes: {
+      JwtAuth: { type: "http", scheme: "bearer", bearerFormat: "JWT" },
+      OAuth2Auth: {
+        type: "oauth2",
+        flows: {
+          /* ... */
+        },
+      },
+    },
+  },
+});
+```
+
+Unknown values (e.g. `@auth MyCustomScheme`) are passed through unchanged regardless of preset configuration.
+
 ### File uploads
 
 ```ts

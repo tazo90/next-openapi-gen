@@ -24,6 +24,7 @@ import {
   DEFAULT_SCHEMA_DIR,
   DEFAULT_UI,
 } from "./defaults.js";
+import { DEFAULT_AUTH_PRESET_REPLACEMENTS } from "../shared/utils.js";
 
 function normalizeRouterType(routerType?: RouterType): RouterType {
   return routerType ?? DEFAULT_ROUTER_TYPE;
@@ -144,6 +145,7 @@ export function normalizeOpenApiConfig(
       adapterPath: template.next?.adapterPath,
     },
     diagnostics: template.diagnostics ?? { enabled: DEFAULT_DIAGNOSTICS_ENABLED },
+    authPresets: { ...DEFAULT_AUTH_PRESET_REPLACEMENTS, ...template.authPresets },
     debug: template.debug ?? DEFAULT_DEBUG,
   };
 }

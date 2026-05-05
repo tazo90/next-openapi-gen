@@ -74,12 +74,16 @@ export type OpenApiConfig = {
     adapterPath?: string | undefined;
   };
   diagnostics?: DiagnosticsConfig | undefined;
+  /** Override or extend the default JSDoc @auth → security-scheme-name mapping.
+   *  Defaults: { bearer: "BearerAuth", basic: "BasicAuth", apikey: "ApiKeyAuth" }.
+   *  User keys win on conflict; lookup is case-insensitive. */
+  authPresets?: Record<string, string> | undefined;
   debug: boolean;
 };
 
 export type ResolvedOpenApiConfig = Omit<
   OpenApiConfig,
-  "routerType" | "schemaType" | "framework" | "next" | "diagnostics"
+  "routerType" | "schemaType" | "framework" | "next" | "diagnostics" | "authPresets"
 > & {
   framework: FrameworkConfig;
   next: {
@@ -90,6 +94,7 @@ export type ResolvedOpenApiConfig = Omit<
   schemaType: SchemaType | SchemaType[];
   schemaBackends: SchemaType[];
   openapiVersion: OpenApiVersion;
+  authPresets: Record<string, string>;
 };
 
 export type OpenApiInfo = {
@@ -179,6 +184,7 @@ export type OpenApiTemplate = OpenApiDocument & {
     adapterPath?: string | undefined;
   };
   diagnostics?: DiagnosticsConfig | undefined;
+  authPresets?: Record<string, string> | undefined;
   debug?: boolean | undefined;
 };
 
