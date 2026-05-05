@@ -1071,10 +1071,17 @@ export class ZodSchemaConverter {
         // Apply method-specific transformations
         switch (methodName) {
           case "optional":
+            // optional means T | undefined — not in required array, no nullable flag
+            break;
           case "nullable":
           case "nullish":
-            // Don't add nullable flag here as it would be at the wrong level
-            // The fact that it's optional is handled by not including it in required array
+            // Transform allOf to anyOf with null branch to preserve null type
+            schema = {
+              anyOf: [
+                { $ref: `#/components/schemas/${this.getSchemaReferenceName(schemaName)}` },
+                { type: "null" },
+              ],
+            };
             break;
           case "describe":
             if (node.arguments.length > 0 && t.isStringLiteral(node.arguments[0])) {
@@ -1762,13 +1769,19 @@ export class ZodSchemaConverter {
         break;
       case "nullable":
         // nullable means T | null — field stays required but can be null
-        if (!schema.allOf) {
+        if (schema.allOf) {
+          // Transform allOf to anyOf with null branch to preserve null type
+          schema = { anyOf: [...schema.allOf, { type: "null" }] };
+        } else {
           schema.nullable = true;
         }
         break;
       case "nullish": // T | null | undefined
         // Not in required array (handled by hasOptionalMethod) AND can be null
-        if (!schema.allOf) {
+        if (schema.allOf) {
+          // Transform allOf to anyOf with null branch to preserve null type
+          schema = { anyOf: [...schema.allOf, { type: "null" }] };
+        } else {
           schema.nullable = true;
         }
         break;

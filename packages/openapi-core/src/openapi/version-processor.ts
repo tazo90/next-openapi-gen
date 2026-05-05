@@ -682,8 +682,10 @@ function downgradeSchemaForOpenApi30(schema: OpenApiSchema, mediaTypeName?: stri
     const nullableBranch = nextSchema.anyOf.find((item) => item.type === "null");
     const baseBranch = nextSchema.anyOf.find((item) => item.type !== "null");
     if (nullableBranch && baseBranch) {
+      const { anyOf: _anyOf, ...outerMeta } = nextSchema;
       nextSchema = {
         ...structuredClone(baseBranch),
+        ...outerMeta,
         nullable: true,
       };
     }
