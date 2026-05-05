@@ -110,7 +110,7 @@ describe("PagesRouterStrategy", () => {
 
       expect(result.pathParamsType).toBe("UserIdSchema");
       expect(result.paramsType).toBe("UserQuerySchema");
-      expect(result.auth).toBe("BearerAuth,CustomType");
+      expect(result.auth).toBe("bearer,CustomType");
       expect(result.operationId).toBe("getUserById");
       expect(result.addResponses).toBe("401:ErrorResponse,500:ErrorResponse");
     });
@@ -146,7 +146,7 @@ describe("PagesRouterStrategy", () => {
       expect(result.bodyDescription).toBe("Avatar form data");
       expect(result.contentType).toBe("multipart/form-data");
       expect(result.responseSet).toBe("errors");
-      expect(result.auth).toBe("ApiKeyAuth");
+      expect(result.auth).toBe("apikey");
     });
 
     it("handles status-only responses and basic auth", () => {
@@ -163,7 +163,7 @@ describe("PagesRouterStrategy", () => {
       expect(result.successCode).toBe("204");
       expect(result.responseType).toBe("");
       expect(result.responseDescription).toBe("Deleted");
-      expect(result.auth).toBe("BasicAuth");
+      expect(result.auth).toBe("basic");
     });
 
     it("supports inline response descriptions from README-style syntax", () => {
@@ -191,7 +191,7 @@ describe("PagesRouterStrategy", () => {
 
       expect(result.summary).toBe("");
       expect(result.tag).toBe("Reports");
-      expect(result.auth).toBe("BearerAuth,ApiKeyAuth,CustomScheme");
+      expect(result.auth).toBe("bearer,ApiKeyAuth,CustomScheme");
       expect(result.responseType).toBe("");
       expect(result.successCode).toBe("");
     });

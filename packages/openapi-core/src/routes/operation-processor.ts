@@ -2,16 +2,33 @@ import type { GenerationPerformanceProfile } from "../core/performance.js";
 import { measurePerformance } from "../core/performance.js";
 import type { SchemaProcessor } from "../schema/typescript/schema-processor.js";
 import { createMultipartEncoding } from "../schema/typescript/helpers.js";
-import { capitalize, getOperationId } from "../shared/utils.js";
+import {
+  capitalize,
+  DEFAULT_AUTH_PRESET_REPLACEMENTS,
+  getOperationId,
+  performAuthPresetReplacements,
+} from "../shared/utils.js";
 import type { DataTypes, ParamSchema, RouteDefinition } from "../shared/types.js";
 import { ResponseProcessor } from "./response-processor.js";
 
 export class OperationProcessor {
+  private readonly authPresets: Record<string, string>;
+  private readonly performanceProfile: GenerationPerformanceProfile | undefined;
+
   constructor(
     private readonly schemaProcessor: SchemaProcessor,
     private readonly responseProcessor: ResponseProcessor,
-    private readonly performanceProfile?: GenerationPerformanceProfile,
-  ) {}
+    options: {
+      authPresets?: Record<string, string> | undefined;
+      performanceProfile?: GenerationPerformanceProfile | undefined;
+    } = {},
+  ) {
+    this.authPresets = {
+      ...DEFAULT_AUTH_PRESET_REPLACEMENTS,
+      ...options.authPresets,
+    };
+    this.performanceProfile = options.performanceProfile;
+  }
 
   public processOperation(
     varName: string,
@@ -72,9 +89,14 @@ export class OperationProcessor {
     }
 
     if (explicitSecurity && explicitSecurity.length > 0) {
-      definition.security = explicitSecurity;
+      definition.security = explicitSecurity.map((req) =>
+        Object.fromEntries(
+          Object.entries(req).map(([scheme, scopes]) => [this.applyPreset(scheme), scopes]),
+        ),
+      );
     } else if (auth) {
-      const authItems = auth.split(",").map((item) => item.trim());
+      const mapped = performAuthPresetReplacements(auth, this.authPresets);
+      const authItems = mapped.split(",").map((item) => item.trim());
       definition.security = authItems.map((authItem) => ({
         [authItem]: [],
       }));
@@ -384,6 +406,10 @@ export class OperationProcessor {
       }
       response.links[link.name] = linkObject;
     }
+  }
+
+  private applyPreset(scheme: string): string {
+    return this.authPresets[scheme.toLowerCase()] ?? scheme;
   }
 
   private createQuerystringParameter(dataTypes: DataTypes): ParamSchema | undefined {

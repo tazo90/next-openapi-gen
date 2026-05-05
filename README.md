@@ -288,33 +288,34 @@ Version guidance:
 | `ignoreRoutes`                        | Exclude routes with wildcard support                             |
 | `defaultResponseSet` / `responseSets` | Reusable error-response groups                                   |
 | `errorConfig`                         | Shared error schema templates                                    |
+| `authPresets`                         | Override or extend the `@auth` keyword → scheme-name mapping     |
 
 For a fuller setup guide, Pages Router notes, response sets, and route exclusion
 patterns, see [docs/getting-started.md](./docs/getting-started.md).
 
 ## JSDoc tags you will use most
 
-| Tag                        | Purpose                                                          |
-| -------------------------- | ---------------------------------------------------------------- |
-| `@pathParams`              | Path parameter schema or type                                    |
-| `@params` / `@queryParams` | Query parameter schema or type                                   |
-| `@header` / `@cookie`      | Header / cookie parameter schema or type                         |
-| `@body`                    | Request body schema or type                                      |
-| `@response`                | Response schema, code, and optional description                  |
-| `@responseDescription`     | Response description without redefining the schema               |
-| `@responseHeader`          | Add a response header to a given status code                     |
-| `@link`                    | Add an OpenAPI link to a response                                |
-| `@auth` / `@security`      | Security requirement(s); `@security` accepts explicit scopes     |
-| `@servers`                 | Operation-level servers                                          |
-| `@externalDocs`            | Operation-level external documentation                           |
-| `@callback`                | OpenAPI operation callback                                       |
-| `@webhook`                 | Mark the handler as a webhook (`3.1`+ `webhooks` section)        |
-| `@contentType`             | Request content type such as `multipart/form-data`               |
-| `@examples`                | Request, response, and querystring examples                      |
-| `@openapi`                 | Explicit inclusion marker when `includeOpenApiRoutes` is enabled |
-| `@openapi-override`        | Deep-merge extra OpenAPI fields onto the operation               |
-| `@ignore`                  | Exclude a route from generation                                  |
-| `@method`                  | Required HTTP method tag for Pages Router handlers               |
+| Tag                        | Purpose                                                                                                 |
+| -------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `@pathParams`              | Path parameter schema or type                                                                           |
+| `@params` / `@queryParams` | Query parameter schema or type                                                                          |
+| `@header` / `@cookie`      | Header / cookie parameter schema or type                                                                |
+| `@body`                    | Request body schema or type                                                                             |
+| `@response`                | Response schema, code, and optional description                                                         |
+| `@responseDescription`     | Response description without redefining the schema                                                      |
+| `@responseHeader`          | Add a response header to a given status code                                                            |
+| `@link`                    | Add an OpenAPI link to a response                                                                       |
+| `@auth` / `@security`      | Security requirement(s); built-in presets: `bearer`, `basic`, `apikey` — configurable via `authPresets` |
+| `@servers`                 | Operation-level servers                                                                                 |
+| `@externalDocs`            | Operation-level external documentation                                                                  |
+| `@callback`                | OpenAPI operation callback                                                                              |
+| `@webhook`                 | Mark the handler as a webhook (`3.1`+ `webhooks` section)                                               |
+| `@contentType`             | Request content type such as `multipart/form-data`                                                      |
+| `@examples`                | Request, response, and querystring examples                                                             |
+| `@openapi`                 | Explicit inclusion marker when `includeOpenApiRoutes` is enabled                                        |
+| `@openapi-override`        | Deep-merge extra OpenAPI fields onto the operation                                                      |
+| `@ignore`                  | Exclude a route from generation                                                                         |
+| `@method`                  | Required HTTP method tag for Pages Router handlers                                                      |
 
 For the complete tag guide and usage recipes, see
 [docs/jsdoc-reference.md](./docs/jsdoc-reference.md).

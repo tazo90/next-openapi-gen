@@ -55,7 +55,7 @@ describe("shared JSDoc utilities regressions", () => {
     });
 
     expect(dataTypes?.operationId).toBe("createNewUser");
-    expect(dataTypes?.auth).toBe("BearerAuth,CustomType");
+    expect(dataTypes?.auth).toBe("bearer,CustomType");
     expect(dataTypes?.successCode).toBe("201");
     expect(dataTypes?.responseType).toBe("UserResponse");
   });

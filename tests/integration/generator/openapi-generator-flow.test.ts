@@ -363,4 +363,17 @@ describe.sequential("OpenApiGenerator integration flow", () => {
       project.cleanup();
     }
   });
+
+  it("applies authPresets config override, replacing bearer with a custom scheme name", () => {
+    const { project, spec } = generateFixtureSpec({
+      fixturePath: appRouterCoreFixture,
+      templateOverrides: { authPresets: { bearer: "JwtAuth" } },
+    });
+
+    try {
+      expect(spec.paths?.["/users/{id}"]?.get?.security).toEqual([{ JwtAuth: [] }]);
+    } finally {
+      project.cleanup();
+    }
+  });
 });

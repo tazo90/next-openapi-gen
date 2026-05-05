@@ -105,7 +105,7 @@ export function parseJSDocBlock(commentValue: string, filePath?: string): DataTy
 
   const authValue = extractLineValue(normalizedComment, "@auth");
   if (authValue) {
-    result.auth = performAuthPresetReplacements(authValue);
+    result.auth = authValue;
   }
 
   const querystring = parseQuerystringTag(normalizedComment);
@@ -1013,15 +1013,18 @@ const INTERNAL_OPENAPI_CONFIG_KEYS = [
   "debug",
 ] as const;
 
-const AUTH_PRESET_REPLACEMENTS: Record<string, string> = {
+export const DEFAULT_AUTH_PRESET_REPLACEMENTS: Record<string, string> = {
   bearer: "BearerAuth",
   basic: "BasicAuth",
   apikey: "ApiKeyAuth",
 };
 
-export function performAuthPresetReplacements(authValue: string): string {
+export function performAuthPresetReplacements(
+  authValue: string,
+  presets: Record<string, string> = DEFAULT_AUTH_PRESET_REPLACEMENTS,
+): string {
   const authParts = authValue.split(",").map((part) => part.trim());
-  const mappedParts = authParts.map((part) => AUTH_PRESET_REPLACEMENTS[part.toLowerCase()] || part);
+  const mappedParts = authParts.map((part) => presets[part.toLowerCase()] || part);
 
   return mappedParts.join(",");
 }

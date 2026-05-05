@@ -75,11 +75,10 @@ export class RouteProcessor {
       return new RegExp(`^${regexPattern}$`);
     });
     this.responseProcessor = new ResponseProcessor(this.config, this.schemaProcessor);
-    this.operationProcessor = new OperationProcessor(
-      this.schemaProcessor,
-      this.responseProcessor,
-      this.performanceProfile,
-    );
+    this.operationProcessor = new OperationProcessor(this.schemaProcessor, this.responseProcessor, {
+      authPresets: this.config.authPresets,
+      performanceProfile: this.performanceProfile,
+    });
   }
 
   private processResponsesFromConfig(
