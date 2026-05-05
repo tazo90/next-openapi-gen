@@ -80,4 +80,29 @@ describe("Zod features › unions and intersections", () => {
       ],
     });
   });
+
+  it("z.literal(1) emits type integer", () => {
+    const schema = convert("z.literal(1)", roots);
+    expect(schema).toEqual({ type: "integer", enum: [1] });
+  });
+
+  it("z.literal(1.5) emits type number", () => {
+    const schema = convert("z.literal(1.5)", roots);
+    expect(schema).toEqual({ type: "number", enum: [1.5] });
+  });
+
+  it("z.union over homogeneous integer literals collapses to an integer enum", () => {
+    const schema = convert("z.union([z.literal(1), z.literal(2), z.literal(3)])", roots);
+    expect(schema).toEqual({ type: "integer", enum: [1, 2, 3] });
+  });
+
+  it("z.union over mixed integer and float literals stays as oneOf", () => {
+    const schema = convert("z.union([z.literal(1), z.literal(2.5)])", roots);
+    expect(schema).toMatchObject({
+      oneOf: expect.arrayContaining([
+        expect.objectContaining({ type: "integer", enum: [1] }),
+        expect.objectContaining({ type: "number", enum: [2.5] }),
+      ]),
+    });
+  });
 });

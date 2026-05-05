@@ -22,7 +22,7 @@ describe("Zod features › primitives", () => {
     ["z.nan()", "z.nan()", { type: "number" }],
     ["z.file()", "z.file()", { type: "string", format: "binary" }],
     ['z.literal("hello")', 'z.literal("hello")', { type: "string", enum: ["hello"] }],
-    ["z.literal(42)", "z.literal(42)", { type: "number", enum: [42] }],
+    ["z.literal(42)", "z.literal(42)", { type: "integer", enum: [42] }],
     ["z.literal(true)", "z.literal(true)", { type: "boolean", enum: [true] }],
     ["z.literal(null)", "z.literal(null)", { type: "null", enum: [null] }],
   ];
