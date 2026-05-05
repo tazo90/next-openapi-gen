@@ -276,19 +276,20 @@ Version guidance:
 
 ### Important options
 
-| Option                                | Purpose                                                          |
-| ------------------------------------- | ---------------------------------------------------------------- |
-| `openapi`                             | Target `3.0.0`, `3.1.0`, or `3.2.0` output                       |
-| `apiDir`                              | Route directory to scan                                          |
-| `routerType`                          | `"app"` or `"pages"`                                             |
-| `schemaDir`                           | Directory or directories to search for schemas/types             |
-| `schemaType`                          | `"zod"`, `"typescript"`, or both                                 |
-| `schemaFiles`                         | YAML/JSON OpenAPI fragments to merge into the generated document |
-| `includeOpenApiRoutes`                | Only include handlers tagged with `@openapi`                     |
-| `ignoreRoutes`                        | Exclude routes with wildcard support                             |
-| `defaultResponseSet` / `responseSets` | Reusable error-response groups                                   |
-| `errorConfig`                         | Shared error schema templates                                    |
-| `authPresets`                         | Override or extend the `@auth` keyword → scheme-name mapping     |
+| Option                                | Purpose                                                                                 |
+| ------------------------------------- | --------------------------------------------------------------------------------------- |
+| `openapi`                             | Target `3.0.0`, `3.1.0`, or `3.2.0` output                                              |
+| `apiDir`                              | Route directory to scan                                                                 |
+| `routerType`                          | `"app"` or `"pages"`                                                                    |
+| `schemaDir`                           | Directory or directories to search for schemas/types                                    |
+| `schemaType`                          | `"zod"`, `"typescript"`, or both                                                        |
+| `schemaFiles`                         | YAML/JSON OpenAPI fragments to merge into the generated document                        |
+| `includeOpenApiRoutes`                | Only include handlers tagged with `@openapi`                                            |
+| `ignoreRoutes`                        | Exclude routes with wildcard support                                                    |
+| `excludeSchemas`                      | Exclude internal schemas from `components/schemas` by name or glob (e.g. `["*Params"]`) |
+| `defaultResponseSet` / `responseSets` | Reusable error-response groups                                                          |
+| `errorConfig`                         | Shared error schema templates                                                           |
+| `authPresets`                         | Override or extend the `@auth` keyword → scheme-name mapping                            |
 
 For a fuller setup guide, Pages Router notes, response sets, and route exclusion
 patterns, see [docs/getting-started.md](./docs/getting-started.md).
@@ -315,6 +316,7 @@ patterns, see [docs/getting-started.md](./docs/getting-started.md).
 | `@openapi`                 | Explicit inclusion marker when `includeOpenApiRoutes` is enabled                                        |
 | `@openapi-override`        | Deep-merge extra OpenAPI fields onto the operation                                                      |
 | `@ignore`                  | Exclude a route from generation                                                                         |
+| `@internal`                | Exclude a schema/type declaration from `components/schemas`                                             |
 | `@method`                  | Required HTTP method tag for Pages Router handlers                                                      |
 
 For the complete tag guide and usage recipes, see

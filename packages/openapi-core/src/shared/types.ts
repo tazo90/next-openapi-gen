@@ -63,6 +63,7 @@ export type OpenApiConfig = {
   outputDir: string;
   includeOpenApiRoutes: boolean;
   ignoreRoutes?: string[] | undefined;
+  excludeSchemas?: string[] | undefined;
   schemaType: SchemaType | SchemaType[]; // Support both single type and array of types
   schemaFiles?: string[] | undefined; // Array of custom OpenAPI schema files (YAML/JSON)
   defaultResponseSet?: string | undefined;
@@ -173,6 +174,7 @@ export type OpenApiTemplate = OpenApiDocument & {
   outputDir?: string | undefined;
   includeOpenApiRoutes?: boolean | undefined;
   ignoreRoutes?: string[] | undefined;
+  excludeSchemas?: string[] | undefined;
   schemaType?: SchemaType | SchemaType[] | undefined;
   schemaFiles?: string[] | undefined;
   defaultResponseSet?: string | undefined;

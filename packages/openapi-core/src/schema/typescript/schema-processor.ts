@@ -84,6 +84,7 @@ export class SchemaProcessor {
   private schemaTypes: SchemaType[];
   private isResolvingPickOmitBase: boolean = false;
   private schemaIdAliases: Record<string, string> = {};
+  private internalSchemaNames: Set<string> = new Set();
   private readonly fileAccess: SchemaProcessorFileAccess;
   private readonly symbolResolver: SymbolResolver;
 
@@ -147,7 +148,8 @@ export class SchemaProcessor {
         !this.isGenericTypeParameter(key) &&
         !this.isInvalidSchemaName(key) &&
         !this.isBuiltInUtilityType(key) &&
-        !this.isFunctionSchema(key)
+        !this.isFunctionSchema(key) &&
+        !this.internalSchemaNames.has(key)
       ) {
         filteredSchemas[key] = value;
       }
@@ -158,6 +160,21 @@ export class SchemaProcessor {
       this.zodSchemaProcessor?.getDefinedSchemas(),
       this.customSchemaProcessor.getDefinedSchemas(),
     ]);
+  }
+
+  public getInternalSchemas(): Record<string, OpenAPIDefinition> {
+    const result: Record<string, OpenAPIDefinition> = {};
+    for (const name of this.internalSchemaNames) {
+      const def = this.openapiDefinitions[name];
+      if (def) result[name] = def;
+    }
+    if (this.zodSchemaConverter) {
+      for (const name of this.zodSchemaConverter.internalSchemaNames) {
+        const schema = this.zodSchemaConverter.zodSchemas[name];
+        if (schema) result[name] = schema;
+      }
+    }
+    return result;
   }
 
   public findSchemaDefinition(schemaName: string, contentType: ContentType): OpenAPIDefinition {
@@ -354,6 +371,7 @@ export class SchemaProcessor {
       this.typeDefinitions,
       filePath || this.currentFilePath,
       this.schemaIdAliases,
+      this.internalSchemaNames,
     );
   }
 

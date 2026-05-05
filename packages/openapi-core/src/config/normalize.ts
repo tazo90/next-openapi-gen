@@ -132,6 +132,7 @@ export function normalizeOpenApiConfig(
     outputDir: template.outputDir ?? DEFAULT_OUTPUT_DIR,
     includeOpenApiRoutes: template.includeOpenApiRoutes ?? DEFAULT_INCLUDE_OPENAPI_ROUTES,
     ignoreRoutes: template.ignoreRoutes ?? [],
+    excludeSchemas: template.excludeSchemas ?? [],
     schemaType: template.schemaType ?? DEFAULT_RUNTIME_SCHEMA_TYPE,
     schemaBackends,
     schemaFiles: template.schemaFiles ?? [],
