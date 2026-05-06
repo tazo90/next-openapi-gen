@@ -2349,6 +2349,11 @@ export class ZodSchemaConverter {
                   if (!this.getStoredSchema(schemaName)) {
                     logger.debug(`Pre-processing Zod schema: ${schemaName}`);
                     this.processingSchemas.add(schemaName);
+                    // Restore context in case a recursive preprocessAllSchemasInFile call
+                    // (triggered by processZodNode resolving an import) overwrote these fields.
+                    this.currentFilePath = filePath;
+                    this.currentAST = ast;
+                    this.currentImports = importedModules;
                     const schema = this.processZodNode(declaration.init);
                     this.processingSchemas.delete(schemaName);
                     if (schema) {
@@ -2374,6 +2379,11 @@ export class ZodSchemaConverter {
                 if (!this.getStoredSchema(schemaName) && !this.processingSchemas.has(schemaName)) {
                   logger.debug(`Pre-processing Zod schema: ${schemaName}`);
                   this.processingSchemas.add(schemaName);
+                  // Restore context in case a recursive preprocessAllSchemasInFile call
+                  // (triggered by processZodNode resolving an import) overwrote these fields.
+                  this.currentFilePath = filePath;
+                  this.currentAST = ast;
+                  this.currentImports = importedModules;
                   const schema = this.processZodNode(declaration.init);
                   this.processingSchemas.delete(schemaName);
                   if (schema) {
