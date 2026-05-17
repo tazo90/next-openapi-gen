@@ -4,7 +4,7 @@ import type { NodePath } from "@babel/traverse";
 import * as t from "@babel/types";
 
 import { traverse } from "../../shared/babel-traverse.js";
-import { parseTypeScriptFile } from "../../shared/utils.js";
+import { extractInternalFlagFromComments, parseTypeScriptFile } from "../../shared/utils.js";
 import { logger } from "../../shared/logger.js";
 import { SymbolResolver } from "../../shared/symbol-resolver.js";
 import { DrizzleZodProcessor } from "./drizzle-zod-processor.js";
@@ -78,6 +78,8 @@ export class ZodSchemaConverter {
   /** Schema variable names whose component name was overridden via .meta({ id }). These must
    *  NOT be copied back under the original variable name in the OpenAPI components object. */
   metaIdSchemaNames: Set<string> = new Set();
+  /** Schema variable names marked @internal — excluded from components/schemas output. */
+  internalSchemaNames: Set<string> = new Set();
   // Current processing context (set during file processing)
   currentFilePath?: string;
   currentAST?: t.File;
@@ -1076,10 +1078,17 @@ export class ZodSchemaConverter {
         // Apply method-specific transformations
         switch (methodName) {
           case "optional":
+            // optional means T | undefined — not in required array, no nullable flag
+            break;
           case "nullable":
           case "nullish":
-            // Don't add nullable flag here as it would be at the wrong level
-            // The fact that it's optional is handled by not including it in required array
+            // Transform allOf to anyOf with null branch to preserve null type
+            schema = {
+              anyOf: [
+                { $ref: `#/components/schemas/${this.getSchemaReferenceName(schemaName)}` },
+                { type: "null" },
+              ],
+            };
             break;
           case "describe":
             if (node.arguments.length > 0 && t.isStringLiteral(node.arguments[0])) {
@@ -1767,13 +1776,19 @@ export class ZodSchemaConverter {
         break;
       case "nullable":
         // nullable means T | null — field stays required but can be null
-        if (!schema.allOf) {
+        if (schema.allOf) {
+          // Transform allOf to anyOf with null branch to preserve null type
+          schema = { anyOf: [...schema.allOf, { type: "null" }] };
+        } else {
           schema.nullable = true;
         }
         break;
       case "nullish": // T | null | undefined
         // Not in required array (handled by hasOptionalMethod) AND can be null
-        if (!schema.allOf) {
+        if (schema.allOf) {
+          // Transform allOf to anyOf with null branch to preserve null type
+          schema = { anyOf: [...schema.allOf, { type: "null" }] };
+        } else {
           schema.nullable = true;
         }
         break;
@@ -2277,7 +2292,13 @@ export class ZodSchemaConverter {
    * Get all processed Zod schemas
    */
   getProcessedSchemas(): Record<string, OpenApiSchema> {
-    return this.zodSchemas;
+    const result: Record<string, OpenApiSchema> = {};
+    for (const [name, schema] of Object.entries(this.zodSchemas)) {
+      if (!this.internalSchemaNames.has(name)) {
+        result[name] = schema;
+      }
+    }
+    return result;
   }
 
   /**
@@ -2351,6 +2372,15 @@ export class ZodSchemaConverter {
 
                 // Check if is Zod schema
                 if (this.isZodSchema(declaration.init)) {
+                  const decl = path.node.declaration;
+                  const allComments = [
+                    ...(path.node.leadingComments ?? []),
+                    ...(decl?.leadingComments ?? []),
+                    ...(declaration.leadingComments ?? []),
+                  ];
+                  if (extractInternalFlagFromComments(allComments)) {
+                    this.internalSchemaNames.add(schemaName);
+                  }
                   if (!this.getStoredSchema(schemaName)) {
                     logger.debug(`Pre-processing Zod schema: ${schemaName}`);
                     this.processingSchemas.add(schemaName);
@@ -2376,6 +2406,13 @@ export class ZodSchemaConverter {
             if (t.isIdentifier(declaration.id) && declaration.init) {
               const schemaName = declaration.id.name;
               if (this.isZodSchema(declaration.init)) {
+                const allComments = [
+                  ...(path.node.leadingComments ?? []),
+                  ...(declaration.leadingComments ?? []),
+                ];
+                if (extractInternalFlagFromComments(allComments)) {
+                  this.internalSchemaNames.add(schemaName);
+                }
                 if (!this.getStoredSchema(schemaName) && !this.processingSchemas.has(schemaName)) {
                   logger.debug(`Pre-processing Zod schema: ${schemaName}`);
                   this.processingSchemas.add(schemaName);

@@ -5,6 +5,7 @@ import {
   capitalize,
   cleanComment,
   cleanSpec,
+  extractInternalFlagFromComments,
   extractJSDocComments,
   extractTypeFromComment,
   extractPathParameters,
@@ -488,5 +489,41 @@ describe("shared utils", () => {
       responseType: "Unauthorized",
       successCode: "4XX",
     });
+  });
+});
+
+describe("extractInternalFlagFromComments", () => {
+  it("returns false for null comments", () => {
+    expect(extractInternalFlagFromComments(null)).toBe(false);
+  });
+
+  it("returns false for empty comments", () => {
+    expect(extractInternalFlagFromComments([])).toBe(false);
+  });
+
+  it("returns true for @internal tag", () => {
+    expect(extractInternalFlagFromComments([{ type: "CommentBlock", value: "* @internal " }])).toBe(
+      true,
+    );
+  });
+
+  it("returns true for @schema false tag", () => {
+    expect(
+      extractInternalFlagFromComments([{ type: "CommentBlock", value: "* @schema false " }]),
+    ).toBe(true);
+  });
+
+  it("returns false when neither @internal nor @schema false", () => {
+    expect(
+      extractInternalFlagFromComments([{ type: "CommentBlock", value: "* @id MySchema " }]),
+    ).toBe(false);
+  });
+
+  it("returns true when @internal is among multiple tags", () => {
+    expect(
+      extractInternalFlagFromComments([
+        { type: "CommentBlock", value: "* @id MySchema\n * @internal " },
+      ]),
+    ).toBe(true);
   });
 });

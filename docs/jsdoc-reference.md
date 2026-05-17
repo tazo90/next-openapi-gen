@@ -645,6 +645,54 @@ export interface AudioInterface {
 In both cases, the component is registered as `Audio` and cross-type references resolve correctly
 to `#/components/schemas/Audio`.
 
+## Excluding internal schemas from components
+
+Inline Zod or TypeScript schemas used only as route-internal implementation details (path/query param
+shapes, bulk-payload bounds, etc.) are emitted into `components/schemas` by default. Two mechanisms
+let you suppress them.
+
+### Per-schema: `@internal` JSDoc tag
+
+Add `/** @internal */` as a leading comment on any Zod `const` declaration or TypeScript
+`type`/`interface`:
+
+```ts
+/** @internal */
+const productIdParamsSchema = z.object({
+  id: z.coerce.number().int().positive(),
+});
+
+/** @internal */
+export type ProductIdParams = z.infer<typeof productIdParamsSchema>;
+```
+
+Both forms suppress the schema from `components/schemas`. If the schema is still referenced by a
+route (e.g. via `@pathParams`), the `$ref` is automatically replaced with the inlined schema content
+so the generated spec remains valid.
+
+`@schema false` is accepted as an alias for `@internal`.
+
+### Project-wide: `excludeSchemas` config
+
+Add `excludeSchemas` to your `openapi-gen.config.ts` (or `next.openapi.json`) to exclude schemas by
+exact name or simple glob (`*`):
+
+```ts
+// openapi-gen.config.ts
+export default defineConfig({
+  // ...
+  excludeSchemas: ["*Params", "productBulkSchema"],
+});
+```
+
+| Pattern                   | Matches                           |
+| ------------------------- | --------------------------------- |
+| `"productIdParamsSchema"` | Exact name                        |
+| `"*Params"`               | Any name ending with `Params`     |
+| `"Internal*"`             | Any name starting with `Internal` |
+
+References to excluded schemas in route operations are inlined automatically.
+
 ## Related guides
 
 - [Getting started and configuration](./getting-started.md)

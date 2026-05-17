@@ -40,6 +40,66 @@ describe("Zod nullability regressions", () => {
     }
   });
 
+  it("preserves null type when .nullish() is applied to a named schema reference (issue #142)", () => {
+    const testDir = setup(`
+      import { z } from "zod";
+
+      export const addressSchema = z.object({ street: z.string(), city: z.string() }).meta({ id: 'Address' });
+      export const personSchema = z.object({
+        name: z.string(),
+        address: addressSchema.nullish(),
+      }).meta({ id: 'Person' });
+    `);
+
+    try {
+      const converter = new ZodSchemaConverter(testDir);
+      const schema = converter.convertZodSchemaToOpenApi("personSchema");
+
+      const addressProp = schema?.properties?.address;
+      expect(addressProp).toBeDefined();
+      // Must use anyOf with a null branch — NOT allOf without null
+      expect(addressProp?.anyOf).toBeDefined();
+      expect(addressProp?.anyOf).toHaveLength(2);
+      expect(addressProp?.anyOf).toContainEqual({ $ref: "#/components/schemas/Address" });
+      expect(addressProp?.anyOf).toContainEqual({ type: "null" });
+      // Must NOT have allOf without null branch
+      expect(addressProp?.allOf).toBeUndefined();
+    } finally {
+      fs.rmSync(testDir, { recursive: true, force: true });
+    }
+  });
+
+  it("preserves null type when .nullable() is applied to a named schema reference (issue #142)", () => {
+    const testDir = setup(`
+      import { z } from "zod";
+
+      export const addressSchema = z.object({ street: z.string(), city: z.string() }).meta({ id: 'Address' });
+      export const personSchema = z.object({
+        name: z.string(),
+        address: addressSchema.nullable(),
+      }).meta({ id: 'Person' });
+    `);
+
+    try {
+      const converter = new ZodSchemaConverter(testDir);
+      const schema = converter.convertZodSchemaToOpenApi("personSchema");
+
+      const addressProp = schema?.properties?.address;
+      expect(addressProp).toBeDefined();
+      // Must use anyOf with a null branch — NOT allOf without null
+      expect(addressProp?.anyOf).toBeDefined();
+      expect(addressProp?.anyOf).toHaveLength(2);
+      expect(addressProp?.anyOf).toContainEqual({ $ref: "#/components/schemas/Address" });
+      expect(addressProp?.anyOf).toContainEqual({ type: "null" });
+      // Must NOT have allOf without null branch
+      expect(addressProp?.allOf).toBeUndefined();
+      // nullable field stays required
+      expect(schema?.required).toContain("address");
+    } finally {
+      fs.rmSync(testDir, { recursive: true, force: true });
+    }
+  });
+
   it("preserves optionality and nullability through validation chains", () => {
     const testDir = setup(`
       import { z } from "zod";

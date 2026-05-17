@@ -486,20 +486,14 @@
             "description": "The profile image"
           },
           "avatar": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/Image"
-              }
-            ],
-            "description": "The avatar image"
+            "$ref": "#/components/schemas/Image",
+            "description": "The avatar image",
+            "nullable": true
           },
           "banner": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/Image"
-              }
-            ],
-            "description": "The banner image"
+            "$ref": "#/components/schemas/Image",
+            "description": "The banner image",
+            "nullable": true
           }
         },
         "required": [
