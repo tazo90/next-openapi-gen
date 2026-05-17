@@ -122,4 +122,50 @@ describe("Zod structure regressions", () => {
       fs.rmSync(testDir, { recursive: true, force: true });
     }
   });
+
+  it("preserves spread base-shape properties when file also imports external schemas", () => {
+    const testDir = createTestDir("nxog-spread-import-");
+
+    fs.writeFileSync(
+      path.join(testDir, "addressSchema.ts"),
+      `
+        import { z } from "zod";
+        export const addressSchema = z.object({
+          street: z.string().describe("Street name"),
+        });
+      `.trim(),
+    );
+
+    fs.writeFileSync(
+      path.join(testDir, "base.ts"),
+      `
+        import { z } from "zod";
+        import { addressSchema } from "./addressSchema";
+
+        const personBaseShape = {
+          name: z.string().describe("Full name"),
+          age: z.number().int().describe("Age in years"),
+        };
+
+        export const employeeSchema = z
+          .object({
+            ...personBaseShape,
+            role: z.string().describe("Job role"),
+          })
+          .meta({ id: "Employee" });
+      `.trim(),
+    );
+
+    try {
+      const converter = new ZodSchemaConverter(testDir);
+      const schema = converter.convertZodSchemaToOpenApi("Employee");
+
+      expect(schema?.properties?.name).toBeDefined();
+      expect(schema?.properties?.age).toBeDefined();
+      expect(schema?.properties?.role).toBeDefined();
+      expect(schema?.required).toEqual(expect.arrayContaining(["name", "age", "role"]));
+    } finally {
+      fs.rmSync(testDir, { recursive: true, force: true });
+    }
+  });
 });
