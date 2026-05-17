@@ -550,7 +550,12 @@ export class ZodSchemaConverter {
             if (this.isZodSchema(path.node.init)) {
               const schema = this.processZodNode(path.node.init);
               if (schema) {
-                this.storeResolvedSchema(schemaName, schema);
+                const overrideId = this.extractMetaIdFromNode(path.node.init);
+                if (overrideId) {
+                  this.applyMetaIdOverride(schemaName, schema, overrideId, filePath);
+                } else {
+                  this.storeResolvedSchema(schemaName, schema);
+                }
               }
               return;
             }
