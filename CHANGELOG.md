@@ -1,3 +1,15 @@
+# [1.4.0](https://github.com/tazo90/next-openapi-gen/compare/v1.3.0...v1.4.0) (2026-05-17)
+
+### ✨ Features
+
+- exclude internal schemas from components via [@internal](https://github.com/internal) tag and excludeSchemas config ([#139](https://github.com/tazo90/next-openapi-gen/issues/139)) ([a2b79b1](https://github.com/tazo90/next-openapi-gen/commit/a2b79b106f69e65a067bac584e7eb683b9b18786)) by [@daniel-rose](https://github.com/daniel-rose)
+
+### 🐛 Bug Fixes
+
+- **zod:** preserve null type when .nullish() is applied to named schema reference ([#145](https://github.com/tazo90/next-openapi-gen/issues/145)) ([63d6b98](https://github.com/tazo90/next-openapi-gen/commit/63d6b98e45fb2c7071afb82f31f50ff147076fa6)) by [@daniel-rose](https://github.com/daniel-rose)
+- **zod:** preserve spread properties in discriminatedUnion member components ([#146](https://github.com/tazo90/next-openapi-gen/issues/146)) ([a876e68](https://github.com/tazo90/next-openapi-gen/commit/a876e68e30945b357ad7415847b7b437f7594b20)) by [@daniel-rose](https://github.com/daniel-rose)
+- **zod:** restore file context before each processZodNode call in preprocessAllSchemasInFile ([#148](https://github.com/tazo90/next-openapi-gen/issues/148)) ([bd5b3e2](https://github.com/tazo90/next-openapi-gen/commit/bd5b3e207d301704949cc44e250d878c0b80ae42)) by [@daniel-rose](https://github.com/daniel-rose)
+
 # [1.3.0](https://github.com/tazo90/next-openapi-gen/compare/v1.2.3...v1.3.0) (2026-05-05)
 
 ### ✨ Features
