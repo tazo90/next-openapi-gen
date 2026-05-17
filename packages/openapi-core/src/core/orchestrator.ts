@@ -22,6 +22,7 @@ import {
   type GenerationPerformanceProfile,
 } from "./performance.js";
 import type { SharedGenerationRuntime } from "./runtime.js";
+import { applyExcludeSchemas, matchExcludePatterns } from "./exclude-schemas.js";
 export type OrchestratorPerformanceProfile = GenerationPerformanceProfile & {
   scanRoutesMs: number;
 };
@@ -132,11 +133,28 @@ export function runGenerationOrchestrator({
   profile.defaultComponentsAndErrorsMs = performance.now() - phaseStartedAt;
 
   phaseStartedAt = performance.now();
-  const definedSchemas = routeProcessor.getSchemaProcessor().getDefinedSchemas();
+  const schemaProcessor = routeProcessor.getSchemaProcessor();
+  const definedSchemas = schemaProcessor.getDefinedSchemas();
   const mergedSchemas: Record<string, unknown> = {
     ...document.components.schemas,
     ...definedSchemas,
   };
+
+  const internalSchemas = schemaProcessor.getInternalSchemas();
+  const patternExcludedNames = matchExcludePatterns(
+    Object.keys(mergedSchemas),
+    config.excludeSchemas ?? [],
+  );
+  const allExcludedSchemas = {
+    ...internalSchemas,
+    ...Object.fromEntries(
+      patternExcludedNames.map((name) => [name, mergedSchemas[name] as Record<string, unknown>]),
+    ),
+  };
+  if (Object.keys(allExcludedSchemas).length > 0) {
+    applyExcludeSchemas(document, mergedSchemas, allExcludedSchemas);
+  }
+
   if (Object.keys(mergedSchemas).length > 0) {
     document.components.schemas = Object.fromEntries(
       Object.entries(mergedSchemas).sort(([a], [b]) =>

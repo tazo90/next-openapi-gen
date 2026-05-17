@@ -4,7 +4,10 @@ import * as t from "@babel/types";
 
 import { traverse } from "../../shared/babel-traverse.js";
 import { resolveTypeScriptModule } from "../../shared/typescript-project.js";
-import { extractSchemaIdFromComments } from "../../shared/utils.js";
+import {
+  extractInternalFlagFromComments,
+  extractSchemaIdFromComments,
+} from "../../shared/utils.js";
 
 type TypeDefinitions = Record<string, any>;
 
@@ -116,6 +119,7 @@ export function collectAllExportedDefinitions(
   typeDefinitions: TypeDefinitions,
   currentFile: string,
   schemaIdAliases?: Record<string, string>,
+  internalSchemaNames?: Set<string>,
 ): void {
   function registerDefinition(
     name: string,
@@ -131,6 +135,9 @@ export function collectAllExportedDefinitions(
       if (!typeDefinitions[overrideId]) {
         typeDefinitions[overrideId] = entry;
       }
+    }
+    if (internalSchemaNames && extractInternalFlagFromComments(allComments)) {
+      internalSchemaNames.add(name);
     }
   }
 

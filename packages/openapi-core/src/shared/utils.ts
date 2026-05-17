@@ -562,6 +562,19 @@ export function cleanComment(commentValue: string): string {
   return commentValue.replace(/\*\s*/g, "").trim();
 }
 
+export function extractInternalFlagFromComments(
+  comments: ReadonlyArray<{ type: string; value: string }> | null | undefined,
+): boolean {
+  if (!comments) return false;
+  for (const comment of comments) {
+    const cleaned = cleanComment(comment.value);
+    if (/@internal\b/.test(cleaned) || /@schema\s+false\b/.test(cleaned)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 export function extractSchemaIdFromComments(
   comments: ReadonlyArray<{ type: string; value: string }> | null | undefined,
 ): string | null {
@@ -1012,6 +1025,7 @@ const INTERNAL_OPENAPI_CONFIG_KEYS = [
   "diagnostics",
   "debug",
   "authPresets",
+  "excludeSchemas",
 ] as const;
 
 export const DEFAULT_AUTH_PRESET_REPLACEMENTS: Record<string, string> = {
