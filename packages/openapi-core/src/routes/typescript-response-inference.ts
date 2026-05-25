@@ -380,115 +380,119 @@ function typeToOpenApiSchema(
   checker: ts.TypeChecker,
   seen: Set<string>,
 ): OpenApiSchemaLike {
+  // Guard against recursive object types
   const seenKey = checker.typeToString(type);
   if (seen.has(seenKey)) {
     return { type: "object" };
   }
-
   seen.add(seenKey);
 
-  if (type.isStringLiteral()) {
-    return { type: "string", enum: [type.value] };
-  }
-  if (type.isNumberLiteral()) {
-    return { type: "number", enum: [type.value] };
-  }
-  if (type.flags & ts.TypeFlags.BooleanLiteral) {
-    return {
-      type: "boolean",
-      enum: [checker.typeToString(type) === "true"],
-    };
-  }
-  if (type.flags & ts.TypeFlags.TemplateLiteral) {
-    return { type: "string" };
-  }
-  if (type.flags & ts.TypeFlags.StringLike) {
-    return { type: "string" };
-  }
-  if (type.flags & ts.TypeFlags.NumberLike) {
-    return { type: "number" };
-  }
-  if (type.flags & ts.TypeFlags.BooleanLike) {
-    return { type: "boolean" };
-  }
-  if (type.flags & ts.TypeFlags.Null) {
-    return { type: "null" };
-  }
-
-  if (type.isUnion()) {
-    const nullable = type.types.some((member) => member.flags & ts.TypeFlags.Null);
-    const nonNullTypes = type.types.filter((member) => !(member.flags & ts.TypeFlags.Null));
-    const soleNonNullType = nonNullTypes[0];
-    if (nullable && soleNonNullType && nonNullTypes.length === 1) {
+  try {
+    if (type.isStringLiteral()) {
+      return { type: "string", enum: [type.value] };
+    }
+    if (type.isNumberLiteral()) {
+      return { type: "number", enum: [type.value] };
+    }
+    if (type.flags & ts.TypeFlags.BooleanLiteral) {
       return {
-        ...typeToOpenApiSchema(soleNonNullType, checker, seen),
-        nullable: true,
+        type: "boolean",
+        enum: [checker.typeToString(type) === "true"],
+      };
+    }
+    if (type.flags & ts.TypeFlags.TemplateLiteral) {
+      return { type: "string" };
+    }
+    if (type.flags & ts.TypeFlags.StringLike) {
+      return { type: "string" };
+    }
+    if (type.flags & ts.TypeFlags.NumberLike) {
+      return { type: "number" };
+    }
+    if (type.flags & ts.TypeFlags.BooleanLike) {
+      return { type: "boolean" };
+    }
+    if (type.flags & ts.TypeFlags.Null) {
+      return { type: "null" };
+    }
+
+    if (type.isUnion()) {
+      const nullable = type.types.some((member) => member.flags & ts.TypeFlags.Null);
+      const nonNullTypes = type.types.filter((member) => !(member.flags & ts.TypeFlags.Null));
+      const soleNonNullType = nonNullTypes[0];
+      if (nullable && soleNonNullType && nonNullTypes.length === 1) {
+        return {
+          ...typeToOpenApiSchema(soleNonNullType, checker, seen),
+          nullable: true,
+        };
+      }
+
+      return {
+        oneOf: nonNullTypes.map((member) => typeToOpenApiSchema(member, checker, seen)),
       };
     }
 
-    return {
-      oneOf: nonNullTypes.map((member) => typeToOpenApiSchema(member, checker, seen)),
-    };
-  }
+    if (checker.isTupleType(type)) {
+      const itemTypes = checker.getTypeArguments(type as ts.TypeReference);
+      return {
+        type: "array",
+        prefixItems: itemTypes.map((itemType) => typeToOpenApiSchema(itemType, checker, seen)),
+        items: false,
+        minItems: itemTypes.length,
+        maxItems: itemTypes.length,
+      };
+    }
 
-  if (checker.isTupleType(type)) {
-    const itemTypes = checker.getTypeArguments(type as ts.TypeReference);
-    return {
-      type: "array",
-      prefixItems: itemTypes.map((itemType) => typeToOpenApiSchema(itemType, checker, seen)),
-      items: false,
-      minItems: itemTypes.length,
-      maxItems: itemTypes.length,
-    };
-  }
+    if (checker.isArrayType(type)) {
+      const elementType = checker.getTypeArguments(type as ts.TypeReference)[0];
+      return {
+        type: "array",
+        items: elementType ? typeToOpenApiSchema(elementType, checker, seen) : { type: "object" },
+      };
+    }
 
-  if (checker.isArrayType(type)) {
-    const elementType = checker.getTypeArguments(type as ts.TypeReference)[0];
-    return {
-      type: "array",
-      items: elementType ? typeToOpenApiSchema(elementType, checker, seen) : { type: "object" },
-    };
-  }
+    const properties = checker.getPropertiesOfType(type);
+    if (properties.length > 0) {
+      const schemaProperties: Record<string, OpenApiSchemaLike> = {};
+      const required: string[] = [];
 
-  const properties = checker.getPropertiesOfType(type);
-  if (properties.length > 0) {
-    const schemaProperties: Record<string, OpenApiSchemaLike> = {};
-    const required: string[] = [];
-
-    properties.forEach((property) => {
-      const propertyDeclaration = property.valueDeclaration || property.declarations?.[0];
-      if (!propertyDeclaration) {
-        return;
-      }
-
-      const propertyType = checker.getTypeOfSymbolAtLocation(property, propertyDeclaration);
-      schemaProperties[property.getName()] = typeToOpenApiSchema(propertyType, checker, seen);
-      if (!(property.flags & ts.SymbolFlags.Optional)) {
-        required.push(property.getName());
-      }
-    });
-
-    return required.length > 0
-      ? {
-          type: "object",
-          properties: schemaProperties,
-          required,
+      properties.forEach((property) => {
+        const propertyDeclaration = property.valueDeclaration || property.declarations?.[0];
+        if (!propertyDeclaration) {
+          return;
         }
-      : {
-          type: "object",
-          properties: schemaProperties,
-        };
-  }
 
-  const stringIndexType = type.getStringIndexType();
-  if (stringIndexType) {
-    return {
-      type: "object",
-      additionalProperties: typeToOpenApiSchema(stringIndexType, checker, seen),
-    };
-  }
+        const propertyType = checker.getTypeOfSymbolAtLocation(property, propertyDeclaration);
+        schemaProperties[property.getName()] = typeToOpenApiSchema(propertyType, checker, seen);
+        if (!(property.flags & ts.SymbolFlags.Optional)) {
+          required.push(property.getName());
+        }
+      });
 
-  return { type: "object" };
+      return required.length > 0
+        ? {
+            type: "object",
+            properties: schemaProperties,
+            required,
+          }
+        : {
+            type: "object",
+            properties: schemaProperties,
+          };
+    }
+
+    const stringIndexType = type.getStringIndexType();
+    if (stringIndexType) {
+      return {
+        type: "object",
+        additionalProperties: typeToOpenApiSchema(stringIndexType, checker, seen),
+      };
+    }
+
+    return { type: "object" };
+  } finally {
+    seen.delete(seenKey);
+  }
 }
 
 function unwrapPromiseType(type: ts.Type, checker: ts.TypeChecker): ts.Type {

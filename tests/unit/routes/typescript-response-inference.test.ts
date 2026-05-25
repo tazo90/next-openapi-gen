@@ -123,6 +123,42 @@ export async function GET(flag: boolean) {
     );
   });
 
+  it("keeps sibling primitive properties from being treated as recursive objects", () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-response-primitive-siblings-"));
+    roots.push(root);
+
+    const routeFile = path.join(root, "route.ts");
+    fs.writeFileSync(
+      routeFile,
+      `export async function GET() {
+  return Response.json({ firstName: "Ada", lastName: "Lovelace" });
+}
+`,
+    );
+
+    const result = inferResponsesForExport(routeFile, "GET");
+
+    expect(result.diagnostics).toEqual([]);
+    expect(result.responses).toEqual([
+      expect.objectContaining({
+        contentType: "application/json",
+        source: "typescript",
+        schema: {
+          type: "object",
+          properties: {
+            firstName: {
+              type: "string",
+            },
+            lastName: {
+              type: "string",
+            },
+          },
+          required: ["firstName", "lastName"],
+        },
+      }),
+    ]);
+  });
+
   it("returns empty results when the route file is missing from the TypeScript program", () => {
     const result = inferResponsesForExport(
       path.join(os.tmpdir(), "nxog-response-missing", "missing-route.ts"),
