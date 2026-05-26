@@ -261,7 +261,7 @@ describe("ZodSchemaConverter", () => {
     ).toEqual({
       type: "integer",
       minimum: -9007199254740991,
-      exclusiveMinimum: true,
+      exclusiveMinimum: 0,
       maximum: 9007199254740991,
     });
   });

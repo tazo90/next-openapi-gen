@@ -168,5 +168,33 @@ describe("Zod features › modifiers", () => {
       expect(result).not.toHaveProperty("id");
       expect(result).toMatchObject({ type: "string" });
     });
+
+    it(".meta() followed by .nullish() keeps metadata on outer schema (not nested in anyOf)", () => {
+      const result = convert(
+        'z.string().describe("Audio title").meta({ example: "Episode 42" }).nullish()',
+        roots,
+      );
+      expect(result).toMatchObject({
+        type: "string",
+        nullable: true,
+        description: "Audio title",
+        example: "Episode 42",
+      });
+      expect(result).not.toHaveProperty("anyOf");
+    });
+
+    it(".meta() followed by .nullable() keeps metadata on outer schema (not nested in anyOf)", () => {
+      const result = convert(
+        'z.number().int().meta({ description: "Count", examples: [42] }).nullable()',
+        roots,
+      );
+      expect(result).toMatchObject({
+        type: "integer",
+        nullable: true,
+        description: "Count",
+        examples: [42],
+      });
+      expect(result).not.toHaveProperty("anyOf");
+    });
   });
 });
