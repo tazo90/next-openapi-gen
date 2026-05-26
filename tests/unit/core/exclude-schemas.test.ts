@@ -169,6 +169,34 @@ describe("applyExcludeSchemas", () => {
     expect(mergedSchemas).not.toHaveProperty("ItemParams");
   });
 
+  it("inlines $ref to excluded schema inside another mergedSchemas entry", () => {
+    const doc = { openapi: "3.0.0", info: { title: "", version: "" } } as OpenApiDocument;
+    const internalSchema = {
+      type: "object",
+      properties: { id: { type: "integer" } },
+    };
+    const mergedSchemas: Record<string, unknown> = {
+      PublicEnvelope: {
+        type: "object",
+        properties: {
+          item: { $ref: "#/components/schemas/InternalItem" },
+        },
+      },
+      InternalItem: internalSchema,
+    };
+    applyExcludeSchemas(doc, mergedSchemas, {
+      InternalItem: internalSchema,
+    });
+
+    expect(mergedSchemas).not.toHaveProperty("InternalItem");
+    expect(mergedSchemas.PublicEnvelope).toEqual({
+      type: "object",
+      properties: {
+        item: { type: "object", properties: { id: { type: "integer" } } },
+      },
+    });
+  });
+
   it("does nothing when excludedSchemas is empty", () => {
     const doc = { openapi: "3.0.0", info: { title: "", version: "" } } as OpenApiDocument;
     const mergedSchemas: Record<string, unknown> = { Product: { type: "object" } };

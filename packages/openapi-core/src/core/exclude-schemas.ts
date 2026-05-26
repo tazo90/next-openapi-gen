@@ -21,6 +21,7 @@ export function applyExcludeSchemas(
   if (excludedNames.size === 0) return;
 
   walkAndInline(document, excludedSchemas, excludedNames, new Set());
+  walkAndInline(mergedSchemas, excludedSchemas, excludedNames, new Set());
 
   for (const name of excludedNames) {
     delete mergedSchemas[name];
