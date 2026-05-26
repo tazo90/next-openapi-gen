@@ -1,3 +1,11 @@
+## [1.4.1](https://github.com/tazo90/next-openapi-gen/compare/v1.4.0...v1.4.1) (2026-05-26)
+
+### 🐛 Bug Fixes
+
+- don't treat inferred sibling types as recursive objects ([#150](https://github.com/tazo90/next-openapi-gen/issues/150)) ([0e58a6c](https://github.com/tazo90/next-openapi-gen/commit/0e58a6c9e810c6a75171815b5cae779098c26878)) by [@rbong](https://github.com/rbong)
+- **core:** inline excluded $refs nested inside other component schemas ([#151](https://github.com/tazo90/next-openapi-gen/issues/151)) ([6b88dba](https://github.com/tazo90/next-openapi-gen/commit/6b88dba6c7a4a716acc5f850939d071856565e21)) by [@daniel-rose](https://github.com/daniel-rose)
+- **zod:** prefer AST path for chains containing .meta() ([#152](https://github.com/tazo90/next-openapi-gen/issues/152)) ([2ca80d8](https://github.com/tazo90/next-openapi-gen/commit/2ca80d88fe46dc024c0eb9500ff2b7125539b488)) by [@daniel-rose](https://github.com/daniel-rose)
+
 # [1.4.0](https://github.com/tazo90/next-openapi-gen/compare/v1.3.0...v1.4.0) (2026-05-17)
 
 ### ✨ Features
