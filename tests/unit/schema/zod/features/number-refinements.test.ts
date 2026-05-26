@@ -20,7 +20,7 @@ describe("Zod features › number refinements", () => {
 
   it("positive() encodes exclusive minimum 0", () => {
     const schema = convert("z.number().positive()", roots);
-    expect(schema).toMatchObject({ type: "number", minimum: 0 });
+    expect(schema).toMatchObject({ type: "number", exclusiveMinimum: 0 });
   });
 
   it("nonnegative() encodes minimum 0", () => {
@@ -32,7 +32,7 @@ describe("Zod features › number refinements", () => {
 
   it("negative() encodes exclusive maximum 0", () => {
     const schema = convert("z.number().negative()", roots);
-    expect(schema).toMatchObject({ type: "number", maximum: 0 });
+    expect(schema).toMatchObject({ type: "number", exclusiveMaximum: 0 });
   });
 
   it("nonpositive() encodes maximum 0", () => {

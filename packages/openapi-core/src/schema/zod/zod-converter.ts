@@ -1742,7 +1742,7 @@ export class ZodSchemaConverter {
     }
 
     if (t.isMemberExpression(node.callee) && t.isIdentifier(node.callee.property)) {
-      const runtimeMethods = new Set(["pipe", "meta"]);
+      const runtimeMethods = new Set(["pipe"]);
       if (runtimeMethods.has(node.callee.property.name)) {
         return true;
       }
@@ -1942,15 +1942,13 @@ export class ZodSchemaConverter {
         schema.type = "integer";
         break;
       case "positive":
-        schema.minimum = 0;
-        schema.exclusiveMinimum = true;
+        schema.exclusiveMinimum = 0;
         break;
       case "nonnegative":
         schema.minimum = 0;
         break;
       case "negative":
-        schema.maximum = 0;
-        schema.exclusiveMaximum = true;
+        schema.exclusiveMaximum = 0;
         break;
       case "nonpositive":
         schema.maximum = 0;
