@@ -1,3 +1,9 @@
+## [1.4.2](https://github.com/tazo90/next-openapi-gen/compare/v1.4.1...v1.4.2) (2026-05-28)
+
+### 🐛 Bug Fixes
+
+- **zod:** resolve constant/variable references in chain method arguments ([#153](https://github.com/tazo90/next-openapi-gen/issues/153)) ([dcde3c8](https://github.com/tazo90/next-openapi-gen/commit/dcde3c88f710c1fb67b3004d9b551c610897ba09)) by [@thelgason](https://github.com/thelgason)
+
 ## [1.4.1](https://github.com/tazo90/next-openapi-gen/compare/v1.4.0...v1.4.1) (2026-05-26)
 
 ### 🐛 Bug Fixes
