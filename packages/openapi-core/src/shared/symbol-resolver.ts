@@ -195,17 +195,62 @@ export class SymbolResolver {
 
   /**
    * Returns a simple literal value (string/number/boolean/null) for a `const` declarator,
-   * or `null` if no such declarator exists.
+   * following imports and re-exports when the name is not declared locally.
    */
   public resolveLiteral(filePath: string, name: string): ResolvedLiteral | undefined {
+    const visited = new Set<string>();
+    return this.resolveLiteralInternal(filePath, name, visited);
+  }
+
+  private resolveLiteralInternal(
+    filePath: string,
+    name: string,
+    visited: Set<string>,
+  ): ResolvedLiteral | undefined {
+    if (visited.has(filePath)) return undefined;
+    visited.add(filePath);
+
     const index = this.getIndex(filePath);
     if (!index) return undefined;
+
     const literal = index.constLiterals.get(name);
-    if (!literal) return undefined;
-    if (t.isStringLiteral(literal)) return literal.value;
-    if (t.isNumericLiteral(literal)) return literal.value;
-    if (t.isBooleanLiteral(literal)) return literal.value;
-    if (t.isNullLiteral(literal)) return null;
+    if (literal) {
+      if (t.isStringLiteral(literal)) return literal.value;
+      if (t.isNumericLiteral(literal)) return literal.value;
+      if (t.isBooleanLiteral(literal)) return literal.value;
+      if (t.isNullLiteral(literal)) return null;
+    }
+
+    // Follow named imports
+    const imports = this.getImports(filePath);
+    const importInfo = imports?.get(name);
+    if (importInfo) {
+      const resolved = this.resolveImportPath(filePath, importInfo.source);
+      if (resolved) {
+        const targetName = importInfo.importedName === "default" ? name : importInfo.importedName;
+        const result = this.resolveLiteralInternal(resolved, targetName, visited);
+        if (result !== undefined) return result;
+      }
+    }
+
+    // Re-exports `export { Foo } from "..."`
+    const reExport = index.namedReExports.get(name);
+    if (reExport) {
+      const resolved = this.resolveImportPath(filePath, reExport.source);
+      if (resolved) {
+        const result = this.resolveLiteralInternal(resolved, reExport.importedName, visited);
+        if (result !== undefined) return result;
+      }
+    }
+
+    // `export * from "..."`
+    for (const starSrc of index.exportsStar) {
+      const resolved = this.resolveImportPath(filePath, starSrc);
+      if (!resolved) continue;
+      const result = this.resolveLiteralInternal(resolved, name, visited);
+      if (result !== undefined) return result;
+    }
+
     return undefined;
   }
 
