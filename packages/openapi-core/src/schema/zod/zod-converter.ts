@@ -1585,6 +1585,54 @@ export class ZodSchemaConverter {
   }
 
   /**
+   * Unwrap a possible `TSAsExpression` / `TSSatisfiesExpression` to get the
+   * underlying expression node.  Returns the node itself when no wrapper is
+   * present.
+   */
+  private unwrapTypeAssertion(node: t.Node | null | undefined): t.Node | undefined {
+    if (!node) return undefined;
+    if (t.isTSAsExpression(node) || t.isTSSatisfiesExpression(node)) {
+      return node.expression;
+    }
+    return node;
+  }
+
+  /**
+   * Resolve a numeric value from a call-expression argument.
+   * Handles: numeric literals, identifier references to const numbers,
+   * and `x as number` / `x satisfies number` wrappers around either.
+   */
+  private resolveNumericArg(arg: t.Node | null | undefined): number | undefined {
+    if (!arg) return undefined;
+    const node = this.unwrapTypeAssertion(arg);
+    if (t.isNumericLiteral(node)) return node.value;
+    if (t.isUnaryExpression(node) && node.operator === "-" && t.isNumericLiteral(node.argument)) {
+      return -node.argument.value;
+    }
+    if (t.isIdentifier(node)) {
+      const val = this.resolveLiteralValue(node.name);
+      if (typeof val === "number") return val;
+    }
+    return undefined;
+  }
+
+  /**
+   * Resolve a string value from a call-expression argument.
+   * Handles: string literals, identifier references to const strings,
+   * and `x as string` / `x satisfies string` wrappers around either.
+   */
+  private resolveStringArg(arg: t.Node | null | undefined): string | undefined {
+    if (!arg) return undefined;
+    const node = this.unwrapTypeAssertion(arg);
+    if (t.isStringLiteral(node)) return node.value;
+    if (t.isIdentifier(node)) {
+      const val = this.resolveLiteralValue(node.name);
+      if (typeof val === "string") return val;
+    }
+    return undefined;
+  }
+
+  /**
    * Resolve an identifier referring to a `z.object({...})` (or similar) call expression.
    * This lets callers inline the referenced object's shape.
    */
@@ -1668,6 +1716,13 @@ export class ZodSchemaConverter {
     }
     if (t.isNullLiteral(node)) {
       return null;
+    }
+    if (t.isIdentifier(node)) {
+      const val = this.resolveLiteralValue(node.name);
+      if (val !== undefined) return val;
+    }
+    if (t.isTSAsExpression(node) || t.isTSSatisfiesExpression(node)) {
+      return this.extractStaticJsonValue(node.expression);
     }
     if (t.isArrayExpression(node)) {
       const values: unknown[] = [];
@@ -1792,55 +1847,62 @@ export class ZodSchemaConverter {
           schema.nullable = true;
         }
         break;
-      case "describe":
-        if (node.arguments.length > 0 && t.isStringLiteral(node.arguments[0])) {
-          const description = node.arguments[0].value;
+      case "describe": {
+        const descVal = this.resolveStringArg(node.arguments[0]);
+        if (descVal !== undefined) {
           // Check if description includes @deprecated
-          if (description.startsWith("@deprecated")) {
+          if (descVal.startsWith("@deprecated")) {
             schema.deprecated = true;
             // Remove @deprecated from description
-            schema.description = description.replace("@deprecated", "").trim();
+            schema.description = descVal.replace("@deprecated", "").trim();
           } else {
-            schema.description = description;
+            schema.description = descVal;
           }
         }
         break;
+      }
       case "deprecated":
         schema.deprecated = true;
         break;
-      case "min":
-        if (node.arguments.length > 0 && t.isNumericLiteral(node.arguments[0])) {
+      case "min": {
+        const minVal = this.resolveNumericArg(node.arguments[0]);
+        if (minVal !== undefined) {
           if (schema.type === "string") {
-            schema.minLength = node.arguments[0].value;
+            schema.minLength = minVal;
           } else if (schema.type === "number" || schema.type === "integer") {
-            schema.minimum = node.arguments[0].value;
+            schema.minimum = minVal;
           } else if (schema.type === "array") {
-            schema.minItems = node.arguments[0].value;
+            schema.minItems = minVal;
           }
         }
         break;
-      case "max":
-        if (node.arguments.length > 0 && t.isNumericLiteral(node.arguments[0])) {
+      }
+      case "max": {
+        const maxVal = this.resolveNumericArg(node.arguments[0]);
+        if (maxVal !== undefined) {
           if (schema.type === "string") {
-            schema.maxLength = node.arguments[0].value;
+            schema.maxLength = maxVal;
           } else if (schema.type === "number" || schema.type === "integer") {
-            schema.maximum = node.arguments[0].value;
+            schema.maximum = maxVal;
           } else if (schema.type === "array") {
-            schema.maxItems = node.arguments[0].value;
+            schema.maxItems = maxVal;
           }
         }
         break;
-      case "length":
-        if (node.arguments.length > 0 && t.isNumericLiteral(node.arguments[0])) {
+      }
+      case "length": {
+        const lenVal = this.resolveNumericArg(node.arguments[0]);
+        if (lenVal !== undefined) {
           if (schema.type === "string") {
-            schema.minLength = node.arguments[0].value;
-            schema.maxLength = node.arguments[0].value;
+            schema.minLength = lenVal;
+            schema.maxLength = lenVal;
           } else if (schema.type === "array") {
-            schema.minItems = node.arguments[0].value;
-            schema.maxItems = node.arguments[0].value;
+            schema.minItems = lenVal;
+            schema.maxItems = lenVal;
           }
         }
         break;
+      }
       case "nonempty":
         // `z.array(...).nonempty()` → at least one item.
         if (schema.type === "array") {
@@ -1923,21 +1985,27 @@ export class ZodSchemaConverter {
           schema.pattern = node.arguments[0].pattern;
         }
         break;
-      case "startsWith":
-        if (node.arguments.length > 0 && t.isStringLiteral(node.arguments[0])) {
-          schema.pattern = `^${this.escapeRegExp(node.arguments[0].value)}`;
+      case "startsWith": {
+        const swVal = this.resolveStringArg(node.arguments[0]);
+        if (swVal !== undefined) {
+          schema.pattern = `^${this.escapeRegExp(swVal)}`;
         }
         break;
-      case "endsWith":
-        if (node.arguments.length > 0 && t.isStringLiteral(node.arguments[0])) {
-          schema.pattern = `${this.escapeRegExp(node.arguments[0].value)}$`;
+      }
+      case "endsWith": {
+        const ewVal = this.resolveStringArg(node.arguments[0]);
+        if (ewVal !== undefined) {
+          schema.pattern = `${this.escapeRegExp(ewVal)}$`;
         }
         break;
-      case "includes":
-        if (node.arguments.length > 0 && t.isStringLiteral(node.arguments[0])) {
-          schema.pattern = this.escapeRegExp(node.arguments[0].value);
+      }
+      case "includes": {
+        const incVal = this.resolveStringArg(node.arguments[0]);
+        if (incVal !== undefined) {
+          schema.pattern = this.escapeRegExp(incVal);
         }
         break;
+      }
       case "int":
         schema.type = "integer";
         break;
@@ -1963,18 +2031,22 @@ export class ZodSchemaConverter {
         break;
       case "default":
         if (node.arguments.length > 0) {
-          if (t.isStringLiteral(node.arguments[0])) {
-            schema.default = node.arguments[0].value;
-          } else if (t.isNumericLiteral(node.arguments[0])) {
-            schema.default = node.arguments[0].value;
-          } else if (t.isBooleanLiteral(node.arguments[0])) {
-            schema.default = node.arguments[0].value;
-          } else if (t.isNullLiteral(node.arguments[0])) {
+          const defaultArg = this.unwrapTypeAssertion(node.arguments[0]);
+          if (t.isStringLiteral(defaultArg)) {
+            schema.default = defaultArg.value;
+          } else if (t.isNumericLiteral(defaultArg)) {
+            schema.default = defaultArg.value;
+          } else if (t.isBooleanLiteral(defaultArg)) {
+            schema.default = defaultArg.value;
+          } else if (t.isNullLiteral(defaultArg)) {
             schema.default = null;
-          } else if (t.isObjectExpression(node.arguments[0])) {
+          } else if (t.isIdentifier(defaultArg)) {
+            const val = this.resolveLiteralValue(defaultArg.name);
+            if (val !== undefined) schema.default = val;
+          } else if (t.isObjectExpression(defaultArg)) {
             // Try to create a default object, but this might not be complete
             const defaultObj: Record<string, string | number | boolean> = {};
-            node.arguments[0].properties.forEach((prop) => {
+            defaultArg.properties.forEach((prop) => {
               if (
                 t.isObjectProperty(prop) &&
                 (t.isIdentifier(prop.key) || t.isStringLiteral(prop.key)) &&

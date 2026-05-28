@@ -644,4 +644,186 @@ describe("ZodSchemaConverter", () => {
       });
     });
   });
+
+  describe("constant reference resolution in chain methods", () => {
+    it("resolves const numeric references in .min(), .max(), and .length()", () => {
+      const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-zod-const-num-"));
+      roots.push(root);
+
+      fs.writeFileSync(
+        path.join(root, "schemas.ts"),
+        [
+          'import { z } from "zod";',
+          "",
+          "const MAX_CHARS = 5000;",
+          "const MAX_ITEMS = 10;",
+          "const MIN_ITEMS = 1;",
+          "const EXACT_LEN = 4;",
+          "const MIN_VAL = 0;",
+          "const MAX_VAL = 100;",
+          "",
+          "export const InputSchema = z.object({",
+          "  texts: z.array(z.string().max(MAX_CHARS)).min(MIN_ITEMS).max(MAX_ITEMS),",
+          "  code: z.string().length(EXACT_LEN),",
+          "  score: z.number().min(MIN_VAL).max(MAX_VAL),",
+          "});",
+        ].join("\n"),
+      );
+
+      const converter = new ZodSchemaConverter(root);
+      converter.processAllSchemasInFile(path.join(root, "schemas.ts"));
+
+      expect(converter.zodSchemas.InputSchema).toEqual({
+        type: "object",
+        properties: {
+          texts: {
+            type: "array",
+            items: { type: "string", maxLength: 5000 },
+            minItems: 1,
+            maxItems: 10,
+          },
+          code: { type: "string", minLength: 4, maxLength: 4 },
+          score: { type: "number", minimum: 0, maximum: 100 },
+        },
+        required: ["texts", "code", "score"],
+      });
+    });
+
+    it("resolves const string references in .describe(), .startsWith(), .endsWith(), .includes()", () => {
+      const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-zod-const-str-"));
+      roots.push(root);
+
+      fs.writeFileSync(
+        path.join(root, "schemas.ts"),
+        [
+          'import { z } from "zod";',
+          "",
+          'const FIELD_DESC = "User email address";',
+          'const PREFIX = "http";',
+          'const SUFFIX = ".com";',
+          'const CONTAINS = "@";',
+          "",
+          "export const FieldSchema = z.object({",
+          "  email: z.string().describe(FIELD_DESC),",
+          "  url: z.string().startsWith(PREFIX),",
+          "  domain: z.string().endsWith(SUFFIX),",
+          "  contact: z.string().includes(CONTAINS),",
+          "});",
+        ].join("\n"),
+      );
+
+      const converter = new ZodSchemaConverter(root);
+      converter.processAllSchemasInFile(path.join(root, "schemas.ts"));
+
+      expect(converter.zodSchemas.FieldSchema).toEqual({
+        type: "object",
+        properties: {
+          email: { type: "string", description: "User email address" },
+          url: { type: "string", pattern: "^http" },
+          domain: { type: "string", pattern: "\\.com$" },
+          contact: { type: "string", pattern: "@" },
+        },
+        required: ["email", "url", "domain", "contact"],
+      });
+    });
+
+    it("resolves constants through 'as number' type assertions", () => {
+      const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-zod-const-as-"));
+      roots.push(root);
+
+      fs.writeFileSync(
+        path.join(root, "schemas.ts"),
+        [
+          'import { z } from "zod";',
+          "",
+          "const MAX_LEN = 100;",
+          "",
+          "export const Schema = z.object({",
+          "  name: z.string().max(MAX_LEN as number),",
+          "});",
+        ].join("\n"),
+      );
+
+      const converter = new ZodSchemaConverter(root);
+      converter.processAllSchemasInFile(path.join(root, "schemas.ts"));
+
+      expect(converter.zodSchemas.Schema).toEqual({
+        type: "object",
+        properties: {
+          name: { type: "string", maxLength: 100 },
+        },
+        required: ["name"],
+      });
+    });
+
+    it("resolves const references in .default()", () => {
+      const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-zod-const-default-"));
+      roots.push(root);
+
+      fs.writeFileSync(
+        path.join(root, "schemas.ts"),
+        [
+          'import { z } from "zod";',
+          "",
+          "const DEFAULT_COUNT = 42;",
+          'const DEFAULT_NAME = "anonymous";',
+          "",
+          "export const Schema = z.object({",
+          "  count: z.number().default(DEFAULT_COUNT),",
+          "  name: z.string().default(DEFAULT_NAME),",
+          "});",
+        ].join("\n"),
+      );
+
+      const converter = new ZodSchemaConverter(root);
+      converter.processAllSchemasInFile(path.join(root, "schemas.ts"));
+
+      expect(converter.zodSchemas.Schema).toEqual({
+        type: "object",
+        properties: {
+          count: { type: "number", default: 42 },
+          name: { type: "string", default: "anonymous" },
+        },
+        required: ["count", "name"],
+      });
+    });
+
+    it("resolves imported constants from another file", () => {
+      const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-zod-const-import-"));
+      roots.push(root);
+
+      fs.writeFileSync(
+        path.join(root, "constants.ts"),
+        ["export const MAX_ITEMS = 50;", 'export const DESCRIPTION = "Items list";'].join("\n"),
+      );
+
+      fs.writeFileSync(
+        path.join(root, "schemas.ts"),
+        [
+          'import { z } from "zod";',
+          'import { MAX_ITEMS, DESCRIPTION } from "./constants";',
+          "",
+          "export const ListSchema = z.object({",
+          "  items: z.array(z.string()).max(MAX_ITEMS).describe(DESCRIPTION),",
+          "});",
+        ].join("\n"),
+      );
+
+      const converter = new ZodSchemaConverter(root);
+      converter.processAllSchemasInFile(path.join(root, "schemas.ts"));
+
+      expect(converter.zodSchemas.ListSchema).toEqual({
+        type: "object",
+        properties: {
+          items: {
+            type: "array",
+            items: { type: "string" },
+            maxItems: 50,
+            description: "Items list",
+          },
+        },
+        required: ["items"],
+      });
+    });
+  });
 });
