@@ -62,16 +62,17 @@
             "description": "Postal code (format: XX-XXX)"
           },
           "country": {
+            "type": "string",
             "default": "Poland",
-            "description": "Country",
-            "type": "string"
+            "description": "Country"
           }
         },
         "required": [
           "street",
           "houseNumber",
           "city",
-          "postalCode"
+          "postalCode",
+          "country"
         ]
       },
       "AdminStatsSchema": {
@@ -1809,7 +1810,6 @@
           "id": {
             "type": "string",
             "format": "uuid",
-            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
             "description": "Category identifier"
           },
           "name": {
@@ -1994,7 +1994,6 @@
           "id": {
             "type": "string",
             "format": "uuid",
-            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
             "description": "Variant identifier"
           },
           "name": {
@@ -2014,15 +2013,14 @@
           "stock": {
             "type": "integer",
             "minimum": 0,
-            "maximum": 9007199254740991,
             "description": "Stock quantity"
           },
           "attributes": {
             "type": "object",
-            "propertyNames": {
+            "additionalProperties": {
               "type": "string"
             },
-            "additionalProperties": {
+            "propertyNames": {
               "type": "string"
             },
             "description": "Variant attributes (color, size, etc.)"
@@ -2920,6 +2918,16 @@
           },
           "500": {
             "$ref": "#/components/responses/500"
+          },
+          "4XX": {
+            "description": "Authorization or validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthErrorResponse"
+                }
+              }
+            }
           }
         }
       },
@@ -3620,6 +3628,36 @@
           },
           "500": {
             "$ref": "#/components/responses/500"
+          },
+          "4XX": {
+            "description": "Any client error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthErrorResponse"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "Any server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthErrorResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Fallback error envelope",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthErrorResponse"
+                }
+              }
+            }
           }
         }
       },
@@ -4116,6 +4154,26 @@
           },
           "500": {
             "$ref": "#/components/responses/500"
+          },
+          "4XX": {
+            "description": "Any authentication error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthErrorResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Fallback error envelope",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthErrorResponse"
+                }
+              }
+            }
           }
         }
       },
@@ -4167,6 +4225,26 @@
           },
           "500": {
             "$ref": "#/components/responses/500"
+          },
+          "4XX": {
+            "description": "Authentication failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthErrorResponse"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "Upstream auth provider failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthErrorResponse"
+                }
+              }
+            }
           }
         }
       }
@@ -4557,6 +4635,16 @@
           },
           "500": {
             "$ref": "#/components/responses/500"
+          },
+          "4XX": {
+            "description": "Signature or replay check failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthErrorResponse"
+                }
+              }
+            }
           }
         }
       }

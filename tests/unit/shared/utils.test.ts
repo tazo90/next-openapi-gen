@@ -411,6 +411,65 @@ describe("shared utils", () => {
     expect(data?.deprecationReason).toBe("use /v2/subscribe instead");
   });
 
+  it("handles multiple @tag annotations by using first as primary and rest as additional tags", () => {
+    const data = getExportCommentData(`
+      /**
+       * @tag Events
+       * @tag Platform
+       * @tag Streaming
+       * @openapi
+       */
+      export async function POST() {}
+    `);
+    expect(data?.tag).toBe("Events");
+    expect(data?.tags).toEqual(["Platform", "Streaming"]);
+  });
+
+  it("handles multiple @response annotations by converting extras to @add entries", () => {
+    const data = getExportCommentData(`
+      /**
+       * @response 200:UserResponse:Success
+       * @response 404:NotFound
+       * @response 429:RateLimitResponse:Too many requests
+       * @openapi
+       */
+      export async function POST() {}
+    `);
+    expect(data?.successCode).toBe("200");
+    expect(data?.responseType).toBe("UserResponse");
+    expect(data?.responseDescription).toBe("Success");
+    expect(data?.addResponses).toBe("404:NotFound,429:RateLimitResponse:Too many requests");
+  });
+
+  it("merges multiple @tag with @tags plural", () => {
+    const data = getExportCommentData(`
+      /**
+       * @tag Events
+       * @tag Platform
+       * @tags Streaming, Webhooks
+       * @openapi
+       */
+      export async function POST() {}
+    `);
+    expect(data?.tag).toBe("Events");
+    expect(data?.tags).toEqual(["Streaming", "Webhooks", "Platform"]);
+  });
+
+  it("merges multiple @response with existing @add entries", () => {
+    const data = getExportCommentData(`
+      /**
+       * @response 200:UserResponse
+       * @response 404:NotFound
+       * @add 401:Unauthorized
+       * @openapi
+       */
+      export async function POST() {}
+    `);
+    expect(data?.successCode).toBe("200");
+    expect(data?.responseType).toBe("UserResponse");
+    expect(data?.addResponses).toBe("404:NotFound,401:Unauthorized");
+  });
+
   it("parses @responseHeader, @link, @callback, and @openapi-override", () => {
     const data = getExportCommentData(`
       /**

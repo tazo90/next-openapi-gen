@@ -34,9 +34,9 @@
           },
           "price": {
             "type": "number",
-            "minimum": 0,
             "exclusiveMinimum": true,
-            "description": "Product price"
+            "description": "Product price",
+            "minimum": 0
           },
           "stock": {
             "type": "integer",
@@ -135,9 +135,9 @@
           },
           "price": {
             "type": "number",
-            "minimum": 0,
             "exclusiveMinimum": true,
-            "description": "Product price"
+            "description": "Product price",
+            "minimum": 0
           },
           "stock": {
             "type": "integer",
@@ -714,6 +714,26 @@
                 "description": "Total users in the result set",
                 "schema": {
                   "type": "integer"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "Any client error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserErrorResponseSchema"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Fallback error envelope",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserErrorResponseSchema"
                 }
               }
             }
