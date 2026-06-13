@@ -3681,7 +3681,8 @@
                 "$ref": "#/components/schemas/CreateOrderBody"
               }
             }
-          }
+          },
+          "required": true
         },
         "responses": {
           "200": {

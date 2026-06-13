@@ -1087,6 +1087,33 @@ export function getOperationId(routePath: string, method: string) {
 }
 
 /**
+ * Deep merge source into target. Plain objects are merged recursively,
+ * arrays and primitives are replaced.
+ */
+export function deepMerge<T extends Record<string, unknown>>(
+  target: T,
+  source: Record<string, unknown>,
+): T {
+  for (const key of Object.keys(source)) {
+    const sourceVal = source[key];
+    const targetVal = target[key];
+    if (
+      sourceVal !== null &&
+      typeof sourceVal === "object" &&
+      !Array.isArray(sourceVal) &&
+      targetVal !== null &&
+      typeof targetVal === "object" &&
+      !Array.isArray(targetVal)
+    ) {
+      deepMerge(targetVal as Record<string, unknown>, sourceVal as Record<string, unknown>);
+    } else {
+      (target as Record<string, unknown>)[key] = sourceVal;
+    }
+  }
+  return target;
+}
+
+/**
  * Common Babel parser configuration for TypeScript files with JSX support
  */
 const DEFAULT_PARSER_OPTIONS: ParserOptions = {

@@ -623,6 +623,49 @@ describe("OperationProcessor", () => {
     expect((result.definition as Record<string, unknown>)["x-rate-limit"]).toBe(100);
   });
 
+  it("@openapi-override requestBody.required merges without destroying content", () => {
+    const schemaProcessor = {
+      getSchemaContent: vi.fn<MockFn>(() => ({
+        params: undefined,
+        querystring: undefined,
+        pathParams: undefined,
+        body: { type: "object", properties: { name: { type: "string" } } },
+        responses: undefined,
+      })),
+      createRequestParamsSchema: vi.fn<MockFn>(() => []),
+      createDefaultPathParamsSchema: vi.fn<MockFn>(),
+      detectContentType: vi.fn<MockFn>(() => "application/json"),
+      createRequestBodySchema: vi.fn<MockFn>(),
+      createResponseSchema: vi.fn<MockFn>(() => ({ 201: { description: "Created" } })),
+      ensureSchemaResolved: vi.fn<MockFn>(),
+      getSchemaReferenceName: vi.fn<MockFn>((name: string) => name),
+    };
+    const responseProcessor = {
+      supportsRequestBody: vi.fn<MockFn>(() => true),
+      processResponses: vi.fn<MockFn>(() => ({ 201: { description: "Created" } })),
+    };
+
+    const processor = new OperationProcessor(schemaProcessor as never, responseProcessor as never);
+    const result = processor.processOperation("POST", "/items", {
+      tag: "Items",
+      bodyType: "CreateItemBody",
+      openapiOverride: {
+        requestBody: {
+          required: true,
+          description: "Item data",
+        },
+      },
+    });
+
+    expect(result.definition.requestBody).toBeDefined();
+    expect(result.definition.requestBody?.required).toBe(true);
+    expect(result.definition.requestBody?.description).toBe("Item data");
+    expect(result.definition.requestBody?.content).toBeDefined();
+    expect(result.definition.requestBody?.content?.["application/json"]?.schema?.$ref).toBe(
+      "#/components/schemas/CreateItemBody",
+    );
+  });
+
   it("applies custom authPresets, with user keys winning over defaults", () => {
     const schemaProcessor = {
       getSchemaContent: vi.fn<MockFn>(() => ({

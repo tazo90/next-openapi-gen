@@ -4,6 +4,7 @@ import type { SchemaProcessor } from "../schema/typescript/schema-processor.js";
 import { createMultipartEncoding } from "../schema/typescript/helpers.js";
 import {
   capitalize,
+  deepMerge,
   DEFAULT_AUTH_PRESET_REPLACEMENTS,
   getOperationId,
   performAuthPresetReplacements,
@@ -283,7 +284,7 @@ export class OperationProcessor {
     this.applyResponseLinks(definition, responseLinks);
 
     if (openapiOverride) {
-      Object.assign(definition, structuredClone(openapiOverride));
+      deepMerge(definition, structuredClone(openapiOverride) as Record<string, unknown>);
     }
 
     return {
