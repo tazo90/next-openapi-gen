@@ -1,3 +1,15 @@
+## [1.4.3](https://github.com/tazo90/next-openapi-gen/compare/v1.4.2...v1.4.3) (2026-06-13)
+
+### 🐛 Bug Fixes
+
+- **core:** handle multiple [@response](https://github.com/response) and [@tag](https://github.com/tag) JSDoc annotations ([#154](https://github.com/tazo90/next-openapi-gen/issues/154)) ([#156](https://github.com/tazo90/next-openapi-gen/issues/156)) ([0a969f0](https://github.com/tazo90/next-openapi-gen/commit/0a969f04b414f576b216bda379ce3ab255168528)) by [@tazo90](https://github.com/tazo90)
+- **core:** use deep merge for [@openapi-override](https://github.com/openapi-override) instead of shallow Object.assign ([#157](https://github.com/tazo90/next-openapi-gen/issues/157)) ([378acfd](https://github.com/tazo90/next-openapi-gen/commit/378acfd013f8d87cf69dba63993c8a342b4a80aa)) by [@tazo90](https://github.com/tazo90)
+- **init:** resolve template directory by walking up from import.meta.url ([#158](https://github.com/tazo90/next-openapi-gen/issues/158)) ([c5a6185](https://github.com/tazo90/next-openapi-gen/commit/c5a61850a3a4e73737cd27c3b15bdd421b37cd96)) by [@tazo90](https://github.com/tazo90)
+
+### 🔨 Chores
+
+- update .gitignore ([8149062](https://github.com/tazo90/next-openapi-gen/commit/81490621386a1b46aa58630612064343108ea5c3)) by [@tazo90](https://github.com/tazo90)
+
 ## [1.4.2](https://github.com/tazo90/next-openapi-gen/compare/v1.4.1...v1.4.2) (2026-05-28)
 
 ### 🐛 Bug Fixes
