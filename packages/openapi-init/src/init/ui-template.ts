@@ -5,7 +5,21 @@ import { fileURLToPath } from "node:url";
 import { normalizeRapidocTemplate } from "./rapidoc-template.js";
 import type { InitFramework } from "./framework.js";
 
-const packageRootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
+function findPackageRoot(): string {
+  let dir = path.dirname(fileURLToPath(import.meta.url));
+  while (true) {
+    if (fs.existsSync(path.join(dir, "templates", "init", "ui"))) {
+      return dir;
+    }
+    const parent = path.dirname(dir);
+    if (parent === dir) {
+      throw new Error("Cannot locate templates directory");
+    }
+    dir = parent;
+  }
+}
+
+const packageRootDir = findPackageRoot();
 const uiTemplatesDir = path.join(packageRootDir, "templates", "init", "ui");
 
 type RenderUiTemplateOptions = {
