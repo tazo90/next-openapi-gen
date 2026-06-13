@@ -45,13 +45,82 @@
         }
       }
     },
+    "/uploads": {
+      "get": {
+        "operationId": "tanstackGetUploadInstructions",
+        "summary": "Load upload instructions.",
+        "description": "",
+        "tags": [
+          "Uploads"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      },
+      "post": {
+        "operationId": "tanstackCreateUpload",
+        "summary": "Create an upload record.",
+        "description": "",
+        "tags": [
+          "Uploads"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/AssetUploadInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssetUpload"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          }
+        }
+      }
+    },
     "/users/{id}": {
       "get": {
         "operationId": "tanstackGetUserById",
         "summary": "Get user",
         "description": "",
         "tags": [
-          "s Users, Identity",
           "Users",
           "Identity"
         ],
@@ -144,84 +213,11 @@
           }
         }
       }
-    },
-    "/uploads": {
-      "get": {
-        "operationId": "tanstackGetUploadInstructions",
-        "summary": "Load upload instructions.",
-        "description": "",
-        "tags": [
-          "Uploads"
-        ],
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "Successful response",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "type": "string"
-                }
-              }
-            }
-          },
-          "400": {
-            "$ref": "#/components/responses/400"
-          },
-          "500": {
-            "$ref": "#/components/responses/500"
-          }
-        }
-      },
-      "post": {
-        "operationId": "tanstackCreateUpload",
-        "summary": "Create an upload record.",
-        "description": "",
-        "tags": [
-          "Uploads"
-        ],
-        "parameters": [],
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "multipart/form-data": {
-              "schema": {
-                "$ref": "#/components/schemas/AssetUploadInput"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AssetUpload"
-                }
-              }
-            }
-          },
-          "401": {
-            "$ref": "#/components/responses/401"
-          },
-          "403": {
-            "$ref": "#/components/responses/403"
-          }
-        }
-      }
     }
   },
   "tags": [
     {
       "name": "Reports"
-    },
-    {
-      "name": "s Users, Identity"
     },
     {
       "name": "Uploads"

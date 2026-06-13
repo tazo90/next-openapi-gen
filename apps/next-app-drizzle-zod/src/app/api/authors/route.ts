@@ -38,7 +38,9 @@ export async function GET(request: NextRequest) {
  * @description Creates a new author using drizzle-zod insert schema generation.
  * @body CreateAuthorSchema
  * @response 201:AuthorResponseSchema
+ * @response 409
  * @tag Authors
+ * @tag Writing
  * @openapi
  */
 export async function POST(request: NextRequest) {

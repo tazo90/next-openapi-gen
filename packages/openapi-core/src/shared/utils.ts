@@ -83,7 +83,6 @@ export function parseJSDocBlock(commentValue: string, filePath?: string): DataTy
   }
 
   result.description = extractLineValue(normalizedComment, "@description");
-  result.tag = extractLineValue(normalizedComment, "@tag");
   result.tagSummary = extractLineValue(normalizedComment, "@tagSummary");
   result.tagKind = extractLineValue(normalizedComment, "@tagKind");
   result.tagParent = extractLineValue(normalizedComment, "@tagParent");
@@ -124,21 +123,37 @@ export function parseJSDocBlock(commentValue: string, filePath?: string): DataTy
     result.responsePrefixEncoding = responsePrefixEncoding;
   }
 
-  const parsedResponse = parseResponseTag(normalizedComment);
-  if (parsedResponse) {
-    result.successCode = parsedResponse.successCode;
-    result.responseType = parsedResponse.responseType;
-    if (!result.responseDescription && parsedResponse.responseDescription) {
-      result.responseDescription = parsedResponse.responseDescription;
+  const responseMatches = [...normalizedComment.matchAll(/@response\s+([^\n\r@]+)/g)];
+  if (responseMatches.length > 0) {
+    const firstRaw = responseMatches[0]?.[1]?.trim();
+    if (firstRaw) {
+      const parsedResponse = parseResponseRawValue(firstRaw);
+      result.successCode = parsedResponse.successCode;
+      result.responseType = parsedResponse.responseType;
+      if (!result.responseDescription && parsedResponse.responseDescription) {
+        result.responseDescription = parsedResponse.responseDescription;
+      }
+    }
+    const extraResponses = responseMatches
+      .slice(1)
+      .map((m) => m[1]?.trim())
+      .filter((t): t is string => Boolean(t));
+    if (extraResponses.length > 0) {
+      result.addResponses = extraResponses.join(",");
     }
   }
 
   const addMatches = [...normalizedComment.matchAll(/@add\s+([^\n\r@]*)/g)];
   if (addMatches.length > 0) {
-    result.addResponses = addMatches
+    const addEntries = addMatches
       .map((match) => match[1]?.trim() || "")
       .filter(Boolean)
       .join(",");
+    if (addEntries) {
+      result.addResponses = result.addResponses
+        ? `${result.addResponses},${addEntries}`
+        : addEntries;
+    }
   }
 
   const examples = collectExampleDefinitions(normalizedComment, "@examples", filePath);
@@ -152,6 +167,21 @@ export function parseJSDocBlock(commentValue: string, filePath?: string): DataTy
   const additionalTags = extractListValue(normalizedComment, "@tags");
   if (additionalTags.length > 0) {
     result.tags = additionalTags;
+  }
+
+  const tagMatches = [...normalizedComment.matchAll(/@tag\s+([^\n\r@]*)/g)];
+  if (tagMatches.length > 0) {
+    const primaryTag = tagMatches[0]?.[1]?.trim();
+    if (primaryTag) {
+      result.tag = primaryTag;
+    }
+    const extraTags = tagMatches
+      .slice(1)
+      .map((m) => m[1]?.trim())
+      .filter((t): t is string => Boolean(t));
+    if (extraTags.length > 0) {
+      result.tags = [...(result.tags ?? []), ...extraTags];
+    }
   }
 
   const servers = parseServersTag(normalizedComment);
@@ -415,11 +445,17 @@ export function parseResponseTag(commentValue: string): {
   successCode: string;
 } | null {
   const rawValue = commentValue.match(/@response\s+([^\n\r@]+)/)?.[1]?.trim();
-
   if (!rawValue) {
     return null;
   }
+  return parseResponseRawValue(rawValue);
+}
 
+function parseResponseRawValue(rawValue: string): {
+  responseDescription: string;
+  responseType: string;
+  successCode: string;
+} {
   if (isStatusCodeToken(rawValue)) {
     return {
       responseDescription: "",

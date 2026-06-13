@@ -56,9 +56,9 @@
           },
           "limit": {
             "type": "integer",
-            "minimum": 0,
             "exclusiveMinimum": true,
-            "description": "Maximum audit rows"
+            "description": "Maximum audit rows",
+            "minimum": 0
           }
         }
       },
@@ -638,9 +638,9 @@
             "required": false,
             "schema": {
               "type": "integer",
-              "minimum": 0,
               "exclusiveMinimum": true,
-              "description": "Maximum audit rows"
+              "description": "Maximum audit rows",
+              "minimum": 0
             },
             "description": "Maximum audit rows"
           }

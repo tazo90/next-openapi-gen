@@ -12,7 +12,6 @@
         "summary": "Get project",
         "description": "",
         "tags": [
-          "s Projects, Workspace",
           "Projects",
           "Workspace"
         ],
@@ -209,9 +208,6 @@
   "tags": [
     {
       "name": "Projects"
-    },
-    {
-      "name": "s Projects, Workspace"
     },
     {
       "name": "Settings"

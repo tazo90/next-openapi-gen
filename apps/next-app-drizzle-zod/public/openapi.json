@@ -108,7 +108,8 @@
         "summary": "Create author",
         "description": "Creates a new author using drizzle-zod insert schema generation.",
         "tags": [
-          "Authors"
+          "Authors",
+          "Writing"
         ],
         "parameters": [],
         "requestBody": {
@@ -136,6 +137,9 @@
           },
           "401": {
             "$ref": "#/components/responses/401"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
           },
           "500": {
             "$ref": "#/components/responses/500"
@@ -562,8 +566,8 @@
             "type": "array",
             "items": {
               "type": "integer",
-              "minimum": 0,
-              "exclusiveMinimum": true
+              "exclusiveMinimum": true,
+              "minimum": 0
             },
             "minItems": 1,
             "description": "Author IDs to update"
