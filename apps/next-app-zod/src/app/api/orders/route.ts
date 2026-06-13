@@ -30,6 +30,7 @@ export async function GET(request: NextRequest) {
  * @body CreateOrderBody
  * @response OrderSchema
  * @auth bearer
+ * @openapi-override {"requestBody":{"required":true}}
  * @openapi
  */
 export async function POST(request: NextRequest) {

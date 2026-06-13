@@ -5,6 +5,7 @@ import {
   capitalize,
   cleanComment,
   cleanSpec,
+  deepMerge,
   extractInternalFlagFromComments,
   extractJSDocComments,
   extractTypeFromComment,
@@ -584,5 +585,78 @@ describe("extractInternalFlagFromComments", () => {
         { type: "CommentBlock", value: "* @id MySchema\n * @internal " },
       ]),
     ).toBe(true);
+  });
+});
+
+describe("deepMerge", () => {
+  it("merges top-level keys", () => {
+    const target = { a: 1 };
+    const source = { b: 2 };
+    deepMerge(target, source);
+    expect(target).toEqual({ a: 1, b: 2 });
+  });
+
+  it("source overwrites target for primitives", () => {
+    const target = { a: 1 };
+    const source = { a: 2 };
+    deepMerge(target, source);
+    expect(target).toEqual({ a: 2 });
+  });
+
+  it("recursively merges nested plain objects", () => {
+    const target = { outer: { a: 1, b: 2 } };
+    const source = { outer: { b: 3, c: 4 } };
+    deepMerge(target, source);
+    expect(target).toEqual({ outer: { a: 1, b: 3, c: 4 } });
+  });
+
+  it("preserves existing nested keys from target when source does not provide them", () => {
+    const target = {
+      requestBody: {
+        content: { "application/json": { schema: { $ref: "#/components/schemas/Foo" } } },
+      },
+    };
+    const source = { requestBody: { required: true } };
+    deepMerge(target, source);
+    expect(target).toEqual({
+      requestBody: {
+        content: { "application/json": { schema: { $ref: "#/components/schemas/Foo" } } },
+        required: true,
+      },
+    });
+  });
+
+  it("replaces arrays instead of merging them", () => {
+    const target = { tags: ["a", "b"] };
+    const source = { tags: ["c"] };
+    deepMerge(target, source);
+    expect(target).toEqual({ tags: ["c"] });
+  });
+
+  it("replaces target value when source is an object and target is a primitive", () => {
+    const target = { x: 5 };
+    const source = { x: { nested: true } };
+    deepMerge(target, source);
+    expect(target).toEqual({ x: { nested: true } });
+  });
+
+  it("replaces target value when source is a primitive and target is an object", () => {
+    const target = { x: { nested: true } };
+    const source = { x: "replaced" };
+    deepMerge(target, source);
+    expect(target).toEqual({ x: "replaced" });
+  });
+
+  it("handles null source values as replacement", () => {
+    const target = { a: { nested: true } };
+    const source = { a: null };
+    deepMerge(target, source);
+    expect(target).toEqual({ a: null });
+  });
+
+  it("returns target unchanged for empty source", () => {
+    const target = { a: 1 };
+    deepMerge(target, {});
+    expect(target).toEqual({ a: 1 });
   });
 });
