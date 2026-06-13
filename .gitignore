@@ -47,4 +47,5 @@ build/
 .DS_Store
 *.pem
 RELEASE.md
-
+WORKFLOW.md
+.opencode
