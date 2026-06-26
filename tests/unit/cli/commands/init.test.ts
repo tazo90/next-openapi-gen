@@ -64,7 +64,7 @@ describe("init command", () => {
       await withProjectCwd(project.root, async () => {
         writeJsonFile(path.join(project.root, "package.json"), {
           name: "fixture-app",
-          packageManager: "pnpm@10.27.0",
+          packageManager: "pnpm@11.9.0",
           version: "1.0.0",
         });
         fs.writeFileSync(path.join(project.root, "pnpm-lock.yaml"), "lockfileVersion: '9.0'");
@@ -127,7 +127,7 @@ describe("init command", () => {
         fs.mkdirSync(path.join(project.root, "config"), { recursive: true });
         writeJsonFile(path.join(project.root, "package.json"), {
           name: "fixture-app",
-          packageManager: "pnpm@10.27.0",
+          packageManager: "pnpm@11.9.0",
           version: "1.0.0",
           devDependencies: {
             typescript: "^5.9.0",
@@ -189,7 +189,7 @@ describe("init command", () => {
         fs.mkdirSync(path.join(project.root, "config"), { recursive: true });
         writeJsonFile(path.join(project.root, "package.json"), {
           name: "fixture-app",
-          packageManager: "pnpm@10.27.0",
+          packageManager: "pnpm@11.9.0",
           version: "1.0.0",
         });
 
@@ -233,7 +233,7 @@ describe("init command", () => {
       await withProjectCwd(project.root, async () => {
         writeJsonFile(path.join(project.root, "package.json"), {
           name: "fixture-app",
-          packageManager: "pnpm@10.27.0",
+          packageManager: "pnpm@11.9.0",
           version: "1.0.0",
         });
 
@@ -327,7 +327,7 @@ describe("init command", () => {
       await withProjectCwd(project.root, async () => {
         writeJsonFile(path.join(project.root, "package.json"), {
           name: "fixture-app",
-          packageManager: "pnpm@10.27.0",
+          packageManager: "pnpm@11.9.0",
           version: "1.0.0",
         });
 

@@ -29,7 +29,6 @@
     "babel-plugin-react-compiler": "catalog:",
     "next-openapi-gen": "workspace:*",
     "postcss": "catalog:",
-    "tailwindcss": "catalog:",
     "typescript": "catalog:"
   }
 }

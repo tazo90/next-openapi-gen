@@ -28,7 +28,6 @@
     "@vitejs/plugin-react": "catalog:tanstack",
     "ajv": "catalog:",
     "next-openapi-gen": "workspace:*",
-    "tailwindcss": "catalog:",
     "typescript": "catalog:",
     "vite": "catalog:tanstack"
   }

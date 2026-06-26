@@ -269,7 +269,6 @@ pnpm test:integration
 
 # Watch or inspect the Vitest suites
 pnpm test:watch
-pnpm test:ui
 
 # Coverage report for unit + integration tests
 pnpm test:coverage

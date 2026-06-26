@@ -1,11 +1,11 @@
 import { execSync } from "node:child_process";
 import {
-  readFileSync,
-  writeFileSync,
-  unlinkSync,
-  readdirSync,
   copyFileSync,
   existsSync,
+  readdirSync,
+  readFileSync,
+  unlinkSync,
+  writeFileSync,
 } from "node:fs";
 import { join } from "node:path";
 
@@ -18,7 +18,7 @@ const readmeDst = join(pkgDir, "README.md");
 const original = readFileSync(pkgPath, "utf8");
 const pkg = JSON.parse(original);
 
-// Strip workspace:* devDependencies (pnpm v10 can't resolve them for private packages)
+// Strip workspace-only devDependencies before packing the public package.
 for (const [key, value] of Object.entries(pkg.devDependencies ?? {})) {
   if (String(value).startsWith("workspace:")) {
     delete pkg.devDependencies[key];
@@ -39,7 +39,7 @@ try {
 
   const tarballPath = join(pkgDir, tarball);
 
-  execSync(`npm publish "${tarballPath}" --access public`, { stdio: "inherit" });
+  execSync(`pnpm publish "${tarballPath}" --access public`, { stdio: "inherit" });
 
   unlinkSync(tarballPath);
 } finally {
