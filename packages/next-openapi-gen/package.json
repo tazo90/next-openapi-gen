@@ -79,7 +79,7 @@
     "fs-extra": "catalog:",
     "js-yaml": "catalog:",
     "ora": "catalog:",
-    "typescript": "catalog:"
+    "typescript": ">=5.9 <8"
   },
   "devDependencies": {
     "@types/node": "catalog:",
@@ -93,6 +93,14 @@
     "oxfmt": "catalog:",
     "oxlint": "catalog:",
     "tsup": "catalog:"
+  },
+  "peerDependencies": {
+    "typescript": ">=5.9 <8"
+  },
+  "peerDependenciesMeta": {
+    "typescript": {
+      "optional": true
+    }
   },
   "engines": {
     "node": ">=24.0.0"

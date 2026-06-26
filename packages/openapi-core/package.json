@@ -37,10 +37,17 @@
   "devDependencies": {
     "@types/babel__traverse": "catalog:",
     "@types/fs-extra": "catalog:",
-    "@types/js-yaml": "catalog:",
     "@types/node": "catalog:",
     "oxfmt": "catalog:",
     "oxlint": "catalog:"
+  },
+  "peerDependencies": {
+    "typescript": ">=5.9 <8"
+  },
+  "peerDependenciesMeta": {
+    "typescript": {
+      "optional": true
+    }
   },
   "engines": {
     "node": ">=24.0.0"

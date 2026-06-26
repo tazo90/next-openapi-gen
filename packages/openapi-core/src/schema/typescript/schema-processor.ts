@@ -1,13 +1,14 @@
 import fs from "fs";
 import path from "path";
 import * as t from "@babel/types";
-import * as ts from "typescript";
+import type * as ts from "typescript";
 
 import { processCustomSchemaFiles } from "../core/custom-schema-file-processor.js";
 import { CustomSchemaProcessor } from "../core/custom-schema-processor.js";
 import { mergeSchemaDefinitionLayers } from "../core/schema-definition-processor.js";
 import { parseTypeScriptFile, parseOpenApiOverrideTag } from "../../shared/utils.js";
 import { getTypeScriptProject } from "../../shared/typescript-project.js";
+import type { TypeScriptRuntime } from "../../shared/typescript-runtime.js";
 import { ZodSchemaConverter } from "../zod/zod-converter.js";
 import { ZodSchemaProcessor } from "../zod/zod-schema-processor.js";
 import {
@@ -753,6 +754,7 @@ export class SchemaProcessor {
   ): OpenAPIDefinition | null {
     try {
       const project = getTypeScriptProject(filePath);
+      const ts = project.ts;
       const sourceFile = project.program.getSourceFile(filePath);
       if (!sourceFile) {
         return null;
@@ -776,7 +778,12 @@ export class SchemaProcessor {
         targetSymbol.flags & (ts.SymbolFlags.TypeAlias | ts.SymbolFlags.Interface)
           ? project.checker.getDeclaredTypeOfSymbol(targetSymbol)
           : project.checker.getTypeAtLocation(declaration);
-      return this.typeScriptTypeToOpenApiSchema(resolvedType, project.checker, new Set<string>());
+      return this.typeScriptTypeToOpenApiSchema(
+        resolvedType,
+        project.checker,
+        new Set<string>(),
+        ts,
+      );
     } catch (error) {
       logger.debug(
         `TypeScript checker fallback failed for ${typeName}: ${getSchemaProcessorErrorMessage(error)}`,
@@ -789,6 +796,7 @@ export class SchemaProcessor {
     type: ts.Type,
     checker: ts.TypeChecker,
     seen: Set<string>,
+    ts: TypeScriptRuntime,
   ): OpenAPIDefinition {
     const primitiveLikeFlags =
       ts.TypeFlags.StringLike |
@@ -886,14 +894,14 @@ export class SchemaProcessor {
 
       if (nullable && nonNullTypes.length === 1 && nonNullTypes[0]) {
         return {
-          ...this.typeScriptTypeToOpenApiSchema(nonNullTypes[0], checker, seen),
+          ...this.typeScriptTypeToOpenApiSchema(nonNullTypes[0], checker, seen, ts),
           nullable: true,
         };
       }
 
       return {
         oneOf: nonNullTypes.map((member) =>
-          this.typeScriptTypeToOpenApiSchema(member, checker, seen),
+          this.typeScriptTypeToOpenApiSchema(member, checker, seen, ts),
         ),
       };
     }
@@ -903,7 +911,7 @@ export class SchemaProcessor {
       return {
         type: "array",
         prefixItems: itemTypes.map((itemType) =>
-          this.typeScriptTypeToOpenApiSchema(itemType, checker, seen),
+          this.typeScriptTypeToOpenApiSchema(itemType, checker, seen, ts),
         ),
         items: false,
         minItems: itemTypes.length,
@@ -916,7 +924,7 @@ export class SchemaProcessor {
       return {
         type: "array",
         items: elementType
-          ? this.typeScriptTypeToOpenApiSchema(elementType, checker, seen)
+          ? this.typeScriptTypeToOpenApiSchema(elementType, checker, seen, ts)
           : { type: "object" },
       };
     }
@@ -937,6 +945,7 @@ export class SchemaProcessor {
           propertyType,
           checker,
           seen,
+          ts,
         );
         if (!(property.flags & ts.SymbolFlags.Optional)) {
           required.push(property.getName());
@@ -951,7 +960,7 @@ export class SchemaProcessor {
     if (type.getNumberIndexType()) {
       return {
         type: "array",
-        items: this.typeScriptTypeToOpenApiSchema(type.getNumberIndexType()!, checker, seen),
+        items: this.typeScriptTypeToOpenApiSchema(type.getNumberIndexType()!, checker, seen, ts),
       };
     }
 
@@ -962,6 +971,7 @@ export class SchemaProcessor {
           type.getStringIndexType()!,
           checker,
           seen,
+          ts,
         ),
       };
     }

@@ -1,4 +1,4 @@
-export type E2EAppName =
+type E2EAppName =
   | "next-app-zod"
   | "next-app-typescript"
   | "next-app-scalar"
@@ -13,7 +13,7 @@ export type E2EAppName =
   | "next-app-next-config"
   | "next-app-ts-config";
 
-export type E2EOpenApiReadyStage = "generate" | "build";
+type E2EOpenApiReadyStage = "generate" | "build";
 
 export type E2EAppConfig = {
   name: E2EAppName;

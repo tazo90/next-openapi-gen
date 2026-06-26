@@ -189,10 +189,9 @@ export async function GET() {}
       expect(getOp).toBeDefined();
 
       const pathParam = getOp?.parameters?.find((p: any) => p.in === "path" && p.name === "id");
-      if (pathParam) {
-        const schema = (pathParam as any).schema;
-        expect(schema).not.toHaveProperty("$ref");
-      }
+      expect(pathParam).toBeDefined();
+      const schema = (pathParam as any).schema;
+      expect(schema).not.toHaveProperty("$ref");
     } finally {
       project.cleanup();
     }
