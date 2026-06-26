@@ -1,5 +1,5 @@
-import path from "path";
 import { createRequire } from "module";
+import path from "path";
 
 import type * as ts from "typescript";
 

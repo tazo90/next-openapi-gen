@@ -1,9 +1,8 @@
 import fs from "node:fs";
 import path from "node:path";
 
-import { describe, expect, it } from "vitest";
-
 import { FrameworkKind, generateProject } from "next-openapi-gen";
+import { describe, expect, it } from "vitest";
 
 import {
   createTempProject,

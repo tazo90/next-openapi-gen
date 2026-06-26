@@ -1,4 +1,5 @@
 import path from "path";
+
 import type * as ts from "typescript";
 
 import type { Diagnostic } from "./types.js";
@@ -240,6 +241,11 @@ function evaluateNode(
         return -operand;
       case ts.SyntaxKind.PlusToken:
         return operand;
+      case ts.SyntaxKind.PlusPlusToken:
+      case ts.SyntaxKind.MinusMinusToken:
+      case ts.SyntaxKind.ExclamationToken:
+      case ts.SyntaxKind.TildeToken:
+        return undefined;
       default:
         return undefined;
     }

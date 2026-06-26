@@ -5,9 +5,9 @@ import path from "node:path";
 import * as t from "@babel/types";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { AppRouterStrategy } from "@workspace/openapi-framework-next/routes/app-router-strategy.js";
-import { parseTypeScriptFile } from "@workspace/openapi-core/shared/utils.js";
 import type { OpenApiConfig } from "@workspace/openapi-core/shared/types.js";
+import { parseTypeScriptFile } from "@workspace/openapi-core/shared/utils.js";
+import { AppRouterStrategy } from "@workspace/openapi-framework-next/routes/app-router-strategy.js";
 
 type AddRoute = Parameters<AppRouterStrategy["processFile"]>[1];
 

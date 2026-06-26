@@ -70,7 +70,7 @@ export const catSchema = z
     expect(dog?.properties).toHaveProperty("id");
     expect(dog?.properties).toHaveProperty("name");
     expect(dog?.properties).toHaveProperty("type");
-    expect(dog?.required?.sort()).toEqual(["id", "name", "type"].sort());
+    expect(dog?.required?.toSorted()).toEqual(["id", "name", "type"].toSorted());
 
     const cat = converter.zodSchemas["Cat"];
     expect(cat, "Cat component must be registered").toBeDefined();

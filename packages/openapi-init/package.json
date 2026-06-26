@@ -17,13 +17,15 @@
     "./package.json": "./package.json"
   },
   "scripts": {
-    "clean": "rm -rf dist tsconfig.tsbuildinfo",
     "build": "pnpm clean && tsc",
     "check": "pnpm format:check && pnpm lint",
-    "format": "oxfmt --config ../oxfmt-config/oxfmt.json --ignore-path ../../.gitignore .",
-    "format:check": "oxfmt --config ../oxfmt-config/oxfmt.json --ignore-path ../../.gitignore --check .",
-    "lint": "oxlint --config ../oxlint-config/base.json . --ignore-path ../../.gitignore --deny-warnings",
-    "test:coverage": "pnpm --dir ../.. test:coverage:openapi-init"
+    "clean": "rm -rf dist tsconfig.tsbuildinfo",
+    "format": "oxfmt --config ../../oxfmt.config.ts --ignore-path ../../.gitignore .",
+    "format:check": "oxfmt --config ../../oxfmt.config.ts --ignore-path ../../.gitignore --check .",
+    "lint": "oxlint --type-aware --config ../../oxlint.config.ts . --ignore-path ../../.gitignore --deny-warnings",
+    "lint:fix": "oxlint --type-aware --config ../../oxlint.config.ts . --ignore-path ../../.gitignore --fix --deny-warnings",
+    "test:coverage": "pnpm --dir ../.. test:coverage:openapi-init",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@workspace/openapi-core": "workspace:*",
@@ -39,5 +41,5 @@
   "engines": {
     "node": ">=24.0.0"
   },
-  "packageManager": "pnpm@10.27.0"
+  "packageManager": "pnpm@11.9.0"
 }

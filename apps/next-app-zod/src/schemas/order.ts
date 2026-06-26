@@ -1,8 +1,9 @@
 import { z } from "zod";
-import { AddressSchema } from "./user";
-import { PaymentMethodSchema } from "./payment";
-import { CartItemSchema } from "./cart";
+
 import type { PaginatedResponse } from "./base";
+import { CartItemSchema } from "./cart";
+import { PaymentMethodSchema } from "./payment";
+import { AddressSchema } from "./user";
 
 export const OrderIdParams = z.object({
   id: z.string().uuid().describe("Order ID"),
@@ -110,7 +111,7 @@ export const CreateOrderBody = z
   })
   .refine(
     (data) => {
-      if (data.useShippingAsBilling === true) return true;
+      if (data.useShippingAsBilling) return true;
       return data.billingAddressId !== undefined || data.billingAddress !== undefined;
     },
     {

@@ -10,7 +10,7 @@ export async function createNextDocsPage(
   ui: string,
   outputFile: string,
 ): Promise<string | null> {
-  return createDocsPage({
+  return await createDocsPage({
     framework: "next",
     docsUrl,
     ui,

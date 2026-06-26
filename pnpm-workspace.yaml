@@ -21,12 +21,14 @@ catalog:
   "@vitest/ui": ^4.1.9
   ajv: ^8.20.0
   autoprefixer: ^10.5.2
+  babel-plugin-react-compiler: ^1.0.0
   commander: ^15.0.0
   cross-env: ^10.1.0
   conventional-changelog-cli: ^5.0.0
   drizzle-kit: ^0.31.10
   drizzle-orm: ^0.45.2
   drizzle-zod: ^0.8.3
+  eslint-plugin-turbo: ^2.10.0
   fs-extra: ^11.3.5
   js-yaml: ^5.1.0
   knip: ^6.20.0
@@ -35,6 +37,7 @@ catalog:
   ora: ^9.4.1
   oxfmt: ^0.56.0
   oxlint: ^1.71.0
+  oxlint-tsgolint: ^0.23.0
   postcss: ^8.5.15
   postgres: ^3.4.9
   simple-git-hooks: ^2.13.1
@@ -85,6 +88,11 @@ peerDependencyRules:
     react: "19"
 
 strictPeerDependencies: true
+
+packageExtensions:
+  "knip@*":
+    dependencies:
+      "@types/minimist": "*"
 
 allowBuilds:
   "@scarf/scarf": false

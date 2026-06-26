@@ -1,10 +1,9 @@
 import fs from "node:fs";
 import path from "node:path";
 
-import { describe, expect, it } from "vitest";
-
 import { Validator } from "@seriousme/openapi-schema-validator";
 import { OpenApiGenerator } from "next-openapi-gen";
+import { describe, expect, it } from "vitest";
 
 import {
   createTempProject,

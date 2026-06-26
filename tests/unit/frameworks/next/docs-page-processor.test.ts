@@ -4,11 +4,11 @@ import path from "node:path";
 
 import { afterEach, describe, expect, it } from "vitest";
 
+import { FrameworkKind } from "@workspace/openapi-core/shared/types.js";
 import {
   createNextDocsPage,
   emitNextDocsArtifact,
 } from "@workspace/openapi-framework-next/frameworks/next/docs-page-processor.js";
-import { FrameworkKind } from "@workspace/openapi-core/shared/types.js";
 
 describe("createNextDocsPage", () => {
   const previousCwd = process.cwd();

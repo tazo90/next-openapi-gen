@@ -3,8 +3,8 @@ import path from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-import { createNextFrameworkSource } from "@workspace/openapi-framework-next/frameworks/next/source.js";
 import { FrameworkKind } from "@workspace/openapi-core/shared/types.js";
+import { createNextFrameworkSource } from "@workspace/openapi-framework-next/frameworks/next/source.js";
 
 import { createTempProject } from "../../../helpers/test-project.js";
 

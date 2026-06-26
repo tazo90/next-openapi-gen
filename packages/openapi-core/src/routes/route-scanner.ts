@@ -40,7 +40,7 @@ export function scanRouteFiles(
   if (!files) {
     files = fs
       .readdirSync(rootDir)
-      .sort((a, b) => a.localeCompare(b, "en", { sensitivity: "base" }));
+      .toSorted((a, b) => a.localeCompare(b, "en", { sensitivity: "base" }));
     state.directoryCache[rootDir] = files;
   }
 

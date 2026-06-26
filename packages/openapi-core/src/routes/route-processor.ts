@@ -7,7 +7,6 @@ import type { SharedGenerationRuntime } from "../core/runtime.js";
 import type { DiagnosticsCollector } from "../diagnostics/collector.js";
 import type { FrameworkSource } from "../frameworks/types.js";
 import { SchemaProcessor } from "../schema/typescript/schema-processor.js";
-import { capitalize, extractPathParameters } from "../shared/utils.js";
 import { logger } from "../shared/logger.js";
 import type {
   DataTypes,
@@ -17,6 +16,7 @@ import type {
   ResolvedOpenApiConfig,
   RouteDefinition,
 } from "../shared/types.js";
+import { capitalize, extractPathParameters } from "../shared/utils.js";
 import { OperationProcessor } from "./operation-processor.js";
 import { sortPathDefinitions } from "./path-sort.js";
 import { ResponseProcessor } from "./response-processor.js";
@@ -271,7 +271,7 @@ export class RouteProcessor {
       this.pathDefinitions[routePath] = {};
     }
 
-    this.pathDefinitions[routePath]![method] = definition;
+    this.pathDefinitions[routePath][method] = definition;
   }
 
   public getPaths(): Record<string, OpenApiPathDefinition> {
@@ -279,7 +279,7 @@ export class RouteProcessor {
   }
 
   public getTags(): OpenApiTagDefinition[] {
-    return Object.values(this.tagDefinitions).sort((a, b) =>
+    return Object.values(this.tagDefinitions).toSorted((a, b) =>
       a.name.localeCompare(b.name, "en", { sensitivity: "base" }),
     );
   }

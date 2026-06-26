@@ -28,7 +28,7 @@ describe("Regressions › PR #119-style Zod edge cases", () => {
         age: { type: "number", nullable: true },
       },
     });
-    const required = (schema as { required: string[] }).required.slice().sort();
+    const required = (schema as { required: string[] }).required.slice().toSorted();
     expect(required).toEqual(["age", "id"]);
   });
 

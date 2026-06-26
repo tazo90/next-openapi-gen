@@ -41,13 +41,15 @@ export async function watchProject(options: WatchProjectOptions = {}): Promise<(
       clearTimeout(timeout);
     }
 
-    timeout = setTimeout(async () => {
-      loadedConfig = await loadConfig({
-        cwd: options.cwd,
-        configPath: options.configPath,
-      });
-      registerWatchers(loadedConfig);
-      await generateFromLoadedConfig(loadedConfig, runtime, options.adapters);
+    timeout = setTimeout(() => {
+      void (async () => {
+        loadedConfig = await loadConfig({
+          cwd: options.cwd,
+          configPath: options.configPath,
+        });
+        registerWatchers(loadedConfig);
+        await generateFromLoadedConfig(loadedConfig, runtime, options.adapters);
+      })();
     }, debounceMs);
   }
 
@@ -69,8 +71,7 @@ export async function watchProject(options: WatchProjectOptions = {}): Promise<(
       watchers.set(
         watchPath,
         fs.watch(watchPath, { recursive }, (_eventType, fileName) => {
-          const changedPath =
-            recursive && fileName ? path.join(watchPath, fileName.toString()) : watchPath;
+          const changedPath = recursive && fileName ? path.join(watchPath, fileName) : watchPath;
           schedule(changedPath);
         }),
       );

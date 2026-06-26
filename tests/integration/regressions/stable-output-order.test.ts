@@ -25,18 +25,18 @@ describe.sequential("stable OpenAPI output order", () => {
 
     try {
       const pathKeys = Object.keys(spec.paths ?? {});
-      expect(pathKeys).toEqual([...pathKeys].sort((a, b) => comparePaths(a, b, spec)));
+      expect(pathKeys).toEqual([...pathKeys].toSorted((a, b) => comparePaths(a, b, spec)));
 
       for (const [, pathDefinition] of Object.entries(spec.paths ?? {})) {
         const methods = Object.keys(pathDefinition ?? {});
-        expect(methods).toEqual(methods.slice().sort((a, b) => compareMethods(a, b)));
+        expect(methods).toEqual(methods.slice().toSorted((a, b) => compareMethods(a, b)));
       }
 
       const tagNames = (spec.tags ?? []).map((tag) => tag.name);
-      expect(tagNames).toEqual([...tagNames].sort(compareAlpha));
+      expect(tagNames).toEqual([...tagNames].toSorted(compareAlpha));
 
       const schemaNames = Object.keys(spec.components?.schemas ?? {});
-      expect(schemaNames).toEqual([...schemaNames].sort(compareAlpha));
+      expect(schemaNames).toEqual([...schemaNames].toSorted(compareAlpha));
     } finally {
       project.cleanup();
     }
@@ -77,7 +77,7 @@ function comparePaths(a: string, b: string, spec: { paths?: Record<string, any> 
 
   const sharedSegmentCount = Math.min(aSegments.length, bSegments.length);
   for (let index = 0; index < sharedSegmentCount; index++) {
-    const segmentComparison = compareAlpha(aSegments[index]!, bSegments[index]!);
+    const segmentComparison = compareAlpha(aSegments[index], bSegments[index]);
     if (segmentComparison !== 0) return segmentComparison;
   }
 

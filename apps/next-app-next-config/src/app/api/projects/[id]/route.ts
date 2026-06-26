@@ -1,10 +1,9 @@
-import { NextResponse } from "next/server";
-
 import type {
   ProjectRecord,
   ProjectRecordIdParams,
   UpdateProjectRecordInput,
 } from "@/schemas/project";
+import { NextResponse } from "next/server";
 
 type ProjectRouteContext = {
   params: Promise<ProjectRecordIdParams>;

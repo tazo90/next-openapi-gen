@@ -5,8 +5,8 @@ import path from "node:path";
 import * as t from "@babel/types";
 import { afterEach, describe, expect, it } from "vitest";
 
-import { parseTypeScriptFile } from "@workspace/openapi-core/shared/utils.js";
 import { ZodSchemaConverter } from "@workspace/openapi-core/schema/zod/zod-converter.js";
+import { parseTypeScriptFile } from "@workspace/openapi-core/shared/utils.js";
 
 function parseInitializer(expression: string): t.Expression {
   const ast = parseTypeScriptFile(`const schema = ${expression};`);
@@ -45,8 +45,8 @@ describe("ZodSchemaConverter", () => {
     const routeFiles: string[] = [];
     converter.findRouteFilesInDir(root, routeFiles);
 
-    expect(routeFiles.sort()).toEqual(
-      [path.join(root, "api", "route.ts"), path.join(nestedDir, "user-api.ts")].sort(),
+    expect(routeFiles.toSorted()).toEqual(
+      [path.join(root, "api", "route.ts"), path.join(nestedDir, "user-api.ts")].toSorted(),
     );
 
     const schemaFile = path.join(root, "schemas.ts");

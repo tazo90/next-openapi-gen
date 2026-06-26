@@ -1,8 +1,8 @@
 import type * as ts from "typescript";
 
+import type { Diagnostic, InferredResponseDefinition, OpenApiSchemaLike } from "../shared/types.js";
 import { getTypeScriptProject } from "../shared/typescript-project.js";
 import type { TypeScriptRuntime } from "../shared/typescript-runtime.js";
-import type { Diagnostic, InferredResponseDefinition, OpenApiSchemaLike } from "../shared/types.js";
 
 type InferredRouteResponses = {
   responses: InferredResponseDefinition[];

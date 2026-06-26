@@ -1,8 +1,8 @@
-import traverseModule from "@babel/traverse";
 import fs from "fs";
 import os from "os";
 import path from "path";
 
+import traverseModule from "@babel/traverse";
 import { describe, expect, it } from "vitest";
 
 import { ZodSchemaConverter } from "@workspace/openapi-core/schema/zod/zod-converter.js";

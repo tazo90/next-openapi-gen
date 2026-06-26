@@ -1,10 +1,11 @@
-import path from "path";
 import type * as fs from "fs";
+import path from "path";
+
 import * as t from "@babel/types";
 
+import { logger } from "./logger.js";
 import { buildFileSymbolIndex, type FileSymbolIndex } from "./symbol-index.js";
 import { parseTypeScriptFile } from "./utils.js";
-import { logger } from "./logger.js";
 
 export type SymbolResolverFileAccess = Pick<typeof fs, "existsSync" | "readFileSync">;
 

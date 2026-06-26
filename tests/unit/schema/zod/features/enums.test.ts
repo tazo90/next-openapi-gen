@@ -31,7 +31,7 @@ describe("Zod features › enums", () => {
     // native enum may fall back to untyped enum depending on AST resolution,
     // but at minimum should produce a string-valued enum.
     const asEnum = schema as { enum?: string[]; type?: string };
-    expect(asEnum.enum?.slice().sort()).toEqual(asEnum.enum ? ["blue", "red"] : undefined);
+    expect(asEnum.enum?.slice().toSorted()).toEqual(asEnum.enum ? ["blue", "red"] : undefined);
   });
 
   it("enum chained with describe() keeps the values", () => {

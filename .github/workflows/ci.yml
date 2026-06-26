@@ -48,8 +48,14 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Run workspace checks
-        run: pnpm check
+      - name: Check formatting
+        run: pnpm format:check
+
+      - name: Run lint
+        run: pnpm lint:ci
+
+      - name: Typecheck tooling
+        run: pnpm typecheck:root
 
       - name: Run Knip
         run: pnpm exec turbo run knip:ci

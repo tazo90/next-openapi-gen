@@ -1,6 +1,6 @@
 import type { NextConfig } from "next";
 
-const transpilePackages = [];
+const transpilePackages: string[] = [];
 
 const nextConfig = {
   typedRoutes: true,

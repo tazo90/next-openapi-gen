@@ -34,7 +34,7 @@ async function loadInstallDependenciesModule(
     hasDependency,
   }));
 
-  return import("@workspace/openapi-init/init/install-dependencies.js");
+  return await import("@workspace/openapi-init/init/install-dependencies.js");
 }
 
 describe("installDependencies", () => {

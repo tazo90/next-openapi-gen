@@ -1,14 +1,15 @@
 import { exec } from "node:child_process";
 import util from "node:util";
 
+import type { SchemaType } from "@workspace/openapi-core/shared/types.js";
+
+import { getPackageManager, hasDependency } from "./package-manager.js";
+import type { UiType } from "./types.js";
 import {
   getDocsPageDependencies,
   getDocsPageDevDependencies,
   getDocsPageInstallFlags,
 } from "./ui-registry.js";
-import { getPackageManager, hasDependency } from "./package-manager.js";
-import type { SchemaType } from "@workspace/openapi-core/shared/types.js";
-import type { UiType } from "./types.js";
 
 const execPromise = util.promisify(exec);
 

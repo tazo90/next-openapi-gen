@@ -89,7 +89,7 @@ describe("route path sorting helpers", () => {
       },
     };
 
-    expect(Object.keys(sortPathDefinitions(paths)["/items"]!)).toEqual([
+    expect(Object.keys(sortPathDefinitions(paths)["/items"])).toEqual([
       "get",
       "post",
       "put",
@@ -108,7 +108,7 @@ describe("route path sorting helpers", () => {
       },
     };
 
-    expect(Object.keys(sortPathDefinitions(paths as never)["/items"]!)).toEqual([
+    expect(Object.keys(sortPathDefinitions(paths as never)["/items"])).toEqual([
       "get",
       "post",
       "custom",

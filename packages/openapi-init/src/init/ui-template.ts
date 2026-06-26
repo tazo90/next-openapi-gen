@@ -2,8 +2,8 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { normalizeRapidocTemplate } from "./rapidoc-template.js";
 import type { InitFramework } from "./framework.js";
+import { normalizeRapidocTemplate } from "./rapidoc-template.js";
 
 function findPackageRoot(): string {
   let dir = path.dirname(fileURLToPath(import.meta.url));

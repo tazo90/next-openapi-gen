@@ -1,4 +1,5 @@
 import fs from "fs";
+
 import type { NodePath } from "@babel/traverse";
 import type * as t from "@babel/types";
 
@@ -9,8 +10,8 @@ import {
 import { HTTP_METHODS } from "@workspace/openapi-core/routes/router-strategy.js";
 import type { RouterStrategy } from "@workspace/openapi-core/routes/router-strategy.js";
 import { traverse } from "@workspace/openapi-core/shared/babel-traverse.js";
-import { parseJSDocBlock, parseTypeScriptFile } from "@workspace/openapi-core/shared/utils.js";
 import type { DataTypes, OpenApiConfig } from "@workspace/openapi-core/shared/types.js";
+import { parseJSDocBlock, parseTypeScriptFile } from "@workspace/openapi-core/shared/utils.js";
 
 export class PagesRouterStrategy implements RouterStrategy {
   private config: OpenApiConfig;

@@ -1,6 +1,9 @@
 import { Command, Option } from "commander";
+
 import { UI_TYPES_WITH_NONE } from "@workspace/openapi-init";
 
+import { generate } from "./commands/generate.js";
+import { init } from "./commands/init.js";
 import {
   CLI_FRAMEWORK_CHOICES,
   CLI_DESCRIPTION,
@@ -19,8 +22,6 @@ import {
   INIT_UI_OPTION_DESCRIPTION,
   resolveCliName,
 } from "./constants.js";
-import { generate } from "./commands/generate.js";
-import { init } from "./commands/init.js";
 
 export function buildProgram(options: { argv?: string[] } = {}) {
   const program = new Command();

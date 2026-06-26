@@ -46,7 +46,7 @@ async function loadInitModule(execMock: ExecMock, spinner: SpinnerMock, setupMoc
   }));
   setupMocks?.();
 
-  return import("@workspace/openapi-cli/cli/commands/init.js");
+  return await import("@workspace/openapi-cli/cli/commands/init.js");
 }
 
 describe("init command", () => {

@@ -1,7 +1,6 @@
-import { ZodSchemaConverter } from "./zod-converter.js";
-
 import type { ContentType, OpenAPIDefinition } from "../../shared/types.js";
 import type { SchemaProcessorModule } from "../core/types.js";
+import type { ZodSchemaConverter } from "./zod-converter.js";
 
 export class ZodSchemaProcessor implements SchemaProcessorModule {
   public readonly kind = "zod" as const;

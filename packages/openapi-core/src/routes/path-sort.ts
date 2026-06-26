@@ -72,11 +72,11 @@ function compareMethods(a: string, b: string): number {
 }
 
 function sortPathMethods(pathDefinition: OpenApiPathDefinition): OpenApiPathDefinition {
-  const sortedMethodEntries = Object.entries(pathDefinition).sort(([a], [b]) =>
+  const sortedMethodEntries = Object.entries(pathDefinition).toSorted(([a], [b]) =>
     compareMethods(a, b),
   );
   return sortedMethodEntries.reduce<OpenApiPathDefinition>((sorted, [method, operation]) => {
-    sorted[method as keyof OpenApiPathDefinition] = operation;
+    sorted[method] = operation;
     return sorted;
   }, {});
 }
@@ -85,7 +85,7 @@ export function sortPathDefinitions(
   paths: Record<string, OpenApiPathDefinition>,
 ): Record<string, OpenApiPathDefinition> {
   return Object.keys(paths)
-    .sort((a, b) => comparePathDefinitions(paths, a, b))
+    .toSorted((a, b) => comparePathDefinitions(paths, a, b))
     .reduce<Record<string, OpenApiPathDefinition>>((sorted, key) => {
       const pathDefinition = paths[key];
       if (pathDefinition) {

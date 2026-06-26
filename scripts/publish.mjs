@@ -1,3 +1,4 @@
+import { execSync } from "node:child_process";
 import {
   readFileSync,
   writeFileSync,
@@ -6,7 +7,6 @@ import {
   copyFileSync,
   existsSync,
 } from "node:fs";
-import { execSync } from "node:child_process";
 import { join } from "node:path";
 
 const rootDir = join(import.meta.dirname, "..");

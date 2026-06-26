@@ -1,7 +1,8 @@
 import * as t from "@babel/types";
+
 import { logger } from "../../shared/logger.js";
-import { resolveTypeScriptModule } from "../../shared/typescript-project.js";
 import type { OpenApiSchema } from "../../shared/types.js";
+import { resolveTypeScriptModule } from "../../shared/typescript-project.js";
 
 type DrizzleZodProcessingContext = {
   currentAST?: t.File | undefined;
@@ -245,7 +246,7 @@ export class DrizzleZodProcessor {
 
   private static extractColumnMetadata(node: t.Expression): DrizzleColumnMetadata | null {
     if (t.isCallExpression(node) && t.isMemberExpression(node.callee)) {
-      const baseMetadata = this.extractColumnMetadata(node.callee.object as t.Expression);
+      const baseMetadata = this.extractColumnMetadata(node.callee.object);
       if (!baseMetadata) {
         return null;
       }
@@ -645,7 +646,7 @@ export class DrizzleZodProcessor {
         if (firstArg && !t.isSpreadElement(firstArg) && !t.isArgumentPlaceholder(firstArg)) {
           const metadata = DrizzleZodProcessor.extractStaticObject(firstArg);
           if (metadata) {
-            const { id: _id, ...rest } = metadata as Record<string, unknown>;
+            const { id: _id, ...rest } = metadata;
             Object.assign(result, rest);
           }
         }

@@ -1,10 +1,10 @@
 import fs from "node:fs";
 
 import { describe, expect, it } from "vitest";
-import { createDefaultGenerationAdapters } from "@workspace/openapi-cli";
 
-import { runGenerationOrchestrator } from "@workspace/openapi-core/core/orchestrator.js";
+import { createDefaultGenerationAdapters } from "@workspace/openapi-cli";
 import { normalizeOpenApiConfig } from "@workspace/openapi-core/config/normalize.js";
+import { runGenerationOrchestrator } from "@workspace/openapi-core/core/orchestrator.js";
 
 import {
   createTempProject,

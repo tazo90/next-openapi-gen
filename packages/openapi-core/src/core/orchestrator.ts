@@ -1,6 +1,12 @@
 import { DiagnosticsCollector } from "../diagnostics/collector.js";
+import {
+  createErrorResponseComponent,
+  generateErrorResponsesFromConfig,
+} from "../generator/error-responses.js";
 import { createDocumentFromTemplate } from "../openapi/document.js";
 import { getOpenApiVersionProcessor } from "../openapi/version-processor.js";
+import { sortPathDefinitions } from "../routes/path-sort.js";
+import { RouteProcessor } from "../routes/route-processor.js";
 import { loadCustomOpenApiFragments } from "../schema/core/custom-schema-file-processor.js";
 import { FrameworkKind } from "../shared/types.js";
 import type {
@@ -9,20 +15,14 @@ import type {
   OpenApiTemplate,
   ResolvedOpenApiConfig,
 } from "../shared/types.js";
-import { sortPathDefinitions } from "../routes/path-sort.js";
-import { RouteProcessor } from "../routes/route-processor.js";
-import {
-  createErrorResponseComponent,
-  generateErrorResponsesFromConfig,
-} from "../generator/error-responses.js";
 import type { FrameworkSourceFactory } from "./adapters.js";
 import type { GeneratorHooks } from "./config/types.js";
+import { applyExcludeSchemas, matchExcludePatterns } from "./exclude-schemas.js";
 import {
   createEmptyGenerationPerformanceProfile,
   type GenerationPerformanceProfile,
 } from "./performance.js";
 import type { SharedGenerationRuntime } from "./runtime.js";
-import { applyExcludeSchemas, matchExcludePatterns } from "./exclude-schemas.js";
 export type OrchestratorPerformanceProfile = GenerationPerformanceProfile & {
   scanRoutesMs: number;
 };
@@ -157,7 +157,7 @@ export function runGenerationOrchestrator({
 
   if (Object.keys(mergedSchemas).length > 0) {
     document.components.schemas = Object.fromEntries(
-      Object.entries(mergedSchemas).sort(([a], [b]) =>
+      Object.entries(mergedSchemas).toSorted(([a], [b]) =>
         a.localeCompare(b, "en", { sensitivity: "base" }),
       ),
     ) as typeof document.components.schemas;

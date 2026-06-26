@@ -1,16 +1,29 @@
 import fs from "fs";
 import path from "path";
+
 import * as t from "@babel/types";
 import type * as ts from "typescript";
 
+import type { SharedGenerationRuntime } from "../../core/runtime.js";
+import { logger } from "../../shared/logger.js";
+import { SymbolResolver } from "../../shared/symbol-resolver.js";
+import type {
+  ContentType,
+  OpenAPIDefinition,
+  OpenApiExampleMap,
+  ParamSchema,
+  PropertyOptions,
+  SchemaType,
+} from "../../shared/types.js";
+import { getTypeScriptProject } from "../../shared/typescript-project.js";
+import type { TypeScriptRuntime } from "../../shared/typescript-runtime.js";
+import { parseOpenApiOverrideTag, parseTypeScriptFile } from "../../shared/utils.js";
 import { processCustomSchemaFiles } from "../core/custom-schema-file-processor.js";
 import { CustomSchemaProcessor } from "../core/custom-schema-processor.js";
 import { mergeSchemaDefinitionLayers } from "../core/schema-definition-processor.js";
-import { parseTypeScriptFile, parseOpenApiOverrideTag } from "../../shared/utils.js";
-import { getTypeScriptProject } from "../../shared/typescript-project.js";
-import type { TypeScriptRuntime } from "../../shared/typescript-runtime.js";
 import { ZodSchemaConverter } from "../zod/zod-converter.js";
 import { ZodSchemaProcessor } from "../zod/zod-schema-processor.js";
+import { extractFunctionParameters, extractFunctionReturnType } from "./function-nodes.js";
 import {
   createTypeReferenceFromString,
   detectContentType,
@@ -41,19 +54,7 @@ import {
   collectTypeDefinitions,
   resolveImportPath,
 } from "./schema-discovery.js";
-import { extractFunctionParameters, extractFunctionReturnType } from "./function-nodes.js";
 import { resolveUtilityTypeReference } from "./utility-types.js";
-import { SymbolResolver } from "../../shared/symbol-resolver.js";
-import type {
-  ContentType,
-  OpenApiExampleMap,
-  OpenAPIDefinition,
-  ParamSchema,
-  PropertyOptions,
-  SchemaType,
-} from "../../shared/types.js";
-import { logger } from "../../shared/logger.js";
-import type { SharedGenerationRuntime } from "../../core/runtime.js";
 
 type SchemaProcessorFileAccess = Pick<
   typeof fs,
@@ -194,7 +195,7 @@ export class SchemaProcessor {
     }
 
     if (this.openapiDefinitions[schemaName]) {
-      return this.openapiDefinitions[schemaName]!;
+      return this.openapiDefinitions[schemaName];
     }
 
     // Priority 1: Check custom schemas first (highest priority)
@@ -319,8 +320,8 @@ export class SchemaProcessor {
       if (!this.schemaDefinitionIndex[aliasName]) {
         this.schemaDefinitionIndex[aliasName] = [];
       }
-      if (!this.schemaDefinitionIndex[aliasName]!.includes(filePath)) {
-        this.schemaDefinitionIndex[aliasName]!.push(filePath);
+      if (!this.schemaDefinitionIndex[aliasName].includes(filePath)) {
+        this.schemaDefinitionIndex[aliasName].push(filePath);
       }
     });
   }
@@ -405,7 +406,7 @@ export class SchemaProcessor {
         }
       }
 
-      const typeDefEntry = this.typeDefinitions[typeName.toString()];
+      const typeDefEntry = this.typeDefinitions[typeName];
       if (!typeDefEntry) {
         // The type is not defined in any of the scanned schema dirs. It may come from
         // node_modules or a directory not covered by schemaDir (e.g. a shared package
@@ -673,7 +674,7 @@ export class SchemaProcessor {
     if (schema.$ref && schema.$ref.startsWith("#/components/schemas/")) {
       const refName = schema.$ref.replace("#/components/schemas/", "");
       const target = this.openapiDefinitions[refName] ?? this.typeDefinitions[refName];
-      if (target && !t.isNode?.(target as any)) {
+      if (target && !t.isNode?.(target)) {
         const resolved = this.openapiDefinitions[refName];
         if (resolved && resolved.properties) return resolved.properties;
       }
@@ -1231,7 +1232,7 @@ export class SchemaProcessor {
       if (
         (!node.typeParameters || node.typeParameters.params.length === 0) &&
         this.schemaIdAliases[typeName] &&
-        this.openapiDefinitions[this.schemaIdAliases[typeName]!]
+        this.openapiDefinitions[this.schemaIdAliases[typeName]]
       ) {
         return { $ref: `#/components/schemas/${this.schemaIdAliases[typeName]}` };
       }
@@ -1295,8 +1296,7 @@ export class SchemaProcessor {
           break;
         }
         const optional =
-          (t.isTSNamedTupleMember(element) && element.optional === true) ||
-          t.isTSOptionalType(unwrapped);
+          (t.isTSNamedTupleMember(element) && element.optional) || t.isTSOptionalType(unwrapped);
         const actualNode = t.isTSOptionalType(unwrapped) ? unwrapped.typeAnnotation : unwrapped;
         prefixItems.push(this.resolveTSNodeType(actualNode));
         if (!optional) minItems++;

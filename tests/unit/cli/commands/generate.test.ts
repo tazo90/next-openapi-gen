@@ -26,7 +26,7 @@ async function loadGenerateModule(
   }));
   setupMocks?.();
 
-  return import("@workspace/openapi-cli/cli/commands/generate.js");
+  return await import("@workspace/openapi-cli/cli/commands/generate.js");
 }
 
 describe("generate command", () => {
