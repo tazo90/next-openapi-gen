@@ -1,10 +1,10 @@
-import { NextRequest, NextResponse } from "next/server";
-
 import {
   CreateWebhookEndpointSchema,
   WebhookEndpointSchema,
   webhookRegistrationExamples,
 } from "@/schemas/zod-schemas";
+import type { NextRequest } from "next/server";
+import { NextResponse } from "next/server";
 
 /**
  * List registered webhooks

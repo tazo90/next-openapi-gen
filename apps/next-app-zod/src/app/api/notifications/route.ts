@@ -1,5 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
 import { ApiResponseSchema, NotificationSchema } from "@/schemas/notification";
+import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
 /**

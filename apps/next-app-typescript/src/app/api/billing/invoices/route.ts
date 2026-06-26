@@ -1,5 +1,3 @@
-import { NextRequest, NextResponse } from "next/server";
-
 import type {
   BillingCookies,
   BillingRequestHeaders,
@@ -7,6 +5,7 @@ import type {
   InvoiceQuery,
   InvoicesResponse,
 } from "@/types/billing";
+import { NextRequest, NextResponse } from "next/server";
 
 /**
  * List invoices

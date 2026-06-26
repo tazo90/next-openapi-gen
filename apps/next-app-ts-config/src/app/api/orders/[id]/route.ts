@@ -1,6 +1,5 @@
-import { NextResponse } from "next/server";
-
 import type { OrderRecord, OrderRecordIdParams, UpdateOrderRecordInput } from "@/schemas/order";
+import { NextResponse } from "next/server";
 
 type OrderRouteContext = {
   params: Promise<OrderRecordIdParams>;

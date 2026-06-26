@@ -1,8 +1,9 @@
 import { DEFAULT_UI } from "@workspace/openapi-core/config/defaults.js";
+
 import type { InitFramework } from "./framework.js";
 import type { PackageManager } from "./package-manager.js";
-import { renderUiTemplate, resolveUiTemplatePath } from "./ui-template.js";
 import type { UiType } from "./types.js";
+import { renderUiTemplate, resolveUiTemplatePath } from "./ui-template.js";
 
 export const UI_TYPES = ["scalar", "swagger", "redoc", "stoplight", "rapidoc"] as const;
 export const UI_TYPES_WITH_NONE = [...UI_TYPES, "none"] as const;

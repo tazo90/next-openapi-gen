@@ -1,5 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
 import { PostIdParams, PostResponseSchema, UpdatePostSchema } from "@/schemas/post";
+import type { NextRequest } from "next/server";
+import { NextResponse } from "next/server";
 
 /**
  * Get post by ID

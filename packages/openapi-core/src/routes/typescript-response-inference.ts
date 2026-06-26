@@ -1,7 +1,8 @@
-import * as ts from "typescript";
+import type * as ts from "typescript";
 
-import { getTypeScriptProject } from "../shared/typescript-project.js";
 import type { Diagnostic, InferredResponseDefinition, OpenApiSchemaLike } from "../shared/types.js";
+import { getTypeScriptProject } from "../shared/typescript-project.js";
+import type { TypeScriptRuntime } from "../shared/typescript-runtime.js";
 
 type InferredRouteResponses = {
   responses: InferredResponseDefinition[];
@@ -28,12 +29,13 @@ export function inferResponsesForExports(
   exportNames: readonly string[],
 ): Map<string, InferredRouteResponses> {
   const project = getTypeScriptProject(filePath);
+  const ts = project.ts;
   const sourceFile = project.program.getSourceFile(filePath);
   if (!sourceFile) {
     return new Map();
   }
 
-  const exportNodeMap = getExportNodeMap(sourceFile);
+  const exportNodeMap = getExportNodeMap(sourceFile, ts);
   const requestedExportNames = Array.from(
     new Set(exportNames.filter((exportName) => exportNodeMap.has(exportName))),
   );
@@ -51,6 +53,7 @@ export function inferResponsesForExports(
       exportNodeMap,
       missingExportNames,
       project.checker,
+      ts,
     ).forEach((result, exportName) => {
       cachedResponseMap.set(exportName, result);
     });
@@ -64,7 +67,7 @@ export function inferResponsesForExports(
   );
 }
 
-function getExportNodeMap(sourceFile: ts.SourceFile): Map<string, ts.Node> {
+function getExportNodeMap(sourceFile: ts.SourceFile, ts: TypeScriptRuntime): Map<string, ts.Node> {
   const cachedNodes = exportNodeCache.get(sourceFile);
   if (cachedNodes) {
     return cachedNodes;
@@ -75,13 +78,13 @@ function getExportNodeMap(sourceFile: ts.SourceFile): Map<string, ts.Node> {
     if (
       ts.isFunctionDeclaration(statement) &&
       statement.name?.text &&
-      hasExportModifier(statement)
+      hasExportModifier(statement, ts)
     ) {
       exportNodes.set(statement.name.text, statement);
       continue;
     }
 
-    if (ts.isVariableStatement(statement) && hasExportModifier(statement)) {
+    if (ts.isVariableStatement(statement) && hasExportModifier(statement, ts)) {
       for (const declaration of statement.declarationList.declarations) {
         if (ts.isIdentifier(declaration.name)) {
           exportNodes.set(declaration.name.text, declaration);
@@ -111,6 +114,7 @@ function inferResponsesForSourceFile(
   exportNodeMap: Map<string, ts.Node>,
   exportNames: readonly string[],
   checker: ts.TypeChecker,
+  ts: TypeScriptRuntime,
 ): Map<string, InferredRouteResponses> {
   const inferredResponses = new Map<string, InferredRouteResponses>();
 
@@ -120,7 +124,7 @@ function inferResponsesForSourceFile(
       return;
     }
 
-    const result = inferResponsesForExportNode(sourceFile, exportNode, checker);
+    const result = inferResponsesForExportNode(sourceFile, exportNode, checker, ts);
     inferredResponses.set(exportName, result);
   });
 
@@ -131,21 +135,22 @@ function inferResponsesForExportNode(
   sourceFile: ts.SourceFile,
   exportNode: ts.Node,
   checker: ts.TypeChecker,
+  ts: TypeScriptRuntime,
 ): InferredRouteResponses {
   const diagnostics: Diagnostic[] = [];
-  const responses = inferResponsesFromReturns(exportNode, sourceFile, checker, diagnostics);
+  const responses = inferResponsesFromReturns(exportNode, sourceFile, checker, diagnostics, ts);
   if (responses.length > 0) {
     return { responses, diagnostics };
   }
 
-  const signatureResponse = inferResponseFromSignature(exportNode, checker);
+  const signatureResponse = inferResponseFromSignature(exportNode, checker, ts);
   return {
     responses: signatureResponse ? [signatureResponse] : [],
     diagnostics,
   };
 }
 
-function hasExportModifier(node: ts.Node): boolean {
+function hasExportModifier(node: ts.Node, ts: TypeScriptRuntime): boolean {
   if (!ts.canHaveModifiers(node)) {
     return false;
   }
@@ -160,28 +165,33 @@ function inferResponsesFromReturns(
   sourceFile: ts.SourceFile,
   checker: ts.TypeChecker,
   diagnostics: Diagnostic[],
+  ts: TypeScriptRuntime,
 ): InferredResponseDefinition[] {
-  const functionLike = getFunctionLikeNode(exportNode);
+  const functionLike = getFunctionLikeNode(exportNode, ts);
   if (!functionLike?.body) {
     return [];
   }
 
   const responses: InferredResponseDefinition[] = [];
-  visitReturns(functionLike.body, (expression) => {
-    const inferredResponse = inferResponseFromExpression(expression, sourceFile, checker);
-    if (inferredResponse) {
-      responses.push(inferredResponse);
-      return;
-    }
+  visitReturns(
+    functionLike.body,
+    (expression) => {
+      const inferredResponse = inferResponseFromExpression(expression, sourceFile, checker, ts);
+      if (inferredResponse) {
+        responses.push(inferredResponse);
+        return;
+      }
 
-    diagnostics.push({
-      code: "response-inference-unresolved",
-      severity: "warning",
-      message:
-        "Could not fully infer a response schema from a return statement. Add an explicit @response tag to make the output deterministic.",
-      filePath: sourceFile.fileName,
-    });
-  });
+      diagnostics.push({
+        code: "response-inference-unresolved",
+        severity: "warning",
+        message:
+          "Could not fully infer a response schema from a return statement. Add an explicit @response tag to make the output deterministic.",
+        filePath: sourceFile.fileName,
+      });
+    },
+    ts,
+  );
 
   return dedupeResponses(responses);
 }
@@ -190,6 +200,7 @@ function inferResponseFromExpression(
   expression: ts.Expression,
   sourceFile: ts.SourceFile,
   checker: ts.TypeChecker,
+  ts: TypeScriptRuntime,
 ): InferredResponseDefinition | undefined {
   if (ts.isCallExpression(expression)) {
     const calleeText = expression.expression.getText(sourceFile);
@@ -201,11 +212,11 @@ function inferResponseFromExpression(
       const candidate = responseType
         ? { typeName: responseType }
         : type
-          ? toSchemaCandidate(type, checker)
+          ? toSchemaCandidate(type, checker, ts)
           : {};
       return {
         ...candidate,
-        statusCode: getStatusCodeFromInit(expression.arguments[1]) || "200",
+        statusCode: getStatusCodeFromInit(expression.arguments[1], ts) || "200",
         contentType: "application/json",
         source: "typescript",
       };
@@ -213,7 +224,7 @@ function inferResponseFromExpression(
 
     if (calleeText === "NextResponse.redirect" || calleeText === "Response.redirect") {
       return {
-        statusCode: getStatusCodeFromRedirectCall(expression) || "302",
+        statusCode: getStatusCodeFromRedirectCall(expression, ts) || "302",
         source: "typescript",
       };
     }
@@ -222,7 +233,7 @@ function inferResponseFromExpression(
   if (
     ts.isNewExpression(expression) &&
     expression.expression.getText(sourceFile) === "Response" &&
-    getStatusCodeFromInit(expression.arguments?.[1]) === "204"
+    getStatusCodeFromInit(expression.arguments?.[1], ts) === "204"
   ) {
     return {
       statusCode: "204",
@@ -236,8 +247,9 @@ function inferResponseFromExpression(
 function inferResponseFromSignature(
   exportNode: ts.Node,
   checker: ts.TypeChecker,
+  ts: TypeScriptRuntime,
 ): InferredResponseDefinition | undefined {
-  const signatureNode = getFunctionLikeNode(exportNode);
+  const signatureNode = getFunctionLikeNode(exportNode, ts);
   if (!signatureNode) {
     return undefined;
   }
@@ -260,7 +272,10 @@ function inferResponseFromSignature(
   };
 }
 
-function getFunctionLikeNode(node: ts.Node): ts.FunctionLikeDeclaration | undefined {
+function getFunctionLikeNode(
+  node: ts.Node,
+  ts: TypeScriptRuntime,
+): ts.FunctionLikeDeclaration | undefined {
   if (ts.isFunctionDeclaration(node)) {
     return node;
   }
@@ -276,7 +291,11 @@ function getFunctionLikeNode(node: ts.Node): ts.FunctionLikeDeclaration | undefi
   return undefined;
 }
 
-function visitReturns(node: ts.Node, visitor: (expression: ts.Expression) => void): void {
+function visitReturns(
+  node: ts.Node,
+  visitor: (expression: ts.Expression) => void,
+  ts: TypeScriptRuntime,
+): void {
   ts.forEachChild(node, (child) => {
     if (ts.isReturnStatement(child) && child.expression) {
       visitor(child.expression);
@@ -292,11 +311,14 @@ function visitReturns(node: ts.Node, visitor: (expression: ts.Expression) => voi
       return;
     }
 
-    visitReturns(child, visitor);
+    visitReturns(child, visitor, ts);
   });
 }
 
-function getStatusCodeFromInit(node: ts.Node | undefined): string | undefined {
+function getStatusCodeFromInit(
+  node: ts.Node | undefined,
+  ts: TypeScriptRuntime,
+): string | undefined {
   if (!node || !ts.isObjectLiteralExpression(node)) {
     return undefined;
   }
@@ -315,7 +337,10 @@ function getStatusCodeFromInit(node: ts.Node | undefined): string | undefined {
   return undefined;
 }
 
-function getStatusCodeFromRedirectCall(expression: ts.CallExpression): string | undefined {
+function getStatusCodeFromRedirectCall(
+  expression: ts.CallExpression,
+  ts: TypeScriptRuntime,
+): string | undefined {
   const statusArgument = expression.arguments[1];
   if (statusArgument && ts.isNumericLiteral(statusArgument)) {
     return statusArgument.text;
@@ -325,19 +350,20 @@ function getStatusCodeFromRedirectCall(expression: ts.CallExpression): string | 
     return undefined;
   }
 
-  return getStatusCodeFromInit(statusArgument);
+  return getStatusCodeFromInit(statusArgument, ts);
 }
 
 function toSchemaCandidate(
   type: ts.Type,
   checker: ts.TypeChecker,
+  ts: TypeScriptRuntime,
 ): Pick<InferredResponseDefinition, "typeName" | "schema"> {
   const typeName = extractNamedType(type, checker);
   if (typeName) {
     return { typeName };
   }
 
-  return { schema: typeToOpenApiSchema(type, checker, new Set<string>()) };
+  return { schema: typeToOpenApiSchema(type, checker, new Set<string>(), ts) };
 }
 
 function extractNamedResponseType(type: ts.Type, checker: ts.TypeChecker): string | undefined {
@@ -379,6 +405,7 @@ function typeToOpenApiSchema(
   type: ts.Type,
   checker: ts.TypeChecker,
   seen: Set<string>,
+  ts: TypeScriptRuntime,
 ): OpenApiSchemaLike {
   // Guard against recursive object types
   const seenKey = checker.typeToString(type);
@@ -422,13 +449,13 @@ function typeToOpenApiSchema(
       const soleNonNullType = nonNullTypes[0];
       if (nullable && soleNonNullType && nonNullTypes.length === 1) {
         return {
-          ...typeToOpenApiSchema(soleNonNullType, checker, seen),
+          ...typeToOpenApiSchema(soleNonNullType, checker, seen, ts),
           nullable: true,
         };
       }
 
       return {
-        oneOf: nonNullTypes.map((member) => typeToOpenApiSchema(member, checker, seen)),
+        oneOf: nonNullTypes.map((member) => typeToOpenApiSchema(member, checker, seen, ts)),
       };
     }
 
@@ -436,7 +463,7 @@ function typeToOpenApiSchema(
       const itemTypes = checker.getTypeArguments(type as ts.TypeReference);
       return {
         type: "array",
-        prefixItems: itemTypes.map((itemType) => typeToOpenApiSchema(itemType, checker, seen)),
+        prefixItems: itemTypes.map((itemType) => typeToOpenApiSchema(itemType, checker, seen, ts)),
         items: false,
         minItems: itemTypes.length,
         maxItems: itemTypes.length,
@@ -447,7 +474,9 @@ function typeToOpenApiSchema(
       const elementType = checker.getTypeArguments(type as ts.TypeReference)[0];
       return {
         type: "array",
-        items: elementType ? typeToOpenApiSchema(elementType, checker, seen) : { type: "object" },
+        items: elementType
+          ? typeToOpenApiSchema(elementType, checker, seen, ts)
+          : { type: "object" },
       };
     }
 
@@ -463,7 +492,7 @@ function typeToOpenApiSchema(
         }
 
         const propertyType = checker.getTypeOfSymbolAtLocation(property, propertyDeclaration);
-        schemaProperties[property.getName()] = typeToOpenApiSchema(propertyType, checker, seen);
+        schemaProperties[property.getName()] = typeToOpenApiSchema(propertyType, checker, seen, ts);
         if (!(property.flags & ts.SymbolFlags.Optional)) {
           required.push(property.getName());
         }
@@ -485,7 +514,7 @@ function typeToOpenApiSchema(
     if (stringIndexType) {
       return {
         type: "object",
-        additionalProperties: typeToOpenApiSchema(stringIndexType, checker, seen),
+        additionalProperties: typeToOpenApiSchema(stringIndexType, checker, seen, ts),
       };
     }
 

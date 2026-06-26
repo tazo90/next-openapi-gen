@@ -4,11 +4,11 @@ import path from "node:path";
 
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { defineConfig } from "@workspace/openapi-core/core/config/define-config.js";
 import {
   DEFAULT_CONFIG_FILENAMES,
   loadConfig,
 } from "@workspace/openapi-core/core/config/load-config.js";
-import { defineConfig } from "@workspace/openapi-core/core/config/define-config.js";
 
 describe("loadConfig", () => {
   const tempDirs: string[] = [];

@@ -130,18 +130,20 @@ export default defineConfig({
   test: {
     globals: true,
     environment: "node",
-    include: selectedCoverageScope?.testInclude ?? defaultTestInclude,
+    include: [...(selectedCoverageScope?.testInclude ?? defaultTestInclude)],
     coverage: {
       provider: "v8",
       reporter: ["text", "json", "html"],
-      include: selectedCoverageScope?.include ?? [
-        "packages/openapi-cli/src/**/*.ts",
-        "packages/openapi-core/src/**/*.ts",
-        "packages/openapi-framework-next/src/**/*.ts",
-        "packages/openapi-framework-react-router/src/**/*.ts",
-        "packages/openapi-framework-tanstack/src/**/*.ts",
-        "packages/openapi-init/src/**/*.ts",
-        "packages/next-openapi-gen/src/**/*.ts",
+      include: [
+        ...(selectedCoverageScope?.include ?? [
+          "packages/openapi-cli/src/**/*.ts",
+          "packages/openapi-core/src/**/*.ts",
+          "packages/openapi-framework-next/src/**/*.ts",
+          "packages/openapi-framework-react-router/src/**/*.ts",
+          "packages/openapi-framework-tanstack/src/**/*.ts",
+          "packages/openapi-init/src/**/*.ts",
+          "packages/next-openapi-gen/src/**/*.ts",
+        ]),
       ],
       exclude: [
         "node_modules/",

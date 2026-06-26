@@ -161,7 +161,7 @@ function main(): void {
       notes:
         "Mean-time ratio threshold for regression detection. Microbenchmarks are noisy; keep this value generous and rely on trend analysis for tighter signals.",
       benchmarks: Object.fromEntries(
-        [...currentMap.entries()].sort(([a], [b]) => a.localeCompare(b)),
+        [...currentMap.entries()].toSorted(([a], [b]) => a.localeCompare(b)),
       ),
     };
     fs.writeFileSync(path.resolve(args.baseline), `${JSON.stringify(baseline, null, 2)}\n`);

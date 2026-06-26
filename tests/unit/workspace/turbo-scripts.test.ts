@@ -28,7 +28,12 @@ describe("workspace Turbo script ownership", () => {
             return [];
           }
 
-          return packageJson.scripts.check === "pnpm format:check && pnpm lint"
+          const validCheckScripts = new Set([
+            "pnpm format:check && pnpm lint",
+            "pnpm format:check && pnpm lint && pnpm typecheck",
+          ]);
+
+          return packageJson.scripts.check && validCheckScripts.has(packageJson.scripts.check)
             ? []
             : [
                 `${workspaceDir}/${entry.name}/package.json -> ${packageJson.scripts.check ?? "<missing>"}`,

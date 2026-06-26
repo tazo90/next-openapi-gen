@@ -1,9 +1,8 @@
-import type { NodePath } from "@babel/traverse";
 import { parse } from "@babel/parser";
 import type { ParserOptions } from "@babel/parser";
-import * as t from "@babel/types";
+import type { NodePath } from "@babel/traverse";
+import type * as t from "@babel/types";
 
-import { resolveTypeScriptValueReference } from "./typescript-project.js";
 import type {
   DataTypes,
   Diagnostic,
@@ -13,6 +12,7 @@ import type {
   OpenApiExampleMap,
   ParamSchema,
 } from "./types.js";
+import { resolveTypeScriptValueReference } from "./typescript-project.js";
 
 export function capitalize(string: string) {
   return string.charAt(0).toUpperCase() + string.slice(1);

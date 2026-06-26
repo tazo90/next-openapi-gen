@@ -1,10 +1,10 @@
-import { NextRequest, NextResponse } from "next/server";
 import type {
   ApiResponse,
   Notification,
   NotificationType,
   ProcessingStatus,
 } from "@/types/notification";
+import { NextRequest, NextResponse } from "next/server";
 
 /**
  * Get notification status

@@ -15,7 +15,7 @@ describe("TypeScript features › conditional and mapped types", () => {
 
   it("keyof on a literal object becomes a string enum", () => {
     const schema = resolve(`keyof { a: string; b: number }`);
-    const values = (schema as { enum: string[] }).enum.slice().sort();
+    const values = (schema as { enum: string[] }).enum.slice().toSorted();
     expect(values).toEqual(["a", "b"]);
   });
 

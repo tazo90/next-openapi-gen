@@ -1,4 +1,5 @@
 import path from "path";
+
 import type { NodePath } from "@babel/traverse";
 import * as t from "@babel/types";
 
@@ -49,7 +50,7 @@ export function collectImports(
   if (!importMap[normalizedPath]) {
     importMap[normalizedPath] = {};
   }
-  const importEntries = importMap[normalizedPath]!;
+  const importEntries = importMap[normalizedPath];
 
   traverse(ast, {
     ImportDeclaration: (nodePath: NodePath<t.ImportDeclaration>) => {

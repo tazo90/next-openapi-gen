@@ -1,4 +1,3 @@
-import { cleanSpec } from "../shared/utils.js";
 import type {
   OpenApiDocument,
   OpenApiExampleMap,
@@ -12,6 +11,7 @@ import type {
   ParamSchema,
   RouteDefinition,
 } from "../shared/types.js";
+import { cleanSpec } from "../shared/utils.js";
 
 interface OpenApiVersionProcessor {
   readonly id: OpenApiVersion;
@@ -410,7 +410,7 @@ function transformResponseDefinition(
     );
   }
 
-  return nextResponse as OpenApiResponseDefinition;
+  return nextResponse;
 }
 
 function transformMediaTypeDefinition(

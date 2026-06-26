@@ -4,14 +4,15 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite dev",
     "build": "vite build",
+    "check": "pnpm format:check && pnpm lint",
+    "dev": "vite dev",
+    "format": "oxfmt --config ../../oxfmt.config.ts --ignore-path ../../.gitignore .",
+    "format:check": "oxfmt --config ../../oxfmt.config.ts --ignore-path ../../.gitignore --check .",
     "generate": "pnpm exec next-openapi-gen generate",
-    "start": "vite preview",
-    "lint": "oxlint --config ../../packages/oxlint-config/base.json . --ignore-path ../../.gitignore --deny-warnings",
-    "format": "oxfmt --config ../../packages/oxfmt-config/oxfmt.json --ignore-path ../../.gitignore .",
-    "format:check": "oxfmt --config ../../packages/oxfmt-config/oxfmt.json --ignore-path ../../.gitignore --check .",
-    "check": "pnpm format:check && pnpm lint"
+    "lint": "oxlint --type-aware --config ../../oxlint.config.ts . --ignore-path ../../.gitignore --deny-warnings",
+    "lint:fix": "oxlint --type-aware --config ../../oxlint.config.ts . --ignore-path ../../.gitignore --fix --deny-warnings",
+    "start": "vite preview"
   },
   "dependencies": {
     "@scalar/api-reference-react": "catalog:",
@@ -26,7 +27,6 @@
     "@vitejs/plugin-react": "catalog:react-router",
     "ajv": "catalog:",
     "next-openapi-gen": "workspace:*",
-    "tailwindcss": "catalog:",
     "typescript": "catalog:",
     "vite": "catalog:react-router"
   }

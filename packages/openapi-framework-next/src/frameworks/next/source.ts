@@ -1,11 +1,12 @@
 import fs from "node:fs";
 import path from "node:path";
 
+import type { GenerationPerformanceProfile } from "@workspace/openapi-core/core/performance.js";
+import type { FrameworkSource } from "@workspace/openapi-core/frameworks/types.js";
+import { FrameworkKind, type ResolvedOpenApiConfig } from "@workspace/openapi-core/shared/types.js";
+
 import { AppRouterStrategy } from "../../routes/app-router-strategy.js";
 import { PagesRouterStrategy } from "../../routes/pages-router-strategy.js";
-import type { GenerationPerformanceProfile } from "@workspace/openapi-core/core/performance.js";
-import { FrameworkKind, type ResolvedOpenApiConfig } from "@workspace/openapi-core/shared/types.js";
-import type { FrameworkSource } from "@workspace/openapi-core/frameworks/types.js";
 
 class NextFrameworkSource implements FrameworkSource {
   private readonly strategy;

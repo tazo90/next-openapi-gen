@@ -28,8 +28,8 @@ describe("zod file processor helpers", () => {
     fs.writeFileSync(path.join(apiDir, "users", "users-api.ts"), "");
     fs.writeFileSync(path.join(apiDir, "users", "ignore.txt"), "");
 
-    expect(collectZodRouteFiles(apiDir).sort()).toEqual(
-      [path.join(apiDir, "route.ts"), path.join(apiDir, "users", "users-api.ts")].sort(),
+    expect(collectZodRouteFiles(apiDir).toSorted()).toEqual(
+      [path.join(apiDir, "route.ts"), path.join(apiDir, "users", "users-api.ts")].toSorted(),
     );
   });
 
@@ -46,21 +46,21 @@ describe("zod file processor helpers", () => {
 
     const routeFiles: string[] = [];
     collectRouteFilesInDirectory(root, routeFiles);
-    expect(routeFiles.sort()).toEqual(
-      [path.join(root, "route.tsx"), path.join(root, "users-api.ts")].sort(),
+    expect(routeFiles.toSorted()).toEqual(
+      [path.join(root, "route.tsx"), path.join(root, "users-api.ts")].toSorted(),
     );
 
     const schemaFiles: string[] = [];
     processZodSchemaFilesInDirectory(root, (filePath) => {
       schemaFiles.push(filePath);
     });
-    expect(schemaFiles.sort()).toEqual(
+    expect(schemaFiles.toSorted()).toEqual(
       [
         path.join(nestedDir, "component.tsx"),
         path.join(nestedDir, "schema.ts"),
         path.join(root, "route.tsx"),
         path.join(root, "users-api.ts"),
-      ].sort(),
+      ].toSorted(),
     );
 
     const readdirSpy = vi.spyOn(fs, "readdirSync").mockImplementationOnce(() => {
@@ -97,7 +97,7 @@ describe("zod file processor helpers", () => {
     expect(
       collectZodRouteFiles(root)
         .map((filePath) => path.basename(filePath))
-        .sort(),
+        .toSorted(),
     ).toEqual(["api-handler.ts", "route.ts", "route.tsx"]);
   });
 
@@ -134,7 +134,7 @@ describe("zod file processor helpers", () => {
       visited.push(path.basename(filePath));
     });
 
-    expect(visited.sort()).toEqual(["schema.ts", "schema.tsx"]);
+    expect(visited.toSorted()).toEqual(["schema.ts", "schema.tsx"]);
   });
 
   it("supports direct recursive collection helper", () => {

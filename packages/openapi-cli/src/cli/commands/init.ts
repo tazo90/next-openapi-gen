@@ -6,7 +6,6 @@ import {
   DEFAULT_INIT_SCHEMA_TYPE,
   DEFAULT_UI,
 } from "@workspace/openapi-core/config/defaults.js";
-import type { OpenApiTemplate } from "@workspace/openapi-core/shared/types.js";
 import {
   createDocsPage,
   createOpenApiTemplate,
@@ -26,7 +25,7 @@ export async function init(options: InitOptions): Promise<void> {
 
   try {
     const outputPath = getOutputPath(output);
-    const template = createOpenApiTemplate(framework) as OpenApiTemplate;
+    const template = createOpenApiTemplate(framework);
 
     extendOpenApiTemplate(template, options);
 

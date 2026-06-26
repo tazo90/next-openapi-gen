@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 
-import yaml from "js-yaml";
+import { load as loadYaml } from "js-yaml";
 
 import { getErrorMessage } from "../../shared/error.js";
 import { logger } from "../../shared/logger.js";
@@ -66,7 +66,7 @@ function parseCustomSchemaFile(filePath: string): unknown | null {
   const ext = path.extname(filePath).toLowerCase();
 
   if (ext === ".yaml" || ext === ".yml") {
-    return yaml.load(content);
+    return loadYaml(content);
   }
 
   if (ext === ".json") {

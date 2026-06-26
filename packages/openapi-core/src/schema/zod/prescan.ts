@@ -1,8 +1,9 @@
 import type { Stats } from "fs";
+import path from "path";
 
 import type { NodePath } from "@babel/traverse";
 import * as t from "@babel/types";
-import path from "path";
+
 import { traverse } from "../../shared/babel-traverse.js";
 
 type FileAccess = {

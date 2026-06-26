@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
 import traverseModule from "@babel/traverse";
+import { describe, expect, it } from "vitest";
 
 import { extractJSDocComments, parseTypeScriptFile } from "@workspace/openapi-core/shared/utils.js";
 

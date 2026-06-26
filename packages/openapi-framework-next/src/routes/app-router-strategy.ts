@@ -1,22 +1,23 @@
-import * as t from "@babel/types";
 import fs from "fs";
+
 import type { NodePath } from "@babel/traverse";
+import * as t from "@babel/types";
 
 import {
   measurePerformance,
   type GenerationPerformanceProfile,
 } from "@workspace/openapi-core/core/performance.js";
 import { HTTP_METHODS } from "@workspace/openapi-core/routes/router-strategy.js";
+import type { RouterStrategy } from "@workspace/openapi-core/routes/router-strategy.js";
 import { inferResponsesForExports } from "@workspace/openapi-core/routes/typescript-response-inference.js";
 import { traverse } from "@workspace/openapi-core/shared/babel-traverse.js";
-import type { RouterStrategy } from "@workspace/openapi-core/routes/router-strategy.js";
-import { extractJSDocComments, parseTypeScriptFile } from "@workspace/openapi-core/shared/utils.js";
 import type {
   DataTypes,
   InferredResponseDefinition,
   OpenApiConfig,
   OpenApiSchemaLike,
 } from "@workspace/openapi-core/shared/types.js";
+import { extractJSDocComments, parseTypeScriptFile } from "@workspace/openapi-core/shared/utils.js";
 
 export class AppRouterStrategy implements RouterStrategy {
   private config: OpenApiConfig;

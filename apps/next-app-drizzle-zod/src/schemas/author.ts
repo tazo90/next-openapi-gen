@@ -1,7 +1,6 @@
+import { authors } from "@/db/schema";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
-
-import { authors } from "@/db/schema";
 
 export const CreateAuthorSchema = createInsertSchema(authors, {
   bio: (schema) => schema.max(280).optional().describe("Author biography"),

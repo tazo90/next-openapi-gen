@@ -1,10 +1,10 @@
 import fs from "node:fs";
 
 import { describe, expect, it } from "vitest";
-import { createDefaultGenerationAdapters } from "@workspace/openapi-cli";
 
-import { runGenerationOrchestrator } from "@workspace/openapi-core/core/orchestrator.js";
+import { createDefaultGenerationAdapters } from "@workspace/openapi-cli";
 import { normalizeOpenApiConfig } from "@workspace/openapi-core/config/normalize.js";
+import { runGenerationOrchestrator } from "@workspace/openapi-core/core/orchestrator.js";
 
 import {
   createTempProject,
@@ -189,10 +189,9 @@ export async function GET() {}
       expect(getOp).toBeDefined();
 
       const pathParam = getOp?.parameters?.find((p: any) => p.in === "path" && p.name === "id");
-      if (pathParam) {
-        const schema = (pathParam as any).schema;
-        expect(schema).not.toHaveProperty("$ref");
-      }
+      expect(pathParam).toBeDefined();
+      const schema = (pathParam as any).schema;
+      expect(schema).not.toHaveProperty("$ref");
     } finally {
       project.cleanup();
     }

@@ -1,11 +1,11 @@
-import { NextRequest, NextResponse } from "next/server";
-
 import {
   AuthorBatchStatusUpdateSchema,
   AuthorsQueryParams,
   AuthorResponseSchema,
   CreateAuthorSchema,
 } from "@/schemas/author";
+import type { NextRequest } from "next/server";
+import { NextResponse } from "next/server";
 
 /**
  * List authors

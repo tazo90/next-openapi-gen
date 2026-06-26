@@ -1,6 +1,14 @@
 {
-  "$schema": "https://turbo.build/schema.json",
+  "$schema": "https://v2-10-0.turborepo.dev/schema.json",
   "ui": "tui",
+  "globalEnv": [
+    "CI",
+    "COVERAGE_SCOPE",
+    "E2E_APP",
+    "FORCE_COLOR",
+    "NEXT_OPENAPI_GEN_TIMING",
+    "NODE_ENV"
+  ],
   "tasks": {
     "//#knip": {
       "dependsOn": ["next-openapi-gen#build"],
@@ -15,12 +23,18 @@
       "outputs": []
     },
     "//#test:integration": {
+      "dependsOn": ["transit"],
       "outputs": []
+    },
+    "//#transit": {
+      "dependsOn": ["^transit"]
     },
     "test:coverage": {
-      "outputs": []
+      "dependsOn": ["transit"],
+      "outputs": ["coverage/**"]
     },
     "//#test:unit": {
+      "dependsOn": ["transit"],
       "outputs": []
     },
     "build": {
@@ -29,6 +43,7 @@
       "outputs": ["dist/**", ".next/**", "!.next/cache/**", "tsconfig.tsbuildinfo"]
     },
     "check": {
+      "dependsOn": ["transit"],
       "outputs": []
     },
     "dev": {
@@ -36,9 +51,11 @@
       "persistent": true
     },
     "format": {
+      "dependsOn": ["transit"],
       "outputs": []
     },
     "format:check": {
+      "dependsOn": ["transit"],
       "outputs": []
     },
     "generate": {
@@ -46,10 +63,24 @@
       "outputs": []
     },
     "lint": {
+      "dependsOn": ["transit"],
+      "outputs": []
+    },
+    "lint:fix": {
+      "cache": false,
+      "dependsOn": ["transit"],
       "outputs": []
     },
     "test": {
+      "dependsOn": ["transit"],
       "outputs": []
+    },
+    "transit": {
+      "dependsOn": ["^transit"]
+    },
+    "typecheck": {
+      "dependsOn": ["transit"],
+      "outputs": ["tsconfig.tsbuildinfo"]
     }
   }
 }

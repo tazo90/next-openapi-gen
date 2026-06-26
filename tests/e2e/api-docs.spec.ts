@@ -1,7 +1,7 @@
 import { test } from "@playwright/test";
 
-import { getE2EAppConfig } from "./apps";
 import { runApiDocsSmokeTest } from "./api-docs-smoke";
+import { getE2EAppConfig } from "./apps";
 
 const app = getE2EAppConfig();
 

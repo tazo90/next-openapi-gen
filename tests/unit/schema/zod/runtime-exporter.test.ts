@@ -1,8 +1,8 @@
 import * as t from "@babel/types";
 import { describe, expect, it } from "vitest";
 
-import { parseTypeScriptFile } from "@workspace/openapi-core/shared/utils.js";
 import { ZodRuntimeExporter } from "@workspace/openapi-core/schema/zod/runtime-exporter.js";
+import { parseTypeScriptFile } from "@workspace/openapi-core/shared/utils.js";
 
 function parseInitializer(expression: string): t.Expression {
   const ast = parseTypeScriptFile(`const schema = ${expression};`);

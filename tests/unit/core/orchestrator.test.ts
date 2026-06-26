@@ -4,9 +4,8 @@ import { describe, expect, it, vi } from "vitest";
 
 type MockFn = (...args: unknown[]) => unknown;
 import { createDefaultGenerationAdapters } from "@workspace/openapi-cli";
-
-import { runGenerationOrchestrator } from "@workspace/openapi-core/core/orchestrator.js";
 import { normalizeOpenApiConfig } from "@workspace/openapi-core/config/normalize.js";
+import { runGenerationOrchestrator } from "@workspace/openapi-core/core/orchestrator.js";
 
 import {
   createTempProject,

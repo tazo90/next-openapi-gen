@@ -2,10 +2,11 @@ import type fs from "fs";
 import path from "path";
 
 import * as t from "@babel/types";
-import { parseTypeScriptFile } from "../../shared/utils.js";
-import type { ContentType, OpenAPIDefinition } from "../../shared/types.js";
+
 import { logger } from "../../shared/logger.js";
 import type { SymbolResolver } from "../../shared/symbol-resolver.js";
+import type { ContentType, OpenAPIDefinition } from "../../shared/types.js";
+import { parseTypeScriptFile } from "../../shared/utils.js";
 
 type TypeDefinitionEntry = {
   node?: any;

@@ -3,13 +3,14 @@ import type {
   FrameworkKind,
   LegacyFrameworkKind,
   OpenApiConfig,
-  OpenApiVersion,
   OpenApiTemplate,
+  OpenApiVersion,
   ResolvedOpenApiConfig,
   RouterType,
   SchemaType,
 } from "../shared/types.js";
 import { FrameworkKind as ResolvedFrameworkKind } from "../shared/types.js";
+import { DEFAULT_AUTH_PRESET_REPLACEMENTS } from "../shared/utils.js";
 import {
   DEFAULT_API_DIR,
   DEFAULT_DEBUG,
@@ -24,7 +25,6 @@ import {
   DEFAULT_SCHEMA_DIR,
   DEFAULT_UI,
 } from "./defaults.js";
-import { DEFAULT_AUTH_PRESET_REPLACEMENTS } from "../shared/utils.js";
 
 function normalizeRouterType(routerType?: RouterType): RouterType {
   return routerType ?? DEFAULT_ROUTER_TYPE;
@@ -62,6 +62,8 @@ type RawFrameworkConfig = {
 
 function normalizeFrameworkKind(kind: RawFrameworkConfig["kind"]): FrameworkKind {
   switch (kind) {
+    case undefined:
+      return ResolvedFrameworkKind.Nextjs;
     case ResolvedFrameworkKind.Nextjs:
     case "next":
       return ResolvedFrameworkKind.Nextjs;

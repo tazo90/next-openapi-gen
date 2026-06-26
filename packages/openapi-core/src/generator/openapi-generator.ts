@@ -1,12 +1,12 @@
-import path from "path";
 import fs from "fs";
+import path from "path";
 
 import { DEFAULT_GENERATE_TEMPLATE_PATH } from "../config/defaults.js";
 import { normalizeOpenApiConfig } from "../config/normalize.js";
-import { runGenerationOrchestrator } from "../core/orchestrator.js";
-import type { OrchestratorPerformanceProfile } from "../core/orchestrator.js";
 import type { GenerationAdapters } from "../core/adapters.js";
 import type { NextOpenApiConfigFile } from "../core/config/types.js";
+import { runGenerationOrchestrator } from "../core/orchestrator.js";
+import type { OrchestratorPerformanceProfile } from "../core/orchestrator.js";
 import type { SharedGenerationRuntime } from "../core/runtime.js";
 import { getErrorMessage } from "../shared/error.js";
 import { logger } from "../shared/logger.js";
@@ -107,6 +107,7 @@ function readOpenApiTemplate(templatePath: string): OpenApiTemplate {
   } catch (error) {
     throw new Error(
       `Failed to read OpenAPI template at ${templatePath}: ${getErrorMessage(error)}`,
+      { cause: error },
     );
   }
 }

@@ -1,7 +1,8 @@
 import type { GenerationPerformanceProfile } from "../core/performance.js";
 import { measurePerformance } from "../core/performance.js";
-import type { SchemaProcessor } from "../schema/typescript/schema-processor.js";
 import { createMultipartEncoding } from "../schema/typescript/helpers.js";
+import type { SchemaProcessor } from "../schema/typescript/schema-processor.js";
+import type { DataTypes, ParamSchema, RouteDefinition } from "../shared/types.js";
 import {
   capitalize,
   deepMerge,
@@ -9,8 +10,7 @@ import {
   getOperationId,
   performAuthPresetReplacements,
 } from "../shared/utils.js";
-import type { DataTypes, ParamSchema, RouteDefinition } from "../shared/types.js";
-import { ResponseProcessor } from "./response-processor.js";
+import type { ResponseProcessor } from "./response-processor.js";
 
 export class OperationProcessor {
   private readonly authPresets: Record<string, string>;

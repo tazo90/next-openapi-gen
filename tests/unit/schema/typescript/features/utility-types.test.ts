@@ -46,13 +46,13 @@ describe("TypeScript features › utility types (standalone)", () => {
 
   it("Exclude<'a' | 'b' | 'c', 'b'> drops 'b'", () => {
     const schema = resolve("Exclude<'a' | 'b' | 'c', 'b'>");
-    const values = (schema as { enum: string[] }).enum.slice().sort();
+    const values = (schema as { enum: string[] }).enum.slice().toSorted();
     expect(values).toEqual(["a", "c"]);
   });
 
   it("Extract<'a' | 'b' | 'c', 'a' | 'b'> keeps a and b", () => {
     const schema = resolve("Extract<'a' | 'b' | 'c', 'a' | 'b'>");
-    const values = (schema as { enum: string[] }).enum.slice().sort();
+    const values = (schema as { enum: string[] }).enum.slice().toSorted();
     expect(values).toEqual(["a", "b"]);
   });
 

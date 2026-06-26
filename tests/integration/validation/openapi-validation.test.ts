@@ -1,10 +1,9 @@
 import fs from "node:fs";
 import path from "node:path";
 
-import { describe, expect, it } from "vitest";
-
 import { Validator } from "@seriousme/openapi-schema-validator";
 import { OpenApiGenerator } from "next-openapi-gen";
+import { describe, expect, it } from "vitest";
 
 import {
   createTempProject,
@@ -34,6 +33,7 @@ describe("OpenAPI document validation", () => {
   it.each(["3.0", "3.1", "3.2"] as const)(
     "validates generated core-flow fixture for OpenAPI %s",
     async (openapiVersion) => {
+      expect.assertions(1);
       const { project, spec } = generateFixtureSpec({
         fixturePath: appRouterCoreFixture,
         openapiVersion,
@@ -102,6 +102,7 @@ describe("OpenAPI document validation", () => {
   it.each(["3.0", "3.1", "3.2"] as const)(
     "validates generated Zod-heavy fixture for OpenAPI %s",
     async (openapiVersion) => {
+      expect.assertions(1);
       const { project, spec } = generateFixtureSpec({
         fixturePath: appRouterZodCoverageFixture,
         openapiVersion,
@@ -118,6 +119,7 @@ describe("OpenAPI document validation", () => {
   it.each(["3.0", "3.1", "3.2"] as const)(
     "validates generated zod-full-coverage fixture for OpenAPI %s",
     async (openapiVersion) => {
+      expect.assertions(3);
       const { project, spec } = generateFixtureSpec({
         fixturePath: appRouterZodFullCoverageFixture,
         openapiVersion,
@@ -136,6 +138,7 @@ describe("OpenAPI document validation", () => {
   it.each(["3.0", "3.1", "3.2"] as const)(
     "validates generated ts-full-coverage fixture for OpenAPI %s",
     async (openapiVersion) => {
+      expect.assertions(3);
       const { project, spec } = generateFixtureSpec({
         fixturePath: appRouterTypescriptFullCoverageFixture,
         openapiVersion,

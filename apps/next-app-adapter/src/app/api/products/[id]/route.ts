@@ -1,6 +1,5 @@
-import { NextResponse } from "next/server";
-
 import type { CatalogItem, CatalogItemIdParams, UpdateCatalogItemInput } from "@/schemas/catalog";
+import { NextResponse } from "next/server";
 
 type ProductRouteContext = {
   params: Promise<CatalogItemIdParams>;

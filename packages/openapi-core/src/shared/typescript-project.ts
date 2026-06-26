@@ -1,9 +1,18 @@
 import path from "path";
-import * as ts from "typescript";
+
+import type * as ts from "typescript";
 
 import type { Diagnostic } from "./types.js";
+import {
+  getBestEffortScriptTarget,
+  resolveTypeScriptRuntime,
+  type TypeScriptRuntime,
+} from "./typescript-runtime.js";
 
 type TypeScriptProject = {
+  ts: TypeScriptRuntime;
+  typescriptPath: string;
+  typescriptVersion: string;
   program: ts.Program;
   checker: ts.TypeChecker;
   compilerOptions: ts.CompilerOptions;
@@ -13,32 +22,36 @@ const projectCache = new Map<string, TypeScriptProject>();
 
 export function getTypeScriptProject(filePath: string): TypeScriptProject {
   const absoluteFilePath = path.resolve(filePath);
+  const runtime = resolveTypeScriptRuntime(absoluteFilePath);
+  const ts = runtime.ts;
   const configPath = ts.findConfigFile(
     path.dirname(absoluteFilePath),
     ts.sys.fileExists,
     "tsconfig.json",
   );
-  const cacheKey = configPath || absoluteFilePath;
+  const cacheKey = `${runtime.packagePath}:${configPath || absoluteFilePath}`;
   const cachedProject = projectCache.get(cacheKey);
   if (cachedProject) {
     return cachedProject;
   }
 
   const project = configPath
-    ? createConfiguredProject(configPath)
-    : createSingleFileProject(absoluteFilePath);
+    ? createConfiguredProject(configPath, runtime.ts, runtime.packagePath, runtime.version)
+    : createSingleFileProject(absoluteFilePath, runtime.ts, runtime.packagePath, runtime.version);
   projectCache.set(cacheKey, project);
   return project;
 }
 
 export function invalidateTypeScriptProject(filePath: string): void {
   const absoluteFilePath = path.resolve(filePath);
+  const runtime = resolveTypeScriptRuntime(absoluteFilePath);
+  const ts = runtime.ts;
   const configPath = ts.findConfigFile(
     path.dirname(absoluteFilePath),
     ts.sys.fileExists,
     "tsconfig.json",
   );
-  const cacheKey = configPath || absoluteFilePath;
+  const cacheKey = `${runtime.packagePath}:${configPath || absoluteFilePath}`;
   projectCache.delete(cacheKey);
 }
 
@@ -48,8 +61,8 @@ export function clearTypeScriptProjectCache(): void {
 
 export function resolveTypeScriptModule(importPath: string, fromFilePath: string): string | null {
   const project = getTypeScriptProject(fromFilePath);
-  const resolutionHost = ts.createCompilerHost(project.compilerOptions, true);
-  const resolvedModule = ts.resolveModuleName(
+  const resolutionHost = project.ts.createCompilerHost(project.compilerOptions, true);
+  const resolvedModule = project.ts.resolveModuleName(
     importPath,
     path.resolve(fromFilePath),
     project.compilerOptions,
@@ -74,6 +87,7 @@ export function resolveTypeScriptValueReference(
 ): { value?: unknown; diagnostic?: Diagnostic } {
   const absoluteFilePath = path.resolve(fromFilePath);
   const project = getTypeScriptProject(absoluteFilePath);
+  const ts = project.ts;
   const sourceFile = project.program.getSourceFile(absoluteFilePath);
   if (!sourceFile) {
     return {
@@ -86,7 +100,7 @@ export function resolveTypeScriptValueReference(
     };
   }
 
-  const symbol = findValueSymbol(referenceName, sourceFile, project.checker);
+  const symbol = findValueSymbol(referenceName, sourceFile, project.checker, ts);
   if (!symbol) {
     return {
       diagnostic: {
@@ -98,7 +112,7 @@ export function resolveTypeScriptValueReference(
     };
   }
 
-  const value = evaluateSymbol(symbol, project.checker, new Set<string>());
+  const value = evaluateSymbol(symbol, project.checker, new Set<string>(), ts);
   if (typeof value === "undefined") {
     return {
       diagnostic: {
@@ -117,6 +131,7 @@ function findValueSymbol(
   referenceName: string,
   sourceFile: ts.SourceFile,
   checker: ts.TypeChecker,
+  ts: TypeScriptRuntime,
 ): ts.Symbol | undefined {
   const symbols = checker.getSymbolsInScope(
     sourceFile,
@@ -138,8 +153,9 @@ function evaluateSymbol(
   symbol: ts.Symbol,
   checker: ts.TypeChecker,
   seen: Set<string>,
+  ts: TypeScriptRuntime,
 ): unknown | undefined {
-  const declaration = getResolvableDeclaration(symbol, checker);
+  const declaration = getResolvableDeclaration(symbol, checker, ts);
   if (!declaration) {
     return undefined;
   }
@@ -150,12 +166,16 @@ function evaluateSymbol(
   }
 
   seen.add(symbolKey);
-  const result = evaluateNode(declaration, checker, seen);
+  const result = evaluateNode(declaration, checker, seen, ts);
   seen.delete(symbolKey);
   return result;
 }
 
-function getResolvableDeclaration(symbol: ts.Symbol, checker: ts.TypeChecker): ts.Node | undefined {
+function getResolvableDeclaration(
+  symbol: ts.Symbol,
+  checker: ts.TypeChecker,
+  ts: TypeScriptRuntime,
+): ts.Node | undefined {
   const target = symbol.flags & ts.SymbolFlags.Alias ? checker.getAliasedSymbol(symbol) : symbol;
   return (
     target.valueDeclaration ||
@@ -179,22 +199,23 @@ function evaluateNode(
   node: ts.Node,
   checker: ts.TypeChecker,
   seen: Set<string>,
+  ts: TypeScriptRuntime,
 ): unknown | undefined {
   if (ts.isVariableDeclaration(node) || ts.isBindingElement(node)) {
-    return node.initializer ? evaluateNode(node.initializer, checker, seen) : undefined;
+    return node.initializer ? evaluateNode(node.initializer, checker, seen, ts) : undefined;
   }
 
   if (ts.isPropertyAssignment(node)) {
-    return evaluateNode(node.initializer, checker, seen);
+    return evaluateNode(node.initializer, checker, seen, ts);
   }
 
   if (ts.isShorthandPropertyAssignment(node)) {
     const symbol = checker.getShorthandAssignmentValueSymbol(node);
-    return symbol ? evaluateSymbol(symbol, checker, seen) : undefined;
+    return symbol ? evaluateSymbol(symbol, checker, seen, ts) : undefined;
   }
 
   if (ts.isParenthesizedExpression(node)) {
-    return evaluateNode(node.expression, checker, seen);
+    return evaluateNode(node.expression, checker, seen, ts);
   }
 
   if (
@@ -202,15 +223,15 @@ function evaluateNode(
     ts.isTypeAssertionExpression(node) ||
     ts.isSatisfiesExpression(node)
   ) {
-    return evaluateNode(node.expression, checker, seen);
+    return evaluateNode(node.expression, checker, seen, ts);
   }
 
   if (ts.isNonNullExpression(node)) {
-    return evaluateNode(node.expression, checker, seen);
+    return evaluateNode(node.expression, checker, seen, ts);
   }
 
   if (ts.isPrefixUnaryExpression(node)) {
-    const operand = evaluateNode(node.operand, checker, seen);
+    const operand = evaluateNode(node.operand, checker, seen, ts);
     if (typeof operand !== "number") {
       return undefined;
     }
@@ -220,6 +241,11 @@ function evaluateNode(
         return -operand;
       case ts.SyntaxKind.PlusToken:
         return operand;
+      case ts.SyntaxKind.PlusPlusToken:
+      case ts.SyntaxKind.MinusMinusToken:
+      case ts.SyntaxKind.ExclamationToken:
+      case ts.SyntaxKind.TildeToken:
+        return undefined;
       default:
         return undefined;
     }
@@ -250,7 +276,7 @@ function evaluateNode(
 
     for (const property of node.properties) {
       if (ts.isSpreadAssignment(property)) {
-        const spreadValue = evaluateNode(property.expression, checker, seen);
+        const spreadValue = evaluateNode(property.expression, checker, seen, ts);
         if (!isRecord(spreadValue)) {
           return undefined;
         }
@@ -259,12 +285,12 @@ function evaluateNode(
         continue;
       }
 
-      const propertyName = getPropertyName(property.name);
+      const propertyName = getPropertyName(property.name, ts);
       if (!propertyName) {
         return undefined;
       }
 
-      const value = evaluateNode(property, checker, seen);
+      const value = evaluateNode(property, checker, seen, ts);
       if (typeof value !== "undefined") {
         result[propertyName] = value;
       }
@@ -278,7 +304,7 @@ function evaluateNode(
 
     for (const element of node.elements) {
       if (ts.isSpreadElement(element)) {
-        const spreadValue = evaluateNode(element.expression, checker, seen);
+        const spreadValue = evaluateNode(element.expression, checker, seen, ts);
         if (!Array.isArray(spreadValue)) {
           return undefined;
         }
@@ -287,7 +313,7 @@ function evaluateNode(
         continue;
       }
 
-      result.push(evaluateNode(element, checker, seen));
+      result.push(evaluateNode(element, checker, seen, ts));
     }
 
     return result;
@@ -295,7 +321,7 @@ function evaluateNode(
 
   if (ts.isIdentifier(node)) {
     const symbol = checker.getSymbolAtLocation(node);
-    return symbol ? evaluateSymbol(symbol, checker, seen) : undefined;
+    return symbol ? evaluateSymbol(symbol, checker, seen, ts) : undefined;
   }
 
   if (ts.isCallExpression(node)) {
@@ -303,17 +329,17 @@ function evaluateNode(
       ts.isPropertyAccessExpression(node.expression) &&
       ["parse", "parseAsync"].includes(node.expression.name.text)
     ) {
-      return node.arguments[0] ? evaluateNode(node.arguments[0], checker, seen) : undefined;
+      return node.arguments[0] ? evaluateNode(node.arguments[0], checker, seen, ts) : undefined;
     }
 
     if (node.expression.getText() === "Object.freeze") {
-      return node.arguments[0] ? evaluateNode(node.arguments[0], checker, seen) : undefined;
+      return node.arguments[0] ? evaluateNode(node.arguments[0], checker, seen, ts) : undefined;
     }
   }
 
   if (ts.isEnumMember(node)) {
     if (node.initializer) {
-      return evaluateNode(node.initializer, checker, seen);
+      return evaluateNode(node.initializer, checker, seen, ts);
     }
 
     return node.name.getText();
@@ -322,7 +348,10 @@ function evaluateNode(
   return undefined;
 }
 
-function getPropertyName(name: ts.PropertyName | undefined): string | undefined {
+function getPropertyName(
+  name: ts.PropertyName | undefined,
+  ts: TypeScriptRuntime,
+): string | undefined {
   if (!name) {
     return undefined;
   }
@@ -342,7 +371,12 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function createConfiguredProject(configPath: string): TypeScriptProject {
+function createConfiguredProject(
+  configPath: string,
+  ts: TypeScriptRuntime,
+  typescriptPath: string,
+  typescriptVersion: string,
+): TypeScriptProject {
   const configFile = ts.readConfigFile(configPath, ts.sys.readFile);
   const parsedConfig = ts.parseJsonConfigFileContent(
     configFile.config,
@@ -355,19 +389,27 @@ function createConfiguredProject(configPath: string): TypeScriptProject {
   });
 
   return {
+    ts,
+    typescriptPath,
+    typescriptVersion,
     program,
     checker: program.getTypeChecker(),
     compilerOptions: parsedConfig.options,
   };
 }
 
-function createSingleFileProject(filePath: string): TypeScriptProject {
+function createSingleFileProject(
+  filePath: string,
+  ts: TypeScriptRuntime,
+  typescriptPath: string,
+  typescriptVersion: string,
+): TypeScriptProject {
   const compilerOptions: ts.CompilerOptions = {
     allowJs: false,
     jsx: ts.JsxEmit.Preserve,
     module: ts.ModuleKind.ESNext,
     moduleResolution: ts.ModuleResolutionKind.Bundler,
-    target: ts.ScriptTarget.ES2022,
+    target: getBestEffortScriptTarget(ts),
   };
   const program = ts.createProgram({
     rootNames: [filePath],
@@ -375,6 +417,9 @@ function createSingleFileProject(filePath: string): TypeScriptProject {
   });
 
   return {
+    ts,
+    typescriptPath,
+    typescriptVersion,
     program,
     checker: program.getTypeChecker(),
     compilerOptions,

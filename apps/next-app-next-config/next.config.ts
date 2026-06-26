@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
+import { withNextOpenApi } from "next-openapi-gen/next";
 
 import nextConfig from "@workspace/next-config";
-import { withNextOpenApi } from "next-openapi-gen/next";
 
 const config = {
   ...nextConfig,

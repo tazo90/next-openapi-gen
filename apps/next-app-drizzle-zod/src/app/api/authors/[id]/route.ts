@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
-
 import { AuthorIdParams, AuthorResponseSchema, UpdateAuthorSchema } from "@/schemas/author";
+import type { NextRequest } from "next/server";
+import { NextResponse } from "next/server";
 
 /**
  * Get author by ID

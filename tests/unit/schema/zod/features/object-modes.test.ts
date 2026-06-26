@@ -126,7 +126,7 @@ describe("Zod features › object modes", () => {
   it("required() marks every property required", () => {
     const schema = convert(`${base}.required()`, roots);
     expect(schema).toMatchObject({ type: "object" });
-    expect((schema as { required: string[] }).required.sort()).toEqual(["id", "name"]);
+    expect((schema as { required: string[] }).required.toSorted()).toEqual(["id", "name"]);
   });
 
   it("deepPartial() strips required arrays recursively", () => {

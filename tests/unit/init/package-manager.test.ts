@@ -46,7 +46,7 @@ describe("package manager helpers", () => {
     fs.writeFileSync(
       path.join(root, "package.json"),
       JSON.stringify({
-        packageManager: "pnpm@10.27.0",
+        packageManager: "pnpm@11.9.0",
       }),
     );
 
