@@ -39,7 +39,9 @@ try {
 
   const tarballPath = join(pkgDir, tarball);
 
-  execSync(`pnpm publish "${tarballPath}" --access public`, { stdio: "inherit" });
+  execSync(`pnpm publish "${tarballPath}" --access public --no-git-checks`, {
+    stdio: "inherit",
+  });
 
   unlinkSync(tarballPath);
 } finally {
