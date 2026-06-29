@@ -119,9 +119,11 @@ describe("Zod prescan helpers", () => {
       t.isMemberExpression(node.callee) &&
       t.isIdentifier(node.callee.object, { name: "z" });
 
-    expect(returnsZodSchemaNode(findFunctionInAST(currentAST, "makeLocal")!, isZodSchema)).toBe(
-      true,
-    );
+    const makeLocalNode = findFunctionInAST(currentAST, "makeLocal");
+    if (!makeLocalNode) {
+      throw new Error("expected makeLocal function in AST");
+    }
+    expect(returnsZodSchemaNode(makeLocalNode, isZodSchema)).toBe(true);
     expect(returnsZodSchemaNode(t.identifier("value"), isZodSchema)).toBe(false);
     expect(
       returnsZodSchemaNode(
