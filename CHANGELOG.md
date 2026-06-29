@@ -1,3 +1,13 @@
+# [1.5.0](https://github.com/tazo90/next-openapi-gen/compare/v1.4.3...v1.5.0) (2026-06-29)
+
+### ✨ Features
+
+- Typescript 7 support and cleanup ([#160](https://github.com/tazo90/next-openapi-gen/issues/160)) ([810693d](https://github.com/tazo90/next-openapi-gen/commit/810693d917efc9d87b917c8ec15c73f98ea42a40)) by [@martijn00](https://github.com/martijn00)
+
+### 🐛 Bug Fixes
+
+- **test:** replace unnecessary non-null assertion with explicit guard ([#161](https://github.com/tazo90/next-openapi-gen/issues/161)) ([a73e026](https://github.com/tazo90/next-openapi-gen/commit/a73e026339a8c670fc862b8138ccdb650bbe1856)) by [@tazo90](https://github.com/tazo90)
+
 ## [1.4.3](https://github.com/tazo90/next-openapi-gen/compare/v1.4.2...v1.4.3) (2026-06-13)
 
 ### 🐛 Bug Fixes
