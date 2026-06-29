@@ -43,6 +43,9 @@ build/
 # Git worktrees
 .worktrees/
 
+# Publish artifacts
+*.tgz
+
 # Misc
 .DS_Store
 *.pem
