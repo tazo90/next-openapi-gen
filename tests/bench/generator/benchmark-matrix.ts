@@ -1,15 +1,16 @@
-import { createSharedGenerationRuntime } from "@workspace/openapi-core/core/runtime.js";
-import {
-  FrameworkKind,
-  type OpenApiVersion,
-  type RouterType,
-} from "@workspace/openapi-core/shared/types.js";
 import {
   OpenApiGenerator,
   type GeneratorPerformanceProfile,
   type OpenApiDocument,
   type OpenApiTemplate,
 } from "next-openapi-gen";
+
+import { createSharedGenerationRuntime } from "@workspace/openapi-core/core/runtime.js";
+import {
+  FrameworkKind,
+  type OpenApiVersion,
+  type RouterType,
+} from "@workspace/openapi-core/shared/types.js";
 
 import {
   copyProjectFixture,

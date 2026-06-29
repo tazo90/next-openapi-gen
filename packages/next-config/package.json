@@ -10,9 +10,19 @@
     }
   },
   "scripts": {
-    "format": "oxfmt --config ../oxfmt-config/oxfmt.json --ignore-path ../../.gitignore .",
-    "format:check": "oxfmt --config ../oxfmt-config/oxfmt.json --ignore-path ../../.gitignore --check .",
-    "check": "pnpm format:check"
+    "check": "pnpm format:check && pnpm lint && pnpm typecheck",
+    "format": "oxfmt --config ../../oxfmt.config.ts --ignore-path ../../.gitignore .",
+    "format:check": "oxfmt --config ../../oxfmt.config.ts --ignore-path ../../.gitignore --check .",
+    "lint": "oxlint --type-aware --config ../../oxlint.config.ts . --ignore-path ../../.gitignore --deny-warnings",
+    "lint:fix": "oxlint --type-aware --config ../../oxlint.config.ts . --ignore-path ../../.gitignore --fix --deny-warnings",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@workspace/typescript-config": "workspace:*",
+    "oxfmt": "catalog:",
+    "oxlint": "catalog:",
+    "oxlint-tsgolint": "catalog:",
+    "typescript": "catalog:"
   },
   "peerDependencies": {
     "next": "catalog:nextjs"

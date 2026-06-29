@@ -1,10 +1,11 @@
 import path from "path";
 
 import { describe, expect, it } from "vitest";
-import { createDefaultGenerationAdapters } from "@workspace/openapi-cli";
 
+import { createDefaultGenerationAdapters } from "@workspace/openapi-cli";
 import { RouteProcessor } from "@workspace/openapi-core/routes/route-processor.js";
 import type { OpenApiConfig } from "@workspace/openapi-core/shared/types.js";
+
 import { copyProjectFixture, getProjectFixturePath } from "../../helpers/test-project.js";
 
 describe("Ignore routes integration", () => {

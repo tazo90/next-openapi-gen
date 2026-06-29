@@ -1,6 +1,6 @@
+import { spawn } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
-import { spawn } from "node:child_process";
 
 import fse from "fs-extra";
 
@@ -33,7 +33,7 @@ export async function generateProject(
     configPath: options.configPath,
   });
 
-  return generateFromLoadedConfig(loadedConfig, options.runtime, options.adapters);
+  return await generateFromLoadedConfig(loadedConfig, options.runtime, options.adapters);
 }
 
 export async function generateFromLoadedConfig(
@@ -109,7 +109,7 @@ async function emitDocsArtifacts(
     return null;
   }
 
-  return adapters.emitDocsArtifact({
+  return await adapters.emitDocsArtifact({
     loadedConfig,
     outputFile,
   });

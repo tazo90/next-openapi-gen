@@ -3,11 +3,11 @@ import os from "node:os";
 import path from "node:path";
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { createDefaultGenerationAdapters } from "@workspace/openapi-cli";
 
-import { PagesRouterStrategy } from "@workspace/openapi-framework-next/routes/pages-router-strategy.js";
+import { createDefaultGenerationAdapters } from "@workspace/openapi-cli";
 import { RouteProcessor } from "@workspace/openapi-core/routes/route-processor.js";
 import type { OpenApiConfig } from "@workspace/openapi-core/shared/types.js";
+import { PagesRouterStrategy } from "@workspace/openapi-framework-next/routes/pages-router-strategy.js";
 
 type AddRoute = Parameters<PagesRouterStrategy["processFile"]>[1];
 type ParseJSDocBlockMock = (...args: unknown[]) => unknown;

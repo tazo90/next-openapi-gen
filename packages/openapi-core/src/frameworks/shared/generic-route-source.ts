@@ -3,8 +3,8 @@ import path from "node:path";
 
 import { measurePerformance, type GenerationPerformanceProfile } from "../../core/performance.js";
 import { traverse } from "../../shared/babel-traverse.js";
-import { extractJSDocComments, parseTypeScriptFile } from "../../shared/utils.js";
 import type { ResolvedOpenApiConfig } from "../../shared/types.js";
+import { extractJSDocComments, parseTypeScriptFile } from "../../shared/utils.js";
 import type { FrameworkSource } from "../types.js";
 
 const GENERIC_HTTP_EXPORTS = ["GET", "POST", "PUT", "PATCH", "DELETE", "loader", "action"] as const;

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { createDefaultGenerationAdapters } from "@workspace/openapi-cli";
 
+import { createDefaultGenerationAdapters } from "@workspace/openapi-cli";
 import { DiagnosticsCollector } from "@workspace/openapi-core/diagnostics/collector.js";
 import { RouteProcessor } from "@workspace/openapi-core/routes/route-processor.js";
 import type { OpenApiConfig } from "@workspace/openapi-core/shared/types.js";

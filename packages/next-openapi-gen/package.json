@@ -59,16 +59,17 @@
     "access": "public"
   },
   "scripts": {
+    "build": "pnpm clean && tsup --config tsup.config.ts && cp -R ../openapi-init/templates ./templates",
     "check": "pnpm format:check && pnpm lint",
     "clean": "rm -rf dist coverage templates tsconfig.tsbuildinfo",
-    "build": "pnpm clean && tsup --config tsup.config.ts && cp -R ../openapi-init/templates ./templates",
-    "format": "oxfmt --config ../oxfmt-config/oxfmt.json --ignore-path ../../.gitignore .",
-    "format:check": "oxfmt --config ../oxfmt-config/oxfmt.json --ignore-path ../../.gitignore --check .",
-    "lint": "oxlint --config ../oxlint-config/base.json . --ignore-path ../../.gitignore --deny-warnings",
-    "lint:fix": "oxlint --config ../oxlint-config/base.json . --ignore-path ../../.gitignore --fix --deny-warnings",
+    "format": "oxfmt --config ../../oxfmt.config.ts --ignore-path ../../.gitignore .",
+    "format:check": "oxfmt --config ../../oxfmt.config.ts --ignore-path ../../.gitignore --check .",
+    "lint": "oxlint --type-aware --config ../../oxlint.config.ts . --ignore-path ../../.gitignore --deny-warnings",
+    "lint:fix": "oxlint --type-aware --config ../../oxlint.config.ts . --ignore-path ../../.gitignore --fix --deny-warnings",
+    "release": "np --no-cleanup --no-tests --no-publish",
     "test": "pnpm --dir ../.. test:unit && pnpm --dir ../.. test:integration",
     "test:coverage": "pnpm --dir ../.. test:coverage:next-openapi-gen",
-    "release": "np --no-cleanup --no-tests --no-publish",
+    "typecheck": "tsc --noEmit",
     "version": "conventional-changelog -p angular -i ../../CHANGELOG.md -s -n ../../.changelogrc.cjs && git add ../../CHANGELOG.md"
   },
   "dependencies": {
@@ -79,7 +80,7 @@
     "fs-extra": "catalog:",
     "js-yaml": "catalog:",
     "ora": "catalog:",
-    "typescript": "catalog:"
+    "typescript": ">=5.9 <8"
   },
   "devDependencies": {
     "@types/node": "catalog:",
@@ -94,10 +95,18 @@
     "oxlint": "catalog:",
     "tsup": "catalog:"
   },
+  "peerDependencies": {
+    "typescript": ">=5.9 <8"
+  },
+  "peerDependenciesMeta": {
+    "typescript": {
+      "optional": true
+    }
+  },
   "engines": {
     "node": ">=24.0.0"
   },
-  "packageManager": "pnpm@10.27.0",
+  "packageManager": "pnpm@11.9.0",
   "np": {
     "packageManager": "pnpm",
     "anyBranch": false,

@@ -1,5 +1,3 @@
-import { NextResponse } from "next/server";
-
 import {
   AuthErrorResponse,
   CreateSessionBody,
@@ -7,6 +5,7 @@ import {
   SessionRequestHeaders,
   SessionResponse,
 } from "@/schemas/session";
+import { NextResponse } from "next/server";
 
 /**
  * Inspect current session

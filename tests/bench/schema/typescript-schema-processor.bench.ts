@@ -1,6 +1,5 @@
+import type * as t from "@babel/types";
 import { bench, describe } from "vitest";
-
-import * as t from "@babel/types";
 
 import { SchemaProcessor } from "@workspace/openapi-core/schema/typescript/schema-processor.js";
 import { parseTypeScriptFile } from "@workspace/openapi-core/shared/utils.js";
@@ -13,7 +12,7 @@ import { parseTypeScriptFile } from "@workspace/openapi-core/shared/utils.js";
 function parseTypeAnnotation(source: string): t.TSType {
   const ast = parseTypeScriptFile(`let _x: ${source};`);
   const declaration = ast.program.body[0] as t.VariableDeclaration;
-  const declarator = declaration.declarations[0] as t.VariableDeclarator;
+  const declarator = declaration.declarations[0];
   const idNode = declarator.id as t.Identifier;
   const annotation = idNode.typeAnnotation as t.TSTypeAnnotation;
   return annotation.typeAnnotation;

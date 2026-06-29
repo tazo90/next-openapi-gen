@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "extends": "./packages/typescript-config/base.json",
+  "compilerOptions": {
+    "allowImportingTsExtensions": true,
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "noEmit": true
+  },
+  "include": [
+    "commitlint.config.mts",
+    "knip.mts",
+    "oxfmt.config.ts",
+    "oxlint.config.ts",
+    "playwright.config.ts",
+    "vitest.bench.config.ts",
+    "vitest.config.ts"
+  ]
+}

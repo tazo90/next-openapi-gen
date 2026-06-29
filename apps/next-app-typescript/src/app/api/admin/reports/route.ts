@@ -1,6 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
-
 import type { AdminReportsResponse, CreateAdminReportBody } from "@/types/admin-reports";
+import { NextRequest, NextResponse } from "next/server";
 
 /**
  * List admin reports

@@ -96,11 +96,7 @@ function findDefaultConfigPath(cwd: string): string | undefined {
 
 function warnForLegacyConfigName(cwd: string, configPath: string): void {
   const relativeConfigPath = path.relative(cwd, configPath);
-  if (
-    !LEGACY_CONFIG_FILENAMES.includes(
-      relativeConfigPath as (typeof LEGACY_CONFIG_FILENAMES)[number],
-    )
-  ) {
+  if (!LEGACY_CONFIG_FILENAMES.includes(relativeConfigPath)) {
     return;
   }
 

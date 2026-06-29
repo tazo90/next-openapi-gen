@@ -1,6 +1,13 @@
 import type { KnipConfig } from "knip";
 
-const config: KnipConfig = {
+const config = {
+  ignoreDependencies: [
+    "@commitlint/config-conventional",
+    "@workspace/oxfmt-config",
+    "@workspace/oxlint-config",
+    "@workspace/typescript-config",
+    "eslint-plugin-turbo",
+  ],
   ignoreFiles: [
     "coverage/**",
     "playwright-report/**",
@@ -29,17 +36,13 @@ const config: KnipConfig = {
   ignoreUnresolved: ["next", "./routeTree.gen"],
   workspaces: {
     ".": {
-      entry: [
-        "*.{json,ts,mts,cts}",
-        ".github/workflows/*.{yml,yaml}",
-        "tests/bench/**/*.ts",
-        "tests/**/*.{test,spec}.ts",
-        "tests/**/*.{test,spec}.tsx",
-      ],
-      project: ["*.{json,ts,mts,cts}", ".github/workflows/*.{yml,yaml}", "tests/**/*.{ts,tsx}"],
+      entry: ["*.{json,ts,mts,cts}", ".github/workflows/*.{yml,yaml}"],
+      project: ["*.{json,ts,mts,cts}", ".github/workflows/*.{yml,yaml}"],
       commitlint: true,
       "github-actions": true,
       "lint-staged": true,
+      oxfmt: true,
+      oxlint: true,
       playwright: true,
       pnpm: true,
       "simple-git-hooks": true,
@@ -73,7 +76,14 @@ const config: KnipConfig = {
     "packages/next-openapi-gen": {
       entry: ["src/index.ts"],
     },
+    tests: {
+      entry: ["bench/**/*.ts", "**/*.{test,spec}.ts", "**/*.{test,spec}.tsx"],
+      project: ["**/*.{ts,tsx}"],
+      playwright: true,
+      typescript: true,
+      vitest: true,
+    },
   },
-};
+} satisfies KnipConfig;
 
 export default config;

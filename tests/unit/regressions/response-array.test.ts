@@ -19,11 +19,9 @@ describe("Array response annotation parsing", () => {
     );
 
     expect(responseMatch).toBeTruthy();
-    if (responseMatch) {
-      const [, code, type] = responseMatch;
-      expect(code).toBe("200");
-      expect(type?.trim()).toBe("PostResponseSchema[]");
-    }
+    const [, code, type] = responseMatch!;
+    expect(code).toBe("200");
+    expect(type?.trim()).toBe("PostResponseSchema[]");
   });
 
   it("builds nested array schemas correctly", () => {

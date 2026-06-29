@@ -1,6 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
-
 import type { UploadResponse } from "@/types/upload";
+import { NextRequest, NextResponse } from "next/server";
 
 /**
  * Upload image file

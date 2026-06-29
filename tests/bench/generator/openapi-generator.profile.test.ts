@@ -1,6 +1,5 @@
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
-
 import type { GeneratorPerformanceProfile } from "next-openapi-gen";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import {
   cleanupBenchProjects,

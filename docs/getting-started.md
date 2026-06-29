@@ -7,6 +7,7 @@ supported frameworks.
 ## Requirements
 
 - Node.js `>=24`
+- TypeScript `>=5.9 <8` when using TypeScript schemas or checker-assisted response inference. `next-openapi-gen` resolves the TypeScript compiler from your project first and uses its bundled compiler only as a fallback.
 - One of the supported frameworks:
   - Next.js with App Router or Pages Router
   - TanStack Router

@@ -1,6 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
-
 import type { ImmutableInvoice, InvoiceIdParams } from "@/types/billing";
+import { NextRequest, NextResponse } from "next/server";
 
 type RouteContext = {
   params: Promise<{ id: string }>;

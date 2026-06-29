@@ -35,7 +35,7 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v6
         with:
-          version: 10.27.0
+          version: 11.9.0
           run_install: false
 
       - name: Setup Node.js
@@ -46,10 +46,16 @@ jobs:
           cache-dependency-path: pnpm-lock.yaml
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm ci
 
-      - name: Run workspace checks
-        run: pnpm check
+      - name: Check formatting
+        run: pnpm format:check
+
+      - name: Run lint
+        run: pnpm lint:ci
+
+      - name: Typecheck tooling
+        run: pnpm typecheck:root
 
       - name: Run Knip
         run: pnpm exec turbo run knip:ci
@@ -65,7 +71,7 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v6
         with:
-          version: 10.27.0
+          version: 11.9.0
           run_install: false
 
       - name: Setup Node.js
@@ -76,7 +82,7 @@ jobs:
           cache-dependency-path: pnpm-lock.yaml
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm ci
 
       - name: Build workspace
         run: pnpm exec turbo run build --filter='./packages/*'
@@ -92,7 +98,7 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v6
         with:
-          version: 10.27.0
+          version: 11.9.0
           run_install: false
 
       - name: Setup Node.js
@@ -103,10 +109,95 @@ jobs:
           cache-dependency-path: pnpm-lock.yaml
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm ci
 
       - name: Run unit tests
         run: pnpm exec turbo run test:unit
+
+  typescript-compatibility:
+    name: TypeScript Compat (${{ matrix.typescript-version }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    continue-on-error: ${{ matrix.experimental }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - typescript-version: 5.9.3
+            experimental: false
+          - typescript-version: 6
+            experimental: false
+          - typescript-version: next
+            experimental: true
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 11.9.0
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm ci
+
+      - name: Build generator packages
+        run: pnpm exec turbo run build --filter=next-openapi-gen...
+
+      - name: Run TypeScript compatibility smoke
+        env:
+          TYPESCRIPT_VERSION: ${{ matrix.typescript-version }}
+        run: |
+          set -euo pipefail
+
+          compat_root="$(mktemp -d)"
+          cp -R tests/fixtures/projects/next/app-router/core-flow "$compat_root/app"
+          cat > "$compat_root/app/package.json" <<'JSON'
+          {
+            "private": true,
+            "type": "module"
+          }
+          JSON
+          cp "$compat_root/app/templates/openapi-3.0.json" "$compat_root/app/next.openapi.json"
+          pnpm --dir "$compat_root/app" add -D "typescript@${TYPESCRIPT_VERSION}"
+
+          COMPAT_PROJECT="$compat_root/app" node --input-type=module <<'NODE'
+          import path from "node:path";
+          import { createRequire } from "node:module";
+
+          import { OpenApiGenerator } from "next-openapi-gen";
+
+          const projectRoot = process.env.COMPAT_PROJECT;
+          if (!projectRoot) {
+            throw new Error("COMPAT_PROJECT is required");
+          }
+
+          const require = createRequire(import.meta.url);
+          const projectTypeScript = require(require.resolve("typescript", { paths: [projectRoot] }));
+          console.log(`Using project TypeScript ${projectTypeScript.version}`);
+
+          const templatePath = path.join(projectRoot, "next.openapi.json");
+          process.chdir(projectRoot);
+          const generator = new OpenApiGenerator({ templatePath });
+          const spec = generator.generate();
+          const errors = generator.getDiagnostics().filter((diagnostic) => diagnostic.severity === "error");
+
+          if (errors.length > 0) {
+            throw new Error(`Unexpected generator errors: ${JSON.stringify(errors, null, 2)}`);
+          }
+
+          if (!spec.paths?.["/users/{id}"]?.get) {
+            throw new Error("Expected /users/{id} GET operation to be generated");
+          }
+          NODE
 
   bench-regression:
     name: Bench Regression
@@ -123,7 +214,7 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v6
         with:
-          version: 10.27.0
+          version: 11.9.0
           run_install: false
 
       - name: Setup Node.js
@@ -134,7 +225,7 @@ jobs:
           cache-dependency-path: pnpm-lock.yaml
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm ci
 
       - name: Run schema micro-benchmarks and compare against baseline
         run: pnpm test:bench:schema:check
@@ -159,7 +250,7 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v6
         with:
-          version: 10.27.0
+          version: 11.9.0
           run_install: false
 
       - name: Setup Node.js
@@ -170,7 +261,7 @@ jobs:
           cache-dependency-path: pnpm-lock.yaml
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm ci
 
       - name: Run integration tests
         run: pnpm exec turbo run test:integration
@@ -186,7 +277,7 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v6
         with:
-          version: 10.27.0
+          version: 11.9.0
           run_install: false
 
       - name: Setup Node.js
@@ -197,7 +288,7 @@ jobs:
           cache-dependency-path: pnpm-lock.yaml
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm ci
 
       - name: Run Windows-focused unit tests
         run: >
@@ -223,7 +314,7 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v6
         with:
-          version: 10.27.0
+          version: 11.9.0
           run_install: false
 
       - name: Setup Node.js
@@ -234,7 +325,7 @@ jobs:
           cache-dependency-path: pnpm-lock.yaml
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm ci
 
       - name: Run coverage
         env:
@@ -321,7 +412,7 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v6
         with:
-          version: 10.27.0
+          version: 11.9.0
           run_install: false
 
       - name: Setup Node.js
@@ -332,10 +423,10 @@ jobs:
           cache-dependency-path: pnpm-lock.yaml
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm ci
 
       - name: Restore Playwright browser cache
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: ~/.cache/ms-playwright
           key: ${{ runner.os }}-playwright-chromium-${{ hashFiles('pnpm-lock.yaml',
@@ -370,6 +461,7 @@ jobs:
       - quality
       - build
       - unit
+      - typescript-compatibility
       - integration
       - windows-smoke
       - bench-regression
@@ -381,6 +473,7 @@ jobs:
           QUALITY_RESULT: ${{ needs.quality.result }}
           BUILD_RESULT: ${{ needs.build.result }}
           UNIT_RESULT: ${{ needs.unit.result }}
+          TYPESCRIPT_COMPATIBILITY_RESULT: ${{ needs.typescript-compatibility.result }}
           INTEGRATION_RESULT: ${{ needs.integration.result }}
           WINDOWS_SMOKE_RESULT: ${{ needs.windows-smoke.result }}
           BENCH_REGRESSION_RESULT: ${{ needs.bench-regression.result }}
@@ -396,6 +489,7 @@ jobs:
             ["Quality", process.env.QUALITY_RESULT],
             ["Build", process.env.BUILD_RESULT],
             ["Unit Tests", process.env.UNIT_RESULT],
+            ["TypeScript Compatibility", process.env.TYPESCRIPT_COMPATIBILITY_RESULT],
             ["Integration Tests", process.env.INTEGRATION_RESULT],
             ["Windows Smoke", process.env.WINDOWS_SMOKE_RESULT],
             ["Bench Regression", process.env.BENCH_REGRESSION_RESULT],

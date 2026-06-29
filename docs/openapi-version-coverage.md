@@ -16,7 +16,7 @@ Feature status uses three buckets:
 - The root `openapi` field is the only version selector; `next-openapi-gen` derives the internal target version from that string.
 - Explicit `@response` metadata wins over inferred responses.
 - Comma-separated `@auth` metadata emits alternative security requirements, one scheme per entry. Richer `securitySchemes` modeling still comes from templates or custom OpenAPI fragments.
-- TypeScript checker support is used selectively for App Router response inference and path-alias/module resolution.
+- TypeScript checker support is used selectively for App Router response inference and path-alias/module resolution. The checker runs through the project-installed TypeScript compiler when available and supports TypeScript `>=5.9 <8`.
 - Zod schemas still default to AST conversion, but selected Zod 4 constructs can use a runtime-assisted export path so request and response variants diverge only when the emitted schemas actually differ.
 
 ## Choosing a version

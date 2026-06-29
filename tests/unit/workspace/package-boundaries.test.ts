@@ -118,7 +118,7 @@ function getModuleSpecifiers(filePath: string): string[] {
   for (const pattern of [staticImportPattern, dynamicImportPattern]) {
     let match: RegExpExecArray | null;
     while ((match = pattern.exec(source)) !== null) {
-      specifiers.push(match[1]!);
+      specifiers.push(match[1]);
     }
   }
 

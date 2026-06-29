@@ -76,7 +76,7 @@ describe("Zod prescan helpers", () => {
       files.push(path.relative(root, filePath).replace(/\\/g, "/"));
     });
 
-    expect(files.sort()).toEqual(["a.ts", "nested/b.tsx"]);
+    expect(files.toSorted()).toEqual(["a.ts", "nested/b.tsx"]);
     expect(
       isZodSchemaNode(parseTypeScriptFile("z.string()").program.body[0] as never, new Set()),
     ).toBe(false);

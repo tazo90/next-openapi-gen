@@ -1,9 +1,3 @@
-import {
-  createFormDataSchema,
-  createMultipartEncoding,
-  detectContentType,
-  getExampleForParam,
-} from "./helpers.js";
 import type {
   OpenAPIDefinition,
   OpenApiExampleMap,
@@ -12,6 +6,12 @@ import type {
   ParamSchema,
   SchemaType,
 } from "../../shared/types.js";
+import {
+  createFormDataSchema,
+  createMultipartEncoding,
+  detectContentType,
+  getExampleForParam,
+} from "./helpers.js";
 
 export function createMultipleResponsesSchema(
   responses: Record<string, any>,
@@ -145,7 +145,7 @@ function createParameterSchema(value: OpenApiSchemaLike): OpenApiSchemaLike {
     return structuredClone(value.schema) as OpenApiSchemaLike;
   }
 
-  const schema = structuredClone(value) as OpenApiSchemaLike;
+  const schema = structuredClone(value);
   delete schema.in;
   delete schema.name;
   delete schema.required;

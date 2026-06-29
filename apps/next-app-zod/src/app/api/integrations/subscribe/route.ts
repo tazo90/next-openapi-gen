@@ -1,6 +1,5 @@
-import { NextResponse } from "next/server";
-
 import { CreateSubscriptionBody, SubscriptionResponse } from "@/schemas/webhook";
+import { NextResponse } from "next/server";
 
 /**
  * Subscribe to payment events

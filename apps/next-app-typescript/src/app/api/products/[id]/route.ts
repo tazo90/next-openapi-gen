@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+
 import { getProductById, updateStock } from "../route.utils";
 
 type ProductRouteContext = {

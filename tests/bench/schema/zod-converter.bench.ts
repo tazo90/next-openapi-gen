@@ -1,6 +1,5 @@
+import type * as t from "@babel/types";
 import { bench, describe } from "vitest";
-
-import * as t from "@babel/types";
 
 import { ZodSchemaConverter } from "@workspace/openapi-core/schema/zod/zod-converter.js";
 import { parseTypeScriptFile } from "@workspace/openapi-core/shared/utils.js";
@@ -31,7 +30,7 @@ function makeConverter(): ZodSchemaConverter {
 function parseInitializer(source: string): t.CallExpression {
   const ast = parseTypeScriptFile(`const _schema = ${source};`);
   const declaration = ast.program.body[0] as t.VariableDeclaration;
-  const declarator = declaration.declarations[0] as t.VariableDeclarator;
+  const declarator = declaration.declarations[0];
   return declarator.init as t.CallExpression;
 }
 

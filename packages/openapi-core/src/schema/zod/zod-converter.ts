@@ -1,19 +1,21 @@
 import fs from "fs";
 import path from "path";
+
 import type { NodePath } from "@babel/traverse";
 import * as t from "@babel/types";
 
 import { traverse } from "../../shared/babel-traverse.js";
-import { extractInternalFlagFromComments, parseTypeScriptFile } from "../../shared/utils.js";
 import { logger } from "../../shared/logger.js";
 import { SymbolResolver } from "../../shared/symbol-resolver.js";
-import { DrizzleZodProcessor } from "./drizzle-zod-processor.js";
+import type { ContentType, OpenApiSchema } from "../../shared/types.js";
+import { extractInternalFlagFromComments, parseTypeScriptFile } from "../../shared/utils.js";
 import {
   expandFactoryCall,
   extractReturnNode,
   parseFileWithCache,
   substituteParameters,
 } from "./converter-runtime.js";
+import { DrizzleZodProcessor } from "./drizzle-zod-processor.js";
 import {
   IGNORED_DIRS,
   collectZodRouteFiles,
@@ -41,7 +43,6 @@ import {
   returnsZodSchemaNode,
 } from "./prescan.js";
 import { ZodRuntimeExporter } from "./runtime-exporter.js";
-import type { ContentType, OpenApiSchema } from "../../shared/types.js";
 
 type ZodConverterFileAccess = Pick<
   typeof fs,
@@ -591,7 +592,7 @@ export class ZodSchemaConverter {
                     if (
                       t.isObjectProperty(prop) &&
                       t.isBooleanLiteral(prop.value) &&
-                      prop.value.value === true
+                      prop.value.value
                     ) {
                       const key = t.isIdentifier(prop.key)
                         ? prop.key.name
@@ -1534,11 +1535,7 @@ export class ZodSchemaConverter {
     if (t.isObjectExpression(arg)) {
       const keys: string[] = [];
       for (const prop of arg.properties) {
-        if (
-          t.isObjectProperty(prop) &&
-          t.isBooleanLiteral(prop.value) &&
-          prop.value.value === true
-        ) {
+        if (t.isObjectProperty(prop) && t.isBooleanLiteral(prop.value) && prop.value.value) {
           if (t.isIdentifier(prop.key)) keys.push(prop.key.name);
           else if (t.isStringLiteral(prop.key)) keys.push(prop.key.value);
         }

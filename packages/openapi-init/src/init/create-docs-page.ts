@@ -1,8 +1,8 @@
 import fs from "node:fs";
 import path from "node:path";
 
-import { renderFrameworkDocsPage } from "./ui-registry.js";
 import type { InitFramework } from "./framework.js";
+import { renderFrameworkDocsPage } from "./ui-registry.js";
 
 type CreateDocsPageOptions = {
   framework?: InitFramework;

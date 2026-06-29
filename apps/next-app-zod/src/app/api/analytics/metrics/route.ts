@@ -1,6 +1,5 @@
-import { NextResponse } from "next/server";
-
 import { MetricQueryBody, MetricQueryResponse, MetricSummaryPatch } from "@/schemas/analytics";
+import { NextResponse } from "next/server";
 
 /**
  * Query metrics

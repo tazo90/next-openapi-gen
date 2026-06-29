@@ -1,10 +1,11 @@
 import path from "path";
+
 import * as t from "@babel/types";
 
 import { logger } from "../../shared/logger.js";
+import type { OpenApiSchema } from "../../shared/types.js";
 import { parseTypeScriptFile } from "../../shared/utils.js";
 import { collectImportMetadata } from "./prescan.js";
-import type { OpenApiSchema } from "../../shared/types.js";
 
 type ZodConverterFileAccess = Pick<typeof import("fs"), "existsSync" | "readFileSync">;
 

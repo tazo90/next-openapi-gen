@@ -2,7 +2,11 @@ import { defineConfig } from "tsup";
 
 export default defineConfig({
   clean: false,
-  dts: true,
+  dts: {
+    compilerOptions: {
+      ignoreDeprecations: "6.0",
+    },
+  },
   entry: {
     cli: "src/cli.ts",
     index: "src/index.ts",

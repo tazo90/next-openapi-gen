@@ -24,6 +24,7 @@ Generate OpenAPI `3.0`, `3.1`, and `3.2` from the routes and schemas you already
 ### Requirements
 
 - Node.js `>=24`
+- TypeScript `>=5.9 <8` for TypeScript schemas and checker-assisted response inference. The generator prefers your project-installed TypeScript and falls back to its bundled compiler when none is installed.
 - A supported app framework:
   - Next.js using App Router or Pages Router
   - TanStack Router
