@@ -15,7 +15,7 @@ import type {
   PropertyOptions,
   SchemaType,
 } from "../../shared/types.js";
-import { getTypeScriptProject } from "../../shared/typescript-project.js";
+import { getTypeScriptAdapter, getTypeScriptProject } from "../../shared/typescript-project.js";
 import type { TypeScriptRuntime } from "../../shared/typescript-runtime.js";
 import { parseOpenApiOverrideTag, parseTypeScriptFile } from "../../shared/utils.js";
 import { processCustomSchemaFiles } from "../core/custom-schema-file-processor.js";
@@ -414,7 +414,7 @@ export class SchemaProcessor {
         // scanned file that imports this type and use the TypeScript language service to
         // resolve it — the compiler already knows the full shape of imported types.
         const contextFile = this.findFileImportingType(typeName);
-        if (contextFile) {
+        if (contextFile && this.schemaTypes.includes("typescript")) {
           logger.debug(
             `resolveType: "${typeName}" not in schema dirs; attempting TypeScript checker fallback via ${contextFile}`,
           );
@@ -431,7 +431,11 @@ export class SchemaProcessor {
       }
       const typeNode = typeDefEntry.node || typeDefEntry; // Support both old and new format
 
-      if (typeDefEntry.filePath && this.shouldUseTypeScriptChecker(typeNode)) {
+      if (
+        typeDefEntry.filePath &&
+        this.schemaTypes.includes("typescript") &&
+        this.shouldUseTypeScriptChecker(typeNode)
+      ) {
         const checkerSchema = this.resolveTypeWithTypeScriptChecker(
           typeName,
           typeDefEntry.filePath,
@@ -754,6 +758,11 @@ export class SchemaProcessor {
     filePath: string,
   ): OpenAPIDefinition | null {
     try {
+      const adapter = getTypeScriptAdapter(filePath);
+      if (adapter.kind === "native") {
+        return adapter.resolveTypeByName(typeName, filePath);
+      }
+
       const project = getTypeScriptProject(filePath);
       const ts = project.ts;
       const sourceFile = project.program.getSourceFile(filePath);

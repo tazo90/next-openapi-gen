@@ -8,11 +8,15 @@ import {
   inferResponsesForExport,
   inferResponsesForExports,
 } from "@workspace/openapi-core/routes/typescript-response-inference.js";
+import { clearTypeScriptProjectCache } from "@workspace/openapi-core/shared/typescript-project.js";
+import { clearTypeScriptRuntimeCache } from "@workspace/openapi-core/shared/typescript-runtime.js";
 
 describe("TypeScript response inference", () => {
   const roots: string[] = [];
 
   afterEach(() => {
+    clearTypeScriptProjectCache();
+    clearTypeScriptRuntimeCache();
     roots.splice(0).forEach((root) => fs.rmSync(root, { recursive: true, force: true }));
   });
 
@@ -213,6 +217,25 @@ export async function GET(flag: boolean) {
     expect(first.get("GET")?.responses).toEqual(second.get("GET")?.responses);
   });
 
+  it("returns empty results when the native TypeScript program does not include the route file", () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-response-native-ts-"));
+    roots.push(root);
+    fs.mkdirSync(path.join(root, "src"), { recursive: true });
+    writeMockTypeScriptNativePackage(root);
+    const routeFile = path.join(root, "src", "route.ts");
+    fs.writeFileSync(
+      routeFile,
+      `export async function GET() {
+  return Response.json({ ok: true });
+}
+`,
+    );
+
+    const result = inferResponsesForExports(routeFile, ["GET"]);
+
+    expect(result.size).toBe(0);
+  });
+
   it("infers redirect status codes from Response.redirect calls", () => {
     const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-response-redirect-"));
     roots.push(root);
@@ -236,3 +259,50 @@ export async function GET(flag: boolean) {
     ]);
   });
 });
+
+function writeMockTypeScriptNativePackage(root: string) {
+  const packageRoot = path.join(root, "node_modules", "typescript");
+  fs.mkdirSync(path.join(packageRoot, "dist", "api", "sync"), { recursive: true });
+  fs.mkdirSync(path.join(packageRoot, "dist", "ast"), { recursive: true });
+  fs.writeFileSync(
+    path.join(packageRoot, "package.json"),
+    JSON.stringify({
+      name: "typescript",
+      version: "7.0.1-rc",
+      type: "module",
+      exports: {
+        "./package.json": "./package.json",
+        "./unstable/sync": "./dist/api/sync/api.js",
+        "./unstable/ast": "./dist/ast/index.js",
+      },
+    }),
+  );
+  fs.writeFileSync(
+    path.join(packageRoot, "dist", "api", "sync", "api.js"),
+    `export const ModifierFlags = { Export: 1 };
+export const SymbolFlags = { Alias: 1, Function: 2, Type: 4, Value: 8, Variable: 16 };
+export const TypeFlags = {};
+export const ObjectFlags = {};
+export class API {
+  updateSnapshot() {
+    const project = {
+      checker: {},
+      compilerOptions: {},
+      configFileName: "",
+      program: { getSourceFile() { return undefined; } },
+    };
+    return {
+      dispose() {},
+      getDefaultProjectForFile() { return project; },
+      getProject() { return undefined; },
+      getProjects() { return [project]; },
+    };
+  }
+}
+`,
+  );
+  fs.writeFileSync(
+    path.join(packageRoot, "dist", "ast", "index.js"),
+    "export const SyntaxKind = {};\n",
+  );
+}

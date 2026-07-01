@@ -1,8 +1,12 @@
 import type * as ts from "typescript";
 
+import { logger } from "../shared/logger.js";
 import type { Diagnostic, InferredResponseDefinition, OpenApiSchemaLike } from "../shared/types.js";
-import { getTypeScriptProject } from "../shared/typescript-project.js";
-import type { TypeScriptRuntime } from "../shared/typescript-runtime.js";
+import { getTypeScriptAdapter, getTypeScriptProject } from "../shared/typescript-project.js";
+import {
+  isTypeScriptUnavailableError,
+  type TypeScriptRuntime,
+} from "../shared/typescript-runtime.js";
 
 type InferredRouteResponses = {
   responses: InferredResponseDefinition[];
@@ -11,6 +15,7 @@ type InferredRouteResponses = {
 
 const exportNodeCache = new WeakMap<ts.SourceFile, Map<string, ts.Node>>();
 const inferredResponseCache = new WeakMap<ts.SourceFile, Map<string, InferredRouteResponses>>();
+const warnedUnavailableTypeScriptPackages = new Set<string>();
 
 export function inferResponsesForExport(
   filePath: string,
@@ -28,7 +33,32 @@ export function inferResponsesForExports(
   filePath: string,
   exportNames: readonly string[],
 ): Map<string, InferredRouteResponses> {
-  const project = getTypeScriptProject(filePath);
+  try {
+    const adapter = getTypeScriptAdapter(filePath);
+    if (adapter.kind === "native") {
+      return adapter.inferResponsesForExports(filePath, exportNames);
+    }
+  } catch (error) {
+    if (isTypeScriptUnavailableError(error)) {
+      warnTypeScriptUnavailable(error.packagePath, error.message);
+      return new Map();
+    }
+
+    throw error;
+  }
+
+  let project: ReturnType<typeof getTypeScriptProject>;
+  try {
+    project = getTypeScriptProject(filePath);
+  } catch (error) {
+    if (isTypeScriptUnavailableError(error)) {
+      warnTypeScriptUnavailable(error.packagePath, error.message);
+      return new Map();
+    }
+
+    throw error;
+  }
+
   const ts = project.ts;
   const sourceFile = project.program.getSourceFile(filePath);
   if (!sourceFile) {
@@ -65,6 +95,15 @@ export function inferResponsesForExports(
       return cachedResponse ? [[exportName, cachedResponse] as const] : [];
     }),
   );
+}
+
+function warnTypeScriptUnavailable(packagePath: string, message: string): void {
+  if (warnedUnavailableTypeScriptPackages.has(packagePath)) {
+    return;
+  }
+
+  warnedUnavailableTypeScriptPackages.add(packagePath);
+  logger.warn(`Skipping TypeScript response inference: ${message}`);
 }
 
 function getExportNodeMap(sourceFile: ts.SourceFile, ts: TypeScriptRuntime): Map<string, ts.Node> {

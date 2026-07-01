@@ -122,6 +122,85 @@ describe("OperationProcessor", () => {
     );
   });
 
+  it("emits a default multipart file request body when no body schema is declared", () => {
+    const schemaProcessor = {
+      getSchemaContent: vi.fn<MockFn>(),
+      createRequestParamsSchema: vi.fn<MockFn>(),
+      createDefaultPathParamsSchema: vi.fn<MockFn>(),
+      detectContentType: vi.fn<MockFn>(),
+      createRequestBodySchema: vi.fn<MockFn>(),
+      createResponseSchema: vi.fn<MockFn>(),
+      ensureSchemaResolved: vi.fn<MockFn>(),
+      getSchemaReferenceName: vi.fn<MockFn>((typeName) => typeName),
+    };
+    const responseProcessor = {
+      supportsRequestBody: vi.fn<MockFn>(() => true),
+      processResponses: vi.fn<MockFn>(() => ({
+        200: {
+          description: "OK",
+        },
+      })),
+    };
+
+    const processor = new OperationProcessor(schemaProcessor as never, responseProcessor as never);
+    const result = processor.processOperation("POST", "/uploads/logo", {
+      bodyDescription: "Organization logo file",
+      contentType: "multipart/form-data",
+      tag: "Uploads",
+    });
+
+    expect(result.definition.requestBody).toEqual({
+      content: {
+        "multipart/form-data": {
+          schema: {
+            properties: {
+              file: {
+                format: "binary",
+                type: "string",
+              },
+            },
+            required: ["file"],
+            type: "object",
+          },
+        },
+      },
+      description: "Organization logo file",
+      required: true,
+    });
+    expect(schemaProcessor.detectContentType).not.toHaveBeenCalled();
+    expect(schemaProcessor.ensureSchemaResolved).not.toHaveBeenCalled();
+  });
+
+  it("does not emit a bodyless multipart request body for methods without request bodies", () => {
+    const schemaProcessor = {
+      getSchemaContent: vi.fn<MockFn>(),
+      createRequestParamsSchema: vi.fn<MockFn>(),
+      createDefaultPathParamsSchema: vi.fn<MockFn>(),
+      detectContentType: vi.fn<MockFn>(),
+      createRequestBodySchema: vi.fn<MockFn>(),
+      createResponseSchema: vi.fn<MockFn>(),
+      ensureSchemaResolved: vi.fn<MockFn>(),
+      getSchemaReferenceName: vi.fn<MockFn>((typeName) => typeName),
+    };
+    const responseProcessor = {
+      supportsRequestBody: vi.fn<MockFn>(() => false),
+      processResponses: vi.fn<MockFn>(() => ({
+        200: {
+          description: "OK",
+        },
+      })),
+    };
+
+    const processor = new OperationProcessor(schemaProcessor as never, responseProcessor as never);
+    const result = processor.processOperation("GET", "/uploads/logo", {
+      contentType: "multipart/form-data",
+      tag: "Uploads",
+    });
+
+    expect(result.definition.requestBody).toBeUndefined();
+    expect(schemaProcessor.detectContentType).not.toHaveBeenCalled();
+  });
+
   it("uses explicit path params and falls back to generated responses for root routes", () => {
     const schemaProcessor = {
       getSchemaContent: vi.fn<MockFn>(({ responseType }: { responseType?: string }) =>
