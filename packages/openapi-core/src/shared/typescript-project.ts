@@ -2,10 +2,15 @@ import path from "path";
 
 import type * as ts from "typescript";
 
+import { logger } from "./logger.js";
+import { createNativeTypeScriptAdapter } from "./native-typescript-adapter.js";
 import type { Diagnostic } from "./types.js";
+import type { TypeScriptCompilerAdapter } from "./typescript-adapter.js";
 import {
   getBestEffortScriptTarget,
+  isTypeScriptUnavailableError,
   resolveTypeScriptRuntime,
+  TypeScriptUnavailableError,
   type TypeScriptRuntime,
 } from "./typescript-runtime.js";
 
@@ -19,11 +24,43 @@ type TypeScriptProject = {
 };
 
 const projectCache = new Map<string, TypeScriptProject>();
+const adapterCache = new Map<string, TypeScriptCompilerAdapter>();
+const warnedUnavailableTypeScriptFeatures = new Set<string>();
+
+export function getTypeScriptAdapter(filePath: string): TypeScriptCompilerAdapter {
+  const runtime = resolveTypeScriptRuntime(path.resolve(filePath));
+  const cachedAdapter = adapterCache.get(runtime.packagePath);
+  if (cachedAdapter) {
+    return cachedAdapter;
+  }
+
+  if (runtime.native) {
+    const nativeAdapter = createNativeTypeScriptAdapter({
+      packagePath: runtime.packagePath,
+      runtime: runtime.native,
+      version: runtime.version,
+    });
+    adapterCache.set(runtime.packagePath, nativeAdapter);
+    return nativeAdapter;
+  }
+
+  if (!runtime.ts) {
+    throw new TypeScriptUnavailableError(runtime);
+  }
+
+  const classicAdapter = createClassicTypeScriptAdapter(runtime.packagePath, runtime.version);
+  adapterCache.set(runtime.packagePath, classicAdapter);
+  return classicAdapter;
+}
 
 export function getTypeScriptProject(filePath: string): TypeScriptProject {
   const absoluteFilePath = path.resolve(filePath);
   const runtime = resolveTypeScriptRuntime(absoluteFilePath);
   const ts = runtime.ts;
+  if (!ts) {
+    throw new TypeScriptUnavailableError(runtime);
+  }
+
   const configPath = ts.findConfigFile(
     path.dirname(absoluteFilePath),
     ts.sys.fileExists,
@@ -36,16 +73,105 @@ export function getTypeScriptProject(filePath: string): TypeScriptProject {
   }
 
   const project = configPath
-    ? createConfiguredProject(configPath, runtime.ts, runtime.packagePath, runtime.version)
-    : createSingleFileProject(absoluteFilePath, runtime.ts, runtime.packagePath, runtime.version);
+    ? createConfiguredProject(configPath, ts, runtime.packagePath, runtime.version)
+    : createSingleFileProject(absoluteFilePath, ts, runtime.packagePath, runtime.version);
   projectCache.set(cacheKey, project);
   return project;
 }
 
 export function invalidateTypeScriptProject(filePath: string): void {
+  try {
+    getTypeScriptAdapter(filePath).invalidate(filePath);
+  } catch (error) {
+    if (!isTypeScriptUnavailableError(error)) {
+      throw error;
+    }
+  }
+}
+
+export function clearTypeScriptProjectCache(): void {
+  for (const adapter of adapterCache.values()) {
+    adapter.clear();
+  }
+  adapterCache.clear();
+  projectCache.clear();
+}
+
+export function resolveTypeScriptModule(importPath: string, fromFilePath: string): string | null {
+  try {
+    return getTypeScriptAdapter(fromFilePath).resolveModule(importPath, fromFilePath);
+  } catch (error) {
+    if (isTypeScriptUnavailableError(error)) {
+      warnTypeScriptUnavailable("module resolution", error);
+      return null;
+    }
+
+    throw error;
+  }
+}
+
+export function resolveTypeScriptValueReference(
+  referenceName: string,
+  fromFilePath: string,
+): { value?: unknown; diagnostic?: Diagnostic } {
+  try {
+    return getTypeScriptAdapter(fromFilePath).resolveValueReference(referenceName, fromFilePath);
+  } catch (error) {
+    if (isTypeScriptUnavailableError(error)) {
+      warnTypeScriptUnavailable("example reference resolution", error);
+      return {
+        diagnostic: {
+          code: "example-reference-unresolved",
+          severity: "warning",
+          message: `Could not resolve example reference "${referenceName}" because TypeScript checker features are unavailable: ${error.message}`,
+          filePath: path.resolve(fromFilePath),
+        },
+      };
+    }
+
+    throw error;
+  }
+}
+
+function createClassicTypeScriptAdapter(
+  packagePath: string,
+  version: string,
+): TypeScriptCompilerAdapter {
+  return {
+    kind: "classic",
+    packagePath,
+    version,
+    clear() {
+      projectCache.clear();
+    },
+    inferResponsesForExports() {
+      throw new Error(
+        "Classic response inference is implemented by typescript-response-inference.",
+      );
+    },
+    invalidate(filePath) {
+      invalidateClassicTypeScriptProject(filePath);
+    },
+    resolveModule(importPath, fromFilePath) {
+      return resolveClassicTypeScriptModule(importPath, fromFilePath);
+    },
+    resolveTypeByName() {
+      throw new Error("Classic schema fallback is implemented by SchemaProcessor.");
+    },
+    resolveValueReference(referenceName, fromFilePath) {
+      return resolveTypeScriptValueReferenceUnchecked(referenceName, fromFilePath);
+    },
+  };
+}
+
+function invalidateClassicTypeScriptProject(filePath: string): void {
   const absoluteFilePath = path.resolve(filePath);
   const runtime = resolveTypeScriptRuntime(absoluteFilePath);
   const ts = runtime.ts;
+  if (!ts) {
+    throw new TypeScriptUnavailableError(runtime);
+  }
+
   const configPath = ts.findConfigFile(
     path.dirname(absoluteFilePath),
     ts.sys.fileExists,
@@ -55,11 +181,7 @@ export function invalidateTypeScriptProject(filePath: string): void {
   projectCache.delete(cacheKey);
 }
 
-export function clearTypeScriptProjectCache(): void {
-  projectCache.clear();
-}
-
-export function resolveTypeScriptModule(importPath: string, fromFilePath: string): string | null {
+function resolveClassicTypeScriptModule(importPath: string, fromFilePath: string): string | null {
   const project = getTypeScriptProject(fromFilePath);
   const resolutionHost = project.ts.createCompilerHost(project.compilerOptions, true);
   const resolvedModule = project.ts.resolveModuleName(
@@ -81,7 +203,7 @@ export function resolveTypeScriptModule(importPath: string, fromFilePath: string
   return normalizedPath;
 }
 
-export function resolveTypeScriptValueReference(
+function resolveTypeScriptValueReferenceUnchecked(
   referenceName: string,
   fromFilePath: string,
 ): { value?: unknown; diagnostic?: Diagnostic } {
@@ -125,6 +247,16 @@ export function resolveTypeScriptValueReference(
   }
 
   return { value };
+}
+
+function warnTypeScriptUnavailable(feature: string, error: TypeScriptUnavailableError): void {
+  const warningKey = `${feature}:${error.packagePath}`;
+  if (warnedUnavailableTypeScriptFeatures.has(warningKey)) {
+    return;
+  }
+
+  warnedUnavailableTypeScriptFeatures.add(warningKey);
+  logger.warn(`Skipping TypeScript ${feature}: ${error.message}`);
 }
 
 function findValueSymbol(

@@ -239,6 +239,12 @@ export async function POST() {
 }
 ```
 
+For simple single-file uploads, `@contentType multipart/form-data` can be used
+without `@body`. Mutation routes then receive a required multipart request body
+with a binary `file` field. Prefer an explicit `@body` schema when the form has
+additional fields, examples, or per-part typing that should appear in generated
+clients.
+
 `@contentType multipart/form-data` also enables multipart-specific request-body
 encoding output. The generator derives per-part `encoding` entries from the body
 schema:

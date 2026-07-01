@@ -190,6 +190,27 @@ describe.sequential("OpenApiGenerator integration flow", () => {
           500: { $ref: "#/components/responses/500" },
         },
       });
+      expect(spec.paths?.["/uploads/logo"]?.post).toMatchObject({
+        tags: ["Uploads"],
+        requestBody: {
+          description: "Multipart form data containing the logo image.",
+          required: true,
+          content: {
+            "multipart/form-data": {
+              schema: {
+                properties: {
+                  file: {
+                    format: "binary",
+                    type: "string",
+                  },
+                },
+                required: ["file"],
+                type: "object",
+              },
+            },
+          },
+        },
+      });
       expect(spec.paths?.["/catalog/products"]?.get?.responses).toMatchObject({
         200: {
           content: {
