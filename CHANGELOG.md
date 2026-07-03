@@ -1,3 +1,18 @@
+# [1.6.0](https://github.com/tazo90/next-openapi-gen/compare/v1.5.0...v1.6.0) (2026-07-03)
+
+### ✨ Features
+
+- native ts7 support and multipart improvement ([#162](https://github.com/tazo90/next-openapi-gen/issues/162)) ([b287917](https://github.com/tazo90/next-openapi-gen/commit/b28791703096a799a5d35d350ec4ee67313cf5cb)) by [@martijn00](https://github.com/martijn00)
+
+### 🐛 Bug Fixes
+
+- **core:** resolve native TS7 runtime via exports and cover adapter ([#163](https://github.com/tazo90/next-openapi-gen/issues/163)) ([63ccdce](https://github.com/tazo90/next-openapi-gen/commit/63ccdce1263f3b50ab6d715d24597c1556b1e98a)) by [@tazo90](https://github.com/tazo90)
+- **publish:** disable git-checks when publishing packed tarball ([3813807](https://github.com/tazo90/next-openapi-gen/commit/381380740d8ed9c0d063bcb4d017c58d56d93cb6)) by [@tazo90](https://github.com/tazo90)
+
+### 🔨 Chores
+
+- ignore publish tarball artifacts ([22aa843](https://github.com/tazo90/next-openapi-gen/commit/22aa843d55ecc6a28392672b946130c3b1d0f657)) by [@tazo90](https://github.com/tazo90)
+
 # [1.5.0](https://github.com/tazo90/next-openapi-gen/compare/v1.4.3...v1.5.0) (2026-06-29)
 
 ### ✨ Features
