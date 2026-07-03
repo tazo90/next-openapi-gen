@@ -229,6 +229,12 @@ Resolution priority is:
 2. `zod`
 3. `typescript`
 
+When `schemaType` does not include `"typescript"`, the TypeScript checker
+fallback is skipped for unresolved types, so a referenced TS-only type stays
+unresolved rather than being inferred through the compiler. Include both
+`"zod"` and `"typescript"` if you want that fallback to run during a Zod
+migration.
+
 See [workflows and integrations](./workflows-and-integrations.md) for more
 mixed-schema examples.
 
