@@ -2,7 +2,12 @@ import type { GenerationPerformanceProfile } from "../core/performance.js";
 import { measurePerformance } from "../core/performance.js";
 import { createMultipartEncoding } from "../schema/typescript/helpers.js";
 import type { SchemaProcessor } from "../schema/typescript/schema-processor.js";
-import type { DataTypes, ParamSchema, RouteDefinition } from "../shared/types.js";
+import type {
+  DataTypes,
+  OpenApiRequestBody,
+  ParamSchema,
+  RouteDefinition,
+} from "../shared/types.js";
 import {
   capitalize,
   deepMerge,
@@ -11,6 +16,8 @@ import {
   performAuthPresetReplacements,
 } from "../shared/utils.js";
 import type { ResponseProcessor } from "./response-processor.js";
+
+const DEFAULT_MULTIPART_REQUEST_BODY_DESCRIPTION = "Multipart form data containing a file upload.";
 
 export class OperationProcessor {
   private readonly authPresets: Record<string, string>;
@@ -55,7 +62,6 @@ export class OperationProcessor {
       responseLinks,
       deprecated,
       deprecationReason,
-      bodyDescription,
       responseDescription,
       openapiOverride,
     } = dataTypes;
@@ -212,48 +218,9 @@ export class OperationProcessor {
     }
 
     if (this.responseProcessor.supportsRequestBody(method)) {
-      if (dataTypes.bodyType) {
-        const contentType = this.schemaProcessor.detectContentType(
-          dataTypes.bodyType || "",
-          dataTypes.contentType,
-        );
-        const multipartEncoding =
-          contentType === "multipart/form-data"
-            ? measurePerformance(this.performanceProfile, "getSchemaContentMs", () =>
-                createMultipartEncoding(
-                  this.schemaProcessor.getSchemaContent({
-                    bodyType: dataTypes.bodyType,
-                  }).body,
-                ),
-              )
-            : undefined;
-
-        if (!multipartEncoding) {
-          measurePerformance(this.performanceProfile, "getSchemaContentMs", () => {
-            this.schemaProcessor.ensureSchemaResolved(dataTypes.bodyType!, "body");
-          });
-        }
-
-        definition.requestBody = {
-          content: {
-            [contentType]: {
-              schema: {
-                $ref: `#/components/schemas/${this.schemaProcessor.getSchemaReferenceName(
-                  dataTypes.bodyType,
-                  "body",
-                )}`,
-              },
-              ...(dataTypes.requestExamples
-                ? { examples: structuredClone(dataTypes.requestExamples) }
-                : {}),
-              ...(multipartEncoding ? { encoding: multipartEncoding } : {}),
-            },
-          },
-        };
-
-        if (bodyDescription) {
-          definition.requestBody.description = bodyDescription;
-        }
+      const requestBody = this.createRequestBody(dataTypes);
+      if (requestBody) {
+        definition.requestBody = requestBody;
       }
     }
 
@@ -411,6 +378,85 @@ export class OperationProcessor {
 
   private applyPreset(scheme: string): string {
     return this.authPresets[scheme.toLowerCase()] ?? scheme;
+  }
+
+  private createRequestBody(dataTypes: DataTypes): OpenApiRequestBody | undefined {
+    if (dataTypes.bodyType) {
+      return this.createSchemaBackedRequestBody(dataTypes);
+    }
+
+    if (dataTypes.contentType?.toLowerCase() === "multipart/form-data") {
+      return this.createDefaultMultipartRequestBody(dataTypes.bodyDescription);
+    }
+
+    return undefined;
+  }
+
+  private createSchemaBackedRequestBody(dataTypes: DataTypes): OpenApiRequestBody {
+    const bodyType = dataTypes.bodyType!;
+    const contentType = this.schemaProcessor.detectContentType(bodyType, dataTypes.contentType);
+    const multipartEncoding =
+      contentType === "multipart/form-data"
+        ? measurePerformance(this.performanceProfile, "getSchemaContentMs", () =>
+            createMultipartEncoding(
+              this.schemaProcessor.getSchemaContent({
+                bodyType,
+              }).body,
+            ),
+          )
+        : undefined;
+
+    if (!multipartEncoding) {
+      measurePerformance(this.performanceProfile, "getSchemaContentMs", () => {
+        this.schemaProcessor.ensureSchemaResolved(bodyType, "body");
+      });
+    }
+
+    const requestBody: OpenApiRequestBody = {
+      content: {
+        [contentType]: {
+          schema: {
+            $ref: `#/components/schemas/${this.schemaProcessor.getSchemaReferenceName(
+              bodyType,
+              "body",
+            )}`,
+          },
+          ...(dataTypes.requestExamples
+            ? { examples: structuredClone(dataTypes.requestExamples) }
+            : {}),
+          ...(multipartEncoding ? { encoding: multipartEncoding } : {}),
+        },
+      },
+    };
+
+    if (dataTypes.bodyDescription) {
+      requestBody.description = dataTypes.bodyDescription;
+    }
+
+    return requestBody;
+  }
+
+  private createDefaultMultipartRequestBody(description?: string): OpenApiRequestBody {
+    const finalDescription = description || DEFAULT_MULTIPART_REQUEST_BODY_DESCRIPTION;
+
+    return {
+      content: {
+        "multipart/form-data": {
+          schema: {
+            properties: {
+              file: {
+                format: "binary",
+                type: "string",
+              },
+            },
+            required: ["file"],
+            type: "object",
+          },
+        },
+      },
+      description: finalDescription,
+      required: true,
+    };
   }
 
   private createQuerystringParameter(dataTypes: DataTypes): ParamSchema | undefined {

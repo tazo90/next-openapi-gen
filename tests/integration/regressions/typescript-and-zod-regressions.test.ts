@@ -2,7 +2,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "path";
 
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { SchemaProcessor } from "@workspace/openapi-core/schema/typescript/schema-processor.js";
 import { ZodSchemaConverter } from "@workspace/openapi-core/schema/zod/zod-converter.js";
@@ -11,6 +11,7 @@ describe("TypeScript and Zod regression scenarios", () => {
   const roots: string[] = [];
 
   afterEach(() => {
+    vi.restoreAllMocks();
     roots.splice(0).forEach((root) => fs.rmSync(root, { recursive: true, force: true }));
   });
 
@@ -149,6 +150,36 @@ describe("TypeScript and Zod regression scenarios", () => {
   });
 
   describe("Zod fixtures", () => {
+    it("does not use the TypeScript checker fallback for zod-only schemas", () => {
+      type CheckerFallbackHost = {
+        resolveTypeWithTypeScriptChecker: (typeName: string, filePath: string) => unknown;
+      };
+      const checkerSpy = vi.spyOn(
+        SchemaProcessor.prototype as unknown as CheckerFallbackHost,
+        "resolveTypeWithTypeScriptChecker",
+      );
+      const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-zod-only-no-ts-checker-"));
+      roots.push(root);
+      fs.writeFileSync(
+        path.join(root, "schema.ts"),
+        [
+          "export type Source = {",
+          "  id: string;",
+          "  name: string;",
+          "};",
+          "",
+          "export type MappedResponse = {",
+          "  [Key in keyof Source]: Source[Key];",
+          "};",
+        ].join("\n"),
+      );
+      const processor = new SchemaProcessor(root, "zod");
+
+      processor.findSchemaDefinition("MappedResponse", "response");
+
+      expect(checkerSpy).not.toHaveBeenCalled();
+    });
+
     it("supports discriminated unions from zod fixtures", () => {
       const converter = new ZodSchemaConverter(
         path.join(process.cwd(), "tests", "fixtures", "unions"),

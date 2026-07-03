@@ -127,6 +127,8 @@ jobs:
             experimental: false
           - typescript-version: 6
             experimental: false
+          - typescript-version: 7.0.1-rc
+            experimental: false
           - typescript-version: next
             experimental: true
     steps:
@@ -170,10 +172,12 @@ jobs:
           pnpm --dir "$compat_root/app" add -D "typescript@${TYPESCRIPT_VERSION}"
 
           COMPAT_PROJECT="$compat_root/app" node --input-type=module <<'NODE'
+          import fs from "node:fs";
           import path from "node:path";
           import { createRequire } from "node:module";
 
           import { OpenApiGenerator } from "next-openapi-gen";
+          import { inferResponsesForExport } from "@workspace/openapi-core/routes/typescript-response-inference.js";
 
           const projectRoot = process.env.COMPAT_PROJECT;
           if (!projectRoot) {
@@ -181,8 +185,13 @@ jobs:
           }
 
           const require = createRequire(import.meta.url);
-          const projectTypeScript = require(require.resolve("typescript", { paths: [projectRoot] }));
-          console.log(`Using project TypeScript ${projectTypeScript.version}`);
+          const projectTypeScriptPackageJsonPath = require.resolve("typescript/package.json", {
+            paths: [projectRoot],
+          });
+          const projectTypeScriptPackageJson = JSON.parse(
+            fs.readFileSync(projectTypeScriptPackageJsonPath, "utf8"),
+          );
+          console.log(`Using project TypeScript ${projectTypeScriptPackageJson.version}`);
 
           const templatePath = path.join(projectRoot, "next.openapi.json");
           process.chdir(projectRoot);
@@ -196,6 +205,36 @@ jobs:
 
           if (!spec.paths?.["/users/{id}"]?.get) {
             throw new Error("Expected /users/{id} GET operation to be generated");
+          }
+
+          const checkerSmokeRoute = path.join(projectRoot, "src", "app", "api", "ts7-smoke", "route.ts");
+          fs.mkdirSync(path.dirname(checkerSmokeRoute), { recursive: true });
+          fs.writeFileSync(
+            checkerSmokeRoute,
+            `type SmokeResponse = {
+              ok: boolean;
+              total: number;
+            };
+
+            export async function GET() {
+              return Response.json({ ok: true, total: 2 } satisfies SmokeResponse, { status: 201 });
+            }
+            `,
+          );
+
+          const inferred = inferResponsesForExport(checkerSmokeRoute, "GET");
+          const inferredResponse = inferred.responses.find(
+            (response) => response.statusCode === "201" && response.contentType === "application/json",
+          );
+          if (
+            inferred.diagnostics.length > 0 ||
+            inferredResponse?.schema?.type !== "object" ||
+            inferredResponse.schema.properties?.ok?.type !== "boolean" ||
+            inferredResponse.schema.properties?.total?.type !== "number"
+          ) {
+            throw new Error(
+              `Expected checker-backed response inference to work: ${JSON.stringify(inferred, null, 2)}`,
+            );
           }
           NODE
 

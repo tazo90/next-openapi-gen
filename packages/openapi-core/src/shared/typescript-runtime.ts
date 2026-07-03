@@ -1,3 +1,4 @@
+import fs from "fs";
 import { createRequire } from "module";
 import path from "path";
 
@@ -5,10 +6,16 @@ import type * as ts from "typescript";
 
 export type TypeScriptRuntime = typeof ts;
 
-export type TypeScriptVersionSupport = "supported" | "too-old" | "too-new";
+export type NativeTypeScriptRuntime = {
+  ast: Record<string, unknown>;
+  sync: Record<string, unknown>;
+};
+
+export type TypeScriptVersionSupport = "supported" | "too-old" | "too-new" | "unsupported-native";
 
 export type ResolvedTypeScriptRuntime = {
-  ts: TypeScriptRuntime;
+  native?: NativeTypeScriptRuntime;
+  ts?: TypeScriptRuntime;
   packagePath: string;
   version: string;
   support: TypeScriptVersionSupport;
@@ -19,24 +26,36 @@ const MINIMUM_TYPESCRIPT_MINOR = 9;
 const MAXIMUM_TYPESCRIPT_MAJOR_EXCLUSIVE = 8;
 
 const require = createRequire(import.meta.url);
-const fallbackTypeScriptPath = require.resolve("typescript");
 const runtimeCache = new Map<string, ResolvedTypeScriptRuntime>();
+let fallbackTypeScriptPackageRoot: string | undefined;
+
+export class TypeScriptUnavailableError extends Error {
+  public readonly packagePath: string;
+  public readonly support: TypeScriptVersionSupport;
+  public readonly version: string;
+
+  constructor(runtime: ResolvedTypeScriptRuntime) {
+    super(getTypeScriptUnavailableMessage(runtime));
+    this.name = "TypeScriptUnavailableError";
+    this.packagePath = runtime.packagePath;
+    this.support = runtime.support;
+    this.version = runtime.version;
+  }
+}
 
 export function resolveTypeScriptRuntime(fromPath: string): ResolvedTypeScriptRuntime {
-  const packagePath = resolveTypeScriptPackagePath(fromPath);
-  const cachedRuntime = runtimeCache.get(packagePath);
+  const packageRoot = resolveTypeScriptPackageRoot(fromPath);
+  const cachedRuntime = runtimeCache.get(packageRoot);
   if (cachedRuntime) {
     return cachedRuntime;
   }
 
-  const runtime = require(packagePath) as TypeScriptRuntime;
+  const loadedPackage = loadTypeScriptPackage(packageRoot);
   const resolvedRuntime = {
-    ts: runtime,
-    packagePath,
-    version: runtime.version,
-    support: getTypeScriptVersionSupport(runtime.version),
+    ...loadedPackage,
+    packagePath: packageRoot,
   };
-  runtimeCache.set(packagePath, resolvedRuntime);
+  runtimeCache.set(packageRoot, resolvedRuntime);
   return resolvedRuntime;
 }
 
@@ -70,15 +89,74 @@ export function getBestEffortScriptTarget(runtime: TypeScriptRuntime): ts.Script
 
 export function clearTypeScriptRuntimeCache(): void {
   runtimeCache.clear();
+  fallbackTypeScriptPackageRoot = undefined;
 }
 
-function resolveTypeScriptPackagePath(fromPath: string): string {
+export function isTypeScriptUnavailableError(error: unknown): error is TypeScriptUnavailableError {
+  return error instanceof TypeScriptUnavailableError;
+}
+
+function resolveTypeScriptPackageRoot(fromPath: string): string {
   const searchDirectory = path.dirname(path.resolve(fromPath));
   try {
-    return require.resolve("typescript", { paths: [searchDirectory] });
+    return path.dirname(require.resolve("typescript/package.json", { paths: [searchDirectory] }));
   } catch {
-    return fallbackTypeScriptPath;
+    return resolveFallbackTypeScriptPackageRoot();
   }
+}
+
+function resolveFallbackTypeScriptPackageRoot(): string {
+  fallbackTypeScriptPackageRoot ??= path.dirname(require.resolve("typescript/package.json"));
+  return fallbackTypeScriptPackageRoot;
+}
+
+function loadTypeScriptPackage(
+  packageRoot: string,
+): Omit<ResolvedTypeScriptRuntime, "packagePath"> {
+  const packageJson = JSON.parse(
+    fs.readFileSync(path.join(packageRoot, "package.json"), "utf8"),
+  ) as { version?: string };
+  const version = packageJson.version ?? "0.0.0";
+  const support = getTypeScriptVersionSupport(version);
+  if (support !== "supported") {
+    return { version, support };
+  }
+
+  if (parseTypeScriptVersion(version)?.major === 7) {
+    return {
+      native: loadNativeTypeScriptPackage(packageRoot),
+      version,
+      support,
+    };
+  }
+
+  const classicTypeScriptPath = require.resolve(path.join(packageRoot, "lib", "typescript.js"));
+  return {
+    ts: require(classicTypeScriptPath) as TypeScriptRuntime,
+    version,
+    support,
+  };
+}
+
+function loadNativeTypeScriptPackage(packageRoot: string): NativeTypeScriptRuntime {
+  const syncPath = require.resolve(path.join(packageRoot, "dist", "api", "sync", "api.js"));
+  const astPath = require.resolve(path.join(packageRoot, "dist", "ast", "index.js"));
+  return {
+    ast: require(astPath) as Record<string, unknown>,
+    sync: require(syncPath) as Record<string, unknown>,
+  };
+}
+
+function getTypeScriptUnavailableMessage(runtime: ResolvedTypeScriptRuntime): string {
+  if (runtime.support === "unsupported-native") {
+    return `TypeScript ${runtime.version} uses the native compiler API, which does not expose the classic compiler API used by next-openapi-gen. TypeScript-checker features are temporarily disabled until native API support is added.`;
+  }
+
+  if (runtime.support === "too-old") {
+    return `TypeScript ${runtime.version} is too old for next-openapi-gen. Install TypeScript 5.9 or newer.`;
+  }
+
+  return `TypeScript ${runtime.version} is not supported by next-openapi-gen.`;
 }
 
 function parseTypeScriptVersion(version: string): { major: number; minor: number } | null {

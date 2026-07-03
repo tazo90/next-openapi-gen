@@ -28,8 +28,12 @@ describe("TypeScript runtime adapter", () => {
 
     expect(runtime.version).toBe("6.0.2");
     expect(fs.realpathSync(runtime.packagePath)).toBe(
-      fs.realpathSync(path.join(root, "node_modules", "typescript", "index.cjs")),
+      fs.realpathSync(path.join(root, "node_modules", "typescript")),
     );
+    expect(runtime.ts).toBeDefined();
+    if (!runtime.ts) {
+      throw new Error("Expected classic TypeScript runtime to be loaded");
+    }
     expect(getBestEffortScriptTarget(runtime.ts)).toBe(600);
   });
 
@@ -48,7 +52,7 @@ describe("TypeScript runtime adapter", () => {
     const firstRoot = createTempRoot("nxog-ts-runtime-first-");
     const secondRoot = createTempRoot("nxog-ts-runtime-second-");
     writeMockTypeScriptPackage(firstRoot, "6.0.2", 600);
-    writeMockTypeScriptPackage(secondRoot, "7.0.0", 700);
+    writeMockTypeScriptNativePackage(secondRoot, "7.0.0");
 
     const firstRuntime = resolveTypeScriptRuntime(path.join(firstRoot, "src", "route.ts"));
     const secondRuntime = resolveTypeScriptRuntime(path.join(secondRoot, "src", "route.ts"));
@@ -68,6 +72,22 @@ describe("TypeScript runtime adapter", () => {
     expect(getTypeScriptVersionSupport("8.0.0")).toBe("too-new");
   });
 
+  it("reads TypeScript 7 package metadata without loading a bare package export", () => {
+    const root = createTempRoot("nxog-ts-runtime-native-");
+    writeMockTypeScriptNativePackage(root, "7.0.1-rc");
+    const sourceFile = path.join(root, "src", "route.ts");
+
+    const runtime = resolveTypeScriptRuntime(sourceFile);
+
+    expect(runtime.version).toBe("7.0.1-rc");
+    expect(runtime.support).toBe("supported");
+    expect(runtime.native).toBeDefined();
+    expect(runtime.ts).toBeUndefined();
+    expect(fs.realpathSync(runtime.packagePath)).toBe(
+      fs.realpathSync(path.join(root, "node_modules", "typescript")),
+    );
+  });
+
   function createTempRoot(prefix: string) {
     const root = fs.mkdtempSync(path.join(os.tmpdir(), prefix));
     roots.push(root);
@@ -78,13 +98,40 @@ describe("TypeScript runtime adapter", () => {
 
 function writeMockTypeScriptPackage(root: string, version: string, latestTarget: number) {
   const packageRoot = path.join(root, "node_modules", "typescript");
-  fs.mkdirSync(packageRoot, { recursive: true });
+  fs.mkdirSync(path.join(packageRoot, "lib"), { recursive: true });
   fs.writeFileSync(
     path.join(packageRoot, "package.json"),
-    JSON.stringify({ name: "typescript", version, main: "index.cjs" }),
+    JSON.stringify({ name: "typescript", version, main: "./lib/typescript.js" }),
   );
   fs.writeFileSync(
-    path.join(packageRoot, "index.cjs"),
+    path.join(packageRoot, "lib", "typescript.js"),
     `module.exports = { version: ${JSON.stringify(version)}, ScriptTarget: { ES2022: 2022, Latest: ${latestTarget} } };\n`,
+  );
+}
+
+function writeMockTypeScriptNativePackage(root: string, version: string) {
+  const packageRoot = path.join(root, "node_modules", "typescript");
+  fs.mkdirSync(path.join(packageRoot, "dist", "api", "sync"), { recursive: true });
+  fs.mkdirSync(path.join(packageRoot, "dist", "ast"), { recursive: true });
+  fs.writeFileSync(
+    path.join(packageRoot, "package.json"),
+    JSON.stringify({
+      name: "typescript",
+      version,
+      type: "module",
+      exports: {
+        "./package.json": "./package.json",
+        "./unstable/sync": "./dist/api/sync/api.js",
+        "./unstable/ast": "./dist/ast/index.js",
+      },
+    }),
+  );
+  fs.writeFileSync(
+    path.join(packageRoot, "dist", "api", "sync", "api.js"),
+    "export class API {}; export const SymbolFlags = {}; export const TypeFlags = {}; export const ModifierFlags = {}; export const ObjectFlags = {};\n",
+  );
+  fs.writeFileSync(
+    path.join(packageRoot, "dist", "ast", "index.js"),
+    "export const SyntaxKind = {};\n",
   );
 }
