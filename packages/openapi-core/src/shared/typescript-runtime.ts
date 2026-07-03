@@ -11,7 +11,7 @@ export type NativeTypeScriptRuntime = {
   sync: Record<string, unknown>;
 };
 
-export type TypeScriptVersionSupport = "supported" | "too-old" | "too-new" | "unsupported-native";
+export type TypeScriptVersionSupport = "supported" | "too-old" | "too-new";
 
 export type ResolvedTypeScriptRuntime = {
   native?: NativeTypeScriptRuntime;
@@ -139,8 +139,8 @@ function loadTypeScriptPackage(
 }
 
 function loadNativeTypeScriptPackage(packageRoot: string): NativeTypeScriptRuntime {
-  const syncPath = require.resolve(path.join(packageRoot, "dist", "api", "sync", "api.js"));
-  const astPath = require.resolve(path.join(packageRoot, "dist", "ast", "index.js"));
+  const syncPath = require.resolve("typescript/unstable/sync", { paths: [packageRoot] });
+  const astPath = require.resolve("typescript/unstable/ast", { paths: [packageRoot] });
   return {
     ast: require(astPath) as Record<string, unknown>,
     sync: require(syncPath) as Record<string, unknown>,
@@ -148,10 +148,6 @@ function loadNativeTypeScriptPackage(packageRoot: string): NativeTypeScriptRunti
 }
 
 function getTypeScriptUnavailableMessage(runtime: ResolvedTypeScriptRuntime): string {
-  if (runtime.support === "unsupported-native") {
-    return `TypeScript ${runtime.version} uses the native compiler API, which does not expose the classic compiler API used by next-openapi-gen. TypeScript-checker features are temporarily disabled until native API support is added.`;
-  }
-
   if (runtime.support === "too-old") {
     return `TypeScript ${runtime.version} is too old for next-openapi-gen. Install TypeScript 5.9 or newer.`;
   }
