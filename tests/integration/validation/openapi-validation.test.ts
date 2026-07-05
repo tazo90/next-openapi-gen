@@ -28,6 +28,13 @@ const appRouterTypescriptFullCoverageFixture = getProjectFixturePath(
   "app-router",
   "ts-full-coverage",
 );
+const tanstackCoreFixture = getProjectFixturePath("tanstack", "core-flow");
+const reactRouterCoreFixture = getProjectFixturePath("react-router", "core-flow");
+
+const frameworkFixtures = [
+  ["TanStack", tanstackCoreFixture],
+  ["React Router", reactRouterCoreFixture],
+] as const;
 
 describe("OpenAPI document validation", () => {
   it.each(["3.0", "3.1", "3.2"] as const)(
@@ -141,6 +148,33 @@ describe("OpenAPI document validation", () => {
       expect.assertions(3);
       const { project, spec } = generateFixtureSpec({
         fixturePath: appRouterTypescriptFullCoverageFixture,
+        openapiVersion,
+      });
+
+      try {
+        await expectValidSpec(spec);
+        expect(spec.paths).toBeDefined();
+        expect(Object.keys(spec.paths ?? {}).length).toBeGreaterThan(0);
+      } finally {
+        project.cleanup();
+      }
+    },
+  );
+
+  it.each(
+    frameworkFixtures.flatMap(([frameworkName, fixturePath]) =>
+      (["3.0", "3.1", "3.2"] as const).map((openapiVersion) => ({
+        fixturePath,
+        frameworkName,
+        openapiVersion,
+      })),
+    ),
+  )(
+    "validates generated $frameworkName fixture for OpenAPI $openapiVersion",
+    async ({ fixturePath, openapiVersion }) => {
+      expect.assertions(3);
+      const { project, spec } = generateFixtureSpec({
+        fixturePath,
         openapiVersion,
       });
 

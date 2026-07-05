@@ -113,7 +113,11 @@ export class DrizzleZodProcessor {
     tableArgument: t.CallExpression["arguments"][number] | undefined,
     context: DrizzleZodProcessingContext,
   ): OpenApiSchema {
-    if (functionName !== "createSelectSchema") {
+    if (
+      functionName !== "createSelectSchema" &&
+      functionName !== "createInsertSchema" &&
+      functionName !== "createUpdateSchema"
+    ) {
       return {
         type: "object",
         properties: {},
@@ -122,7 +126,7 @@ export class DrizzleZodProcessor {
     }
 
     const tableCall = tableArgument ? this.resolveTableCall(tableArgument, context) : null;
-    const schema = tableCall ? this.extractSelectSchemaFromTable(tableCall) : null;
+    const schema = tableCall ? this.extractSchemaFromTable(tableCall, functionName) : null;
     if (schema) {
       return schema;
     }
@@ -206,7 +210,10 @@ export class DrizzleZodProcessor {
     return t.isIdentifier(node.callee, { name: "pgTable" });
   }
 
-  private static extractSelectSchemaFromTable(node: t.CallExpression): OpenApiSchema | null {
+  private static extractSchemaFromTable(
+    node: t.CallExpression,
+    functionName: string,
+  ): OpenApiSchema | null {
     const columnsArgument = node.arguments[1];
     if (!t.isObjectExpression(columnsArgument)) {
       return null;
@@ -234,7 +241,9 @@ export class DrizzleZodProcessor {
         ...column.schema,
         ...(column.isNotNull ? {} : { nullable: true }),
       };
-      required.push(key);
+      if (this.isRequiredColumnForSchema(column, functionName)) {
+        required.push(key);
+      }
     });
 
     return {
@@ -242,6 +251,21 @@ export class DrizzleZodProcessor {
       properties,
       required,
     };
+  }
+
+  private static isRequiredColumnForSchema(
+    column: DrizzleColumnMetadata,
+    functionName: string,
+  ): boolean {
+    if (functionName === "createUpdateSchema") {
+      return false;
+    }
+
+    if (functionName === "createInsertSchema") {
+      return column.isNotNull && !column.hasDefault && !column.isGenerated;
+    }
+
+    return true;
   }
 
   private static extractColumnMetadata(node: t.Expression): DrizzleColumnMetadata | null {

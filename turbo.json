@@ -6,8 +6,11 @@
     "COVERAGE_SCOPE",
     "E2E_APP",
     "FORCE_COLOR",
+    "GENERATOR_BENCH_ITERATIONS",
+    "GENERATOR_BENCH_OUTPUT",
     "NEXT_OPENAPI_GEN_TIMING",
-    "NODE_ENV"
+    "NODE_ENV",
+    "PATH"
   ],
   "tasks": {
     "//#knip": {
@@ -60,7 +63,18 @@
     },
     "generate": {
       "dependsOn": ["^build"],
-      "outputs": []
+      "env": ["OPENAPI_GEN_CACHE"],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "next.openapi.json",
+        "openapi-gen.config.json",
+        "openapi-gen.config.ts",
+        "openapi-gen.config.mts",
+        "next-openapi.config.ts",
+        "next-openapi.config.mts",
+        "src/**"
+      ],
+      "outputs": ["public/openapi.json", ".openapi-gen/**"]
     },
     "lint": {
       "dependsOn": ["transit"],

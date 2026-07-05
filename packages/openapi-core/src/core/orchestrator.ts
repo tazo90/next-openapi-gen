@@ -8,13 +8,13 @@ import { getOpenApiVersionProcessor } from "../openapi/version-processor.js";
 import { sortPathDefinitions } from "../routes/path-sort.js";
 import { RouteProcessor } from "../routes/route-processor.js";
 import { loadCustomOpenApiFragments } from "../schema/core/custom-schema-file-processor.js";
-import { FrameworkKind } from "../shared/types.js";
 import type {
   OpenApiDocument,
   OpenApiTagDefinition,
   OpenApiTemplate,
   ResolvedOpenApiConfig,
 } from "../shared/types.js";
+import { FrameworkKind } from "../shared/types.js";
 import type { FrameworkSourceFactory } from "./adapters.js";
 import type { GeneratorHooks } from "./config/types.js";
 import { applyExcludeSchemas, matchExcludePatterns } from "./exclude-schemas.js";
@@ -88,6 +88,10 @@ export function runGenerationOrchestrator({
     ...document.paths,
     ...routeProcessor.getPaths(),
   });
+  const discoveredWebhooks = routeProcessor.getWebhooks();
+  if (Object.keys(discoveredWebhooks).length > 0) {
+    document.webhooks = discoveredWebhooks;
+  }
   document.tags = mergeTagDefinitions(document.tags, routeProcessor.getTags());
   profile.sortAndMergePathsMs = performance.now() - phaseStartedAt;
   profile.buildPathsMs = profile.sortAndMergePathsMs;

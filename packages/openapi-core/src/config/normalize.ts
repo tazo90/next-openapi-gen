@@ -15,6 +15,7 @@ import {
   DEFAULT_API_DIR,
   DEFAULT_DEBUG,
   DEFAULT_DIAGNOSTICS_ENABLED,
+  DEFAULT_DIAGNOSTICS_FAIL_ON,
   DEFAULT_DOCS_URL,
   DEFAULT_GENERATED_OPENAPI_FILENAME,
   DEFAULT_INCLUDE_OPENAPI_ROUTES,
@@ -147,7 +148,11 @@ export function normalizeOpenApiConfig(
     next: {
       adapterPath: template.next?.adapterPath,
     },
-    diagnostics: template.diagnostics ?? { enabled: DEFAULT_DIAGNOSTICS_ENABLED },
+    diagnostics: {
+      enabled: template.diagnostics?.enabled ?? DEFAULT_DIAGNOSTICS_ENABLED,
+      failOn: template.diagnostics?.failOn ?? DEFAULT_DIAGNOSTICS_FAIL_ON,
+    },
+    experimental: template.experimental,
     authPresets: { ...DEFAULT_AUTH_PRESET_REPLACEMENTS, ...template.authPresets },
     debug: template.debug ?? DEFAULT_DEBUG,
   };

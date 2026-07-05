@@ -58,6 +58,7 @@ Feature status uses three buckets:
 | Example Object `dataValue` / `serializedValue` / `externalValue`  | `generated`, `template/custom`, `validated` | Route examples and template/custom examples preserve 3.2 example fields and downgrade older targets where needed. |
 | Discriminator `defaultMapping`                                    | `template/custom`, `validated`              | Preserved through the shared document model.                                                                      |
 | `server.name` and root `$self`                                    | `template/custom`, `validated`              | Preserved for 3.2 and removed for older versions.                                                                 |
+| `additionalOperations` / HTTP `QUERY`                             | `generated`, `template/custom`, `validated` | `@method QUERY` emits an OpenAPI 3.2 `additionalOperations.query` operation; older targets strip it.              |
 | `oauth2MetadataUrl` and OAuth `deviceAuthorization` flow          | `template/custom`, `validated`              | Preserved for 3.2 and stripped for older versions.                                                                |
 
 ## First-Class Route Features
@@ -67,6 +68,7 @@ Feature status uses three buckets:
 | Examples                | `@examples`                                                                                 | Supports inline values, serialized payloads, external URLs, and exported typed references for request, response, and querystring examples. |
 | Structured tag metadata | `@tag`, `@tagSummary`, `@tagKind`, `@tagParent`                                             | Tag metadata is synthesized into root `tags` entries.                                                                                      |
 | `querystring`           | `@querystring FilterSchema as advancedQuery`                                                | Emits an OpenAPI 3.2 `querystring` parameter with form content.                                                                            |
+| HTTP `QUERY`            | `@method QUERY`                                                                             | Emits the operation under `additionalOperations.query` for OpenAPI 3.2 output.                                                             |
 | Sequential media        | `@responseContentType`, `@responseItem`, `@responseItemEncoding`, `@responsePrefixEncoding` | Emits 3.2 media objects for streaming or record-oriented responses.                                                                        |
 
 ## Checker-Assisted Improvements

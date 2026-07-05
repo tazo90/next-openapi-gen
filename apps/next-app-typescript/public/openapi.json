@@ -1254,12 +1254,10 @@
         "type": "object",
         "properties": {
           "name": {
-            "type": "string",
-            "nullable": false
+            "type": "string"
           },
           "price": {
-            "type": "number",
-            "nullable": false
+            "type": "number"
           }
         },
         "required": [
@@ -1271,8 +1269,7 @@
         "type": "object",
         "properties": {
           "notify": {
-            "type": "boolean",
-            "nullable": false
+            "type": "boolean"
           }
         },
         "required": [
@@ -1286,12 +1283,10 @@
             "type": "object",
             "properties": {
               "name": {
-                "type": "string",
-                "nullable": false
+                "type": "string"
               },
               "price": {
-                "type": "number",
-                "nullable": false
+                "type": "number"
               }
             },
             "required": [
@@ -1307,8 +1302,7 @@
             ],
             "properties": {
               "notify": {
-                "type": "boolean",
-                "nullable": false
+                "type": "boolean"
               }
             },
             "required": [
@@ -2990,7 +2984,8 @@
                 "paid",
                 "uncollectible"
               ]
-            }
+            },
+            "example": "example"
           },
           {
             "in": "query",
@@ -2998,7 +2993,8 @@
             "required": false,
             "schema": {
               "type": "string"
-            }
+            },
+            "example": "example"
           },
           {
             "in": "query",
@@ -3006,7 +3002,8 @@
             "required": false,
             "schema": {
               "type": "string"
-            }
+            },
+            "example": "example"
           },
           {
             "in": "query",
@@ -3014,7 +3011,8 @@
             "required": false,
             "schema": {
               "type": "string"
-            }
+            },
+            "example": "example"
           },
           {
             "in": "cookie",
@@ -3024,7 +3022,8 @@
               "type": "string",
               "description": "Session token"
             },
-            "description": "Session token"
+            "description": "Session token",
+            "example": "example"
           }
         ],
         "security": [
@@ -3229,7 +3228,8 @@
                 "csv",
                 "ndjson"
               ]
-            }
+            },
+            "example": "example"
           },
           {
             "in": "path",
@@ -3282,7 +3282,16 @@
         ],
         "responses": {
           "307": {
-            "description": "Successful response"
+            "description": "Successful response",
+            "headers": {
+              "Location": {
+                "description": "Redirect target URL",
+                "schema": {
+                  "type": "string",
+                  "format": "uri"
+                }
+              }
+            }
           },
           "400": {
             "$ref": "#/components/responses/400"
@@ -3422,7 +3431,8 @@
               "type": "number",
               "description": "Page number for pagination"
             },
-            "description": "Page number for pagination"
+            "description": "Page number for pagination",
+            "example": 1
           },
           {
             "in": "query",
@@ -3432,7 +3442,8 @@
               "type": "number",
               "description": "Number of comments per page"
             },
-            "description": "Number of comments per page"
+            "description": "Number of comments per page",
+            "example": 1
           },
           {
             "in": "query",
@@ -3447,7 +3458,8 @@
               ],
               "description": "Sort order"
             },
-            "description": "Sort order"
+            "description": "Sort order",
+            "example": "example"
           },
           {
             "in": "query",
@@ -3457,7 +3469,8 @@
               "type": "boolean",
               "description": "Whether to include soft-deleted comments"
             },
-            "description": "Whether to include soft-deleted comments"
+            "description": "Whether to include soft-deleted comments",
+            "example": true
           },
           {
             "in": "query",
@@ -3467,7 +3480,8 @@
               "type": "boolean",
               "description": "Whether to include replies"
             },
-            "description": "Whether to include replies"
+            "description": "Whether to include replies",
+            "example": true
           },
           {
             "in": "query",
@@ -3477,7 +3491,8 @@
               "type": "string",
               "description": "Filter by user ID"
             },
-            "description": "Filter by user ID"
+            "description": "Filter by user ID",
+            "example": "example"
           },
           {
             "in": "path",
@@ -3990,7 +4005,8 @@
               "type": "string",
               "description": "start date (ISO 8601)"
             },
-            "description": "start date (ISO 8601)"
+            "description": "start date (ISO 8601)",
+            "example": "example"
           },
           {
             "in": "query",
@@ -4000,7 +4016,8 @@
               "type": "string",
               "description": "end date (ISO 8601)"
             },
-            "description": "end date (ISO 8601)"
+            "description": "end date (ISO 8601)",
+            "example": "example"
           }
         ],
         "security": [

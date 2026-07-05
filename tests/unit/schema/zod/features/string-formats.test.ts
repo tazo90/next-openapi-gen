@@ -10,11 +10,20 @@ describe("Zod features › string formats", () => {
     ["email (method)", "z.string().email()", { type: "string", format: "email" }],
     ["url (method)", "z.string().url()", { type: "string", format: "uri" }],
     ["uuid (method)", "z.string().uuid()", { type: "string", format: "uuid" }],
+    ["uuidv4 (method)", "z.string().uuidv4()", { type: "string", format: "uuid" }],
+    ["uuidv6 (method)", "z.string().uuidv6()", { type: "string", format: "uuid" }],
+    ["uuidv7 (method)", "z.string().uuidv7()", { type: "string", format: "uuid" }],
     ["cuid (method)", "z.string().cuid()", { type: "string", format: "cuid" }],
     ["cuid2", "z.string().cuid2()", { type: "string", format: "cuid2" }],
     ["ulid", "z.string().ulid()", { type: "string", format: "ulid" }],
     ["nanoid", "z.string().nanoid()", { type: "string", format: "nanoid" }],
+    ["xid", "z.string().xid()", { type: "string", format: "xid" }],
+    ["ksuid", "z.string().ksuid()", { type: "string", format: "ksuid" }],
     ["jwt", "z.string().jwt()", { type: "string", format: "jwt" }],
+    ["hostname", "z.string().hostname()", { type: "string", format: "hostname" }],
+    ["httpUrl", "z.string().httpUrl()", { type: "string", format: "uri" }],
+    ["hex", "z.string().hex()", { type: "string", format: "hex" }],
+    ["hash", "z.string().hash('sha256')", { type: "string", format: "hash" }],
     ["base64", "z.string().base64()", { type: "string", format: "base64" }],
     ["base64url", "z.string().base64url()", { type: "string", format: "base64url" }],
     ["emoji", "z.string().emoji()", { type: "string", format: "emoji" }],
@@ -47,6 +56,12 @@ describe("Zod features › string formats", () => {
       type: "string",
       minLength: 5,
       maxLength: 5,
+    });
+  });
+
+  it("string normalization methods are no-ops for wire shape", () => {
+    expect(convert("z.string().trim().toLowerCase().toUpperCase()", roots)).toEqual({
+      type: "string",
     });
   });
 

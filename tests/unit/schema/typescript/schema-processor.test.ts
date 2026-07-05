@@ -21,6 +21,9 @@ describe("SchemaProcessor", () => {
 
     expect(processor.getExampleForParam("userId")).toBe("123");
     expect(processor.getExampleForParam("page", "number")).toBe(1);
+    expect(processor.getExampleForParam("organizationId", { type: "string", format: "uuid" })).toBe(
+      "123e4567-e89b-12d3-a456-426614174000",
+    );
     expect(processor.getExampleForParam("isEnabled", "boolean")).toBe(true);
     expect(processor.detectContentType("AvatarUpload")).toBe("application/json");
     expect(processor.detectContentType("MultipartFormDataPayload")).toBe("multipart/form-data");
@@ -54,8 +57,8 @@ describe("SchemaProcessor", () => {
         name: "id",
         in: "path",
         required: true,
-        schema: { type: "number" },
-        example: 123,
+        schema: { type: "string" },
+        example: "123",
         description: "Path parameter: id",
       },
       {
@@ -500,6 +503,38 @@ describe("SchemaProcessor", () => {
         message: { type: "string" },
         statusCode: expect.objectContaining({ type: expect.stringMatching(/number|integer/) }),
       }),
+    });
+  });
+
+  it("redirects z.infer<typeof Schema> aliases to the Zod converter when enabled", () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-zinfer-alias-"));
+    roots.push(root);
+
+    fs.writeFileSync(
+      path.join(root, "schemas.ts"),
+      [
+        'import { z } from "zod";',
+        "",
+        "export const UserSchema = z.object({",
+        "  id: z.string().uuid(),",
+        "});",
+        "",
+        "export type UserAlias = z.infer<typeof UserSchema>;",
+      ].join("\n"),
+    );
+
+    const processor = new SchemaProcessor(root, ["typescript", "zod"]);
+    const schema = processor.findSchemaDefinition("UserAlias", "response");
+
+    expect(schema).toEqual({
+      type: "object",
+      properties: {
+        id: {
+          type: "string",
+          format: "uuid",
+        },
+      },
+      required: ["id"],
     });
   });
 });

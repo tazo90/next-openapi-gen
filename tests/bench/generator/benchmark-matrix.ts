@@ -16,8 +16,8 @@ import {
   copyProjectFixture,
   getProjectFixturePath,
   materializeTemplateVariant,
-  type TempProject,
   withProjectCwd,
+  type TempProject,
 } from "../../helpers/test-project.js";
 
 export type BenchmarkOpenApiVersion = Extract<OpenApiVersion, "3.0" | "3.1" | "3.2">;
@@ -251,6 +251,29 @@ export function collectProfiles(
       const profile = generator.getPerformanceProfile();
       if (!profile) {
         throw new Error(`Expected performance profile for scenario "${project.scenario.id}".`);
+      }
+
+      return profile;
+    }),
+  );
+}
+
+export function collectWarmProfiles(
+  project: BenchProject,
+  iterations: number,
+): GeneratorPerformanceProfile[] {
+  return Array.from({ length: iterations }, () =>
+    withProjectCwd(project.project.root, () => {
+      const runtime = createSharedGenerationRuntime();
+      const coldGenerator = new OpenApiGenerator({ templatePath: project.templatePath, runtime });
+      coldGenerator.generate();
+
+      const warmGenerator = new OpenApiGenerator({ templatePath: project.templatePath, runtime });
+      warmGenerator.generate();
+
+      const profile = warmGenerator.getPerformanceProfile();
+      if (!profile) {
+        throw new Error(`Expected warm performance profile for scenario "${project.scenario.id}".`);
       }
 
       return profile;

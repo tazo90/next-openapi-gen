@@ -132,6 +132,48 @@ describe("OpenAPI version processor", () => {
     });
   });
 
+  it("downgrades tuple schemas to valid OpenAPI 3.0 array item schemas", () => {
+    const finalized = getOpenApiVersionProcessor("3.0").finalize(
+      createDocumentFromTemplate({
+        openapi: "3.2.0",
+        info: { title: "Fixture", version: "1.0.0" },
+        components: {
+          schemas: {
+            Tupled: {
+              type: "array",
+              prefixItems: [{ type: "string" }, { type: "number" }],
+              items: false,
+              minItems: 2,
+              maxItems: 2,
+            },
+            RestTupled: {
+              type: "array",
+              prefixItems: [{ type: "string" }],
+              items: { type: "number" },
+              minItems: 1,
+            },
+          },
+        },
+      }),
+    );
+
+    expect(finalized.components?.schemas?.Tupled).toEqual({
+      type: "array",
+      items: {
+        oneOf: [{ type: "string" }, { type: "number" }],
+      },
+      minItems: 2,
+      maxItems: 2,
+    });
+    expect(finalized.components?.schemas?.RestTupled).toEqual({
+      type: "array",
+      items: {
+        oneOf: [{ type: "string" }, { type: "number" }],
+      },
+      minItems: 1,
+    });
+  });
+
   it("preserves 3.2-only features and strips them for older versions", () => {
     const document = createDocumentFromTemplate({
       openapi: "3.2.0",

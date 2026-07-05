@@ -88,11 +88,20 @@ describe("Zod features › modifiers", () => {
     expect(convert("z.string().superRefine((v, ctx) => {})", roots)).toMatchObject({
       type: "string",
     });
+    expect(convert("z.string().check((v) => true)", roots)).toMatchObject({
+      type: "string",
+    });
   });
 
   it(".pipe(schema) merges the piped schema onto the base", () => {
     const schema = convert("z.string().pipe(z.string().email())", roots);
     expect(schema).toMatchObject({ type: "string", format: "email" });
+  });
+
+  it(".overwrite() and .nonoptional() preserve the value schema", () => {
+    expect(convert("z.string().overwrite((v) => v.trim()).nonoptional()", roots)).toMatchObject({
+      type: "string",
+    });
   });
 
   it(".describe() with a concrete example sets description", () => {

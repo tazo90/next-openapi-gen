@@ -7,8 +7,8 @@ import {
   measurePerformance,
   type GenerationPerformanceProfile,
 } from "@workspace/openapi-core/core/performance.js";
-import { HTTP_METHODS } from "@workspace/openapi-core/routes/router-strategy.js";
 import type { RouterStrategy } from "@workspace/openapi-core/routes/router-strategy.js";
+import { HTTP_METHODS } from "@workspace/openapi-core/routes/router-strategy.js";
 import { inferResponsesForExports } from "@workspace/openapi-core/routes/typescript-response-inference.js";
 import { traverse } from "@workspace/openapi-core/shared/babel-traverse.js";
 import type {
@@ -19,16 +19,34 @@ import type {
 } from "@workspace/openapi-core/shared/types.js";
 import { extractJSDocComments, parseTypeScriptFile } from "@workspace/openapi-core/shared/utils.js";
 
+type HandlerValueSource = "pathParamsType" | "queryParamsType" | "bodyType";
+type HandlerParsedSchemas = Partial<Record<HandlerValueSource, string>> & {
+  notFoundResponse?: boolean;
+  streamResponse?: boolean;
+};
+
+type CachedFileContent = {
+  content: string;
+  mtimeMs: number;
+  size: number;
+};
+
+const moduleFileASTCache = new Map<string, t.File>();
+const moduleFileContentCache = new Map<string, CachedFileContent>();
+
 export class AppRouterStrategy implements RouterStrategy {
   private config: OpenApiConfig;
   private normalizedApiDir: string;
-  private readonly fileContentCache = new Map<string, string>();
+  private readonly fileASTCache: Map<string, t.File>;
+  private readonly fileContentCache: Map<string, CachedFileContent>;
 
   constructor(
     config: OpenApiConfig,
     private readonly performanceProfile?: GenerationPerformanceProfile,
   ) {
     this.config = config;
+    this.fileASTCache = moduleFileASTCache;
+    this.fileContentCache = moduleFileContentCache;
     this.normalizedApiDir = config.apiDir
       .replaceAll("\\", "/")
       .replace(/^\.\//, "")
@@ -45,7 +63,7 @@ export class AppRouterStrategy implements RouterStrategy {
       return false;
     }
 
-    return /export\s+(?:async\s+)?function\s+(GET|POST|PUT|PATCH|DELETE)\b|export\s+const\s+(GET|POST|PUT|PATCH|DELETE)\b(?:\s*:\s*(?:=>|[^=;])+)?\s*=(?!=|>)/.test(
+    return /export\s+(?:async\s+)?function\s+(GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS)\b|export\s+const\s+(GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS)\b(?:\s*:\s*(?:=>|[^=;])+)?\s*=(?!=|>)/.test(
       content,
     );
   }
@@ -54,10 +72,7 @@ export class AppRouterStrategy implements RouterStrategy {
     filePath: string,
     addRoute: (method: string, filePath: string, dataTypes: DataTypes) => void,
   ): void {
-    const content = this.readFile(filePath);
-    const ast = measurePerformance(this.performanceProfile, "parseRouteFilesMs", () =>
-      parseTypeScriptFile(content),
-    );
+    const ast = this.parseFile(filePath);
     const directRoutes: Array<{ method: string; dataTypes: DataTypes }> = [];
     const checkerCandidates: Array<{
       exportName: string;
@@ -201,6 +216,15 @@ export class AppRouterStrategy implements RouterStrategy {
     // Remove Next.js route groups (folders in parentheses like (authenticated))
     relativePath = relativePath.replace(/\/\([^)]+\)/g, "");
 
+    // Strip parallel route segments (@folder)
+    relativePath = relativePath.replace(/\/@[^/]+/g, "");
+
+    // Strip intercepting route segments like (.)segment, (..)segment, (...segment)
+    relativePath = relativePath.replace(/\/\(\.+[^)]*\)/g, "");
+
+    // Optional catch-all routes [[...slug]] before required catch-all
+    relativePath = relativePath.replace(/\/\[\[\.\.\.(.*?)\]\]/g, "/{$1}");
+
     // Handle catch-all routes before dynamic routes
     relativePath = relativePath.replace(/\/\[\.\.\.(.*?)\]/g, "/{$1}");
 
@@ -222,15 +246,29 @@ export class AppRouterStrategy implements RouterStrategy {
         inferredResponseType: string;
       } {
     const handlerInsights = this.collectHandlerInsights(handlerNode);
-    const { inferredQueryParamNames, inferredResponses, requiresTypeScriptChecker } =
-      handlerInsights;
+    const {
+      inferredBodyType,
+      inferredPathParamsType,
+      inferredQueryParamNames,
+      inferredQueryParamsType,
+      inferredResponses,
+      handlerDiagnostics,
+      requiresTypeScriptChecker,
+    } = handlerInsights;
+    const inferredDataTypes: DataTypes = {
+      ...dataTypes,
+      ...(inferredBodyType && !dataTypes.bodyType ? { inferredBodyType } : {}),
+      ...(inferredPathParamsType && !dataTypes.pathParamsType ? { inferredPathParamsType } : {}),
+      ...(inferredQueryParamsType && !dataTypes.paramsType ? { inferredQueryParamsType } : {}),
+      ...(inferredQueryParamNames.length > 0 ? { inferredQueryParamNames } : {}),
+      ...(handlerDiagnostics.length > 0
+        ? { diagnostics: [...(dataTypes.diagnostics ?? []), ...handlerDiagnostics] }
+        : {}),
+    };
     if (dataTypes.responseType || dataTypes.responseItemType || dataTypes.successCode === "204") {
       return {
         kind: "direct",
-        dataTypes: {
-          ...dataTypes,
-          ...(inferredQueryParamNames.length > 0 ? { inferredQueryParamNames } : {}),
-        },
+        dataTypes: inferredDataTypes,
       };
     }
 
@@ -239,9 +277,8 @@ export class AppRouterStrategy implements RouterStrategy {
       return {
         kind: "direct",
         dataTypes: {
-          ...dataTypes,
+          ...inferredDataTypes,
           responseType: inferredResponseType,
-          ...(inferredQueryParamNames.length > 0 ? { inferredQueryParamNames } : {}),
         },
       };
     }
@@ -250,41 +287,112 @@ export class AppRouterStrategy implements RouterStrategy {
       return {
         kind: "direct",
         dataTypes: {
-          ...dataTypes,
+          ...inferredDataTypes,
           ...(inferredResponses.length > 0 ? { inferredResponses } : {}),
-          ...(inferredQueryParamNames.length > 0 ? { inferredQueryParamNames } : {}),
         },
       };
     }
 
     return {
       kind: "needs-checker",
-      dataTypes,
+      dataTypes: inferredDataTypes,
       inferredQueryParamNames,
       inferredResponseType,
     };
   }
 
   private collectHandlerInsights(handlerNode: t.Node): {
+    inferredBodyType: string;
+    inferredPathParamsType: string;
     inferredQueryParamNames: string[];
+    inferredQueryParamsType: string;
     inferredResponses: InferredResponseDefinition[];
+    handlerDiagnostics: NonNullable<DataTypes["diagnostics"]>;
     requiresTypeScriptChecker: boolean;
   } {
     const functionLike = this.getFunctionLikeNode(handlerNode);
 
     if (!functionLike || !functionLike.body) {
       return {
+        inferredBodyType: "",
+        inferredPathParamsType: "",
         inferredQueryParamNames: [],
+        inferredQueryParamsType: "",
         inferredResponses: [],
+        handlerDiagnostics: [],
         requiresTypeScriptChecker: false,
       };
     }
 
     const queryParamNames = new Set<string>();
+    const parsedSchemas: HandlerParsedSchemas = {};
     const inferredResponses: InferredResponseDefinition[] = [];
     let requiresTypeScriptChecker = false;
     if (!t.isBlockStatement(functionLike.body)) {
-      this.visitHandlerNode(functionLike.body, queryParamNames, (expression) => {
+      const aliases = new Map<string, HandlerValueSource>();
+      this.seedParameterAliases(functionLike, aliases);
+      this.visitHandlerNode(
+        functionLike.body,
+        queryParamNames,
+        aliases,
+        parsedSchemas,
+        (expression) => {
+          const inferredResponse = this.inferResponseFromExpression(expression);
+          if (inferredResponse) {
+            inferredResponses.push(inferredResponse);
+          }
+          if (this.requiresCheckerForExpression(expression)) {
+            requiresTypeScriptChecker = true;
+          }
+        },
+      );
+      if (this.requiresCheckerForExpression(functionLike.body)) {
+        requiresTypeScriptChecker = true;
+      }
+
+      if (
+        parsedSchemas.notFoundResponse &&
+        !inferredResponses.some((response) => response.statusCode === "404")
+      ) {
+        inferredResponses.push({
+          statusCode: "404",
+          description: "Not Found",
+          source: "typescript",
+        });
+      }
+
+      if (
+        parsedSchemas.streamResponse &&
+        !inferredResponses.some((response) => response.contentType)
+      ) {
+        inferredResponses.push({
+          statusCode: "200",
+          contentType: "text/event-stream",
+          schema: { type: "string" },
+          description: "Streaming response",
+          source: "typescript",
+        });
+      }
+
+      return {
+        inferredBodyType: parsedSchemas.bodyType ?? "",
+        inferredPathParamsType: parsedSchemas.pathParamsType ?? "",
+        inferredQueryParamNames: Array.from(queryParamNames),
+        inferredQueryParamsType: parsedSchemas.queryParamsType ?? "",
+        inferredResponses,
+        handlerDiagnostics: this.buildHandlerDiagnostics(parsedSchemas),
+        requiresTypeScriptChecker,
+      };
+    }
+
+    const aliases = new Map<string, HandlerValueSource>();
+    this.seedParameterAliases(functionLike, aliases);
+    this.visitHandlerNode(
+      functionLike.body,
+      queryParamNames,
+      aliases,
+      parsedSchemas,
+      (expression) => {
         const inferredResponse = this.inferResponseFromExpression(expression);
         if (inferredResponse) {
           inferredResponses.push(inferredResponse);
@@ -292,38 +400,123 @@ export class AppRouterStrategy implements RouterStrategy {
         if (this.requiresCheckerForExpression(expression)) {
           requiresTypeScriptChecker = true;
         }
-      });
-      if (this.requiresCheckerForExpression(functionLike.body)) {
-        requiresTypeScriptChecker = true;
-      }
+      },
+    );
 
-      return {
-        inferredQueryParamNames: Array.from(queryParamNames),
-        inferredResponses,
-        requiresTypeScriptChecker,
-      };
+    if (
+      parsedSchemas.notFoundResponse &&
+      !inferredResponses.some((response) => response.statusCode === "404")
+    ) {
+      inferredResponses.push({
+        statusCode: "404",
+        description: "Not Found",
+        source: "typescript",
+      });
     }
 
-    this.visitHandlerNode(functionLike.body, queryParamNames, (expression) => {
-      const inferredResponse = this.inferResponseFromExpression(expression);
-      if (inferredResponse) {
-        inferredResponses.push(inferredResponse);
-      }
-      if (this.requiresCheckerForExpression(expression)) {
-        requiresTypeScriptChecker = true;
-      }
-    });
+    if (
+      parsedSchemas.streamResponse &&
+      !inferredResponses.some((response) => response.contentType)
+    ) {
+      inferredResponses.push({
+        statusCode: "200",
+        contentType: "text/event-stream",
+        schema: { type: "string" },
+        description: "Streaming response",
+        source: "typescript",
+      });
+    }
 
     return {
+      inferredBodyType: parsedSchemas.bodyType ?? "",
+      inferredPathParamsType: parsedSchemas.pathParamsType ?? "",
       inferredQueryParamNames: Array.from(queryParamNames),
+      inferredQueryParamsType: parsedSchemas.queryParamsType ?? "",
       inferredResponses,
+      handlerDiagnostics: this.buildHandlerDiagnostics(parsedSchemas),
       requiresTypeScriptChecker,
     };
+  }
+
+  private buildHandlerDiagnostics(
+    parsedSchemas: HandlerParsedSchemas,
+  ): NonNullable<DataTypes["diagnostics"]> {
+    const diagnostics: NonNullable<DataTypes["diagnostics"]> = [];
+
+    if (parsedSchemas.notFoundResponse) {
+      diagnostics.push({
+        code: "unsupported-route-feature",
+        severity: "info",
+        message:
+          "Handler calls notFound(); add an explicit @response for 404 if you want it documented in OpenAPI.",
+      });
+    }
+
+    if (parsedSchemas.streamResponse) {
+      diagnostics.push({
+        code: "stream-response-hint",
+        severity: "info",
+        message:
+          "Handler appears to return a streaming body. Consider @responseContentType text/event-stream (or another sequential media type) with @responseItem for accurate OpenAPI output.",
+      });
+    }
+
+    return diagnostics;
+  }
+
+  private isNotFoundCall(node: t.CallExpression): boolean {
+    return (
+      t.isIdentifier(node.callee, { name: "notFound" }) ||
+      (t.isMemberExpression(node.callee) &&
+        t.isIdentifier(node.callee.property, { name: "notFound" }) &&
+        t.isIdentifier(node.callee.object, { name: "next" }))
+    );
+  }
+
+  private isReadableStreamResponse(node: t.CallExpression): boolean {
+    if (!t.isMemberExpression(node.callee) || !t.isIdentifier(node.callee.property)) {
+      return false;
+    }
+
+    if (node.callee.property.name !== "json") {
+      return false;
+    }
+
+    const firstArgument = node.arguments[0];
+    if (!firstArgument) {
+      return false;
+    }
+
+    return this.containsReadableStream(firstArgument);
+  }
+
+  private containsReadableStream(node: t.Node): boolean {
+    if (t.isNewExpression(node) && t.isIdentifier(node.callee, { name: "ReadableStream" })) {
+      return true;
+    }
+
+    const visitorKeys = t.VISITOR_KEYS[node.type];
+    if (!visitorKeys) {
+      return false;
+    }
+
+    return visitorKeys.some((key) => {
+      const value = node[key as keyof typeof node];
+      if (Array.isArray(value)) {
+        return value.some(
+          (child) => this.isTraversableNode(child) && this.containsReadableStream(child),
+        );
+      }
+
+      return this.isTraversableNode(value) && this.containsReadableStream(value);
+    });
   }
 
   private visitHandlerNode(
     node: t.Node | null | undefined,
     queryParamNames: Set<string>,
+    aliases: Map<string, HandlerValueSource>,
+    parsedSchemas: HandlerParsedSchemas,
     onReturnExpression: (expression: t.Expression) => void,
   ): void {
     if (!node) {
@@ -335,9 +528,32 @@ export class AppRouterStrategy implements RouterStrategy {
       if (name) {
         queryParamNames.add(name);
       }
+
+      const parsedSchema = this.getParsedSchemaFromCall(node, aliases);
+      if (parsedSchema) {
+        parsedSchemas[parsedSchema.source] ??= parsedSchema.schemaName;
+      }
+
+      if (this.isNotFoundCall(node)) {
+        parsedSchemas.notFoundResponse = true;
+      }
+
+      if (this.isReadableStreamResponse(node)) {
+        parsedSchemas.streamResponse = true;
+      }
+    }
+
+    if (t.isVariableDeclarator(node) && t.isIdentifier(node.id) && node.init) {
+      const source = this.getHandlerValueSource(node.init, aliases);
+      if (source) {
+        aliases.set(node.id.name, source);
+      }
     }
 
     if (t.isReturnStatement(node) && node.argument) {
+      if (t.isCallExpression(node.argument) && this.isReadableStreamResponse(node.argument)) {
+        parsedSchemas.streamResponse = true;
+      }
       onReturnExpression(node.argument);
       return;
     }
@@ -356,16 +572,46 @@ export class AppRouterStrategy implements RouterStrategy {
       if (Array.isArray(value)) {
         value.forEach((child) => {
           if (this.isTraversableNode(child)) {
-            this.visitHandlerNode(child, queryParamNames, onReturnExpression);
+            this.visitHandlerNode(
+              child,
+              queryParamNames,
+              aliases,
+              parsedSchemas,
+              onReturnExpression,
+            );
           }
         });
         return;
       }
 
       if (this.isTraversableNode(value)) {
-        this.visitHandlerNode(value, queryParamNames, onReturnExpression);
+        this.visitHandlerNode(value, queryParamNames, aliases, parsedSchemas, onReturnExpression);
       }
     });
+  }
+
+  private seedParameterAliases(
+    functionLike: t.FunctionDeclaration | t.FunctionExpression | t.ArrowFunctionExpression,
+    aliases: Map<string, HandlerValueSource>,
+  ): void {
+    for (const param of functionLike.params) {
+      if (!t.isObjectPattern(param)) {
+        continue;
+      }
+
+      for (const property of param.properties) {
+        if (!t.isObjectProperty(property)) {
+          continue;
+        }
+
+        const keyName = this.getObjectKeyName(property.key);
+        if (keyName !== "params" || !t.isIdentifier(property.value)) {
+          continue;
+        }
+
+        aliases.set(property.value.name, "pathParamsType");
+      }
+    }
   }
 
   private getSearchParamName(node: t.CallExpression): string | null {
@@ -387,6 +633,106 @@ export class AppRouterStrategy implements RouterStrategy {
 
     const firstArgument = node.arguments[0];
     return t.isStringLiteral(firstArgument) ? firstArgument.value : null;
+  }
+
+  private getParsedSchemaFromCall(
+    node: t.CallExpression,
+    aliases: Map<string, HandlerValueSource>,
+  ): { schemaName: string; source: HandlerValueSource } | null {
+    if (!t.isMemberExpression(node.callee) || !t.isIdentifier(node.callee.property)) {
+      return null;
+    }
+
+    const methodName = node.callee.property.name;
+    if (methodName !== "parse" && methodName !== "safeParse") {
+      return null;
+    }
+
+    if (!t.isIdentifier(node.callee.object)) {
+      return null;
+    }
+
+    const firstArgument = node.arguments[0];
+    if (!firstArgument || t.isArgumentPlaceholder(firstArgument)) {
+      return null;
+    }
+
+    const source = this.getHandlerValueSource(firstArgument, aliases);
+    return source ? { schemaName: node.callee.object.name, source } : null;
+  }
+
+  private getHandlerValueSource(
+    node: t.Node,
+    aliases: Map<string, HandlerValueSource>,
+  ): HandlerValueSource | null {
+    if (t.isIdentifier(node)) {
+      return aliases.get(node.name) ?? null;
+    }
+
+    if (t.isAwaitExpression(node)) {
+      return this.getHandlerValueSource(node.argument, aliases);
+    }
+
+    if (this.isContextParamsExpression(node)) {
+      return "pathParamsType";
+    }
+
+    if (this.isJsonBodyExpression(node) || this.isFormDataExpression(node)) {
+      return "bodyType";
+    }
+
+    if (this.containsSearchParams(node)) {
+      return "queryParamsType";
+    }
+
+    return null;
+  }
+
+  private isContextParamsExpression(node: t.Node): boolean {
+    return (
+      t.isMemberExpression(node) &&
+      t.isIdentifier(node.property, { name: "params" }) &&
+      t.isIdentifier(node.object)
+    );
+  }
+
+  private isJsonBodyExpression(node: t.Node): boolean {
+    return this.isRequestMethodCall(node, "json");
+  }
+
+  private isFormDataExpression(node: t.Node): boolean {
+    return this.isRequestMethodCall(node, "formData");
+  }
+
+  private isRequestMethodCall(node: t.Node, methodName: string): boolean {
+    return (
+      t.isCallExpression(node) &&
+      t.isMemberExpression(node.callee) &&
+      t.isIdentifier(node.callee.property, { name: methodName }) &&
+      t.isIdentifier(node.callee.object)
+    );
+  }
+
+  private containsSearchParams(node: t.Node): boolean {
+    if (t.isMemberExpression(node) && t.isIdentifier(node.property, { name: "searchParams" })) {
+      return true;
+    }
+
+    const visitorKeys = t.VISITOR_KEYS[node.type];
+    if (!visitorKeys) {
+      return false;
+    }
+
+    return visitorKeys.some((key) => {
+      const value = node[key as keyof typeof node];
+      if (Array.isArray(value)) {
+        return value.some(
+          (child) => this.isTraversableNode(child) && this.containsSearchParams(child),
+        );
+      }
+
+      return this.isTraversableNode(value) && this.containsSearchParams(value);
+    });
   }
 
   private inferResponseTypeFromHandler(handlerNode: t.Node): string {
@@ -426,21 +772,32 @@ export class AppRouterStrategy implements RouterStrategy {
         return false;
       }
 
-      if (property.name === "redirect") {
-        return true;
-      }
-
       if (property.name === "json") {
         return Boolean(expression.arguments[1]);
       }
     }
 
-    return t.isNewExpression(expression) && t.isIdentifier(expression.callee, { name: "Response" });
+    return false;
   }
 
   private inferResponseFromExpression(
     expression: t.Expression,
   ): InferredResponseDefinition | undefined {
+    if (this.isRedirectResponse(expression)) {
+      return {
+        statusCode: "307",
+        description: "Redirect response",
+        source: "typescript",
+      };
+    }
+
+    if (t.isNewExpression(expression) && t.isIdentifier(expression.callee, { name: "Response" })) {
+      const statusCode = this.getLiteralResponseStatusCode(expression.arguments[1]);
+      if (statusCode === "204") {
+        return { statusCode, source: "typescript" };
+      }
+    }
+
     if (!t.isCallExpression(expression) || !t.isMemberExpression(expression.callee)) {
       return undefined;
     }
@@ -476,6 +833,19 @@ export class AppRouterStrategy implements RouterStrategy {
       schema,
       source: "typescript",
     };
+  }
+
+  private isRedirectResponse(expression: t.Expression): boolean {
+    if (!t.isCallExpression(expression) || !t.isMemberExpression(expression.callee)) {
+      return false;
+    }
+
+    return (
+      t.isIdentifier(expression.callee.property, { name: "redirect" }) &&
+      t.isIdentifier(expression.callee.object) &&
+      (expression.callee.object.name === "Response" ||
+        expression.callee.object.name === "NextResponse")
+    );
   }
 
   private getLiteralResponseStatusCode(
@@ -557,11 +927,19 @@ export class AppRouterStrategy implements RouterStrategy {
   }
 
   private isPropertyNamed(property: t.ObjectProperty, name: string): boolean {
-    if (t.isIdentifier(property.key)) {
-      return property.key.name === name;
+    return this.getObjectKeyName(property.key) === name;
+  }
+
+  private getObjectKeyName(key: t.Node): string | null {
+    if (t.isIdentifier(key)) {
+      return key.name;
     }
 
-    return t.isStringLiteral(property.key) && property.key.value === name;
+    if (t.isStringLiteral(key)) {
+      return key.value;
+    }
+
+    return null;
   }
 
   private getFunctionLikeNode(
@@ -655,15 +1033,39 @@ export class AppRouterStrategy implements RouterStrategy {
   }
 
   private readFile(filePath: string): string {
+    const stat = fs.statSync(filePath);
     const cachedContent = this.fileContentCache.get(filePath);
-    if (cachedContent) {
-      return cachedContent;
+    if (
+      cachedContent &&
+      cachedContent.mtimeMs === stat.mtimeMs &&
+      cachedContent.size === stat.size
+    ) {
+      return cachedContent.content;
     }
 
     const content = measurePerformance(this.performanceProfile, "readRouteFilesMs", () =>
       fs.readFileSync(filePath, "utf-8"),
     );
-    this.fileContentCache.set(filePath, content);
+    this.fileContentCache.set(filePath, {
+      content,
+      mtimeMs: stat.mtimeMs,
+      size: stat.size,
+    });
+    this.fileASTCache.delete(filePath);
     return content;
+  }
+
+  private parseFile(filePath: string): t.File {
+    const content = this.readFile(filePath);
+    const cachedAst = this.fileASTCache.get(filePath);
+    if (cachedAst) {
+      return cachedAst;
+    }
+
+    const ast = measurePerformance(this.performanceProfile, "parseRouteFilesMs", () =>
+      parseTypeScriptFile(content),
+    );
+    this.fileASTCache.set(filePath, ast);
+    return ast;
   }
 }

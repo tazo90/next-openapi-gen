@@ -64,6 +64,33 @@ export function processZodLiteral(
   if (t.isNullLiteral(arg)) {
     return { type: "null", enum: [null] };
   }
+  if (t.isArrayExpression(arg)) {
+    const enumValues = arg.elements.flatMap((element) => {
+      if (
+        t.isStringLiteral(element) ||
+        t.isNumericLiteral(element) ||
+        t.isBooleanLiteral(element)
+      ) {
+        return [element.value];
+      }
+      if (t.isNullLiteral(element)) {
+        return [null];
+      }
+      return [];
+    });
+    if (enumValues.length > 0) {
+      const nonNullValues = enumValues.filter((value) => value !== null);
+      const firstValue = nonNullValues[0];
+      const type = firstValue === undefined ? "null" : typeof firstValue;
+      return {
+        type:
+          type === "number" && enumValues.every((value) => Number.isInteger(value))
+            ? "integer"
+            : type,
+        enum: enumValues,
+      };
+    }
+  }
   // Unwrap `as const` / `satisfies` wrappers
   if (t.isTSAsExpression(arg) || t.isTSSatisfiesExpression(arg)) {
     return processZodLiteral(
@@ -437,6 +464,27 @@ export function processZodPrimitiveNode(
     case "number":
       schema = { type: "number" };
       break;
+    case "float32":
+      schema = { type: "number", format: "float" };
+      break;
+    case "float64":
+      schema = { type: "number", format: "double" };
+      break;
+    case "int":
+      schema = { type: "integer" };
+      break;
+    case "int32":
+      schema = { type: "integer", format: "int32" };
+      break;
+    case "int64":
+      schema = { type: "integer", format: "int64" };
+      break;
+    case "uint32":
+      schema = { type: "integer", minimum: 0, maximum: 4294967295 };
+      break;
+    case "uint64":
+      schema = { type: "integer", format: "int64", minimum: 0 };
+      break;
     case "boolean":
     case "stringbool":
       schema = { type: "boolean" };
@@ -455,6 +503,9 @@ export function processZodPrimitiveNode(
       schema = { type: "string", format: "uri" };
       break;
     case "uuid":
+    case "uuidv4":
+    case "uuidv6":
+    case "uuidv7":
     case "guid":
       schema = { type: "string", format: "uuid" };
       break;
@@ -470,8 +521,26 @@ export function processZodPrimitiveNode(
     case "nanoid":
       schema = { type: "string", format: "nanoid" };
       break;
+    case "xid":
+      schema = { type: "string", format: "xid" };
+      break;
+    case "ksuid":
+      schema = { type: "string", format: "ksuid" };
+      break;
     case "jwt":
       schema = { type: "string", format: "jwt" };
+      break;
+    case "hostname":
+      schema = { type: "string", format: "hostname" };
+      break;
+    case "httpUrl":
+      schema = { type: "string", format: "uri" };
+      break;
+    case "hex":
+      schema = { type: "string", format: "hex" };
+      break;
+    case "hash":
+      schema = { type: "string", format: "hash" };
       break;
     case "base64":
       schema = { type: "string", format: "byte" };
@@ -524,9 +593,13 @@ export function processZodPrimitiveNode(
       break;
     case "any":
     case "unknown":
+    case "json":
       // Truly any / unknown — an empty schema accepts anything. Emit {} rather than
       // `{ type: "object" }` so we don't pin the type for free-form values.
       schema = {};
+      break;
+    case "symbol":
+      schema = { type: "string" };
       break;
     case "null":
     case "undefined":
@@ -601,6 +674,16 @@ export function processZodPrimitiveNode(
       }
       break;
     }
+    case "pipe":
+    case "codec": {
+      const target = node.arguments[node.arguments.length - 1];
+      if (target && isProcessableZodNode(target)) {
+        schema = context.processNode(target);
+      } else {
+        schema = {};
+      }
+      break;
+    }
     case "lazy": {
       // `z.lazy(() => Schema)` — unwrap the body expression so the reference is followed.
       const arrow = node.arguments[0];
@@ -648,16 +731,19 @@ export function processZodPrimitiveNode(
           enum: enumValues,
         };
       } else if (node.arguments.length > 0 && t.isObjectExpression(node.arguments[0])) {
-        const enumValues: string[] = [];
+        const enumValues: Array<string | number> = [];
         node.arguments[0].properties.forEach((prop) => {
           if (t.isObjectProperty(prop) && t.isStringLiteral(prop.value)) {
             enumValues.push(prop.value.value);
+          } else if (t.isObjectProperty(prop) && t.isNumericLiteral(prop.value)) {
+            enumValues.push(prop.value.value);
           }
         });
+        const firstValue = enumValues[0];
         schema =
           enumValues.length > 0
             ? {
-                type: "string",
+                type: typeof firstValue === "number" ? "number" : "string",
                 enum: enumValues,
               }
             : { type: "string" };
@@ -677,6 +763,7 @@ export function processZodPrimitiveNode(
         schema = { type: "string" };
       }
       break;
+    case "partialRecord":
     case "record": {
       // Zod 4: `z.record(keyType, valueType)` — keep propertyNames + additionalProperties.
       // Zod 3 / single-arg form: `z.record(valueType)`.
@@ -735,14 +822,17 @@ export function processZodPrimitiveNode(
       break;
     }
     case "strictObject":
+    case "looseObject":
     case "object":
       schema = node.arguments.length > 0 ? context.processObject(node) : { type: "object" };
       if (zodType === "strictObject") {
         schema.additionalProperties = false;
+      } else if (zodType === "looseObject") {
+        schema.additionalProperties = true;
       }
       break;
     case "templateLiteral":
-      schema = { type: "string" };
+      schema = processZodTemplateLiteral(node, context);
       break;
     case "custom":
       if (node.typeParameters && node.typeParameters.params.length > 0) {
@@ -776,4 +866,49 @@ export function processZodPrimitiveNode(
   }
 
   return schema;
+}
+
+function processZodTemplateLiteral(
+  node: t.CallExpression,
+  context: PrimitiveHelperContext,
+): OpenApiSchema {
+  const partsArg = node.arguments[0];
+  if (!t.isArrayExpression(partsArg)) {
+    return { type: "string" };
+  }
+
+  const parts = partsArg.elements.flatMap((element) => {
+    if (!element || t.isSpreadElement(element)) {
+      return [];
+    }
+
+    if (t.isStringLiteral(element) || t.isNumericLiteral(element)) {
+      return [escapeRegExp(String(element.value))];
+    }
+
+    if (!t.isCallExpression(element)) {
+      return [".+"];
+    }
+
+    const schema = context.processNode(element);
+    if (Array.isArray(schema.enum) && schema.enum.length > 0) {
+      return [`(?:${schema.enum.map((value) => escapeRegExp(String(value))).join("|")})`];
+    }
+
+    if (schema.type === "integer") {
+      return ["-?\\d+"];
+    }
+
+    if (schema.type === "number") {
+      return ["-?\\d+(?:\\.\\d+)?"];
+    }
+
+    if (schema.type === "boolean") {
+      return ["(?:true|false)"];
+    }
+
+    return [".+"];
+  });
+
+  return parts.length > 0 ? { type: "string", pattern: `^${parts.join("")}$` } : { type: "string" };
 }

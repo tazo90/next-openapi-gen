@@ -94,6 +94,53 @@ describe.sequential("README-backed generator samples", () => {
       );
       expect(spec.components?.schemas?.ExtendedSchema).toBeDefined();
       expect(spec.components?.schemas?.DoubleExtendedSchema).toBeDefined();
+      expect(spec.openapi).toBe("3.2.0");
+      expect(spec.$self).toBe("https://example.com/openapi/next-app-zod.json");
+      expect(spec.paths?.["/events"]?.get?.parameters).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            in: "querystring",
+            name: "advancedQuery",
+          }),
+        ]),
+      );
+      expect(spec.paths?.["/events"]?.get?.responses?.["200"]).toMatchObject({
+        content: {
+          "text/event-stream": {
+            itemSchema: {
+              $ref: "#/components/schemas/EventChunk",
+            },
+          },
+        },
+      });
+      expect(spec.paths?.["/integrations/subscribe"]?.post?.callbacks).toMatchObject({
+        paymentEvent: {
+          "{$request.body#/callbackUrl}": {
+            $ref: "#/components/callbacks/SubscriptionEventPayload",
+          },
+        },
+      });
+      expect(spec.webhooks?.paymentEvent?.post?.requestBody).toMatchObject({
+        content: {
+          "application/json": {
+            schema: {
+              $ref: "#/components/schemas/PaymentEvent",
+            },
+          },
+        },
+      });
+      expect(spec.paths?.["/organizations/{organizationId}"]?.get?.parameters).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            in: "path",
+            name: "organizationId",
+            schema: {
+              type: "string",
+              format: "uuid",
+            },
+          }),
+        ]),
+      );
     } finally {
       project.cleanup();
     }
@@ -141,6 +188,44 @@ describe.sequential("README-backed generator samples", () => {
         { BearerAuth: [] },
         { PartnerToken: [] },
       ]);
+      expect(spec.openapi).toBe("3.1.0");
+      expect(spec.paths?.["/upload"]?.post?.requestBody).toMatchObject({
+        content: {
+          "multipart/form-data": {
+            schema: {
+              $ref: "#/components/schemas/UploadFormData",
+            },
+          },
+        },
+      });
+      expect(
+        spec.paths?.["/organizations/{orgId}/projects/{projectId}/tasks/{taskId}/comments"]?.get
+          ?.parameters,
+      ).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            in: "path",
+            name: "orgId",
+          }),
+          expect.objectContaining({
+            in: "path",
+            name: "projectId",
+          }),
+          expect.objectContaining({
+            in: "path",
+            name: "taskId",
+          }),
+          expect.objectContaining({
+            in: "query",
+            name: "sort",
+            schema: {
+              type: "string",
+              enum: ["newest", "oldest", "likes"],
+              description: "Sort order",
+            },
+          }),
+        ]),
+      );
     } finally {
       project.cleanup();
     }
@@ -189,6 +274,36 @@ describe.sequential("README-backed generator samples", () => {
         description: "User role definition from protobuf",
       });
       expect(spec.components?.schemas?.Permission).toBeDefined();
+      expect(spec.openapi).toBe("3.2.0");
+      expect(spec.webhooks?.integrationEvent?.post?.requestBody).toMatchObject({
+        content: {
+          "application/json": {
+            schema: {
+              $ref: "#/components/schemas/WebhookEnvelope",
+            },
+          },
+        },
+      });
+      expect(spec.paths?.["/integrations/webhooks"]?.post).toMatchObject({
+        operationId: "mixedRegisterWebhookEndpoint",
+        callbacks: expect.any(Object),
+      });
+      expect(spec.paths?.["/integrations/webhooks/deliveries/{deliveryId}"]?.get).toMatchObject({
+        operationId: "mixedGetWebhookDelivery",
+        parameters: [
+          {
+            in: "path",
+            name: "deliveryId",
+            required: true,
+            schema: {
+              type: "string",
+              description: "Delivery attempt identifier",
+            },
+            description: "Delivery attempt identifier",
+            example: "123",
+          },
+        ],
+      });
     } finally {
       project.cleanup();
     }
@@ -225,6 +340,63 @@ describe.sequential("README-backed generator samples", () => {
       });
     } finally {
       project.cleanup();
+    }
+  });
+
+  it("covers TanStack and React Router sample-app route mapping and multipart actions", () => {
+    const tanstack = generateProjectSpec({
+      projectPath: path.join(rootDir, "apps", "tanstack-app"),
+    });
+    const reactRouter = generateProjectSpec({
+      projectPath: path.join(rootDir, "apps", "react-router-app"),
+    });
+
+    try {
+      expect(tanstack.spec.paths?.["/reports/{reportId}/summary"]?.get).toMatchObject({
+        operationId: "tanstackGetReportSummary",
+        parameters: [
+          {
+            in: "path",
+            name: "reportId",
+            required: true,
+            schema: {
+              type: "string",
+            },
+            example: "123",
+          },
+        ],
+      });
+      expect(tanstack.spec.paths?.["/uploads"]?.post).toMatchObject({
+        operationId: "tanstackCreateUpload",
+        requestBody: {
+          content: {
+            "multipart/form-data": {
+              schema: {
+                $ref: "#/components/schemas/AssetUploadInput",
+              },
+            },
+          },
+        },
+      });
+      expect(reactRouter.spec.paths?.["/projects/{projectId}"]?.get).toMatchObject({
+        operationId: "reactRouterGetProjectById",
+        tags: ["Projects", "Workspace"],
+      });
+      expect(reactRouter.spec.paths?.["/uploads"]?.post).toMatchObject({
+        operationId: "reactRouterCreateUpload",
+        requestBody: {
+          content: {
+            "multipart/form-data": {
+              schema: {
+                $ref: "#/components/schemas/UploadDraft",
+              },
+            },
+          },
+        },
+      });
+    } finally {
+      tanstack.project.cleanup();
+      reactRouter.project.cleanup();
     }
   });
 });

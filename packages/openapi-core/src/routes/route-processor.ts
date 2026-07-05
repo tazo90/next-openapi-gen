@@ -10,13 +10,13 @@ import { SchemaProcessor } from "../schema/typescript/schema-processor.js";
 import { logger } from "../shared/logger.js";
 import type {
   DataTypes,
-  OpenApiTagDefinition,
   OpenApiConfig,
   OpenApiPathDefinition,
+  OpenApiTagDefinition,
   ResolvedOpenApiConfig,
   RouteDefinition,
 } from "../shared/types.js";
-import { capitalize, extractPathParameters } from "../shared/utils.js";
+import { capitalize, extractPathParameters, resolveAnnotationTypeName } from "../shared/utils.js";
 import { OperationProcessor } from "./operation-processor.js";
 import { sortPathDefinitions } from "./path-sort.js";
 import { ResponseProcessor } from "./response-processor.js";
@@ -30,6 +30,7 @@ export type RouteScanPerformanceProfile = {
 
 export class RouteProcessor {
   private pathDefinitions: Record<string, OpenApiPathDefinition> = {};
+  private webhookDefinitions: Record<string, OpenApiPathDefinition> = {};
   private tagDefinitions: Record<string, OpenApiTagDefinition> = {};
   private schemaProcessor: SchemaProcessor;
   private config: ResolvedOpenApiConfig;
@@ -65,6 +66,7 @@ export class RouteProcessor {
       this.config.apiDir,
       undefined,
       runtime,
+      this.diagnostics,
     );
     this.source = (createFrameworkSource ?? missingFrameworkSourceFactory)(
       this.config,
@@ -77,6 +79,7 @@ export class RouteProcessor {
     this.responseProcessor = new ResponseProcessor(this.config, this.schemaProcessor);
     this.operationProcessor = new OperationProcessor(this.schemaProcessor, this.responseProcessor, {
       authPresets: this.config.authPresets,
+      diagnostics: this.diagnostics,
       performanceProfile: this.performanceProfile,
     });
   }
@@ -156,13 +159,24 @@ export class RouteProcessor {
 
     const pathParams = extractPathParameters(routePath);
     this.registerTagMetadata(routePath, dataTypes);
-    if (pathParams.length > 0 && !dataTypes.pathParamsType) {
+    this.registerRouteFeatureDiagnostics(filePath, routePath, dataTypes);
+    if (
+      pathParams.length > 0 &&
+      !resolveAnnotationTypeName(dataTypes.pathParamsType) &&
+      !resolveAnnotationTypeName(dataTypes.inferredPathParamsType) &&
+      !this.canAutoWirePathParams(routePath, pathParams)
+    ) {
       this.diagnostics?.add({
         code: "missing-path-params-type",
         severity: "warning",
         message: `Route ${routePath} contains path parameters ${pathParams.join(", ")} but no @pathParams type is defined.`,
         filePath,
         routePath,
+        metadata: {
+          pathParams,
+          suggestedFix:
+            "Add @pathParams <SchemaName>, validate context.params in the handler, or export matching <paramName>Schema helpers.",
+        },
       });
       logger.debug(
         `Route ${routePath} contains path parameters ${pathParams.join(
@@ -171,7 +185,33 @@ export class RouteProcessor {
       );
     }
 
-    this.addRouteToPaths(method, routePath, dataTypes, pathParams);
+    this.addRouteToPaths(method, routePath, dataTypes, pathParams, filePath);
+  }
+
+  private canAutoWirePathParams(routePath: string, pathParams: string[]): boolean {
+    const hasSchemaCandidate =
+      "hasSchemaCandidate" in this.schemaProcessor
+        ? this.schemaProcessor.hasSchemaCandidate.bind(this.schemaProcessor)
+        : undefined;
+    if (!hasSchemaCandidate) {
+      return false;
+    }
+
+    const rootPath = capitalize(routePath.split("/")[1] || "");
+    const objectCandidates = [
+      `${rootPath}PathParamsSchema`,
+      `${rootPath}ParamsSchema`,
+      ...pathParams.map((name) => `${capitalize(name)}ParamsSchema`),
+    ];
+    if (objectCandidates.some((candidate) => hasSchemaCandidate(candidate))) {
+      return true;
+    }
+
+    return pathParams.every((name) =>
+      [`${name}Schema`, `${capitalize(name)}Schema`].some((candidate) =>
+        hasSchemaCandidate(candidate),
+      ),
+    );
   }
 
   public scanApiRoutes(dir: string): RouteScanPerformanceProfile {
@@ -252,6 +292,7 @@ export class RouteProcessor {
     discoveredRoutePath: string,
     dataTypes: DataTypes,
     pathParamNames: string[] = [],
+    filePath?: string,
   ): void {
     const normalizedRoutePath =
       discoveredRoutePath.includes("{") || discoveredRoutePath.startsWith("/")
@@ -265,13 +306,36 @@ export class RouteProcessor {
       normalizedRoutePath,
       dataTypes,
       resolvedPathParamNames,
+      filePath,
     );
+
+    if (dataTypes.isWebhook) {
+      const webhookKey = dataTypes.webhookName?.trim() || routePath;
+      if (!this.webhookDefinitions[webhookKey]) {
+        this.webhookDefinitions[webhookKey] = {};
+      }
+      this.webhookDefinitions[webhookKey][method] = definition;
+      return;
+    }
 
     if (!this.pathDefinitions[routePath]) {
       this.pathDefinitions[routePath] = {};
     }
 
+    if (method === "query") {
+      const pathItem = this.pathDefinitions[routePath] as OpenApiPathDefinition & {
+        additionalOperations?: Record<string, RouteDefinition>;
+      };
+      pathItem.additionalOperations ??= {};
+      pathItem.additionalOperations.query = definition;
+      return;
+    }
+
     this.pathDefinitions[routePath][method] = definition;
+  }
+
+  public getWebhooks(): Record<string, OpenApiPathDefinition> {
+    return sortPathDefinitions(this.webhookDefinitions);
   }
 
   public getPaths(): Record<string, OpenApiPathDefinition> {
@@ -286,6 +350,43 @@ export class RouteProcessor {
 
   public getSwaggerPaths(): Record<string, OpenApiPathDefinition> {
     return this.getPaths();
+  }
+
+  private registerRouteFeatureDiagnostics(
+    filePath: string,
+    routePath: string,
+    _dataTypes: DataTypes,
+  ): void {
+    const normalizedFilePath = filePath.replaceAll("\\", "/");
+    if (normalizedFilePath.includes("/[[...")) {
+      this.diagnostics?.add({
+        code: "unsupported-route-feature",
+        severity: "info",
+        message: `Route ${routePath} uses an optional catch-all segment ([[...]]). OpenAPI path parameters are always required; verify the emitted parameter semantics match your runtime.`,
+        filePath,
+        routePath,
+      });
+    }
+
+    if (/\/@[^/]+/.test(normalizedFilePath)) {
+      this.diagnostics?.add({
+        code: "unsupported-route-feature",
+        severity: "info",
+        message: `Route ${routePath} uses a parallel route segment (@folder). Parallel route folders are stripped from the generated OpenAPI path.`,
+        filePath,
+        routePath,
+      });
+    }
+
+    if (/\/\(\.+[^)]*\)/.test(normalizedFilePath)) {
+      this.diagnostics?.add({
+        code: "unsupported-route-feature",
+        severity: "info",
+        message: `Route ${routePath} uses an intercepting route segment. Intercepting route folders are stripped from the generated OpenAPI path.`,
+        filePath,
+        routePath,
+      });
+    }
   }
 
   private registerTagMetadata(routePath: string, dataTypes: DataTypes): void {

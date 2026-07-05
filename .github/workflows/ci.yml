@@ -161,17 +161,22 @@ jobs:
           set -euo pipefail
 
           compat_root="$(mktemp -d)"
-          cp -R tests/fixtures/projects/next/app-router/core-flow "$compat_root/app"
-          cat > "$compat_root/app/package.json" <<'JSON'
+          cp -R tests/fixtures/projects/next/app-router/core-flow "$compat_root/core-flow"
+          cp -R tests/fixtures/projects/next/app-router/ts-full-coverage "$compat_root/ts-full-coverage"
+          for compat_project in "$compat_root/core-flow" "$compat_root/ts-full-coverage"; do
+            cat > "$compat_project/package.json" <<'JSON'
           {
             "private": true,
             "type": "module"
           }
           JSON
-          cp "$compat_root/app/templates/openapi-3.0.json" "$compat_root/app/next.openapi.json"
-          pnpm --dir "$compat_root/app" add -D "typescript@${TYPESCRIPT_VERSION}"
+          done
+          cp "$compat_root/core-flow/templates/openapi-3.0.json" "$compat_root/core-flow/next.openapi.json"
+          cp "$compat_root/ts-full-coverage/templates/openapi-3.2.json" "$compat_root/ts-full-coverage/next.openapi.json"
+          pnpm --dir "$compat_root/core-flow" add -D "typescript@${TYPESCRIPT_VERSION}"
+          pnpm --dir "$compat_root/ts-full-coverage" add -D "typescript@${TYPESCRIPT_VERSION}"
 
-          COMPAT_PROJECT="$compat_root/app" node --input-type=module <<'NODE'
+          COMPAT_CORE_PROJECT="$compat_root/core-flow" COMPAT_TS_FULL_PROJECT="$compat_root/ts-full-coverage" node --input-type=module <<'NODE'
           import fs from "node:fs";
           import path from "node:path";
           import { createRequire } from "node:module";
@@ -179,35 +184,52 @@ jobs:
           import { OpenApiGenerator } from "next-openapi-gen";
           import { inferResponsesForExport } from "@workspace/openapi-core/routes/typescript-response-inference.js";
 
-          const projectRoot = process.env.COMPAT_PROJECT;
-          if (!projectRoot) {
-            throw new Error("COMPAT_PROJECT is required");
+          const coreProjectRoot = process.env.COMPAT_CORE_PROJECT;
+          const tsFullProjectRoot = process.env.COMPAT_TS_FULL_PROJECT;
+          if (!coreProjectRoot || !tsFullProjectRoot) {
+            throw new Error("COMPAT_CORE_PROJECT and COMPAT_TS_FULL_PROJECT are required");
           }
 
           const require = createRequire(import.meta.url);
           const projectTypeScriptPackageJsonPath = require.resolve("typescript/package.json", {
-            paths: [projectRoot],
+            paths: [coreProjectRoot],
           });
           const projectTypeScriptPackageJson = JSON.parse(
             fs.readFileSync(projectTypeScriptPackageJsonPath, "utf8"),
           );
           console.log(`Using project TypeScript ${projectTypeScriptPackageJson.version}`);
 
-          const templatePath = path.join(projectRoot, "next.openapi.json");
-          process.chdir(projectRoot);
-          const generator = new OpenApiGenerator({ templatePath });
-          const spec = generator.generate();
-          const errors = generator.getDiagnostics().filter((diagnostic) => diagnostic.severity === "error");
+          function generateProject(projectRoot) {
+            const templatePath = path.join(projectRoot, "next.openapi.json");
+            process.chdir(projectRoot);
+            const generator = new OpenApiGenerator({ templatePath });
+            const spec = generator.generate();
+            const errors = generator
+              .getDiagnostics()
+              .filter((diagnostic) => diagnostic.severity === "error");
 
-          if (errors.length > 0) {
-            throw new Error(`Unexpected generator errors: ${JSON.stringify(errors, null, 2)}`);
+            if (errors.length > 0) {
+              throw new Error(`Unexpected generator errors: ${JSON.stringify(errors, null, 2)}`);
+            }
+
+            return spec;
           }
 
-          if (!spec.paths?.["/users/{id}"]?.get) {
+          const coreSpec = generateProject(coreProjectRoot);
+          if (!coreSpec.paths?.["/users/{id}"]?.get) {
             throw new Error("Expected /users/{id} GET operation to be generated");
           }
 
-          const checkerSmokeRoute = path.join(projectRoot, "src", "app", "api", "ts7-smoke", "route.ts");
+          const tsFullSpec = generateProject(tsFullProjectRoot);
+          if (
+            !tsFullSpec.components?.schemas?.FixedTuple ||
+            !tsFullSpec.components?.schemas?.Versioned ||
+            !tsFullSpec.paths?.["/utilities"]?.post
+          ) {
+            throw new Error("Expected ts-full-coverage schemas and utility route to be generated");
+          }
+
+          const checkerSmokeRoute = path.join(coreProjectRoot, "src", "app", "api", "ts7-smoke", "route.ts");
           fs.mkdirSync(path.dirname(checkerSmokeRoute), { recursive: true });
           fs.writeFileSync(
             checkerSmokeRoute,
@@ -269,12 +291,24 @@ jobs:
       - name: Run schema micro-benchmarks and compare against baseline
         run: pnpm test:bench:schema:check
 
-      - name: Upload current bench report
+      - name: Run generator benchmarks and compare against baseline
+        run: pnpm test:bench:generator:check
+
+      - name: Upload current schema bench report
         if: always()
         uses: actions/upload-artifact@v7
         with:
           name: schema-bench-report
           path: tests/bench/schema/current.json
+          if-no-files-found: warn
+          retention-days: 7
+
+      - name: Upload current generator bench report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: generator-bench-report
+          path: tests/bench/generator/current.json
           if-no-files-found: warn
           retention-days: 7
 

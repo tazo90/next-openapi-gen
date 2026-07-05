@@ -5,11 +5,12 @@ import { UI_TYPES_WITH_NONE } from "@workspace/openapi-init";
 import { generate } from "./commands/generate.js";
 import { init } from "./commands/init.js";
 import {
-  CLI_FRAMEWORK_CHOICES,
   CLI_DESCRIPTION,
+  CLI_FRAMEWORK_CHOICES,
   CLI_SCHEMA_CHOICES,
-  GENERATE_CONFIG_OPTION_DESCRIPTION,
   GENERATE_COMMAND_DESCRIPTION,
+  GENERATE_CONFIG_OPTION_DESCRIPTION,
+  GENERATE_FAIL_ON_OPTION_DESCRIPTION,
   GENERATE_TEMPLATE_OPTION_DESCRIPTION,
   GENERATE_WATCH_OPTION_DESCRIPTION,
   getCliVersion,
@@ -56,6 +57,13 @@ export function buildProgram(options: { argv?: string[] } = {}) {
     .option("-c, --config <file>", GENERATE_CONFIG_OPTION_DESCRIPTION)
     .option("-t, --template <file>", GENERATE_TEMPLATE_OPTION_DESCRIPTION)
     .option("-w, --watch", GENERATE_WATCH_OPTION_DESCRIPTION, false)
+    .addOption(
+      new Option("--fail-on <severity>", GENERATE_FAIL_ON_OPTION_DESCRIPTION).choices([
+        "error",
+        "warning",
+        "never",
+      ]),
+    )
     .action(generate);
 
   return program;

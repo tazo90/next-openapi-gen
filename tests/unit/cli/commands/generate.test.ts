@@ -194,6 +194,8 @@ export async function GET() {}`,
     };
     const generateProject = vi.fn<MockFn>(async () => ({
       artifacts: [],
+      diagnostics: [],
+      diagnosticsFailOn: "never",
       outputFile: "/tmp/openapi.json",
     }));
     const watchProject = vi.fn<MockFn>(async () => vi.fn<MockFn>());
@@ -210,15 +212,47 @@ export async function GET() {}`,
       watch: true,
     });
 
-    expect(generateProject).toHaveBeenCalledWith(
-      expect.objectContaining({
-        configPath: "openapi-gen.config.ts",
-      }),
-    );
+    expect(generateProject).not.toHaveBeenCalled();
     expect(watchProject).toHaveBeenCalledWith(
       expect.objectContaining({
         configPath: "openapi-gen.config.ts",
       }),
     );
+  });
+
+  it("prints grouped diagnostics and fails on warning when requested", async () => {
+    const spinner = {
+      start: vi.fn<MockFn>().mockReturnThis(),
+      succeed: vi.fn<MockFn>(),
+    };
+    const generateProject = vi.fn<MockFn>(async () => ({
+      artifacts: [],
+      diagnostics: [
+        {
+          code: "missing-query-params-type",
+          severity: "warning",
+          message: "Query parameters were inferred from searchParams usage.",
+          filePath: "/tmp/app/api/search/route.ts",
+          routePath: "/search",
+        },
+      ],
+      diagnosticsFailOn: "never",
+      outputFile: "/tmp/openapi.json",
+    }));
+    const watchProject = vi.fn<MockFn>();
+    const writeSpy = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
+
+    const { generate } = await loadGenerateModule(spinner, () => {
+      vi.doMock("@workspace/openapi-core", () => ({
+        generateProject,
+        watchProject,
+      }));
+    });
+
+    await expect(generate({ failOn: "warning" })).rejects.toThrow(
+      "OpenAPI generation failed because diagnostics matched --fail-on warning.",
+    );
+    expect(writeSpy).toHaveBeenCalledWith(expect.stringContaining("missing-query-params-type"));
+    expect(writeSpy).toHaveBeenCalledWith(expect.stringContaining("warning: 1"));
   });
 });

@@ -4,6 +4,7 @@ import type {
   ContentType,
   OpenAPIDefinition,
   OpenApiMediaTypeDefinition,
+  OpenApiSchemaLike,
   PropertyOptions,
   SchemaType,
 } from "../../shared/types.js";
@@ -198,7 +199,18 @@ export function getPropertyOptions(node: any, contentType: ContentType): Propert
   return options;
 }
 
-export function getExampleForParam(paramName: string, type: string = "string"): any {
+export function getExampleForParam(
+  paramName: string,
+  typeOrSchema: string | OpenApiSchemaLike = "string",
+): any {
+  const schema = typeof typeOrSchema === "string" ? { type: typeOrSchema } : typeOrSchema;
+  const type = getPrimaryType(schema.type);
+  const format = typeof schema.format === "string" ? schema.format : undefined;
+
+  if (format === "uuid" || paramName.toLowerCase().includes("uuid")) {
+    return "123e4567-e89b-12d3-a456-426614174000";
+  }
+
   if (paramName === "id" || paramName.endsWith("Id") || paramName.endsWith("_id")) {
     return type === "string" ? "123" : 123;
   }
@@ -222,10 +234,18 @@ export function getExampleForParam(paramName: string, type: string = "string"): 
       return "admin";
     default:
       if (type === "string") return "example";
-      if (type === "number") return 1;
+      if (type === "number" || type === "integer") return 1;
       if (type === "boolean") return true;
       return "example";
   }
+}
+
+function getPrimaryType(type: OpenApiSchemaLike["type"]): string {
+  if (Array.isArray(type)) {
+    return type.find((entry) => entry !== "null") || type[0] || "string";
+  }
+
+  return typeof type === "string" ? type : "string";
 }
 
 export function detectContentType(bodyType: string, explicitContentType?: string): string {
@@ -296,12 +316,21 @@ function getMultipartPartContentType(
   propertyName: string,
   value: OpenAPIDefinition,
 ): string | undefined {
+  const mediaTypes = getMultipartPartContentMediaTypes(value);
+  if (mediaTypes.length > 0) {
+    return mediaTypes.join(", ");
+  }
+
   if (typeof value.contentMediaType === "string") {
     return value.contentMediaType;
   }
 
   if (value.type === "string" && value.format === "binary") {
     return "application/octet-stream";
+  }
+
+  if (value.type === "array" && value.items && typeof value.items === "object") {
+    return getMultipartPartContentType(propertyName, value.items);
   }
 
   if (
@@ -313,6 +342,19 @@ function getMultipartPartContentType(
   }
 
   return undefined;
+}
+
+function getMultipartPartContentMediaTypes(value: OpenAPIDefinition): string[] {
+  const mediaTypes = value["x-contentMediaTypes"];
+  if (Array.isArray(mediaTypes)) {
+    return mediaTypes.filter((mediaType): mediaType is string => typeof mediaType === "string");
+  }
+
+  if (value.type === "array" && value.items && typeof value.items === "object") {
+    return getMultipartPartContentMediaTypes(value.items);
+  }
+
+  return [];
 }
 
 export function isDateString(node: any): boolean {

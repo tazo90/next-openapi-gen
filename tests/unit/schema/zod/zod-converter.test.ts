@@ -5,6 +5,7 @@ import path from "node:path";
 import * as t from "@babel/types";
 import { afterEach, describe, expect, it } from "vitest";
 
+import { DiagnosticsCollector } from "@workspace/openapi-core/diagnostics/collector.js";
 import { ZodSchemaConverter } from "@workspace/openapi-core/schema/zod/zod-converter.js";
 import { parseTypeScriptFile } from "@workspace/openapi-core/shared/utils.js";
 
@@ -45,8 +46,9 @@ describe("ZodSchemaConverter", () => {
     const routeFiles: string[] = [];
     converter.findRouteFilesInDir(root, routeFiles);
 
-    expect(routeFiles.toSorted()).toEqual(
-      [path.join(root, "api", "route.ts"), path.join(nestedDir, "user-api.ts")].toSorted(),
+    const sortPaths = (left: string, right: string) => left.localeCompare(right);
+    expect(routeFiles.toSorted(sortPaths)).toEqual(
+      [path.join(root, "api", "route.ts"), path.join(nestedDir, "user-api.ts")].toSorted(sortPaths),
     );
 
     const schemaFile = path.join(root, "schemas.ts");
@@ -141,6 +143,111 @@ describe("ZodSchemaConverter", () => {
       type: "string",
       example: "demo",
       deprecated: true,
+    });
+  });
+
+  it("emits diagnostics for unknown Zod helpers and chain methods", () => {
+    const diagnostics = new DiagnosticsCollector();
+    const converter = new ZodSchemaConverter(process.cwd(), undefined, undefined, diagnostics);
+
+    expect(converter.processZodNode(parseInitializer("z.mystery()"))).toEqual({
+      type: "string",
+    });
+    expect(converter.processZodNode(parseInitializer("z.string().mysteryMethod()"))).toEqual({
+      type: "string",
+    });
+
+    expect(diagnostics.getAll()).toEqual([
+      expect.objectContaining({
+        code: "unknown-zod-helper",
+        severity: "warning",
+        metadata: { name: "mystery" },
+      }),
+      expect.objectContaining({
+        code: "unknown-zod-method",
+        severity: "warning",
+        metadata: { name: "mysteryMethod" },
+      }),
+    ]);
+  });
+
+  it("emits a pattern for static z.templateLiteral schemas", () => {
+    const converter = new ZodSchemaConverter(process.cwd());
+
+    expect(
+      converter.processZodNode(
+        parseInitializer('z.templateLiteral(["v", z.literal(1), "-", z.number()])'),
+      ),
+    ).toEqual({
+      type: "string",
+      pattern: "^v(1)--?\\d+(?:\\.\\d+)?$",
+    });
+  });
+
+  it("preserves statically resolvable computed object keys", () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-zod-computed-"));
+    roots.push(root);
+    const schemaFile = path.join(root, "schemas.ts");
+    fs.writeFileSync(
+      schemaFile,
+      `import { z } from "zod/v4";
+
+const displayNameKey = "displayName" as const;
+
+export const UserSchema = z.object({
+  [displayNameKey]: z.string(),
+});
+`,
+    );
+
+    const converter = new ZodSchemaConverter(root);
+    const schema = converter.convertZodSchemaToOpenApi("UserSchema");
+
+    expect(schema).toMatchObject({
+      type: "object",
+      properties: {
+        displayName: {
+          type: "string",
+        },
+      },
+      required: ["displayName"],
+    });
+  });
+
+  it("expands factory calls with destructured object parameters", () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-zod-factory-destructured-"));
+    roots.push(root);
+    const schemaFile = path.join(root, "schemas.ts");
+    fs.writeFileSync(
+      schemaFile,
+      `import { z } from "zod/v4";
+
+function createEnvelope({ data }: { data: z.ZodTypeAny }) {
+  return z.object({
+    ok: z.boolean(),
+    data,
+  });
+}
+
+export const EnvelopeSchema = createEnvelope({
+  data: z.string(),
+});
+`,
+    );
+
+    const converter = new ZodSchemaConverter(root);
+    const schema = converter.convertZodSchemaToOpenApi("EnvelopeSchema");
+
+    expect(schema).toMatchObject({
+      type: "object",
+      properties: {
+        ok: {
+          type: "boolean",
+        },
+        data: {
+          type: "string",
+        },
+      },
     });
   });
 
@@ -260,7 +367,6 @@ describe("ZodSchemaConverter", () => {
       converter.processZodNode(parseInitializer("z.number().int().positive().safe()")),
     ).toEqual({
       type: "integer",
-      minimum: -9007199254740991,
       exclusiveMinimum: 0,
       maximum: 9007199254740991,
     });

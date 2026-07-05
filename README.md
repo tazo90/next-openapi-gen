@@ -291,6 +291,9 @@ Version guidance:
 | `defaultResponseSet` / `responseSets` | Reusable error-response groups                                                          |
 | `errorConfig`                         | Shared error schema templates                                                           |
 | `authPresets`                         | Override or extend the `@auth` keyword → scheme-name mapping                            |
+| `diagnostics.failOn`                  | CI gate: `"never"` (default), `"warning"`, or `"error"`                                 |
+
+During generation, the CLI prints diagnostics grouped by severity (`error`, `warning`, `info`) and also writes them to `.openapi-gen/manifest.json` in non-production runs. Common codes include `missing-query-params-type`, `multipart-missing-body-schema`, `schema-not-found`, `schema-dir-empty`, `path-param-schema-conflict`, `unknown-zod-helper`, `unknown-zod-method`, `type-resolution-fallback`, `inferred-path-params`, `inferred-query-params`, and `inferred-body`.
 
 For a fuller setup guide, Pages Router notes, response sets, and route exclusion
 patterns, see [docs/getting-started.md](./docs/getting-started.md).
@@ -318,7 +321,7 @@ patterns, see [docs/getting-started.md](./docs/getting-started.md).
 | `@openapi-override`        | Deep-merge extra OpenAPI fields onto the operation                                                      |
 | `@ignore`                  | Exclude a route from generation                                                                         |
 | `@internal`                | Exclude a schema/type declaration from `components/schemas`                                             |
-| `@method`                  | Required HTTP method tag for Pages Router handlers                                                      |
+| `@method`                  | Override or declare the HTTP method; `QUERY` emits OpenAPI 3.2 `additionalOperations`                   |
 
 For the complete tag guide and usage recipes, see
 [docs/jsdoc-reference.md](./docs/jsdoc-reference.md).
@@ -442,11 +445,14 @@ pnpm exec openapi-gen generate --watch
 
 ### `generate` options
 
-| Option       | Purpose                                       |
-| ------------ | --------------------------------------------- |
-| `--config`   | Use a specific config file                    |
-| `--template` | Merge a specific OpenAPI template or fragment |
-| `--watch`    | Regenerate when routes or schema files change |
+| Option       | Purpose                                                                  |
+| ------------ | ------------------------------------------------------------------------ |
+| `--config`   | Use a specific config file                                               |
+| `--template` | Merge a specific OpenAPI template or fragment                            |
+| `--watch`    | Regenerate when routes or schema files change                            |
+| `--fail-on`  | Exit with an error when diagnostics reach `error`, `warning`, or `never` |
+
+Generated diagnostics are printed after each run and recorded in `.openapi-gen/manifest.json` (development only) for automation and CI review.
 
 ## Contributing
 

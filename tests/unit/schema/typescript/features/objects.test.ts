@@ -82,4 +82,22 @@ describe("TypeScript features › object literals", () => {
       additionalProperties: { type: "number" },
     });
   });
+
+  it("Map and Set types emit object/unique-array schemas", () => {
+    expect(resolve("Map<string, number>")).toMatchObject({
+      type: "object",
+      additionalProperties: { type: "number" },
+    });
+    expect(resolve("Set<string>")).toMatchObject({
+      type: "array",
+      items: { type: "string" },
+      uniqueItems: true,
+    });
+  });
+
+  it("branded primitive intersections keep the base primitive shape", () => {
+    expect(resolve('string & { __brand: "UserId" }')).toEqual({
+      type: "string",
+    });
+  });
 });

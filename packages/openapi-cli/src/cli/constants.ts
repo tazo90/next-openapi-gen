@@ -25,6 +25,8 @@ export const INIT_OUTPUT_OPTION_DESCRIPTION = "Specify the output path for the O
 export const GENERATE_TEMPLATE_OPTION_DESCRIPTION = "Specify the OpenAPI template file";
 export const GENERATE_WATCH_OPTION_DESCRIPTION =
   "Watch route and schema files and regenerate on changes";
+export const GENERATE_FAIL_ON_OPTION_DESCRIPTION =
+  "Fail generation when diagnostics include the selected severity";
 
 export const INIT_DEFAULTS = {
   docsUrl: DEFAULT_DOCS_URL,

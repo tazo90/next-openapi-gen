@@ -1,11 +1,19 @@
 import fs from "node:fs";
 import path from "node:path";
 
+import type * as t from "@babel/types";
+
 import { measurePerformance, type GenerationPerformanceProfile } from "../../core/performance.js";
+import type { CachedFileContent, SharedGenerationRuntime } from "../../core/runtime.js";
 import { traverse } from "../../shared/babel-traverse.js";
 import type { ResolvedOpenApiConfig } from "../../shared/types.js";
-import { extractJSDocComments, parseTypeScriptFile } from "../../shared/utils.js";
+import {
+  extractJSDocComments,
+  extractPathParameters,
+  parseTypeScriptFile,
+} from "../../shared/utils.js";
 import type { FrameworkSource } from "../types.js";
+import { applyHandlerInsightsToDataTypes } from "./handler-insights.js";
 
 const GENERIC_HTTP_EXPORTS = ["GET", "POST", "PUT", "PATCH", "DELETE", "loader", "action"] as const;
 
@@ -14,14 +22,22 @@ type GenericRouteSourceOptions = {
   fileExtensions?: string[] | undefined;
 };
 
+const moduleFileASTCache = new Map<string, t.File>();
+const moduleFileContentCache = new Map<string, CachedFileContent>();
+
 export class GenericRouteSource implements FrameworkSource {
-  private readonly fileContentCache = new Map<string, string>();
+  private readonly fileASTCache: Map<string, t.File>;
+  private readonly fileContentCache: Map<string, CachedFileContent>;
 
   constructor(
     public readonly config: ResolvedOpenApiConfig,
     private readonly options: GenericRouteSourceOptions = {},
     private readonly performanceProfile?: GenerationPerformanceProfile,
-  ) {}
+    runtime?: SharedGenerationRuntime,
+  ) {
+    this.fileASTCache = runtime?.routeScan.fileASTCache ?? moduleFileASTCache;
+    this.fileContentCache = runtime?.routeScan.fileContentCache ?? moduleFileContentCache;
+  }
 
   public getScanRoots(): string[] {
     return [this.config.apiDir];
@@ -76,11 +92,9 @@ export class GenericRouteSource implements FrameworkSource {
   }
 
   public processFile(filePath: string, routePath = this.getRoutePath(filePath)) {
-    const content = this.readFile(filePath);
-    const ast = measurePerformance(this.performanceProfile, "parseRouteFilesMs", () =>
-      parseTypeScriptFile(content),
-    );
+    const ast = this.parseFile(filePath);
     const routes: ReturnType<FrameworkSource["processFile"]> = [];
+    const hasPathParams = extractPathParameters(routePath).length > 0;
 
     measurePerformance(this.performanceProfile, "analyzeRouteFilesMs", () => {
       traverse(ast, {
@@ -106,7 +120,11 @@ export class GenericRouteSource implements FrameworkSource {
                 method,
                 filePath,
                 routePath,
-                dataTypes: extractJSDocComments(nodePath, filePath),
+                dataTypes: applyHandlerInsightsToDataTypes(
+                  extractJSDocComments(nodePath, filePath),
+                  item,
+                  { hasPathParams },
+                ),
               });
             }
             return;
@@ -122,7 +140,11 @@ export class GenericRouteSource implements FrameworkSource {
               method,
               filePath,
               routePath,
-              dataTypes: extractJSDocComments(nodePath, filePath),
+              dataTypes: applyHandlerInsightsToDataTypes(
+                extractJSDocComments(nodePath, filePath),
+                declaration,
+                { hasPathParams },
+              ),
             });
           }
         },
@@ -133,16 +155,40 @@ export class GenericRouteSource implements FrameworkSource {
   }
 
   private readFile(filePath: string): string {
+    const stat = fs.statSync(filePath);
     const cachedContent = this.fileContentCache.get(filePath);
-    if (cachedContent) {
-      return cachedContent;
+    if (
+      cachedContent &&
+      cachedContent.mtimeMs === stat.mtimeMs &&
+      cachedContent.size === stat.size
+    ) {
+      return cachedContent.content;
     }
 
     const content = measurePerformance(this.performanceProfile, "readRouteFilesMs", () =>
       fs.readFileSync(filePath, "utf-8"),
     );
-    this.fileContentCache.set(filePath, content);
+    this.fileContentCache.set(filePath, {
+      content,
+      mtimeMs: stat.mtimeMs,
+      size: stat.size,
+    });
+    this.fileASTCache.delete(filePath);
     return content;
+  }
+
+  private parseFile(filePath: string): t.File {
+    const content = this.readFile(filePath);
+    const cachedAst = this.fileASTCache.get(filePath);
+    if (cachedAst) {
+      return cachedAst;
+    }
+
+    const ast = measurePerformance(this.performanceProfile, "parseRouteFilesMs", () =>
+      parseTypeScriptFile(content),
+    );
+    this.fileASTCache.set(filePath, ast);
+    return ast;
   }
 }
 

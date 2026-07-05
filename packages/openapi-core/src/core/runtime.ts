@@ -1,10 +1,20 @@
 import path from "node:path";
 
+import type * as t from "@babel/types";
+
 import { invalidateTypeScriptProject } from "../shared/typescript-project.js";
+
+export type CachedFileContent = {
+  content: string;
+  mtimeMs: number;
+  size: number;
+};
 
 export type SharedGenerationRuntime = {
   routeScan: {
     directoryCache: Record<string, string[]>;
+    fileASTCache: Map<string, t.File>;
+    fileContentCache: Map<string, CachedFileContent>;
     statCache: Record<string, import("node:fs").Stats>;
   };
   schema: {
@@ -20,6 +30,8 @@ export function createSharedGenerationRuntime(): SharedGenerationRuntime {
   return {
     routeScan: {
       directoryCache: {},
+      fileASTCache: new Map(),
+      fileContentCache: new Map(),
       statCache: {},
     },
     schema: {
@@ -36,6 +48,8 @@ export function invalidateRuntimeFile(runtime: SharedGenerationRuntime, filePath
   const absoluteFilePath = path.resolve(filePath);
 
   delete runtime.routeScan.statCache[absoluteFilePath];
+  runtime.routeScan.fileASTCache.delete(absoluteFilePath);
+  runtime.routeScan.fileContentCache.delete(absoluteFilePath);
   delete runtime.schema.statCache[absoluteFilePath];
   runtime.schema.fileASTCache.delete(absoluteFilePath);
   runtime.schema.schemaFiles = null;

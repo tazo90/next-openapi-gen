@@ -19,12 +19,51 @@ describe("Zod features › primitives", () => {
     ["z.never()", "z.never()", { not: {} }],
     ["z.any()", "z.any()", {}],
     ["z.unknown()", "z.unknown()", {}],
+    ["z.json()", "z.json()", {}],
     ["z.nan()", "z.nan()", { type: "number" }],
+    ["z.symbol()", "z.symbol()", { type: "string" }],
     ["z.file()", "z.file()", { type: "string", format: "binary" }],
+    [
+      "z.file().mime().minSize().maxSize()",
+      'z.file().mime("image/png").minSize(1).maxSize(1024)',
+      {
+        type: "string",
+        format: "binary",
+        contentMediaType: "image/png",
+        minLength: 1,
+        maxLength: 1024,
+      },
+    ],
+    [
+      "z.file().mime([...])",
+      'z.file().mime(["image/png", "image/jpeg"])',
+      {
+        type: "string",
+        format: "binary",
+        "x-contentMediaTypes": ["image/png", "image/jpeg"],
+      },
+    ],
+    [
+      "z.array(z.file())",
+      'z.array(z.file().mime(["image/png", "image/jpeg"]))',
+      {
+        type: "array",
+        items: {
+          type: "string",
+          format: "binary",
+          "x-contentMediaTypes": ["image/png", "image/jpeg"],
+        },
+      },
+    ],
     ['z.literal("hello")', 'z.literal("hello")', { type: "string", enum: ["hello"] }],
     ["z.literal(42)", "z.literal(42)", { type: "integer", enum: [42] }],
     ["z.literal(true)", "z.literal(true)", { type: "boolean", enum: [true] }],
     ["z.literal(null)", "z.literal(null)", { type: "null", enum: [null] }],
+    [
+      "z.literal([...])",
+      'z.literal(["draft", "published"])',
+      { type: "string", enum: ["draft", "published"] },
+    ],
   ];
 
   it.each(cases)("%s", (_label, source, expected) => {

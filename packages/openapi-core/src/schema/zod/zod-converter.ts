@@ -4,6 +4,7 @@ import path from "path";
 import type { NodePath } from "@babel/traverse";
 import * as t from "@babel/types";
 
+import type { DiagnosticsCollector } from "../../diagnostics/collector.js";
 import { traverse } from "../../shared/babel-traverse.js";
 import { logger } from "../../shared/logger.js";
 import { SymbolResolver } from "../../shared/symbol-resolver.js";
@@ -51,6 +52,182 @@ type ZodConverterFileAccess = Pick<
 
 const defaultFileAccess: ZodConverterFileAccess = fs;
 
+const SUPPORTED_ZOD_HELPERS = new Set([
+  "any",
+  "array",
+  "base64",
+  "base64url",
+  "bigint",
+  "boolean",
+  "cidr",
+  "cidrv4",
+  "cidrv6",
+  "codec",
+  "custom",
+  "cuid",
+  "cuid2",
+  "date",
+  "datetime",
+  "discriminatedUnion",
+  "e164",
+  "email",
+  "emoji",
+  "enum",
+  "file",
+  "float32",
+  "float64",
+  "function",
+  "guid",
+  "hash",
+  "hex",
+  "hostname",
+  "httpUrl",
+  "ip",
+  "instanceof",
+  "int",
+  "int32",
+  "int64",
+  "intersection",
+  "ipv4",
+  "ipv6",
+  "iso.date",
+  "iso.datetime",
+  "iso.duration",
+  "iso.time",
+  "json",
+  "jwt",
+  "ksuid",
+  "lazy",
+  "literal",
+  "looseObject",
+  "map",
+  "nan",
+  "nanoid",
+  "nativeEnum",
+  "never",
+  "null",
+  "number",
+  "object",
+  "partialRecord",
+  "pipe",
+  "pipeline",
+  "preprocess",
+  "promise",
+  "record",
+  "set",
+  "strictObject",
+  "string",
+  "stringbool",
+  "symbol",
+  "templateLiteral",
+  "tuple",
+  "uint32",
+  "uint64",
+  "undefined",
+  "union",
+  "unknown",
+  "ulid",
+  "url",
+  "uuid",
+  "uuidv4",
+  "uuidv6",
+  "uuidv7",
+  "void",
+  "xid",
+]);
+
+const SUPPORTED_ZOD_CHAIN_METHODS = new Set([
+  "and",
+  "base64",
+  "base64url",
+  "brand",
+  "catch",
+  "catchall",
+  "check",
+  "cidr",
+  "cidrv4",
+  "cidrv6",
+  "cuid",
+  "cuid2",
+  "date",
+  "datetime",
+  "deepPartial",
+  "default",
+  "deprecated",
+  "describe",
+  "duration",
+  "e164",
+  "email",
+  "emoji",
+  "endsWith",
+  "extend",
+  "finite",
+  "guid",
+  "hash",
+  "hex",
+  "hostname",
+  "httpUrl",
+  "includes",
+  "int",
+  "ip",
+  "ipv4",
+  "ipv6",
+  "jwt",
+  "keyof",
+  "ksuid",
+  "length",
+  "max",
+  "maxSize",
+  "merge",
+  "meta",
+  "mime",
+  "min",
+  "minSize",
+  "multipleOf",
+  "nanoid",
+  "negative",
+  "nonempty",
+  "nonnegative",
+  "nonoptional",
+  "nonpositive",
+  "nullable",
+  "nullish",
+  "omit",
+  "optional",
+  "or",
+  "overwrite",
+  "partial",
+  "passthrough",
+  "pick",
+  "pipe",
+  "positive",
+  "prefault",
+  "readonly",
+  "refine",
+  "regex",
+  "required",
+  "rest",
+  "safe",
+  "startsWith",
+  "step",
+  "strict",
+  "strip",
+  "superRefine",
+  "time",
+  "toLowerCase",
+  "toUpperCase",
+  "transform",
+  "trim",
+  "ulid",
+  "uri",
+  "url",
+  "uuid",
+  "uuidv4",
+  "uuidv6",
+  "uuidv7",
+  "xid",
+]);
+
 /**
  * Class for converting Zod schemas to OpenAPI specifications
  */
@@ -88,6 +265,8 @@ export class ZodSchemaConverter {
   currentContentType: ContentType = "response";
   private readonly fileAccess: ZodConverterFileAccess;
   private readonly runtimeExporter = new ZodRuntimeExporter();
+  private readonly diagnostics: DiagnosticsCollector | undefined;
+  private readonly emittedUnknownDiagnostics = new Set<string>();
   /** Shared symbol resolver — replaces ad-hoc per-call AST traversals. */
   readonly symbolResolver: SymbolResolver;
 
@@ -95,11 +274,13 @@ export class ZodSchemaConverter {
     schemaDir: string | string[],
     apiDir?: string,
     fileAccess: ZodConverterFileAccess = defaultFileAccess,
+    diagnostics?: DiagnosticsCollector,
   ) {
     const dirs = Array.isArray(schemaDir) ? schemaDir : [schemaDir];
     this.schemaDirs = dirs.map((d) => path.resolve(d));
     this.apiDir = apiDir ? path.resolve(apiDir) : undefined;
     this.fileAccess = fileAccess;
+    this.diagnostics = diagnostics;
     this.symbolResolver = new SymbolResolver(
       fileAccess as Pick<typeof fs, "existsSync" | "readFileSync">,
       this.fileASTCache,
@@ -1050,6 +1231,7 @@ export class ZodSchemaConverter {
       } else if (methodName === "literal" && node.arguments.length > 0) {
         return this.processZodLiteral(node);
       } else {
+        this.warnIfUnknownZodHelper(methodName);
         return this.processZodPrimitive(node);
       }
     }
@@ -1181,6 +1363,45 @@ export class ZodSchemaConverter {
 
     logger.debug("Unknown Zod schema node:", node);
     return { type: "object" };
+  }
+
+  private warnIfUnknownZodHelper(helperName: string): void {
+    if (SUPPORTED_ZOD_HELPERS.has(helperName)) {
+      return;
+    }
+
+    this.addUnknownZodDiagnostic("unknown-zod-helper", helperName);
+  }
+
+  private warnIfUnknownZodMethod(methodName: string): void {
+    if (SUPPORTED_ZOD_CHAIN_METHODS.has(methodName)) {
+      return;
+    }
+
+    this.addUnknownZodDiagnostic("unknown-zod-method", methodName);
+  }
+
+  private addUnknownZodDiagnostic(code: "unknown-zod-helper" | "unknown-zod-method", name: string) {
+    if (!this.diagnostics) {
+      return;
+    }
+
+    const key = `${code}:${this.currentFilePath ?? ""}:${name}`;
+    if (this.emittedUnknownDiagnostics.has(key)) {
+      return;
+    }
+    this.emittedUnknownDiagnostics.add(key);
+
+    this.diagnostics.add({
+      code,
+      severity: "warning",
+      message:
+        code === "unknown-zod-helper"
+          ? `Unknown Zod helper "${name}" was approximated as a string schema.`
+          : `Unknown Zod chain method "${name}" was ignored during OpenAPI schema conversion.`,
+      ...(this.currentFilePath ? { filePath: this.currentFilePath } : {}),
+      metadata: { name },
+    });
   }
 
   /**
@@ -1349,14 +1570,35 @@ export class ZodSchemaConverter {
       if (t.isObjectProperty(prop)) {
         let propName: string | undefined;
 
-        // Handle both identifier and string literal keys
-        if (t.isIdentifier(prop.key)) {
+        // Handle identifier, string literal, and statically known computed keys.
+        if (t.isIdentifier(prop.key) && !prop.computed) {
           propName = prop.key.name;
         } else if (t.isStringLiteral(prop.key)) {
           propName = prop.key.value;
+        } else if (prop.computed && t.isIdentifier(prop.key)) {
+          const resolved = this.resolveLiteralValue(prop.key.name);
+          if (typeof resolved === "string" || typeof resolved === "number") {
+            propName = String(resolved);
+          }
         } else {
           logger.debug(`Skipping property ${index} - unsupported key type`);
+          this.diagnostics?.add({
+            code: "zod-computed-key-skipped",
+            severity: "info",
+            message:
+              "Skipped a Zod object property because its computed key is not statically resolvable.",
+            ...(this.currentFilePath ? { filePath: this.currentFilePath } : {}),
+            metadata: {
+              propertyIndex: index,
+              suggestedFix:
+                "Use a string literal key or a const string identifier for computed Zod object keys.",
+            },
+          });
           return; // Skip if key is not identifier or string literal
+        }
+
+        if (!propName) {
+          return;
         }
 
         if (
@@ -1625,6 +1867,29 @@ export class ZodSchemaConverter {
     if (t.isIdentifier(node)) {
       const val = this.resolveLiteralValue(node.name);
       if (typeof val === "string") return val;
+    }
+    return undefined;
+  }
+
+  private resolveStringArrayArg(arg: t.Node | null | undefined): string[] | undefined {
+    if (!arg) return undefined;
+    const node = this.unwrapTypeAssertion(arg);
+    if (t.isStringLiteral(node)) return [node.value];
+    if (t.isArrayExpression(node)) {
+      const values = node.elements.flatMap((element) => {
+        const value = this.resolveStringArg(element);
+        return value === undefined ? [] : [value];
+      });
+      return values.length > 0 ? values : undefined;
+    }
+    if (t.isIdentifier(node)) {
+      const literal = this.resolveLiteralValue(node.name);
+      if (typeof literal === "string") return [literal];
+
+      const values = this.resolveConstArrayValues(node.name);
+      if (values && values.every((value) => typeof value === "string")) {
+        return values;
+      }
     }
     return undefined;
   }
@@ -1938,6 +2203,9 @@ export class ZodSchemaConverter {
         schema.format = "uri";
         break;
       case "uuid":
+      case "uuidv4":
+      case "uuidv6":
+      case "uuidv7":
       case "guid":
         schema.format = "uuid";
         break;
@@ -1958,6 +2226,11 @@ export class ZodSchemaConverter {
       case "ulid":
       case "nanoid":
       case "jwt":
+      case "xid":
+      case "ksuid":
+      case "hostname":
+      case "hex":
+      case "hash":
       case "base64":
       case "base64url":
       case "emoji":
@@ -1967,6 +2240,9 @@ export class ZodSchemaConverter {
       case "cidrv6":
       case "e164":
         schema.format = methodName;
+        break;
+      case "httpUrl":
+        schema.format = "uri";
         break;
       case "datetime":
         schema.format = "date-time";
@@ -2003,6 +2279,19 @@ export class ZodSchemaConverter {
         }
         break;
       }
+      case "trim":
+      case "toLowerCase":
+      case "toUpperCase":
+        // String normalization changes runtime values, not the accepted wire shape.
+        break;
+      case "multipleOf":
+      case "step": {
+        const multipleOf = this.resolveNumericArg(node.arguments[0]);
+        if (multipleOf !== undefined) {
+          schema.multipleOf = multipleOf;
+        }
+        break;
+      }
       case "int":
         schema.type = "integer";
         break;
@@ -2026,6 +2315,33 @@ export class ZodSchemaConverter {
         schema.minimum = -9007199254740991; // -(2^53 - 1)
         schema.maximum = 9007199254740991; // 2^53 - 1
         break;
+      case "mime": {
+        const mimeTypes = node.arguments.flatMap((argument) => {
+          const values = this.resolveStringArrayArg(argument);
+          return values ?? [];
+        });
+        if (mimeTypes.length === 1) {
+          schema.contentMediaType = mimeTypes[0];
+        } else if (mimeTypes.length > 1) {
+          delete schema.contentMediaType;
+          schema["x-contentMediaTypes"] = mimeTypes;
+        }
+        break;
+      }
+      case "minSize": {
+        const minSize = this.resolveNumericArg(node.arguments[0]);
+        if (minSize !== undefined) {
+          schema.minLength = minSize;
+        }
+        break;
+      }
+      case "maxSize": {
+        const maxSize = this.resolveNumericArg(node.arguments[0]);
+        if (maxSize !== undefined) {
+          schema.maxLength = maxSize;
+        }
+        break;
+      }
       case "default":
         if (node.arguments.length > 0) {
           const defaultArg = this.unwrapTypeAssertion(node.arguments[0]);
@@ -2151,11 +2467,16 @@ export class ZodSchemaConverter {
         break;
       case "refine":
       case "superRefine":
+      case "check":
         // These are custom validators that cannot be easily represented in OpenAPI
         // We preserve the schema as is
         break;
       case "transform":
+      case "overwrite":
         // Transform doesn't change the schema validation, only the output format
+        break;
+      case "nonoptional":
+        // Required-ness is tracked on parent object schemas; the value schema is unchanged.
         break;
       case "readonly":
         // `z.readonly()` → JSON Schema `readOnly: true`. Harmless on primitives too.
@@ -2248,6 +2569,14 @@ export class ZodSchemaConverter {
           schema.required = Object.keys(schema.properties);
         }
         break;
+      case "keyof":
+        if (schema.type === "object" && schema.properties) {
+          schema = {
+            type: "string",
+            enum: Object.keys(schema.properties),
+          };
+        }
+        break;
       case "merge": {
         // `.merge(OtherObjectSchema)` — inline the other object's properties.
         // In Zod 4 this is equivalent to `.extend(other.shape)`.
@@ -2302,9 +2631,31 @@ export class ZodSchemaConverter {
           }
         }
         break;
+      default:
+        this.warnIfUnknownZodMethod(methodName);
+        break;
     }
 
+    this.reconcileNumericBounds(schema);
     return schema;
+  }
+
+  private reconcileNumericBounds(schema: OpenApiSchema): void {
+    if (typeof schema.minimum === "number" && typeof schema.exclusiveMinimum === "number") {
+      if (schema.exclusiveMinimum >= schema.minimum) {
+        delete schema.minimum;
+      } else {
+        delete schema.exclusiveMinimum;
+      }
+    }
+
+    if (typeof schema.maximum === "number" && typeof schema.exclusiveMaximum === "number") {
+      if (schema.exclusiveMaximum <= schema.maximum) {
+        delete schema.maximum;
+      } else {
+        delete schema.exclusiveMaximum;
+      }
+    }
   }
 
   /** Recursively clear `required` arrays on nested object schemas. */
