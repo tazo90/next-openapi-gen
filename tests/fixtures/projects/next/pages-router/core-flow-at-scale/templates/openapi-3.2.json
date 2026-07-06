@@ -1,0 +1,27 @@
+{
+  "openapi": "3.2.0",
+  "info": {
+    "title": "Pages Router Core Flow At Scale",
+    "version": "1.0.0",
+    "description": "Large-scale pages router TypeScript fixture"
+  },
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  },
+  "routerType": "pages",
+  "apiDir": "./pages/api",
+  "schemaDir": "./schemas",
+  "schemaType": "typescript",
+  "docsUrl": "api-docs",
+  "ui": "scalar",
+  "outputDir": "./public",
+  "outputFile": "openapi.json",
+  "includeOpenApiRoutes": true,
+  "debug": false
+}

@@ -148,4 +148,19 @@ describe("normalizeOpenApiConfig", () => {
 
     expect(config.openapiVersion).toBe("3.0");
   });
+
+  it("defaults cache to true and honors explicit overrides", () => {
+    expect(
+      normalizeOpenApiConfig({
+        info: { title: "Fixture", version: "1.0.0" },
+      } as never).cache,
+    ).toBe(true);
+
+    expect(
+      normalizeOpenApiConfig({
+        info: { title: "Fixture", version: "1.0.0" },
+        cache: false,
+      } as never).cache,
+    ).toBe(false);
+  });
 });

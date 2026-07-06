@@ -295,24 +295,6 @@ export function getSchemaContent(
     context.findSchemaDefinition(baseResponseType, "response");
   }
 
-  if (context.schemaTypes.includes("zod")) {
-    if (paramsType && !context.openapiDefinitions[paramsType]) {
-      context.findSchemaDefinition(paramsType, "params");
-    }
-    if (baseQuerystringType && !context.openapiDefinitions[baseQuerystringType]) {
-      context.findSchemaDefinition(baseQuerystringType, "params");
-    }
-    if (pathParamsType && !context.openapiDefinitions[pathParamsType]) {
-      context.findSchemaDefinition(pathParamsType, "pathParams");
-    }
-    if (baseBodyType && !context.openapiDefinitions[baseBodyType]) {
-      context.findSchemaDefinition(baseBodyType, "body");
-    }
-    if (baseResponseType && !context.openapiDefinitions[baseResponseType]) {
-      context.findSchemaDefinition(baseResponseType, "response");
-    }
-  }
-
   const params = paramsType ? context.openapiDefinitions[paramsType] || {} : {};
   const querystring = baseQuerystringType
     ? context.openapiDefinitions[baseQuerystringType] || {}

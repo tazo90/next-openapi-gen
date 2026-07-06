@@ -22,6 +22,9 @@ export type GenerationPerformanceProfile = {
   buildPathsMs: number;
   defaultComponentsAndErrorsMs: number;
   mergeSchemasMs: number;
+  zodPreScanMs: number;
+  zodPreprocessMs: number;
+  zodConvertMs: number;
   finalizeDocumentMs: number;
   totalMs: number;
 };
@@ -51,6 +54,9 @@ export function createEmptyGenerationPerformanceProfile(): GenerationPerformance
     buildPathsMs: 0,
     defaultComponentsAndErrorsMs: 0,
     mergeSchemasMs: 0,
+    zodPreScanMs: 0,
+    zodPreprocessMs: 0,
+    zodConvertMs: 0,
     finalizeDocumentMs: 0,
     totalMs: 0,
   };

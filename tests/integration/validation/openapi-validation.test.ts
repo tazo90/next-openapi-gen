@@ -30,6 +30,17 @@ const appRouterTypescriptFullCoverageFixture = getProjectFixturePath(
 );
 const tanstackCoreFixture = getProjectFixturePath("tanstack", "core-flow");
 const reactRouterCoreFixture = getProjectFixturePath("react-router", "core-flow");
+const appRouterCoreFlowAtScaleFixture = getProjectFixturePath(
+  "next",
+  "app-router",
+  "core-flow-at-scale",
+);
+const appRouterZodFullCoverageAtScaleFixture = getProjectFixturePath(
+  "next",
+  "app-router",
+  "zod-full-coverage-at-scale",
+);
+const tanstackCoreFlowAtScaleFixture = getProjectFixturePath("tanstack", "core-flow-at-scale");
 
 const frameworkFixtures = [
   ["TanStack", tanstackCoreFixture],
@@ -182,6 +193,29 @@ describe("OpenAPI document validation", () => {
         await expectValidSpec(spec);
         expect(spec.paths).toBeDefined();
         expect(Object.keys(spec.paths ?? {}).length).toBeGreaterThan(0);
+      } finally {
+        project.cleanup();
+      }
+    },
+  );
+
+  it.each([
+    ["Next app router core at scale", appRouterCoreFlowAtScaleFixture],
+    ["Next app router zod full at scale", appRouterZodFullCoverageAtScaleFixture],
+    ["TanStack core at scale", tanstackCoreFlowAtScaleFixture],
+  ] as const)(
+    "validates generated at-scale fixture for OpenAPI 3.2 (%s)",
+    async (_label, fixturePath) => {
+      expect.assertions(3);
+      const { project, spec } = generateFixtureSpec({
+        fixturePath,
+        openapiVersion: "3.2",
+      });
+
+      try {
+        await expectValidSpec(spec);
+        expect(spec.paths).toBeDefined();
+        expect(Object.keys(spec.paths ?? {}).length).toBeGreaterThanOrEqual(45);
       } finally {
         project.cleanup();
       }

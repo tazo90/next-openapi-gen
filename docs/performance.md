@@ -10,14 +10,15 @@ The CI benchmark job is informational. It uploads current reports and surfaces r
 
 ## Commands
 
-| Command                            | Purpose                                                                                                            |
-| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| `pnpm test:bench:schema:check`     | Runs schema micro-benchmarks and compares `tests/bench/schema/current.json` to `tests/bench/schema/baseline.json`. |
-| `pnpm test:bench:generator:check`  | Writes `tests/bench/generator/current.json` and compares it to `tests/bench/generator/baseline.json`.              |
-| `pnpm test:bench:generator:update` | Refreshes the committed generator baseline after intentional performance changes.                                  |
-| `pnpm test:bench:profile`          | Prints phase-level timing summaries for the full generator matrix.                                                 |
-| `pnpm test:bench:cli`              | Builds the CLI package, runs subprocess benchmarks, and runs the watch-mode smoke check.                           |
-| `pnpm test:bench:all`              | Runs schema, generator, and CLI benchmark coverage.                                                                |
+| Command                            | Purpose                                                                                                             |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `pnpm test:bench:schema:check`     | Runs schema micro-benchmarks and compares `tests/bench/schema/current.json` to `tests/bench/schema/baseline.json`.  |
+| `pnpm test:bench:generator:check`  | Writes `tests/bench/generator/current.json` and compares it to `tests/bench/generator/baseline.json`.               |
+| `pnpm test:bench:generator:update` | Refreshes the committed generator baseline after intentional performance changes.                                   |
+| `pnpm test:bench:profile`          | Prints phase-level timing summaries for the full generator matrix.                                                  |
+| `pnpm test:bench:scale`            | Prints phase-level timing summaries for the opt-in `*-at-scale` fixture tier (~100 operations, ~50 schema modules). |
+| `pnpm test:bench:cli`              | Builds the CLI package, runs subprocess benchmarks, and runs the watch-mode smoke check.                            |
+| `pnpm test:bench:all`              | Runs schema, generator, and CLI benchmark coverage.                                                                 |
 
 ## Generator Matrix
 
@@ -30,6 +31,21 @@ Canonical scenarios to inspect first:
 - `next/app-router/ts-full-coverage` with OpenAPI 3.2 for TypeScript schema-heavy behavior.
 - `next/app-router/drizzle-zod-flow` with OpenAPI 3.2 for Drizzle-Zod conversion.
 - `tanstack/core-flow` and `react-router/core-flow` with OpenAPI 3.2 for non-Next adapters.
+
+## Scale Fixture Tier
+
+Large realistic apps are materialized by `pnpm generate:scale-fixtures` into `tests/fixtures/projects/**/*-at-scale` and `apps/**/generated/`. Each scale fixture targets roughly 125 operations and 50 generated schema modules (plus copied catalog schemas on full-coverage fixtures).
+
+Regenerate after changing `scripts/fixture-scale/` domain or emitters. Do not hand-edit generated route or schema files.
+
+Run the opt-in scale benchmark tier locally when profiling large-app performance:
+
+```bash
+pnpm generate:scale-fixtures --target all --clean
+pnpm test:bench:scale
+```
+
+Scale scenarios are excluded from `pnpm test:bench:generator:check` so CI bench time and baseline size stay stable.
 
 ## Reading A Report
 
@@ -46,20 +62,19 @@ Use cold/warm ratio as the first cache-effectiveness signal. If warm time is clo
 
 The generator has process-local caches for route scanning, route file content, route ASTs, schema file ASTs, schema discovery, and TypeScript projects. Watch mode uses `SharedGenerationRuntime` automatically.
 
-Opt-in cross-run caching is available with:
-
-```bash
-OPENAPI_GEN_CACHE=1 pnpm generate:apps
-```
-
-or by setting:
+Opt-in cross-run caching is enabled by default. Disable it with:
 
 ```json
 {
-  "experimental": {
-    "cache": true
-  }
+  "cache": false
 }
+```
+
+You can also force cache behavior for a single run:
+
+```bash
+OPENAPI_GEN_CACHE=0 pnpm generate:apps
+OPENAPI_GEN_CACHE=1 pnpm generate:apps
 ```
 
 The disk cache fingerprints config files, API route files, schema files, custom schema files, package metadata, lockfile, and `tsconfig.json`. It reuses the existing spec only when inputs are unchanged and no docs or SDK side effects need to run.

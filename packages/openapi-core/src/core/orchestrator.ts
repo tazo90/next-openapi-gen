@@ -141,6 +141,7 @@ export function runGenerationOrchestrator({
   const definedSchemas = schemaProcessor.getDefinedSchemas();
   const mergedSchemas: Record<string, unknown> = {
     ...document.components.schemas,
+    ...routeProcessor.getCachedSchemas(),
     ...definedSchemas,
   };
 
@@ -150,6 +151,7 @@ export function runGenerationOrchestrator({
     config.excludeSchemas ?? [],
   );
   const allExcludedSchemas = {
+    ...routeProcessor.getCachedInternalSchemas(),
     ...internalSchemas,
     ...Object.fromEntries(
       patternExcludedNames.map((name) => [name, mergedSchemas[name] as Record<string, unknown>]),

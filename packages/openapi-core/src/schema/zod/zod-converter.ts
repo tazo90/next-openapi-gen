@@ -4,6 +4,8 @@ import path from "path";
 import type { NodePath } from "@babel/traverse";
 import * as t from "@babel/types";
 
+import { measurePerformance, type GenerationPerformanceProfile } from "../../core/performance.js";
+import type { SharedZodGenerationRuntime } from "../../core/runtime.js";
 import type { DiagnosticsCollector } from "../../diagnostics/collector.js";
 import { traverse } from "../../shared/babel-traverse.js";
 import { logger } from "../../shared/logger.js";
@@ -258,6 +260,7 @@ export class ZodSchemaConverter {
   metaIdSchemaNames: Set<string> = new Set();
   /** Schema variable names marked @internal — excluded from components/schemas output. */
   internalSchemaNames: Set<string> = new Set();
+  variantSensitiveSchemaNames: Set<string> = new Set();
   // Current processing context (set during file processing)
   currentFilePath?: string;
   currentAST?: t.File;
@@ -267,6 +270,10 @@ export class ZodSchemaConverter {
   private readonly runtimeExporter = new ZodRuntimeExporter();
   private readonly diagnostics: DiagnosticsCollector | undefined;
   private readonly emittedUnknownDiagnostics = new Set<string>();
+  private readonly performanceProfile: GenerationPerformanceProfile | undefined;
+  private readonly runtimeState: SharedZodGenerationRuntime | undefined;
+  private hasPreScanned = false;
+  private currentSchemaUsedRuntimeExport = false;
   /** Shared symbol resolver — replaces ad-hoc per-call AST traversals. */
   readonly symbolResolver: SymbolResolver;
 
@@ -275,12 +282,35 @@ export class ZodSchemaConverter {
     apiDir?: string,
     fileAccess: ZodConverterFileAccess = defaultFileAccess,
     diagnostics?: DiagnosticsCollector,
+    fileASTCache?: Map<string, t.File>,
+    runtimeState?: SharedZodGenerationRuntime,
+    performanceProfile?: GenerationPerformanceProfile,
   ) {
     const dirs = Array.isArray(schemaDir) ? schemaDir : [schemaDir];
     this.schemaDirs = dirs.map((d) => path.resolve(d));
     this.apiDir = apiDir ? path.resolve(apiDir) : undefined;
     this.fileAccess = fileAccess;
     this.diagnostics = diagnostics;
+    this.performanceProfile = performanceProfile;
+    this.runtimeState = runtimeState;
+    if (fileASTCache) {
+      this.fileASTCache = fileASTCache;
+    }
+    if (runtimeState) {
+      this.zodSchemas = runtimeState.convertedSchemas;
+      this.drizzleZodImports = runtimeState.drizzleZodImports;
+      this.fileImportsCache = runtimeState.fileImportsCache;
+      this.preprocessedFiles = runtimeState.preprocessedFiles;
+      this.processedFileSchemaPairs = runtimeState.processedFileSchemaPairs;
+      this.schemaVariantRefs = runtimeState.schemaVariantRefs;
+      this.schemaNameToFiles = runtimeState.schemaNameToFiles;
+      this.zodImportAlias = runtimeState.zodImportAlias;
+      this.metaIdSchemaNames = runtimeState.metaIdSchemaNames;
+      this.internalSchemaNames = runtimeState.internalSchemaNames;
+      this.variantSensitiveSchemaNames = runtimeState.variantSensitiveSchemaNames;
+      this.typeToSchemaMapping = runtimeState.typeToSchemaMapping;
+      this.hasPreScanned = runtimeState.preScanned;
+    }
     this.symbolResolver = new SymbolResolver(
       fileAccess as Pick<typeof fs, "existsSync" | "readFileSync">,
       this.fileASTCache,
@@ -294,11 +324,17 @@ export class ZodSchemaConverter {
     schemaName: string,
     contentType: ContentType = this.currentContentType,
   ): OpenApiSchema | null {
+    const conversionStartedAt = performance.now();
     this.currentContentType = contentType || "response";
 
-    // Run pre-scan only one time
-    if (Object.keys(this.typeToSchemaMapping).length === 0) {
-      this.preScanForTypeMappings();
+    if (!this.hasPreScanned) {
+      measurePerformance(this.performanceProfile, "zodPreScanMs", () => {
+        this.preScanForTypeMappings();
+      });
+      this.hasPreScanned = true;
+      if (this.runtimeState) {
+        this.runtimeState.preScanned = true;
+      }
     }
 
     logger.debug(`Looking for Zod schema: ${schemaName}`);
@@ -350,9 +386,21 @@ export class ZodSchemaConverter {
         }
       }
 
-      // Find all route files and process them first
-      const routeFiles = this.findRouteFiles();
+      // Schema modules are the common case. Prefer them before falling back to
+      // route files so JSDoc-only references do not trigger route-file parsing.
+      for (const dir of this.schemaDirs) {
+        this.scanDirectoryForZodSchema(dir, schemaName);
+        if (this.getStoredSchema(schemaName)) break;
+      }
 
+      const schemaDirSchema = this.getStoredSchema(schemaName);
+      if (schemaDirSchema) {
+        logger.debug(`Found and processed Zod schema: ${schemaName}`);
+        return schemaDirSchema;
+      }
+
+      // Fallback for projects that define Zod schemas inline in route files.
+      const routeFiles = this.findRouteFiles();
       for (const routeFile of routeFiles) {
         this.processFileForZodSchema(routeFile, schemaName);
 
@@ -361,12 +409,6 @@ export class ZodSchemaConverter {
           logger.debug(`Found Zod schema '${schemaName}' in route file: ${routeFile}`);
           return routeSchema;
         }
-      }
-
-      // Scan schema directories
-      for (const dir of this.schemaDirs) {
-        this.scanDirectoryForZodSchema(dir, schemaName);
-        if (this.getStoredSchema(schemaName)) break;
       }
 
       // Return the schema if found, or null if not
@@ -379,6 +421,9 @@ export class ZodSchemaConverter {
       logger.debug(`Could not find Zod schema: ${schemaName}`);
       return null;
     } finally {
+      if (this.performanceProfile) {
+        this.performanceProfile.zodConvertMs += performance.now() - conversionStartedAt;
+      }
       // Remove from processing set
       this.processingSchemas.delete(schemaName);
       if (mappedSchemaName && requestedSchemaName !== schemaName) {
@@ -434,7 +479,10 @@ export class ZodSchemaConverter {
       return this.zodSchemas[explicitReferenceName] ?? null;
     }
 
-    return allowBaseFallback ? (this.zodSchemas[normalizedName] ?? null) : null;
+    if (allowBaseFallback || !this.variantSensitiveSchemaNames.has(normalizedName)) {
+      return this.zodSchemas[normalizedName] ?? null;
+    }
+    return null;
   }
 
   private storeResolvedSchema(
@@ -443,12 +491,20 @@ export class ZodSchemaConverter {
     contentType: ContentType = this.currentContentType,
   ): string {
     const normalizedName = this.typeToSchemaMapping[schemaName] ?? schemaName;
+    const schemaUsesRuntimeExport = this.currentSchemaUsedRuntimeExport;
+    this.currentSchemaUsedRuntimeExport = false;
+    if (schemaUsesRuntimeExport) {
+      this.variantSensitiveSchemaNames.add(normalizedName);
+    }
     const variantKey = this.getVariantKey(normalizedName, contentType);
     const existingBaseSchema = this.zodSchemas[normalizedName];
 
     if (!existingBaseSchema) {
       this.zodSchemas[normalizedName] = schema;
       this.schemaVariantRefs.set(variantKey, normalizedName);
+      if (!this.variantSensitiveSchemaNames.has(normalizedName)) {
+        this.registerCommonVariantRefs(normalizedName);
+      }
       return normalizedName;
     }
 
@@ -473,6 +529,13 @@ export class ZodSchemaConverter {
     this.schemaVariantRefs.set(this.getVariantKey(normalizedName, "pathParams"), normalizedName);
     this.schemaVariantRefs.set(variantKey, normalizedName);
     return normalizedName;
+  }
+
+  private registerCommonVariantRefs(schemaName: string): void {
+    this.schemaVariantRefs.set(this.getVariantKey(schemaName, "response"), schemaName);
+    this.schemaVariantRefs.set(this.getVariantKey(schemaName, "body"), schemaName);
+    this.schemaVariantRefs.set(this.getVariantKey(schemaName, "params"), schemaName);
+    this.schemaVariantRefs.set(this.getVariantKey(schemaName, "pathParams"), schemaName);
   }
 
   /**
@@ -549,6 +612,29 @@ export class ZodSchemaConverter {
     });
   }
 
+  preprocessSchemaDirectories(): void {
+    if (!this.hasPreScanned) {
+      measurePerformance(this.performanceProfile, "zodPreScanMs", () => {
+        this.preScanForTypeMappings();
+      });
+      this.hasPreScanned = true;
+      if (this.runtimeState) {
+        this.runtimeState.preScanned = true;
+      }
+    }
+
+    for (const dir of this.schemaDirs) {
+      if (this.runtimeState?.preprocessedSchemaDirectories.has(dir)) {
+        continue;
+      }
+
+      this.getSchemaFiles(dir).forEach((filePath) => {
+        this.preprocessAllSchemasInFile(filePath);
+      });
+      this.runtimeState?.preprocessedSchemaDirectories.add(dir);
+    }
+  }
+
   /**
    * Process a file to find Zod schema definitions
    */
@@ -562,8 +648,7 @@ export class ZodSchemaConverter {
     try {
       const content = this.fileAccess.readFileSync(filePath, "utf-8");
 
-      // Check if file contains schema we are looking for
-      if (!content.includes(schemaName)) {
+      if (!this.fileMayDefineSchema(filePath, content, schemaName)) {
         return;
       }
 
@@ -1142,6 +1227,7 @@ export class ZodSchemaConverter {
         contentType: this.currentContentType,
       });
       if (runtimeSchema) {
+        this.currentSchemaUsedRuntimeExport = true;
         return runtimeSchema;
       }
     }
@@ -2733,7 +2819,10 @@ export class ZodSchemaConverter {
 
     // Scan schema directories
     for (const dir of this.schemaDirs) {
-      this.getSchemaFiles(dir).forEach((filePath) => this.scanFileForTypeMappings(filePath));
+      this.getSchemaFiles(dir).forEach((filePath) => {
+        this.scanFileForTypeMappings(filePath);
+        this.indexSchemaNamesInFile(filePath);
+      });
     }
   }
 
@@ -2749,6 +2838,32 @@ export class ZodSchemaConverter {
     }
   }
 
+  private indexSchemaNamesInFile(filePath: string): void {
+    try {
+      const ast = this.getParsedFile(filePath);
+      const { importedModules, drizzleZodImports, zodLocalName } = collectImportMetadata(ast);
+      drizzleZodImports.forEach((importName) => {
+        this.drizzleZodImports.add(importName);
+      });
+      this.fileImportsCache.set(filePath, importedModules);
+      this.zodImportAlias.set(filePath, zodLocalName);
+
+      this.currentFilePath = filePath;
+      this.currentAST = ast;
+      this.currentImports = importedModules;
+
+      traverse(ast, {
+        VariableDeclarator: (path: NodePath<t.VariableDeclarator>) => {
+          if (t.isIdentifier(path.node.id) && path.node.init && this.isZodSchema(path.node.init)) {
+            this.indexSchemaName(path.node.id.name, filePath);
+          }
+        },
+      });
+    } catch (error) {
+      logger.error(`Error indexing Zod schemas in file ${filePath}: ${error}`);
+    }
+  }
+
   /**
    * Pre-process all Zod schemas in a file
    */
@@ -2757,49 +2872,90 @@ export class ZodSchemaConverter {
       return;
     }
 
-    try {
-      const ast = this.getParsedFile(filePath, content);
+    measurePerformance(this.performanceProfile, "zodPreprocessMs", () => {
+      try {
+        const ast = this.getParsedFile(filePath, content);
 
-      const { importedModules, drizzleZodImports, zodLocalName } = collectImportMetadata(ast);
-      drizzleZodImports.forEach((importName) => {
-        this.drizzleZodImports.add(importName);
-      });
+        const { importedModules, drizzleZodImports, zodLocalName } = collectImportMetadata(ast);
+        drizzleZodImports.forEach((importName) => {
+          this.drizzleZodImports.add(importName);
+        });
 
-      // Cache imports + alias for this file
-      this.fileImportsCache.set(filePath, importedModules);
-      this.zodImportAlias.set(filePath, zodLocalName);
+        // Cache imports + alias for this file
+        this.fileImportsCache.set(filePath, importedModules);
+        this.zodImportAlias.set(filePath, zodLocalName);
 
-      // Set current processing context for factory function expansion
-      this.currentFilePath = filePath;
-      this.currentAST = ast;
-      this.currentImports = importedModules;
+        // Set current processing context for factory function expansion
+        this.currentFilePath = filePath;
+        this.currentAST = ast;
+        this.currentImports = importedModules;
 
-      // Mark file as preprocessed BEFORE traversal so recursive lookups (e.g. when
-      // resolving cross-references like `SafeRedirectPathSchema.optional()` inside
-      // another schema in the same file) don't re-enter preprocessing on a half-built
-      // state and emit spurious "conflicts with an existing schema" warnings.
-      this.preprocessedFiles.add(filePath);
+        // Mark file as preprocessed BEFORE traversal so recursive lookups (e.g. when
+        // resolving cross-references like `SafeRedirectPathSchema.optional()` inside
+        // another schema in the same file) don't re-enter preprocessing on a half-built
+        // state and emit spurious "conflicts with an existing schema" warnings.
+        this.preprocessedFiles.add(filePath);
 
-      // Collect all exported Zod schemas
-      traverse(ast, {
-        ExportNamedDeclaration: (path: NodePath<t.ExportNamedDeclaration>) => {
-          if (t.isVariableDeclaration(path.node.declaration)) {
-            path.node.declaration.declarations.forEach((declaration: t.VariableDeclarator) => {
+        // Collect all exported Zod schemas
+        traverse(ast, {
+          ExportNamedDeclaration: (path: NodePath<t.ExportNamedDeclaration>) => {
+            if (t.isVariableDeclaration(path.node.declaration)) {
+              path.node.declaration.declarations.forEach((declaration: t.VariableDeclarator) => {
+                if (t.isIdentifier(declaration.id) && declaration.init) {
+                  const schemaName = declaration.id.name;
+
+                  // Check if is Zod schema
+                  if (this.isZodSchema(declaration.init)) {
+                    const decl = path.node.declaration;
+                    const allComments = [
+                      ...(path.node.leadingComments ?? []),
+                      ...(decl?.leadingComments ?? []),
+                      ...(declaration.leadingComments ?? []),
+                    ];
+                    if (extractInternalFlagFromComments(allComments)) {
+                      this.internalSchemaNames.add(schemaName);
+                    }
+                    if (!this.getStoredSchema(schemaName)) {
+                      logger.debug(`Pre-processing Zod schema: ${schemaName}`);
+                      this.processingSchemas.add(schemaName);
+                      // Restore context in case a recursive preprocessAllSchemasInFile call
+                      // (triggered by processZodNode resolving an import) overwrote these fields.
+                      this.currentFilePath = filePath;
+                      this.currentAST = ast;
+                      this.currentImports = importedModules;
+                      const schema = this.processZodNode(declaration.init);
+                      this.processingSchemas.delete(schemaName);
+                      if (schema) {
+                        const overrideId = this.extractMetaIdFromNode(declaration.init);
+                        this.applyMetaIdOverride(schemaName, schema, overrideId, filePath);
+                      } else {
+                        this.indexSchemaName(schemaName, filePath);
+                      }
+                    } else {
+                      this.indexSchemaName(schemaName, filePath);
+                    }
+                  }
+                }
+              });
+            }
+          },
+          // Also process non-exported const declarations
+          VariableDeclaration: (path: NodePath<t.VariableDeclaration>) => {
+            path.node.declarations.forEach((declaration: t.VariableDeclarator) => {
               if (t.isIdentifier(declaration.id) && declaration.init) {
                 const schemaName = declaration.id.name;
-
-                // Check if is Zod schema
                 if (this.isZodSchema(declaration.init)) {
-                  const decl = path.node.declaration;
                   const allComments = [
                     ...(path.node.leadingComments ?? []),
-                    ...(decl?.leadingComments ?? []),
                     ...(declaration.leadingComments ?? []),
                   ];
                   if (extractInternalFlagFromComments(allComments)) {
                     this.internalSchemaNames.add(schemaName);
                   }
-                  if (!this.getStoredSchema(schemaName)) {
+                  if (
+                    !this.getStoredSchema(schemaName) &&
+                    !this.processingSchemas.has(schemaName)
+                  ) {
                     logger.debug(`Pre-processing Zod schema: ${schemaName}`);
                     this.processingSchemas.add(schemaName);
                     // Restore context in case a recursive preprocessAllSchemasInFile call
@@ -2821,48 +2977,12 @@ export class ZodSchemaConverter {
                 }
               }
             });
-          }
-        },
-        // Also process non-exported const declarations
-        VariableDeclaration: (path: NodePath<t.VariableDeclaration>) => {
-          path.node.declarations.forEach((declaration: t.VariableDeclarator) => {
-            if (t.isIdentifier(declaration.id) && declaration.init) {
-              const schemaName = declaration.id.name;
-              if (this.isZodSchema(declaration.init)) {
-                const allComments = [
-                  ...(path.node.leadingComments ?? []),
-                  ...(declaration.leadingComments ?? []),
-                ];
-                if (extractInternalFlagFromComments(allComments)) {
-                  this.internalSchemaNames.add(schemaName);
-                }
-                if (!this.getStoredSchema(schemaName) && !this.processingSchemas.has(schemaName)) {
-                  logger.debug(`Pre-processing Zod schema: ${schemaName}`);
-                  this.processingSchemas.add(schemaName);
-                  // Restore context in case a recursive preprocessAllSchemasInFile call
-                  // (triggered by processZodNode resolving an import) overwrote these fields.
-                  this.currentFilePath = filePath;
-                  this.currentAST = ast;
-                  this.currentImports = importedModules;
-                  const schema = this.processZodNode(declaration.init);
-                  this.processingSchemas.delete(schemaName);
-                  if (schema) {
-                    const overrideId = this.extractMetaIdFromNode(declaration.init);
-                    this.applyMetaIdOverride(schemaName, schema, overrideId, filePath);
-                  } else {
-                    this.indexSchemaName(schemaName, filePath);
-                  }
-                } else {
-                  this.indexSchemaName(schemaName, filePath);
-                }
-              }
-            }
-          });
-        },
-      });
-    } catch (error) {
-      logger.error(`Error pre-processing file ${filePath}: ${error}`);
-    }
+          },
+        });
+      } catch (error) {
+        logger.error(`Error pre-processing file ${filePath}: ${error}`);
+      }
+    });
   }
 
   /**
@@ -2886,6 +3006,11 @@ export class ZodSchemaConverter {
     filePath: string,
   ): void {
     const finalName = overrideId && overrideId !== schemaName ? overrideId : schemaName;
+    const schemaUsesRuntimeExport = this.currentSchemaUsedRuntimeExport;
+    this.currentSchemaUsedRuntimeExport = false;
+    if (schemaUsesRuntimeExport) {
+      this.variantSensitiveSchemaNames.add(finalName);
+    }
     this.indexSchemaName(schemaName, filePath);
     if (finalName !== schemaName) {
       this.indexSchemaName(finalName, filePath);
@@ -2904,6 +3029,9 @@ export class ZodSchemaConverter {
       const variantKey = this.getVariantKey(finalName, this.currentContentType);
       this.zodSchemas[finalName] = schema;
       this.schemaVariantRefs.set(variantKey, finalName);
+      if (!this.variantSensitiveSchemaNames.has(finalName)) {
+        this.registerCommonVariantRefs(finalName);
+      }
     } else {
       logger.warn(
         `Schema component name '${overrideId ?? finalName}' conflicts with an existing schema, ignoring .meta({ id }) on '${schemaName}'`,
@@ -2935,19 +3063,30 @@ export class ZodSchemaConverter {
     if (this.schemaNameToFiles.has(candidate)) {
       return true;
     }
-    for (const dir of this.schemaDirs) {
-      for (const filePath of this.getSchemaFiles(dir)) {
-        try {
-          const content = this.fileAccess.readFileSync(filePath, "utf-8");
-          if (content.includes(candidate)) {
-            return true;
-          }
-        } catch {
-          // ignore unreadable files
-        }
-      }
-    }
     return false;
+  }
+
+  private fileMayDefineSchema(filePath: string, content: string, schemaName: string): boolean {
+    if (!content.includes(schemaName)) {
+      return false;
+    }
+    if (this.isSchemaFilePath(filePath)) {
+      return true;
+    }
+
+    const escapedName = escapeRegExp(schemaName);
+    return new RegExp(
+      `(?:^|\\n)\\s*(?:export\\s+)?(?:const|let|var|type|interface)\\s+${escapedName}\\b`,
+    ).test(content);
+  }
+
+  private isSchemaFilePath(filePath: string): boolean {
+    return this.schemaDirs.some((dir) => {
+      const relativePath = path.relative(dir, filePath);
+      return (
+        relativePath === "" || (!relativePath.startsWith("..") && !path.isAbsolute(relativePath))
+      );
+    });
   }
 
   /**

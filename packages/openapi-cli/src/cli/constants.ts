@@ -8,7 +8,6 @@ import {
   DEFAULT_UI,
   SCHEMA_TYPES,
 } from "@workspace/openapi-core/config/defaults.js";
-import { INIT_FRAMEWORKS } from "@workspace/openapi-init";
 
 export const CLI_NAME = "openapi-gen";
 export const LEGACY_CLI_NAME = "next-openapi-gen";
@@ -28,9 +27,20 @@ export const GENERATE_WATCH_OPTION_DESCRIPTION =
 export const GENERATE_FAIL_ON_OPTION_DESCRIPTION =
   "Fail generation when diagnostics include the selected severity";
 
+export const CLI_FRAMEWORK_CHOICES = ["next", "tanstack", "react-router"] as const;
+export const CLI_SCHEMA_CHOICES = [...SCHEMA_TYPES] as const;
+export const CLI_UI_CHOICES = [
+  "scalar",
+  "swagger",
+  "redoc",
+  "stoplight",
+  "rapidoc",
+  "none",
+] as const;
+
 export const INIT_DEFAULTS = {
   docsUrl: DEFAULT_DOCS_URL,
-  framework: INIT_FRAMEWORKS[0],
+  framework: CLI_FRAMEWORK_CHOICES[0],
   output: DEFAULT_GENERATE_TEMPLATE_PATH,
   schema: DEFAULT_INIT_SCHEMA_TYPE,
   ui: DEFAULT_UI,
@@ -39,9 +49,6 @@ export const INIT_DEFAULTS = {
 export const GENERATE_DEFAULTS = {
   template: DEFAULT_GENERATE_TEMPLATE_PATH,
 } as const;
-
-export const CLI_FRAMEWORK_CHOICES = [...INIT_FRAMEWORKS] as const;
-export const CLI_SCHEMA_CHOICES = [...SCHEMA_TYPES] as const;
 
 type PackageJson = {
   version?: string;

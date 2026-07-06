@@ -1,0 +1,18 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Pages Router Zod Flow At Scale",
+    "version": "1.0.0",
+    "description": "Large-scale pages router Zod fixture"
+  },
+  "routerType": "pages",
+  "apiDir": "./pages/api",
+  "schemaDir": "./schemas",
+  "schemaType": "zod",
+  "docsUrl": "api-docs",
+  "ui": "scalar",
+  "outputDir": "./public",
+  "outputFile": "openapi.json",
+  "includeOpenApiRoutes": true,
+  "debug": false
+}

@@ -51,8 +51,13 @@ export function resolveImportPath(
     const currentDir = pathOps.dirname(currentFilePath);
     const resolvedPath = pathOps.resolve(currentDir, importSource);
     const extensions = [".ts", ".tsx", ".js", ".jsx"];
+    const hasSourceExtension = extensions.some((extension) => resolvedPath.endsWith(extension));
 
-    if (!pathOps.extname(resolvedPath)) {
+    if (fileAccess.existsSync(resolvedPath)) {
+      return resolvedPath;
+    }
+
+    if (!hasSourceExtension) {
       for (const ext of extensions) {
         const withExt = resolvedPath + ext;
         if (fileAccess.existsSync(withExt)) {
@@ -66,8 +71,6 @@ export function resolveImportPath(
           return indexPath;
         }
       }
-    } else if (fileAccess.existsSync(resolvedPath)) {
-      return resolvedPath;
     }
   }
 

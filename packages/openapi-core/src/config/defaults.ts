@@ -12,6 +12,7 @@ export const DEFAULT_ROUTER_TYPE: RouterType = "app";
 export const DEFAULT_RUNTIME_SCHEMA_TYPE: SchemaType = "typescript";
 export const DEFAULT_SCHEMA_DIR = "./src";
 export const DEFAULT_UI = "scalar";
+export const DEFAULT_CACHE = true;
 export const DEFAULT_DEBUG = false;
 export const DEFAULT_DIAGNOSTICS_ENABLED = true;
 export const DEFAULT_DIAGNOSTICS_FAIL_ON: DiagnosticFailOn = "never";

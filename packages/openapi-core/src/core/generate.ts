@@ -5,6 +5,7 @@ import path from "node:path";
 
 import fse from "fs-extra";
 
+import { resolveCacheSetting } from "../config/normalize.js";
 import { OpenApiGenerator } from "../generator/openapi-generator.js";
 import { logger } from "../shared/logger.js";
 import type { Diagnostic, DiagnosticFailOn } from "../shared/types.js";
@@ -12,7 +13,11 @@ import type { GenerationAdapters } from "./adapters.js";
 import { loadConfig } from "./config/load-config.js";
 import type { GeneratedArtifact, LoadedConfigFile } from "./config/types.js";
 import { resolveGeneratedWorkspaceDir } from "./generated-workspace.js";
-import { createSharedGenerationRuntime, type SharedGenerationRuntime } from "./runtime.js";
+import {
+  createSharedGenerationRuntime,
+  type CachedRouteFragment,
+  type SharedGenerationRuntime,
+} from "./runtime.js";
 
 export type GenerateProjectOptions = {
   adapters?: GenerationAdapters | undefined;
@@ -38,6 +43,7 @@ type DiskCacheRecord = {
   inputs?: Record<string, DiskCacheInputRecord> | undefined;
   outputFile: string;
   performance: unknown;
+  routeFragments?: Record<string, CachedRouteFragment> | undefined;
   updatedAt: string;
 };
 
@@ -77,6 +83,9 @@ export async function generateFromLoadedConfig(
   const outputDir = path.resolve(config.outputDir);
   const outputFile = path.join(outputDir, config.outputFile);
   const diskCache = createDiskCacheContext(loadedConfig, outputFile);
+  if (diskCache?.routeFragments && generatorRuntime) {
+    generatorRuntime.routeScan.routeFragments = new Map(Object.entries(diskCache.routeFragments));
+  }
   if (diskCache && !hasArtifactSideEffects(loadedConfig)) {
     const cachedResult = readCachedResult(diskCache, config.diagnostics.failOn ?? "never");
     if (cachedResult) {
@@ -123,6 +132,9 @@ export async function generateFromLoadedConfig(
       inputs: diskCache.inputs,
       outputFile,
       performance: generator.getPerformanceProfile(),
+      routeFragments: generatorRuntime
+        ? Object.fromEntries(generatorRuntime.routeScan.routeFragments)
+        : undefined,
       updatedAt: new Date().toISOString(),
     });
   }
@@ -170,7 +182,15 @@ function getProcessCacheKey(loadedConfig: LoadedConfigFile): string {
 }
 
 function isCacheEnabled(config: LoadedConfigFile["config"]): boolean {
-  return config.experimental?.cache === true || process.env.OPENAPI_GEN_CACHE === "1";
+  if (process.env.OPENAPI_GEN_CACHE === "0") {
+    return false;
+  }
+
+  if (process.env.OPENAPI_GEN_CACHE === "1") {
+    return true;
+  }
+
+  return resolveCacheSetting(config);
 }
 
 function hasArtifactSideEffects(loadedConfig: LoadedConfigFile): boolean {
@@ -189,6 +209,7 @@ function createDiskCacheContext(
   inputs: Record<string, DiskCacheInputRecord>;
   inputCount: number;
   outputFile: string;
+  routeFragments?: Record<string, CachedRouteFragment> | undefined;
 } | null {
   if (!isCacheEnabled(loadedConfig.config)) {
     return null;
@@ -200,12 +221,16 @@ function createDiskCacheContext(
     path.join(generatedWorkspaceDir, "cache", "generate.json"),
   );
   const { fingerprint, inputs } = createInputFingerprint(inputFiles, previousRecord?.inputs);
+  const routeFragments = canReuseRouteFragments(loadedConfig, inputs, previousRecord)
+    ? previousRecord.routeFragments
+    : undefined;
   return {
     cacheFile: path.join(generatedWorkspaceDir, "cache", "generate.json"),
     fingerprint,
     inputs,
     inputCount: inputFiles.length,
     outputFile,
+    routeFragments,
   };
 }
 
@@ -373,6 +398,34 @@ function createInputFingerprint(
 
 function createFileHash(file: string): string {
   return crypto.createHash("sha256").update(fs.readFileSync(file)).digest("hex");
+}
+
+function canReuseRouteFragments(
+  loadedConfig: LoadedConfigFile,
+  currentInputs: Record<string, DiskCacheInputRecord>,
+  previousRecord: DiskCacheRecord | null,
+): previousRecord is DiskCacheRecord & {
+  routeFragments: Record<string, CachedRouteFragment>;
+} {
+  if (!previousRecord?.routeFragments || !previousRecord.inputs) {
+    return false;
+  }
+
+  const apiDir = path.resolve(loadedConfig.config.apiDir ?? "./src/app/api");
+  return Object.entries(currentInputs).every(([filePath, input]) => {
+    const previousInput = previousRecord.inputs?.[filePath];
+    if (
+      previousInput &&
+      previousInput.hash === input.hash &&
+      previousInput.mtimeMs === input.mtimeMs &&
+      previousInput.size === input.size
+    ) {
+      return true;
+    }
+
+    const relativePath = path.relative(apiDir, filePath);
+    return relativePath !== "" && !relativePath.startsWith("..") && !path.isAbsolute(relativePath);
+  });
 }
 
 async function emitDocsArtifacts(

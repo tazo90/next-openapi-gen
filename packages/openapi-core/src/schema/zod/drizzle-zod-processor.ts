@@ -32,6 +32,15 @@ type DrizzleColumnMetadata = {
  * This processor extracts field definitions and refinements to generate OpenAPI schemas.
  */
 export class DrizzleZodProcessor {
+  private static readonly tableSchemaCache = new WeakMap<
+    t.CallExpression,
+    Map<string, OpenApiSchema>
+  >();
+  private static readonly variableInitializerCache = new WeakMap<
+    t.File,
+    Map<string, t.Expression | null>
+  >();
+
   /**
    * Known drizzle-zod helper function names
    */
@@ -161,8 +170,10 @@ export class DrizzleZodProcessor {
     }
 
     const resolvedPath =
-      context.resolveImportPath?.(context.currentFilePath, importSource) ||
-      resolveTypeScriptModule(importSource, context.currentFilePath);
+      context.resolveImportPath?.(context.currentFilePath, importSource) ??
+      (importSource.startsWith(".")
+        ? null
+        : resolveTypeScriptModule(importSource, context.currentFilePath));
     if (!resolvedPath) {
       return null;
     }
@@ -182,6 +193,12 @@ export class DrizzleZodProcessor {
       return null;
     }
 
+    const cachedInitializers = this.variableInitializerCache.get(ast);
+    if (cachedInitializers) {
+      return cachedInitializers.get(name) ?? null;
+    }
+
+    const initializers = new Map<string, t.Expression | null>();
     for (const statement of ast.program.body) {
       const declaration =
         t.isExportNamedDeclaration(statement) && statement.declaration
@@ -193,17 +210,17 @@ export class DrizzleZodProcessor {
       }
 
       for (const declarator of declaration.declarations) {
-        if (
-          t.isIdentifier(declarator.id, { name }) &&
-          declarator.init &&
-          t.isExpression(declarator.init)
-        ) {
-          return declarator.init;
+        if (t.isIdentifier(declarator.id)) {
+          initializers.set(
+            declarator.id.name,
+            declarator.init && t.isExpression(declarator.init) ? declarator.init : null,
+          );
         }
       }
     }
 
-    return null;
+    this.variableInitializerCache.set(ast, initializers);
+    return initializers.get(name) ?? null;
   }
 
   private static isPgTableCall(node: t.CallExpression): boolean {
@@ -214,6 +231,12 @@ export class DrizzleZodProcessor {
     node: t.CallExpression,
     functionName: string,
   ): OpenApiSchema | null {
+    const cachedByFunction = this.tableSchemaCache.get(node);
+    const cachedSchema = cachedByFunction?.get(functionName);
+    if (cachedSchema) {
+      return structuredClone(cachedSchema);
+    }
+
     const columnsArgument = node.arguments[1];
     if (!t.isObjectExpression(columnsArgument)) {
       return null;
@@ -246,11 +269,15 @@ export class DrizzleZodProcessor {
       }
     });
 
-    return {
+    const schema = {
       type: "object",
       properties,
       required,
     };
+    const schemaMap = cachedByFunction ?? new Map<string, OpenApiSchema>();
+    schemaMap.set(functionName, schema);
+    this.tableSchemaCache.set(node, schemaMap);
+    return structuredClone(schema);
   }
 
   private static isRequiredColumnForSchema(

@@ -3,7 +3,7 @@ import fs from "fs";
 import { normalizeOpenApiConfig } from "../config/normalize.js";
 import type { FrameworkSourceFactory } from "../core/adapters.js";
 import { measurePerformance, type GenerationPerformanceProfile } from "../core/performance.js";
-import type { SharedGenerationRuntime } from "../core/runtime.js";
+import type { CachedRouteFragment, SharedGenerationRuntime } from "../core/runtime.js";
 import type { DiagnosticsCollector } from "../diagnostics/collector.js";
 import type { FrameworkSource } from "../frameworks/types.js";
 import { SchemaProcessor } from "../schema/typescript/schema-processor.js";
@@ -32,6 +32,8 @@ export class RouteProcessor {
   private pathDefinitions: Record<string, OpenApiPathDefinition> = {};
   private webhookDefinitions: Record<string, OpenApiPathDefinition> = {};
   private tagDefinitions: Record<string, OpenApiTagDefinition> = {};
+  private cachedSchemaDefinitions: Record<string, any> = {};
+  private cachedInternalSchemaDefinitions: Record<string, any> = {};
   private schemaProcessor: SchemaProcessor;
   private config: ResolvedOpenApiConfig;
   private source: FrameworkSource;
@@ -40,6 +42,7 @@ export class RouteProcessor {
   private responseProcessor: ResponseProcessor;
   private operationProcessor: OperationProcessor;
   private performanceProfile: GenerationPerformanceProfile | undefined;
+  private runtime: SharedGenerationRuntime | undefined;
 
   private directoryCache: Record<string, string[]> = {};
   private statCache: Record<string, fs.Stats> = {};
@@ -55,6 +58,7 @@ export class RouteProcessor {
     this.config = normalizeOpenApiConfig(config);
     this.diagnostics = diagnostics;
     this.performanceProfile = performanceProfile;
+    this.runtime = runtime;
     if (runtime) {
       this.directoryCache = runtime.routeScan.directoryCache;
       this.statCache = runtime.routeScan.statCache;
@@ -67,6 +71,7 @@ export class RouteProcessor {
       undefined,
       runtime,
       this.diagnostics,
+      this.performanceProfile,
     );
     this.source = (createFrameworkSource ?? missingFrameworkSourceFactory)(
       this.config,
@@ -248,17 +253,37 @@ export class RouteProcessor {
         return;
       }
 
+      const cachedFragment = this.getReusableRouteFragment(filePath, routePath);
+      if (cachedFragment) {
+        this.applyRouteFragment(cachedFragment);
+        return;
+      }
+
       let phaseStartedAt = performance.now();
       const discoveredRoutes = this.source.processFile(filePath, routePath);
       processRouteFilesMs += performance.now() - phaseStartedAt;
 
       phaseStartedAt = performance.now();
+      const pathsBefore = structuredClone(this.pathDefinitions);
+      const webhooksBefore = structuredClone(this.webhookDefinitions);
+      const tagsBefore = structuredClone(this.tagDefinitions);
+      const schemasBefore = this.schemaProcessor.getDefinedSchemas();
+      const internalSchemasBefore = this.schemaProcessor.getInternalSchemas();
+      const diagnosticsBefore = this.diagnostics?.getAll().length ?? 0;
       discoveredRoutes.forEach(({ method, filePath: routeFilePath, routePath, dataTypes }) => {
         measurePerformance(this.performanceProfile, "registerRouteMs", () => {
           this.registerRoute(method, routeFilePath, routePath, dataTypes);
         });
       });
       buildOperationsMs += performance.now() - phaseStartedAt;
+      this.writeRouteFragment(filePath, routePath, {
+        diagnosticsBefore,
+        internalSchemasBefore,
+        pathsBefore,
+        schemasBefore,
+        tagsBefore,
+        webhooksBefore,
+      });
     });
 
     return {
@@ -274,6 +299,8 @@ export class RouteProcessor {
       processRouteFilesMs: 0,
       buildOperationsMs: 0,
     };
+
+    this.schemaProcessor.preprocessZodSchemas();
 
     this.source.getScanRoots().forEach((rootDir) => {
       if (fs.existsSync(rootDir)) {
@@ -338,6 +365,88 @@ export class RouteProcessor {
     return sortPathDefinitions(this.webhookDefinitions);
   }
 
+  private getReusableRouteFragment(
+    filePath: string,
+    routePath: string,
+  ): CachedRouteFragment | undefined {
+    const fragment = this.runtime?.routeScan.routeFragments.get(filePath);
+    if (!fragment) {
+      return undefined;
+    }
+
+    const stat = fs.statSync(filePath);
+    if (
+      fragment.mtimeMs !== stat.mtimeMs ||
+      fragment.size !== stat.size ||
+      fragment.cacheKey !== this.getRouteFragmentCacheKey(routePath)
+    ) {
+      return undefined;
+    }
+
+    return fragment;
+  }
+
+  private applyRouteFragment(fragment: CachedRouteFragment): void {
+    Object.assign(this.pathDefinitions, structuredClone(fragment.paths));
+    Object.assign(this.webhookDefinitions, structuredClone(fragment.webhooks));
+    Object.assign(this.tagDefinitions, structuredClone(fragment.tags));
+    Object.assign(this.cachedSchemaDefinitions, structuredClone(fragment.schemas));
+    Object.assign(this.cachedInternalSchemaDefinitions, structuredClone(fragment.internalSchemas));
+    fragment.diagnostics.forEach((diagnostic) => this.diagnostics?.add(diagnostic));
+  }
+
+  private writeRouteFragment(
+    filePath: string,
+    routePath: string,
+    previous: {
+      diagnosticsBefore: number;
+      internalSchemasBefore: Record<string, any>;
+      pathsBefore: Record<string, OpenApiPathDefinition>;
+      schemasBefore: Record<string, any>;
+      tagsBefore: Record<string, OpenApiTagDefinition>;
+      webhooksBefore: Record<string, OpenApiPathDefinition>;
+    },
+  ): void {
+    if (!this.runtime) {
+      return;
+    }
+
+    const stat = fs.statSync(filePath);
+    const currentSchemas = this.schemaProcessor.getDefinedSchemas();
+    const currentInternalSchemas = this.schemaProcessor.getInternalSchemas();
+    const diagnostics = this.diagnostics?.getAll().slice(previous.diagnosticsBefore) ?? [];
+
+    this.runtime.routeScan.routeFragments.set(filePath, {
+      cacheKey: this.getRouteFragmentCacheKey(routePath),
+      diagnostics: structuredClone(diagnostics),
+      internalSchemas: getSchemaDelta(previous.internalSchemasBefore, currentInternalSchemas),
+      mtimeMs: stat.mtimeMs,
+      paths: getRecordDelta(previous.pathsBefore, this.pathDefinitions),
+      schemas: getSchemaDelta(previous.schemasBefore, currentSchemas),
+      size: stat.size,
+      tags: getRecordDelta(previous.tagsBefore, this.tagDefinitions),
+      webhooks: getRecordDelta(previous.webhooksBefore, this.webhookDefinitions),
+    });
+  }
+
+  private getRouteFragmentCacheKey(routePath: string): string {
+    return JSON.stringify({
+      authPresets: this.config.authPresets,
+      defaultResponseSet: this.config.defaultResponseSet,
+      errorConfig: this.config.errorConfig,
+      errorDefinitions: this.config.errorDefinitions,
+      excludeSchemas: this.config.excludeSchemas,
+      framework: this.config.framework,
+      ignoreRoutes: this.config.ignoreRoutes,
+      includeOpenApiRoutes: this.config.includeOpenApiRoutes,
+      openapiVersion: this.config.openapiVersion,
+      responseSets: this.config.responseSets,
+      routePath,
+      schemaBackends: this.config.schemaBackends,
+      schemaFiles: this.config.schemaFiles,
+    });
+  }
+
   public getPaths(): Record<string, OpenApiPathDefinition> {
     return sortPathDefinitions(this.pathDefinitions);
   }
@@ -350,6 +459,14 @@ export class RouteProcessor {
 
   public getSwaggerPaths(): Record<string, OpenApiPathDefinition> {
     return this.getPaths();
+  }
+
+  public getCachedSchemas(): Record<string, any> {
+    return this.cachedSchemaDefinitions;
+  }
+
+  public getCachedInternalSchemas(): Record<string, any> {
+    return this.cachedInternalSchemaDefinitions;
   }
 
   private registerRouteFeatureDiagnostics(
@@ -403,6 +520,23 @@ export class RouteProcessor {
       ...(dataTypes.tagParent ? { parent: dataTypes.tagParent } : {}),
     };
   }
+}
+
+function getSchemaDelta(
+  before: Record<string, any>,
+  after: Record<string, any>,
+): Record<string, any> {
+  return getRecordDelta(before, after);
+}
+
+function getRecordDelta<T>(before: Record<string, T>, after: Record<string, T>): Record<string, T> {
+  const delta: Record<string, any> = {};
+  for (const [key, value] of Object.entries(after)) {
+    if (JSON.stringify(before[key]) !== JSON.stringify(value)) {
+      delta[key] = value;
+    }
+  }
+  return delta as Record<string, T>;
 }
 
 function missingFrameworkSourceFactory(): never {

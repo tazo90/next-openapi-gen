@@ -1,13 +1,10 @@
 import { Command, Option } from "commander";
 
-import { UI_TYPES_WITH_NONE } from "@workspace/openapi-init";
-
-import { generate } from "./commands/generate.js";
-import { init } from "./commands/init.js";
 import {
   CLI_DESCRIPTION,
   CLI_FRAMEWORK_CHOICES,
   CLI_SCHEMA_CHOICES,
+  CLI_UI_CHOICES,
   GENERATE_COMMAND_DESCRIPTION,
   GENERATE_CONFIG_OPTION_DESCRIPTION,
   GENERATE_FAIL_ON_OPTION_DESCRIPTION,
@@ -38,7 +35,7 @@ export function buildProgram(options: { argv?: string[] } = {}) {
     )
     .addOption(
       new Option("-i, --ui <type>", INIT_UI_OPTION_DESCRIPTION)
-        .choices([...UI_TYPES_WITH_NONE])
+        .choices([...CLI_UI_CHOICES])
         .default(INIT_DEFAULTS.ui),
     )
     .option("-u, --docs-url <url>", INIT_DOCS_URL_OPTION_DESCRIPTION, INIT_DEFAULTS.docsUrl)
@@ -49,7 +46,10 @@ export function buildProgram(options: { argv?: string[] } = {}) {
     )
     .option("-o, --output <file>", INIT_OUTPUT_OPTION_DESCRIPTION, INIT_DEFAULTS.output)
     .description(INIT_COMMAND_DESCRIPTION)
-    .action(init);
+    .action(async (options) => {
+      const { init } = await import("./commands/init.js");
+      return await init(options);
+    });
 
   program
     .command("generate")
@@ -64,7 +64,10 @@ export function buildProgram(options: { argv?: string[] } = {}) {
         "never",
       ]),
     )
-    .action(generate);
+    .action(async (options) => {
+      const { generate } = await import("./commands/generate.js");
+      return await generate(options);
+    });
 
   return program;
 }

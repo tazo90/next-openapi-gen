@@ -27,6 +27,6 @@ export default defineConfig({
   format: ["esm"],
   noExternal: [/^@workspace\/openapi-/],
   sourcemap: false,
-  splitting: false,
+  splitting: true,
   target: "node24",
 });

@@ -77,6 +77,8 @@ export type OpenApiConfig = {
     adapterPath?: string | undefined;
   };
   diagnostics?: DiagnosticsConfig | undefined;
+  /** Reuse process-local and disk-backed caches when inputs are unchanged. */
+  cache?: boolean | undefined;
   experimental?: GeneratorExperimentalConfig | undefined;
   /** Override or extend the default JSDoc @auth → security-scheme-name mapping.
    *  Defaults: { bearer: "BearerAuth", basic: "BasicAuth", apikey: "ApiKeyAuth" }.
@@ -86,8 +88,6 @@ export type OpenApiConfig = {
 };
 
 export type GeneratorExperimentalConfig = {
-  /** Reuse process-local and disk-backed caches when inputs are unchanged. */
-  cache?: boolean | undefined;
   /** Prototype flag reserved for benchmark-only route parsing experiments. */
   parallelRoutes?: boolean | undefined;
 };
@@ -196,6 +196,7 @@ export type OpenApiTemplate = OpenApiDocument & {
     adapterPath?: string | undefined;
   };
   diagnostics?: DiagnosticsConfig | undefined;
+  cache?: boolean | undefined;
   experimental?: GeneratorExperimentalConfig | undefined;
   authPresets?: Record<string, string> | undefined;
   debug?: boolean | undefined;

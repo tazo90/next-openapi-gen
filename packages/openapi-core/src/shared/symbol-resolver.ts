@@ -167,8 +167,11 @@ export class SymbolResolver {
       const currentDir = pathOps.dirname(currentFilePath);
       const base = pathOps.resolve(currentDir, importSource);
       const extensions = [".ts", ".tsx", ".js", ".jsx"];
+      const hasSourceExtension = extensions.some((extension) => base.endsWith(extension));
 
-      if (!pathOps.extname(base)) {
+      if (this.fileAccess.existsSync(base)) {
+        resolved = base;
+      } else if (!hasSourceExtension) {
         for (const ext of extensions) {
           const withExt = base + ext;
           if (this.fileAccess.existsSync(withExt)) {
@@ -185,8 +188,6 @@ export class SymbolResolver {
             }
           }
         }
-      } else if (this.fileAccess.existsSync(base)) {
-        resolved = base;
       }
     }
 

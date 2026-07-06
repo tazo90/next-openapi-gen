@@ -4,6 +4,7 @@ import path from "path";
 import * as t from "@babel/types";
 import type * as ts from "typescript";
 
+import type { GenerationPerformanceProfile } from "../../core/performance.js";
 import type { SharedGenerationRuntime } from "../../core/runtime.js";
 import type { DiagnosticsCollector } from "../../diagnostics/collector.js";
 import { traverse } from "../../shared/babel-traverse.js";
@@ -111,6 +112,7 @@ export class SchemaProcessor {
     fileAccess: SchemaProcessorFileAccess = defaultFileAccess,
     runtime?: SharedGenerationRuntime,
     diagnostics?: DiagnosticsCollector,
+    performanceProfile?: GenerationPerformanceProfile,
   ) {
     this.schemaDirs = normalizeSchemaDirs(schemaDir).map((d) =>
       path.isAbsolute(d) ? d : path.resolve(d),
@@ -132,7 +134,15 @@ export class SchemaProcessor {
 
     // Initialize Zod converter if Zod is enabled
     if (this.schemaTypes.includes("zod")) {
-      this.zodSchemaConverter = new ZodSchemaConverter(schemaDir, apiDir, undefined, diagnostics);
+      this.zodSchemaConverter = new ZodSchemaConverter(
+        schemaDir,
+        apiDir,
+        undefined,
+        diagnostics,
+        this.fileASTCache,
+        runtime?.schema.zod,
+        performanceProfile,
+      );
       this.zodSchemaProcessor = new ZodSchemaProcessor(this.zodSchemaConverter);
       // Share the AST cache across TS + Zod converters so each file is parsed once.
       this.symbolResolver = this.zodSchemaConverter.symbolResolver;
@@ -186,6 +196,24 @@ export class SchemaProcessor {
       }
     }
     return result;
+  }
+
+  public preprocessZodSchemas(): void {
+    this.zodSchemaConverter?.preprocessSchemaDirectories();
+    const zodDefinitions = this.zodSchemaProcessor?.getDefinedSchemas();
+    if (zodDefinitions) {
+      Object.assign(this.openapiDefinitions, zodDefinitions);
+      if (this.zodSchemaConverter) {
+        for (const [typeName, schemaName] of Object.entries(
+          this.zodSchemaConverter.typeToSchemaMapping,
+        )) {
+          const definition = zodDefinitions[schemaName];
+          if (definition && !this.openapiDefinitions[typeName]) {
+            this.openapiDefinitions[typeName] = definition;
+          }
+        }
+      }
+    }
   }
 
   public findSchemaDefinition(schemaName: string, contentType: ContentType): OpenAPIDefinition {

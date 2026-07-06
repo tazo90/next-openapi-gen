@@ -1,0 +1,22 @@
+{
+  "openapi": "3.2.0",
+  "info": {
+    "title": "Ignore Routes At Scale",
+    "version": "1.0.0",
+    "description": "Large-scale fixture with ignore route filtering"
+  },
+  "apiDir": "./src/app/api",
+  "schemaDir": "./src",
+  "schemaType": "typescript",
+  "docsUrl": "api-docs",
+  "ui": "scalar",
+  "outputDir": "./public",
+  "outputFile": "openapi.json",
+  "includeOpenApiRoutes": false,
+  "debug": false,
+  "ignoreRoutes": [
+    "/admin/*",
+    "/debug",
+    "/public/info"
+  ]
+}

@@ -140,8 +140,8 @@ describe.skipIf(!fs.existsSync(builtCliPath))("openapi-gen CLI subprocess benchm
     "generate — unchanged disk cache hit",
     () => {
       const root = getProject(getProjects(), "next-app-core-3.2").project.root;
-      runCli(["generate", "-c", "openapi-gen.config.json"], root, { OPENAPI_GEN_CACHE: "1" });
-      runCli(["generate", "-c", "openapi-gen.config.json"], root, { OPENAPI_GEN_CACHE: "1" });
+      runCli(["generate", "-c", "openapi-gen.config.json"], root);
+      runCli(["generate", "-c", "openapi-gen.config.json"], root);
     },
     subprocessBenchOptions,
   );
