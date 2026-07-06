@@ -53,7 +53,7 @@ export function resolveImportPath(
     const extensions = [".ts", ".tsx", ".js", ".jsx"];
     const hasSourceExtension = extensions.some((extension) => resolvedPath.endsWith(extension));
 
-    if (fileAccess.existsSync(resolvedPath)) {
+    if (hasSourceExtension && fileAccess.existsSync(resolvedPath)) {
       return resolvedPath;
     }
 

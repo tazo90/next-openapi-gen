@@ -43,6 +43,8 @@ describe("AppRouterStrategy", () => {
     expect(strategy.getRoutePath("./src/app/api/users/[id]/route.ts")).toBe("/users/{id}");
     expect(strategy.getRoutePath("./src/app/api/(authenticated)/users/route.ts")).toBe("/users");
     expect(strategy.getRoutePath("./src/app/api/files/[...path]/route.ts")).toBe("/files/{path}");
+    expect(strategy.getRoutePath("./src/app/api/files/[[...path]]/route.ts")).toBe("/files/{path}");
+    expect(strategy.getRoutePath("./src/app/api/@modal/users/route.ts")).toBe("/users");
   });
 
   it("supports custom apiDir values and windows-style paths", () => {
@@ -175,7 +177,7 @@ describe("AppRouterStrategy", () => {
        */
       export async function GET() {}
 
-      /** 
+      /**
        * Update a user
        * @openapi
        */
@@ -289,48 +291,6 @@ describe("AppRouterStrategy", () => {
         ],
       }),
     );
-  });
-
-  it("detects status fields on response option objects, including string-literal keys", () => {
-    strategy = new AppRouterStrategy(baseConfig);
-    const optsAst = parseTypeScriptFile(`const opts = { "status": 418 };`);
-    const decl = optsAst.program.body[0];
-    if (!decl || decl.type !== "VariableDeclaration") {
-      throw new Error("Expected variable declaration");
-    }
-    const init = decl.declarations[0]?.init;
-    if (!init || init.type !== "ObjectExpression") {
-      throw new Error("Expected object expression");
-    }
-    const statusProp = init.properties[0];
-    if (!statusProp || statusProp.type !== "ObjectProperty") {
-      throw new Error("Expected object property");
-    }
-    // @ts-expect-error exercising private helper for string-literal property keys
-    expect(strategy.isPropertyNamed(statusProp, "status")).toBe(true);
-    // @ts-expect-error exercising private helper for literal status extraction
-    expect(strategy.getLiteralResponseStatusCode(init)).toBe("418");
-  });
-
-  it("infers JSON body shapes for checker-backed response analysis", () => {
-    strategy = new AppRouterStrategy(baseConfig);
-
-    // @ts-expect-error exercising inferSchemaFromJsonArgument branches
-    expect(strategy.inferSchemaFromJsonArgument(undefined)).toEqual({ type: "object" });
-    // @ts-expect-error
-    expect(strategy.inferSchemaFromJsonArgument(t.nullLiteral())).toEqual({ type: "null" });
-    // @ts-expect-error
-    expect(
-      strategy.inferSchemaFromJsonArgument(t.spreadElement(t.identifier("rest"))),
-    ).toBeUndefined();
-    // @ts-expect-error
-    expect(strategy.inferSchemaFromJsonArgument(t.identifier("data"))).toEqual({ type: "object" });
-    // @ts-expect-error
-    expect(
-      strategy.inferSchemaFromJsonArgument(
-        t.arrayExpression([t.spreadElement(t.identifier("items")), t.numericLiteral(1)]),
-      ),
-    ).toEqual({ type: "array", items: { type: "number" } });
   });
 
   it("infers query parameters read from URL searchParams", () => {

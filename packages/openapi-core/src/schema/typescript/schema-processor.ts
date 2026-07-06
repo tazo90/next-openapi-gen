@@ -203,16 +203,6 @@ export class SchemaProcessor {
     const zodDefinitions = this.zodSchemaProcessor?.getDefinedSchemas();
     if (zodDefinitions) {
       Object.assign(this.openapiDefinitions, zodDefinitions);
-      if (this.zodSchemaConverter) {
-        for (const [typeName, schemaName] of Object.entries(
-          this.zodSchemaConverter.typeToSchemaMapping,
-        )) {
-          const definition = zodDefinitions[schemaName];
-          if (definition && !this.openapiDefinitions[typeName]) {
-            this.openapiDefinitions[typeName] = definition;
-          }
-        }
-      }
     }
   }
 

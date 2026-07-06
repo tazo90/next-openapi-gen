@@ -503,9 +503,7 @@ function requiresCheckerForExpression(expression: t.Expression): boolean {
       return false;
     }
 
-    return (
-      property.name === "redirect" || (property.name === "json" && Boolean(expression.arguments[1]))
-    );
+    return property.name === "json" && Boolean(expression.arguments[1]);
   }
 
   return t.isNewExpression(expression) && t.isIdentifier(expression.callee, { name: "Response" });
@@ -580,10 +578,7 @@ function isRedirectResponse(expression: t.Expression): boolean {
 }
 
 function getLiteralResponseStatusCode(
-  argument:
-    | t.CallExpression["arguments"][number]
-     
-    | undefined,
+  argument: t.CallExpression["arguments"][number] | undefined,
 ): string | undefined {
   if (!argument || !t.isObjectExpression(argument)) {
     return undefined;

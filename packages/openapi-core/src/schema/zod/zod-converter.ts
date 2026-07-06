@@ -361,6 +361,7 @@ export class ZodSchemaConverter {
 
     const cachedSchema = this.getStoredSchema(schemaName, this.currentContentType, false);
     if (cachedSchema) {
+      this.applyTypeAliasComponent(requestedSchemaName, schemaName, mappedSchemaName);
       return cachedSchema;
     }
 
@@ -426,24 +427,37 @@ export class ZodSchemaConverter {
       }
       // Remove from processing set
       this.processingSchemas.delete(schemaName);
-      if (mappedSchemaName && requestedSchemaName !== schemaName) {
-        const resolvedReference = this.getSchemaReferenceName(schemaName, this.currentContentType);
-        // Copy schema under alias name so OpenAPI components use the alias — but only for
-        // type-alias mappings (z.infer<typeof X>), not for .meta({ id }) overrides which
-        // intentionally rename the component and must not reintroduce the original name.
-        if (
-          !this.metaIdSchemaNames.has(requestedSchemaName) &&
-          this.zodSchemas[resolvedReference] &&
-          !this.zodSchemas[requestedSchemaName]
-        ) {
-          this.zodSchemas[requestedSchemaName] = this.zodSchemas[resolvedReference];
-        }
-        this.schemaVariantRefs.set(
-          this.getVariantKey(requestedSchemaName, this.currentContentType),
-          this.zodSchemas[requestedSchemaName] ? requestedSchemaName : resolvedReference,
-        );
-      }
+      this.applyTypeAliasComponent(requestedSchemaName, schemaName, mappedSchemaName);
     }
+  }
+
+  private applyTypeAliasComponent(
+    requestedSchemaName: string,
+    resolvedSchemaName: string,
+    mappedSchemaName: string | undefined,
+  ): void {
+    if (!mappedSchemaName || requestedSchemaName === resolvedSchemaName) {
+      return;
+    }
+
+    const resolvedReference = this.getSchemaReferenceName(
+      resolvedSchemaName,
+      this.currentContentType,
+    );
+    // Copy schema under alias name so OpenAPI components use the alias — but only for
+    // type-alias mappings (z.infer<typeof X>), not for .meta({ id }) overrides which
+    // intentionally rename the component and must not reintroduce the original name.
+    if (
+      !this.metaIdSchemaNames.has(requestedSchemaName) &&
+      this.zodSchemas[resolvedReference] &&
+      !this.zodSchemas[requestedSchemaName]
+    ) {
+      this.zodSchemas[requestedSchemaName] = this.zodSchemas[resolvedReference];
+    }
+    this.schemaVariantRefs.set(
+      this.getVariantKey(requestedSchemaName, this.currentContentType),
+      this.zodSchemas[requestedSchemaName] ? requestedSchemaName : resolvedReference,
+    );
   }
 
   public getSchemaReferenceName(
