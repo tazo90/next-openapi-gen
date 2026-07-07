@@ -19,5 +19,5 @@ export type ProjectCollectionPathParams = {
 
 export type ProjectIdParams = {
   organizationId: string;
-  id: string;
+  projectId: string;
 };

@@ -19,7 +19,7 @@ export const OrganizationListResponse = z.object({
 });
 
 export const OrganizationIdParamsSchema = z.object({
-  id: z.string().regex(/^\d+$/),
+  organizationId: z.string().regex(/^\d+$/),
 });
 
 export const OrganizationListQuerySchema = z.object({

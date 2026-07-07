@@ -23,5 +23,5 @@ export const ProjectCollectionPathParamsSchema = z.object({
 
 export const ProjectIdParamsSchema = z.object({
   organizationId: z.string().uuid(),
-  id: z.string().uuid(),
+  projectId: z.string().uuid(),
 });

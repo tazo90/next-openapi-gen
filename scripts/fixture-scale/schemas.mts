@@ -3,6 +3,7 @@ import path from "node:path";
 import {
   GENERATED_HEADER,
   SCALE_RESOURCES,
+  getRouteIdParam,
   getSchemaNames,
   type ResourceDefinition,
 } from "./domain.mts";
@@ -75,6 +76,7 @@ function resolveSchemaRoot(outputDir: string, schemaLayout: SchemaLayout, useZod
 
 function emitTypeScriptEntitySchemaFile(resource: ResourceDefinition, index: number): string {
   const names = getSchemaNames(resource);
+  const routeIdParam = getRouteIdParam(resource);
   const statusUnion = index % 4 === 0 ? `\n  status: "draft" | "active" | "archived";` : "";
   const readonlyFields =
     index % 3 === 0 ? `\n  readonly createdAt: string;\n  readonly updatedAt: string;` : "";
@@ -86,12 +88,12 @@ export type ${names.collectionPathParams} = {
 
 export type ${names.idParams} = {
   ${resource.nested.parentParam}: string;
-  id: string;
+  ${routeIdParam}: string;
 };
 `
     : `
 export type ${names.idParams} = {
-  id: string;
+  ${routeIdParam}: string;
 };
 `;
 
@@ -137,6 +139,7 @@ export type ${names.updateInput} = {
 
 function emitZodEntitySchemaFile(resource: ResourceDefinition): string {
   const names = getSchemaNames(resource);
+  const routeIdParam = getRouteIdParam(resource);
   const pathParamsBlock = resource.nested
     ? `
 export const ${names.zodCollectionPathParams} = z.object({
@@ -145,12 +148,12 @@ export const ${names.zodCollectionPathParams} = z.object({
 
 export const ${names.zodIdParams} = z.object({
   ${resource.nested.parentParam}: z.string().uuid(),
-  id: z.string().uuid(),
+  ${routeIdParam}: z.string().uuid(),
 });
 `
     : `
 export const ${names.zodIdParams} = z.object({
-  id: z.string().uuid(),
+  ${routeIdParam}: z.string().uuid(),
 });
 `;
 
@@ -216,6 +219,7 @@ ${tables}
 
 function emitDrizzleSchemaFile(resource: ResourceDefinition): string {
   const names = getSchemaNames(resource);
+  const routeIdParam = getRouteIdParam(resource);
   const tableVar = toCamelCase(resource.tableName);
 
   return `${GENERATED_HEADER}import { createInsertSchema, createSelectSchema } from "drizzle-zod";
@@ -245,10 +249,10 @@ ${
 
 export const ${names.zodIdParams} = z.object({
   ${resource.nested.parentParam}: z.string().regex(/^\\d+$/),
-  id: z.string().regex(/^\\d+$/),
+  ${routeIdParam}: z.string().regex(/^\\d+$/),
 });`
     : `export const ${names.zodIdParams} = z.object({
-  id: z.string().regex(/^\\d+$/),
+  ${routeIdParam}: z.string().regex(/^\\d+$/),
 });`
 }
 

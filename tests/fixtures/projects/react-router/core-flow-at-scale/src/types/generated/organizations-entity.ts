@@ -15,5 +15,5 @@ export type OrganizationListResponse = {
 };
 
 export type OrganizationIdParams = {
-  id: string;
+  organizationId: string;
 };

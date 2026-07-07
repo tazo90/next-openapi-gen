@@ -18,5 +18,5 @@ export const OrganizationListResponse = z.object({
 });
 
 export const OrganizationIdParamsSchema = z.object({
-  id: z.string().uuid(),
+  organizationId: z.string().uuid(),
 });

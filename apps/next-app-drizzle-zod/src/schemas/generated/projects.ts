@@ -24,7 +24,7 @@ export const ProjectCollectionPathParamsSchema = z.object({
 
 export const ProjectIdParamsSchema = z.object({
   organizationId: z.string().regex(/^\d+$/),
-  id: z.string().regex(/^\d+$/),
+  projectId: z.string().regex(/^\d+$/),
 });
 
 export const ProjectListQuerySchema = z.object({

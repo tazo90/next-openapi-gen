@@ -27,6 +27,7 @@
     "@workspace/next-config": "workspace:*",
     "babel-plugin-react-compiler": "catalog:",
     "next-openapi-gen": "workspace:*",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "zod": "catalog:"
   }
 }

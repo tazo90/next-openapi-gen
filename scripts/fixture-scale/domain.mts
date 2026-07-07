@@ -24,6 +24,8 @@ export type ResourceDefinition = {
   slug: string;
   tag: string;
   tableName: string;
+  /** App-router dynamic segment for resource detail routes, e.g. organizationId. */
+  routeIdParam?: string;
   nested?: {
     parentSlug: string;
     parentParam: string;
@@ -41,6 +43,7 @@ export const SCALE_RESOURCES: ResourceDefinition[] = [
     slug: "projects",
     tag: "Projects",
     tableName: "projects",
+    routeIdParam: "projectId",
     nested: { parentSlug: "organizations", parentParam: "organizationId" },
   },
   {
@@ -66,14 +69,28 @@ export const SCALE_RESOURCES: ResourceDefinition[] = [
   { name: "AuditLog", slug: "audit-logs", tag: "AuditLogs", tableName: "audit_logs" },
   { name: "CatalogItem", slug: "catalog-items", tag: "Catalog", tableName: "catalog_items" },
   { name: "Workspace", slug: "workspaces", tag: "Workspaces", tableName: "workspaces" },
-  { name: "Organization", slug: "organizations", tag: "Organizations", tableName: "organizations" },
+  {
+    name: "Organization",
+    slug: "organizations",
+    tag: "Organizations",
+    tableName: "organizations",
+    routeIdParam: "organizationId",
+  },
   { name: "Department", slug: "departments", tag: "Departments", tableName: "departments" },
   { name: "Document", slug: "documents", tag: "Documents", tableName: "documents" },
   { name: "Comment", slug: "comments", tag: "Comments", tableName: "comments" },
   { name: "Attachment", slug: "attachments", tag: "Attachments", tableName: "attachments" },
 ];
 
+export function getRouteIdParam(resource: ResourceDefinition): string {
+  return resource.routeIdParam ?? "id";
+}
+
 export function getResourceOperations(resource: ResourceDefinition): RouteOperation[] {
+  const routeIdParam = getRouteIdParam(resource);
+  const detailSegmentPath = `[${routeIdParam}]`;
+  const detailOpenApiSuffix = `/{${routeIdParam}}`;
+
   return [
     {
       kind: "list",
@@ -92,8 +109,8 @@ export function getResourceOperations(resource: ResourceDefinition): RouteOperat
     {
       kind: "get",
       method: "GET",
-      segmentPath: "[id]",
-      openApiSuffix: "/{id}",
+      segmentPath: detailSegmentPath,
+      openApiSuffix: detailOpenApiSuffix,
       summary: `Get ${resource.name.toLowerCase()} by ID`,
       description: `Returns a single ${resource.name.toLowerCase()} by identifier`,
       hasQuery: false,
@@ -120,8 +137,8 @@ export function getResourceOperations(resource: ResourceDefinition): RouteOperat
     {
       kind: "update",
       method: "PATCH",
-      segmentPath: "[id]",
-      openApiSuffix: "/{id}",
+      segmentPath: detailSegmentPath,
+      openApiSuffix: detailOpenApiSuffix,
       summary: `Update ${resource.name.toLowerCase()}`,
       description: `Updates an existing ${resource.name.toLowerCase()}`,
       hasQuery: false,
@@ -134,8 +151,8 @@ export function getResourceOperations(resource: ResourceDefinition): RouteOperat
     {
       kind: "delete",
       method: "DELETE",
-      segmentPath: "[id]",
-      openApiSuffix: "/{id}",
+      segmentPath: detailSegmentPath,
+      openApiSuffix: detailOpenApiSuffix,
       summary: `Delete ${resource.name.toLowerCase()}`,
       description: `Deletes a ${resource.name.toLowerCase()} by identifier`,
       hasQuery: false,

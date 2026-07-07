@@ -23,6 +23,7 @@ const config = {
     "apps/next-app-mixed-schemas/package.json": ["devDependencies"],
     "apps/next-app-sandbox/package.json": ["devDependencies"],
     "apps/next-app-scalar/package.json": ["devDependencies"],
+    "apps/next-app-swagger/package.json": ["devDependencies"],
     "apps/next-app-typescript/package.json": ["devDependencies"],
     "apps/next-app-zod/package.json": ["devDependencies"],
     "apps/next-app-adapter/package.json": ["devDependencies"],
