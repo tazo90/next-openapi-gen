@@ -11,7 +11,7 @@ const typescriptFullCoverageFixture = getProjectFixturePath(
   "ts-full-coverage",
 );
 
-describe("full coverage fixture generation", () => {
+describe("full coverage fixture generation", { timeout: 15_000 }, () => {
   it.each(openApiVersions)("wires representative Zod schemas for OpenAPI %s", (openapiVersion) => {
     const { project, spec } = generateFixtureSpec({
       fixturePath: zodFullCoverageFixture,

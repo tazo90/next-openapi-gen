@@ -32,7 +32,8 @@
               "pattern": "^\\d+$",
               "description": "Page number"
             },
-            "description": "Page number"
+            "description": "Page number",
+            "example": 1
           },
           {
             "in": "query",
@@ -43,7 +44,8 @@
               "pattern": "^\\d+$",
               "description": "Items per page"
             },
-            "description": "Items per page"
+            "description": "Items per page",
+            "example": "example"
           },
           {
             "in": "query",
@@ -53,7 +55,8 @@
               "type": "string",
               "description": "Case-insensitive author search"
             },
-            "description": "Case-insensitive author search"
+            "description": "Case-insensitive author search",
+            "example": "example"
           },
           {
             "in": "query",
@@ -67,7 +70,8 @@
               ],
               "description": "Sort mode"
             },
-            "description": "Sort mode"
+            "description": "Sort mode",
+            "example": "example"
           }
         ],
         "responses": {
@@ -294,7 +298,8 @@
               "pattern": "^\\d+$",
               "description": "Page number"
             },
-            "description": "Page number"
+            "description": "Page number",
+            "example": 1
           },
           {
             "in": "query",
@@ -305,7 +310,8 @@
               "pattern": "^\\d+$",
               "description": "Items per page"
             },
-            "description": "Items per page"
+            "description": "Items per page",
+            "example": "example"
           },
           {
             "in": "query",
@@ -319,7 +325,8 @@
               ],
               "description": "Filter by publication status"
             },
-            "description": "Filter by publication status"
+            "description": "Filter by publication status",
+            "example": "example"
           },
           {
             "in": "query",
@@ -330,7 +337,8 @@
               "pattern": "^\\d+$",
               "description": "Filter by author ID"
             },
-            "description": "Filter by author ID"
+            "description": "Filter by author ID",
+            "example": "123"
           }
         ],
         "responses": {
@@ -673,47 +681,58 @@
       "CreateAuthorSchema": {
         "type": "object",
         "properties": {
-          "bio": {
+          "name": {
             "type": "string",
-            "maxLength": 280,
-            "description": "Author biography"
+            "maxLength": 100,
+            "minLength": 2,
+            "description": "Author display name"
           },
           "email": {
             "type": "string",
+            "maxLength": 255,
             "format": "email",
             "description": "Author email address"
           },
-          "name": {
+          "bio": {
             "type": "string",
-            "minLength": 2,
-            "maxLength": 100,
-            "description": "Author display name"
+            "nullable": true,
+            "maxLength": 280,
+            "description": "Author biography"
+          },
+          "avatarUrl": {
+            "type": "string",
+            "maxLength": 500,
+            "nullable": true
           }
         },
         "required": [
-          "email",
-          "name"
+          "name",
+          "email"
         ]
       },
       "CreatePostSchema": {
         "type": "object",
         "properties": {
+          "id": {
+            "type": "integer"
+          },
           "title": {
             "type": "string",
-            "minLength": 5,
             "maxLength": 255,
+            "minLength": 5,
             "description": "Post title"
           },
           "slug": {
             "type": "string",
-            "minLength": 3,
             "maxLength": 255,
+            "minLength": 3,
             "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
             "description": "URL-friendly slug"
           },
           "excerpt": {
             "type": "string",
             "maxLength": 500,
+            "nullable": true,
             "description": "Short excerpt of the post"
           },
           "content": {
@@ -725,11 +744,22 @@
             "type": "boolean",
             "description": "Whether the post is published"
           },
+          "viewCount": {
+            "type": "integer"
+          },
           "authorId": {
             "type": "integer",
             "minimum": 0,
             "exclusiveMinimum": true,
             "description": "ID of the post author"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
           }
         },
         "required": [
@@ -845,21 +875,24 @@
       "UpdateAuthorSchema": {
         "type": "object",
         "properties": {
-          "avatarUrl": {
+          "name": {
             "type": "string",
-            "format": "uri",
-            "description": "Author avatar URL"
+            "maxLength": 100,
+            "minLength": 2,
+            "description": "Author display name"
           },
           "bio": {
             "type": "string",
+            "nullable": true,
             "maxLength": 280,
             "description": "Author biography"
           },
-          "name": {
+          "avatarUrl": {
             "type": "string",
-            "minLength": 2,
-            "maxLength": 100,
-            "description": "Author display name"
+            "maxLength": 500,
+            "nullable": true,
+            "format": "uri",
+            "description": "Author avatar URL"
           }
         },
         "required": []
@@ -869,18 +902,20 @@
         "properties": {
           "title": {
             "type": "string",
-            "minLength": 5,
             "maxLength": 255,
+            "minLength": 5,
             "description": "Post title"
           },
           "slug": {
             "type": "string",
+            "maxLength": 255,
             "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
             "description": "URL-friendly slug"
           },
           "excerpt": {
             "type": "string",
             "maxLength": 500,
+            "nullable": true,
             "description": "Short excerpt"
           },
           "content": {

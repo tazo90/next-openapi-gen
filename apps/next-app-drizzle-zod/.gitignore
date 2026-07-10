@@ -6,3 +6,9 @@ build
 *.log
 .env*.local
 .vercelignore
+
+# Scale benchmark routes/schemas from `pnpm generate:scale-fixtures --target=apps`.
+# drizzle-zod@0.8.3 infers Zod 4 types that fail typecheck against this app's Zod 3 pin.
+src/app/api/generated/
+src/schemas/generated/
+src/db/schema.generated.ts
