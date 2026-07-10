@@ -24,13 +24,19 @@ import {
   collectZodRouteFiles,
   processZodSchemaFilesInDirectory,
 } from "./file-processor.js";
+import {
+  FUNCTIONAL_CHECK_TO_CHAIN_METHOD,
+  FUNCTIONAL_FORMAT_CHECKS,
+  FUNCTIONAL_NOOP_CHECKS,
+  FUNCTIONAL_WRAPPER_HELPERS,
+} from "./functional-checks.js";
 import { processImports } from "./import-processor.js";
 import {
-  applyNullableWrapper,
   escapeRegExp,
   extractDescriptionFromArguments,
   hasOptionalMethod,
   isOptionalCall,
+  isOptionalUnionCall,
   processZodDiscriminatedUnion,
   processZodIntersection,
   processZodLiteral,
@@ -38,6 +44,7 @@ import {
   processZodTuple,
   processZodUnion,
 } from "./node-helpers.js";
+import { applyNullableWrapper } from "./nullability.js";
 import {
   collectImportMetadata,
   extractTypeMappingsFromAST,
@@ -67,15 +74,19 @@ const SUPPORTED_ZOD_HELPERS = new Set([
   "cidrv6",
   "codec",
   "custom",
+  "catch",
   "cuid",
   "cuid2",
   "date",
   "datetime",
+  "default",
+  "describe",
   "discriminatedUnion",
   "e164",
   "email",
   "emoji",
   "enum",
+  "extend",
   "file",
   "float32",
   "float64",
@@ -117,8 +128,10 @@ const SUPPORTED_ZOD_HELPERS = new Set([
   "partialRecord",
   "pipe",
   "pipeline",
+  "prefault",
   "preprocess",
   "promise",
+  "readonly",
   "record",
   "set",
   "strictObject",
@@ -259,6 +272,8 @@ export class ZodSchemaConverter {
   schemaNameToFiles: Map<string, Set<string>> = new Map();
   /** Per-file import alias for the `zod` module (`import { z as zod }` sets this to `"zod"`). */
   zodImportAlias: Map<string, string> = new Map();
+  /** Per-file Zod import source (`zod`, `zod/mini`, etc.). */
+  zodImportSource: Map<string, string> = new Map();
   /** Schema variable names whose component name was overridden via .meta({ id }). These must
    *  NOT be copied back under the original variable name in the OpenAPI components object. */
   metaIdSchemaNames: Set<string> = new Set();
@@ -693,6 +708,9 @@ export class ZodSchemaConverter {
         });
         this.fileImportsCache.set(filePath, importedModules);
         this.zodImportAlias.set(filePath, resolution.zodLocalName);
+        if (resolution.zodImportSource) {
+          this.zodImportSource.set(filePath, resolution.zodImportSource);
+        }
       }
 
       // Set current processing context for use by processZodNode during factory expansion
@@ -944,9 +962,7 @@ export class ZodSchemaConverter {
                       if (propSchema) {
                         extensionProperties[key] = propSchema;
 
-                        const isOptional =
-                          // @ts-ignore
-                          this.isOptional(prop.value) || this.hasOptionalMethod(prop.value);
+                        const isOptional = this.isPropertyOptional(prop.value);
 
                         if (!isOptional) {
                           extensionRequired.push(key);
@@ -1243,6 +1259,7 @@ export class ZodSchemaConverter {
     if (this.shouldUseRuntimeExport(node)) {
       const runtimeSchema = this.runtimeExporter.exportSchema(node, {
         contentType: this.currentContentType,
+        zodLocalName: this.getCurrentZodLocalName(),
       });
       if (runtimeSchema) {
         this.currentSchemaUsedRuntimeExport = true;
@@ -1256,7 +1273,8 @@ export class ZodSchemaConverter {
       t.isMemberExpression(node.callee) &&
       t.isIdentifier(node.callee.object) &&
       t.isIdentifier(node.callee.property) &&
-      node.callee.property.name === "extend"
+      node.callee.property.name === "extend" &&
+      !this.isZodLocalName(node.callee.object.name)
     ) {
       const baseSchemaName = node.callee.object.name;
 
@@ -1352,6 +1370,8 @@ export class ZodSchemaConverter {
           return { type: "object" };
         }
         return applyNullableWrapper(this.processZodNode(firstArgument));
+      } else if (FUNCTIONAL_WRAPPER_HELPERS.has(methodName)) {
+        return this.processZodFunctionalWrapper(methodName, node);
       } else {
         this.warnIfUnknownZodHelper(methodName);
         return this.processZodPrimitive(node);
@@ -1760,7 +1780,7 @@ export class ZodSchemaConverter {
           const processedSchema = this.processZodNode(prop.value);
           if (processedSchema) {
             properties[propName] = processedSchema;
-            const isOptional = this.isOptional(prop.value) || this.hasOptionalMethod(prop.value);
+            const isOptional = this.isPropertyOptional(prop.value);
             if (!isOptional) {
               required.push(propName);
             }
@@ -1779,7 +1799,10 @@ export class ZodSchemaConverter {
           properties[propName] = {
             $ref: `#/components/schemas/${this.getSchemaReferenceName(referencedSchemaName)}`,
           };
-          required.push(propName); // Assuming it's required unless marked optional
+          const referencedInit = this.resolveObjectSchemaNode(referencedSchemaName);
+          if (!referencedInit || !this.isPropertyOptional(referencedInit)) {
+            required.push(propName);
+          }
           return; // Skip further processing for this property
         }
 
@@ -1806,7 +1829,7 @@ export class ZodSchemaConverter {
           };
           properties[propName] = arraySchema;
 
-          const isOptional = this.isOptional(prop.value) || this.hasOptionalMethod(prop.value);
+          const isOptional = this.isPropertyOptional(prop.value);
           if (!isOptional) {
             required.push(propName);
           }
@@ -1820,9 +1843,7 @@ export class ZodSchemaConverter {
           properties[propName] = propSchema;
 
           // If the property is not marked as optional, add it to required list
-          const isOptional =
-            // @ts-ignore
-            this.isOptional(prop.value) || this.hasOptionalMethod(prop.value);
+          const isOptional = this.isPropertyOptional(prop.value);
 
           if (!isOptional) {
             required.push(propName);
@@ -1877,6 +1898,17 @@ export class ZodSchemaConverter {
    * Always returns true for the canonical `"z"` — callers should use this
    * instead of comparing to `"z"` directly.
    */
+  private isPropertyOptional(node: t.Node): boolean {
+    if (!t.isCallExpression(node)) {
+      return false;
+    }
+    return (
+      this.isOptional(node) ||
+      this.hasOptionalMethod(node) ||
+      isOptionalUnionCall(node, this.getCurrentZodLocalName())
+    );
+  }
+
   private isZodLocalName(name: string | undefined): boolean {
     if (!name) return false;
     if (name === "z") return true;
@@ -2170,19 +2202,20 @@ export class ZodSchemaConverter {
       return false;
     }
 
-    const helperPath = getZodRuntimeHelperPath(node);
+    const zodLocalName = this.getCurrentZodLocalName();
+    const helperPath = getZodRuntimeHelperPath(node, zodLocalName);
     if (helperPath) {
       const helperName = helperPath.join(".");
       return (
         helperName.startsWith("coerce.") ||
         helperName === "templateLiteral" ||
-        helperName === "stringbool"
+        helperName === "stringbool" ||
+        helperName === "prefault"
       );
     }
 
     if (t.isMemberExpression(node.callee) && t.isIdentifier(node.callee.property)) {
-      const runtimeMethods = new Set(["pipe"]);
-      if (runtimeMethods.has(node.callee.property.name)) {
+      if (node.callee.property.name === "pipe") {
         return true;
       }
 
@@ -2207,7 +2240,16 @@ export class ZodSchemaConverter {
     // Process the parent chain first
     let schema = this.processZodNode(node.callee.object);
 
-    // Apply the current method
+    schema = this.applyZodChainMethod(schema, methodName, node);
+    this.reconcileNumericBounds(schema);
+    return schema;
+  }
+
+  private applyZodChainMethod(
+    schema: OpenApiSchema,
+    methodName: string,
+    node: t.CallExpression,
+  ): OpenApiSchema {
     switch (methodName) {
       case "optional":
         // optional means T | undefined — not in required array, no nullable flag
@@ -2511,77 +2553,45 @@ export class ZodSchemaConverter {
         if (node.arguments.length > 0) {
           const metadata = this.extractStaticJsonValue(node.arguments[0]);
           if (metadata && typeof metadata === "object" && !Array.isArray(metadata)) {
-            const { id: _id, ...rest } = metadata as Record<string, unknown>;
+            const {
+              id: _id,
+              title,
+              description,
+              examples,
+              deprecated,
+              ...rest
+            } = metadata as Record<string, unknown>;
+            if (typeof title === "string") {
+              schema.title = title;
+            }
+            if (typeof description === "string") {
+              schema.description = description;
+            }
+            if (Array.isArray(examples)) {
+              schema.examples = examples as OpenApiSchema["examples"];
+            }
+            if (deprecated === true) {
+              schema.deprecated = true;
+            }
             Object.assign(schema, rest);
-            // _id is handled by extractMetaIdFromNode at the call site
           }
         }
         break;
       case "extend":
         if (node.arguments.length > 0 && t.isObjectExpression(node.arguments[0])) {
-          // Get the base schema by processing the object that extend is called on
           const baseSchemaResult = this.processZodNode(node.callee.object);
-
-          // If it's a reference, resolve it to the actual schema
-          let baseSchema = baseSchemaResult;
-          if (baseSchemaResult && baseSchemaResult.$ref) {
-            const schemaName = baseSchemaResult.$ref.replace("#/components/schemas/", "");
-            // Try to convert the base schema if not already processed
-            if (!this.getStoredSchema(schemaName)) {
-              logger.debug(
-                `[extend] Base schema ${schemaName} not found, attempting to convert it`,
-              );
-              this.convertZodSchemaToOpenApi(schemaName);
-            }
-            // Now retrieve the converted schema
-            if (this.getStoredSchema(schemaName)) {
-              baseSchema = this.getStoredSchema(schemaName)!;
-            } else {
-              logger.debug(`Could not resolve reference for extend: ${schemaName}`);
-            }
-          }
-
-          // Process the extension object
-          const extendNode: any = {
-            type: "CallExpression",
-            callee: {
-              type: "MemberExpression",
-              object: { type: "Identifier", name: "z" },
-              property: { type: "Identifier", name: "object" },
-              computed: false,
-              optional: false,
-            },
-            arguments: [node.arguments[0]],
-          };
-
-          const extendedProps = this.processZodObject(extendNode);
-
-          // Merge base schema and extensions
-          if (baseSchema && baseSchema.properties) {
-            schema = {
-              type: "object",
-              properties: {
-                ...baseSchema.properties,
-                ...extendedProps?.properties,
-              },
-              required: [...(baseSchema.required || []), ...(extendedProps?.required || [])].filter(
-                (item, index, arr) => arr.indexOf(item) === index,
-              ), // Remove duplicates
-            };
-
-            // Copy other properties from base schema
-            if (baseSchema.description) schema.description = baseSchema.description;
-          } else {
-            logger.debug("Could not resolve base schema for extend");
-            schema = extendedProps || { type: "object" };
-          }
+          schema = this.mergeExtendedObject(baseSchemaResult, node.arguments[0]);
         }
         break;
       case "refine":
       case "superRefine":
+        break;
       case "check":
-        // These are custom validators that cannot be easily represented in OpenAPI
-        // We preserve the schema as is
+        for (const argument of node.arguments) {
+          if (t.isCallExpression(argument)) {
+            schema = this.applyFunctionalCheckArg(schema, argument);
+          }
+        }
         break;
       case "transform":
       case "overwrite":
@@ -2748,8 +2758,147 @@ export class ZodSchemaConverter {
         break;
     }
 
-    this.reconcileNumericBounds(schema);
     return schema;
+  }
+
+  private applyFunctionalCheckArg(schema: OpenApiSchema, arg: t.CallExpression): OpenApiSchema {
+    if (!t.isMemberExpression(arg.callee) || !t.isIdentifier(arg.callee.property)) {
+      return schema;
+    }
+
+    if (!t.isIdentifier(arg.callee.object) || !this.isZodLocalName(arg.callee.object.name)) {
+      return schema;
+    }
+
+    const fnName = arg.callee.property.name;
+    if (fnName === "refine" || fnName === "check" || fnName === "superRefine") {
+      return schema;
+    }
+
+    if (FUNCTIONAL_NOOP_CHECKS.has(fnName)) {
+      return schema;
+    }
+
+    const chainMethod = FUNCTIONAL_CHECK_TO_CHAIN_METHOD[fnName] ?? fnName;
+    if (FUNCTIONAL_FORMAT_CHECKS.has(fnName) || SUPPORTED_ZOD_CHAIN_METHODS.has(chainMethod)) {
+      return this.applyZodChainMethod(schema, chainMethod, arg);
+    }
+
+    return schema;
+  }
+
+  private processZodFunctionalWrapper(methodName: string, node: t.CallExpression): OpenApiSchema {
+    if (methodName === "extend") {
+      const baseArg = node.arguments[0];
+      const shapeArg = node.arguments[1];
+      if (
+        !baseArg ||
+        !shapeArg ||
+        t.isArgumentPlaceholder(baseArg) ||
+        t.isArgumentPlaceholder(shapeArg)
+      ) {
+        return { type: "object" };
+      }
+      return this.mergeExtendedObject(this.processZodNode(baseArg), shapeArg);
+    }
+
+    const innerArg = node.arguments[0];
+    if (!innerArg || t.isArgumentPlaceholder(innerArg)) {
+      return { type: "object" };
+    }
+
+    let schema = this.processZodNode(innerArg);
+
+    switch (methodName) {
+      case "readonly":
+        schema.readOnly = true;
+        return schema;
+      case "describe": {
+        const descVal = this.resolveStringArg(node.arguments[1]);
+        if (descVal !== undefined) {
+          if (descVal.startsWith("@deprecated")) {
+            schema.deprecated = true;
+            schema.description = descVal.replace("@deprecated", "").trim();
+          } else {
+            schema.description = descVal;
+          }
+        }
+        return schema;
+      }
+      case "default": {
+        const valueArg = node.arguments[1];
+        if (!valueArg || t.isArgumentPlaceholder(valueArg)) {
+          return schema;
+        }
+        const syntheticNode = t.callExpression(
+          t.memberExpression(t.identifier("_"), t.identifier("default")),
+          [valueArg],
+        );
+        return this.applyZodChainMethod(schema, "default", syntheticNode);
+      }
+      case "prefault":
+      case "catch": {
+        const valueArg = node.arguments[1];
+        if (!valueArg || t.isArgumentPlaceholder(valueArg)) {
+          return schema;
+        }
+        const syntheticNode = t.callExpression(
+          t.memberExpression(t.identifier("_"), t.identifier(methodName)),
+          [valueArg],
+        );
+        return this.applyZodChainMethod(schema, methodName, syntheticNode);
+      }
+      default:
+        return schema;
+    }
+  }
+
+  private mergeExtendedObject(
+    baseSchemaResult: OpenApiSchema,
+    shapeArg: t.Node | t.SpreadElement | t.ArgumentPlaceholder,
+  ): OpenApiSchema {
+    if (!t.isObjectExpression(shapeArg)) {
+      return baseSchemaResult;
+    }
+
+    let baseSchema = baseSchemaResult;
+    if (baseSchemaResult.$ref) {
+      const schemaName = baseSchemaResult.$ref.replace("#/components/schemas/", "");
+      if (!this.getStoredSchema(schemaName)) {
+        logger.debug(`[extend] Base schema ${schemaName} not found, attempting to convert it`);
+        this.convertZodSchemaToOpenApi(schemaName);
+      }
+      if (this.getStoredSchema(schemaName)) {
+        baseSchema = this.getStoredSchema(schemaName)!;
+      } else {
+        logger.debug(`Could not resolve reference for extend: ${schemaName}`);
+      }
+    }
+
+    const extendNode = t.callExpression(
+      t.memberExpression(t.identifier(this.getCurrentZodLocalName()), t.identifier("object")),
+      [shapeArg],
+    );
+    const extendedProps = this.processZodObject(extendNode);
+
+    if (baseSchema.properties) {
+      const merged: OpenApiSchema = {
+        type: "object",
+        properties: {
+          ...baseSchema.properties,
+          ...extendedProps?.properties,
+        },
+        required: [...(baseSchema.required || []), ...(extendedProps?.required || [])].filter(
+          (item, index, arr) => arr.indexOf(item) === index,
+        ),
+      };
+      if (baseSchema.description) {
+        merged.description = baseSchema.description;
+      }
+      return merged;
+    }
+
+    return extendedProps || { type: "object" };
   }
 
   private reconcileNumericBounds(schema: OpenApiSchema): void {
@@ -2871,12 +3020,16 @@ export class ZodSchemaConverter {
   private indexSchemaNamesInFile(filePath: string): void {
     try {
       const ast = this.getParsedFile(filePath);
-      const { importedModules, drizzleZodImports, zodLocalName } = collectImportMetadata(ast);
+      const { importedModules, drizzleZodImports, zodLocalName, zodImportSource } =
+        collectImportMetadata(ast);
       drizzleZodImports.forEach((importName) => {
         this.drizzleZodImports.add(importName);
       });
       this.fileImportsCache.set(filePath, importedModules);
       this.zodImportAlias.set(filePath, zodLocalName);
+      if (zodImportSource) {
+        this.zodImportSource.set(filePath, zodImportSource);
+      }
 
       this.currentFilePath = filePath;
       this.currentAST = ast;
@@ -2906,7 +3059,8 @@ export class ZodSchemaConverter {
       try {
         const ast = this.getParsedFile(filePath, content);
 
-        const { importedModules, drizzleZodImports, zodLocalName } = collectImportMetadata(ast);
+        const { importedModules, drizzleZodImports, zodLocalName, zodImportSource } =
+          collectImportMetadata(ast);
         drizzleZodImports.forEach((importName) => {
           this.drizzleZodImports.add(importName);
         });
@@ -2914,6 +3068,9 @@ export class ZodSchemaConverter {
         // Cache imports + alias for this file
         this.fileImportsCache.set(filePath, importedModules);
         this.zodImportAlias.set(filePath, zodLocalName);
+        if (zodImportSource) {
+          this.zodImportSource.set(filePath, zodImportSource);
+        }
 
         // Set current processing context for factory function expansion
         this.currentFilePath = filePath;
@@ -3224,7 +3381,10 @@ function areSchemasEquivalent(left: OpenApiSchema, right: OpenApiSchema): boolea
   return JSON.stringify(left) === JSON.stringify(right);
 }
 
-function getZodRuntimeHelperPath(node: t.CallExpression): string[] | null {
+function getZodRuntimeHelperPath(
+  node: t.CallExpression,
+  zodLocalName: string = "z",
+): string[] | null {
   if (!t.isMemberExpression(node.callee) || !t.isIdentifier(node.callee.property)) {
     return null;
   }
@@ -3240,5 +3400,9 @@ function getZodRuntimeHelperPath(node: t.CallExpression): string[] | null {
     currentObject = currentObject.object;
   }
 
-  return t.isIdentifier(currentObject, { name: "z" }) ? path : null;
+  if (!t.isIdentifier(currentObject)) {
+    return null;
+  }
+
+  return currentObject.name === "z" || currentObject.name === zodLocalName ? path : null;
 }

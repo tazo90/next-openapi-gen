@@ -6,10 +6,14 @@ import type { ContentType, JsonValue, OpenApiSchema } from "../../shared/types.j
 
 type RuntimeExportOptions = {
   contentType: ContentType;
+  zodLocalName?: string;
 };
 
 export class ZodRuntimeExporter {
+  private zodLocalName = "z";
+
   public exportSchema(node: t.Node, options: RuntimeExportOptions): OpenApiSchema | null {
+    this.zodLocalName = options.zodLocalName ?? "z";
     const runtimeSchema = this.buildSchema(node);
     if (!runtimeSchema) {
       return null;
@@ -35,7 +39,7 @@ export class ZodRuntimeExporter {
 
   private buildSchema(node: t.Node): z.ZodTypeAny | null {
     if (t.isCallExpression(node)) {
-      const helperPath = getZodHelperPath(node);
+      const helperPath = getZodHelperPath(node, this.zodLocalName);
       if (helperPath) {
         return this.buildRootSchema(node, helperPath);
       }
@@ -608,7 +612,7 @@ export class ZodRuntimeExporter {
   }
 }
 
-function getZodHelperPath(node: t.CallExpression): string[] | null {
+function getZodHelperPath(node: t.CallExpression, zodLocalName: string = "z"): string[] | null {
   if (!t.isMemberExpression(node.callee) || !t.isIdentifier(node.callee.property)) {
     return null;
   }
@@ -624,7 +628,11 @@ function getZodHelperPath(node: t.CallExpression): string[] | null {
     currentObject = currentObject.object;
   }
 
-  return t.isIdentifier(currentObject, { name: "z" }) ? path : null;
+  if (!t.isIdentifier(currentObject)) {
+    return null;
+  }
+
+  return currentObject.name === "z" || currentObject.name === zodLocalName ? path : null;
 }
 
 function getObjectKey(key: t.ObjectProperty["key"]): string | null {

@@ -3,6 +3,7 @@ import * as t from "@babel/types";
 import { logger } from "../../shared/logger.js";
 import type { OpenApiSchema } from "../../shared/types.js";
 import { resolveTypeScriptModule } from "../../shared/typescript-project.js";
+import { applyNullableWrapper } from "./nullability.js";
 
 type DrizzleZodProcessingContext = {
   currentAST?: t.File | undefined;
@@ -680,11 +681,9 @@ export class DrizzleZodProcessor {
         // Handled by isFieldOptional check, no schema modification needed
         break;
       case "nullable":
-        result.nullable = true;
-        break;
+        return applyNullableWrapper(result);
       case "nullish":
-        result.nullable = true;
-        break;
+        return applyNullableWrapper(result);
 
       case "describe":
         if (args.length > 0 && t.isStringLiteral(args[0])) {

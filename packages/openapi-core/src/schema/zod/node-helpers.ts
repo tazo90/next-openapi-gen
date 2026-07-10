@@ -1,6 +1,7 @@
 import * as t from "@babel/types";
 
 import type { OpenApiSchema } from "../../shared/types.js";
+import { applyNullableWrapper } from "./nullability.js";
 
 // Broader detection for binary payloads passed to `z.custom<T>()`: matches common runtime
 // types people annotate uploaded bytes with. We treat them all as `string` + `format: binary`
@@ -28,6 +29,8 @@ export type PrimitiveHelperContext = {
   resolveConstArrayValues?: (name: string) => (string | number)[] | null;
   /** Resolve an identifier referring to a `z.object({...})` (or equivalent) call. */
   resolveObjectSchemaNode?: (name: string) => t.CallExpression | null;
+  /** Local alias for the Zod import (`z`, `zod`, etc.). */
+  zodLocalName?: string;
   /** The name of the local zod import binding — defaults to `"z"`. */
   zodLocalName?: string;
 };
@@ -281,6 +284,42 @@ export function processZodIntersection(
   };
 }
 
+function isZodHelperCall(node: t.Node, helperName: string, zodLocalName: string = "z"): boolean {
+  return (
+    t.isCallExpression(node) &&
+    t.isMemberExpression(node.callee) &&
+    t.isIdentifier(node.callee.object) &&
+    isZodLocalBinding(node.callee.object.name, zodLocalName) &&
+    t.isIdentifier(node.callee.property) &&
+    node.callee.property.name === helperName
+  );
+}
+
+export function isUndefinedBranchNode(node: t.Node, zodLocalName: string = "z"): boolean {
+  return (
+    isZodHelperCall(node, "undefined", zodLocalName) || isZodHelperCall(node, "void", zodLocalName)
+  );
+}
+
+export function isNullBranchNode(node: t.Node, zodLocalName: string = "z"): boolean {
+  return isZodHelperCall(node, "null", zodLocalName);
+}
+
+export function isOptionalUnionCall(node: t.CallExpression, zodLocalName: string = "z"): boolean {
+  if (!isZodHelperCall(node, "union", zodLocalName) || node.arguments.length === 0) {
+    return false;
+  }
+
+  const arrayExpr = resolveArrayOfSchemas(node.arguments[0]);
+  if (!arrayExpr) {
+    return false;
+  }
+
+  return arrayExpr.elements.some(
+    (element) => isProcessableZodNode(element) && isUndefinedBranchNode(element, zodLocalName),
+  );
+}
+
 export function processZodUnion(
   node: t.CallExpression,
   processNode: ProcessZodNode,
@@ -308,8 +347,28 @@ export function processZodUnion(
     return { type: "object" };
   }
 
+  const zodLocalName = context?.zodLocalName ?? "z";
+  const valueElements = arrayExpr.elements.filter(
+    (element) =>
+      isProcessableZodNode(element) &&
+      !isUndefinedBranchNode(element, zodLocalName) &&
+      !isNullBranchNode(element, zodLocalName),
+  );
+  const hasNullBranch = arrayExpr.elements.some(
+    (element) => isProcessableZodNode(element) && isNullBranchNode(element, zodLocalName),
+  );
+
+  if (valueElements.length === 1) {
+    const baseSchema = processNode(valueElements[0]!);
+    if (hasNullBranch) {
+      return applyNullableWrapper(baseSchema);
+    }
+    return baseSchema;
+  }
+
   const unionItems = arrayExpr.elements
     .filter(isProcessableZodNode)
+    .filter((element) => !isUndefinedBranchNode(element, zodLocalName))
     .map((element) => processNode(element));
 
   if (unionItems.length === 2) {
@@ -349,12 +408,7 @@ export function processZodUnion(
   };
 }
 
-export function applyNullableWrapper(schema: OpenApiSchema): OpenApiSchema {
-  if (schema.allOf) {
-    return { anyOf: [...schema.allOf, { type: "null" }] };
-  }
-  return { ...schema, nullable: true };
-}
+export { applyNullableWrapper };
 
 function isZodLocalBinding(name: string, zodLocalName: string = "z"): boolean {
   return name === "z" || name === zodLocalName;

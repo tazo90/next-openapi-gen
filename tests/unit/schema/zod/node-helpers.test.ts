@@ -6,6 +6,8 @@ import {
   extractDescriptionFromArguments,
   hasOptionalMethod,
   isOptionalCall,
+  isOptionalUnionCall,
+  isUndefinedBranchNode,
   processZodDiscriminatedUnion,
   processZodIntersection,
   processZodLiteral,
@@ -234,6 +236,12 @@ describe("Zod node helpers", () => {
     expect(isOptionalCall(getFirstInitializer("z.string().nullable()") as t.CallExpression)).toBe(
       false,
     );
+    expect(
+      isOptionalUnionCall(
+        getFirstInitializer("z.union([z.string(), z.undefined()])") as t.CallExpression,
+      ),
+    ).toBe(true);
+    expect(isUndefinedBranchNode(getFirstInitializer("z.undefined()"))).toBe(true);
   });
 
   it("processes primitive zod nodes through the extracted helper", () => {

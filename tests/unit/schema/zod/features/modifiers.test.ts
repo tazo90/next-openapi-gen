@@ -243,5 +243,72 @@ describe("Zod features › modifiers", () => {
       });
       expect(result).not.toHaveProperty("anyOf");
     });
+
+    it("title and deprecated map from .meta()", () => {
+      expect(convert('z.string().meta({ title: "Label", deprecated: true })', roots)).toMatchObject(
+        {
+          type: "string",
+          title: "Label",
+          deprecated: true,
+        },
+      );
+    });
+  });
+
+  it("z.extend(base, shape) merges object schemas", () => {
+    const schema = convert("z.extend(z.object({ name: z.string() }), { age: z.number() })", roots);
+    expect(schema).toMatchObject({
+      type: "object",
+      required: ["name", "age"],
+      properties: {
+        name: { type: "string" },
+        age: { type: "number" },
+      },
+    });
+  });
+
+  it("functional wrappers mirror chain behavior", () => {
+    expect(convert("z.readonly(z.string())", roots)).toMatchObject({
+      type: "string",
+      readOnly: true,
+    });
+    expect(convert('z.default(z.string(), "hi")', roots)).toMatchObject({
+      type: "string",
+      default: "hi",
+    });
+    expect(convert('z.describe(z.number(), "count")', roots)).toMatchObject({
+      type: "number",
+      description: "count",
+    });
+    expect(convert('z.catch(z.string(), "fallback")', roots)).toMatchObject({
+      type: "string",
+      default: "fallback",
+    });
+  });
+
+  it(".check() with functional minLength/maxLength refinements", () => {
+    expect(convert("z.string().check(z.minLength(10), z.maxLength(100))", roots)).toMatchObject({
+      type: "string",
+      minLength: 10,
+      maxLength: 100,
+    });
+  });
+
+  it("z.union([T, z.undefined()]) treats undefined as optional semantics", () => {
+    const schema = convert(
+      `z.object({
+        name: z.union([z.string(), z.undefined()]),
+        id: z.string(),
+      })`,
+      roots,
+    );
+    expect(schema).toMatchObject({
+      type: "object",
+      required: ["id"],
+      properties: {
+        name: { type: "string" },
+        id: { type: "string" },
+      },
+    });
   });
 });
