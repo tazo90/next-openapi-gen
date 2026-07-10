@@ -1299,5 +1299,7 @@ function isIgnoredRuntimeType(typeName: string): boolean {
 }
 
 function isUsableTypeName(typeName: string): boolean {
-  return typeName !== "__type" && /^[A-Za-z_$][\w$]*$/.test(typeName);
+  return (
+    typeName !== "__type" && !typeName.startsWith("__object") && /^[A-Za-z_$][\w$]*$/.test(typeName)
+  );
 }

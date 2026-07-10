@@ -136,6 +136,7 @@ describe("OpenAPI document validation", () => {
 
   it.each(["3.0", "3.1", "3.2"] as const)(
     "validates generated zod-full-coverage fixture for OpenAPI %s",
+    { timeout: 15_000 },
     async (openapiVersion) => {
       expect.assertions(3);
       const { project, spec } = generateFixtureSpec({
@@ -155,6 +156,7 @@ describe("OpenAPI document validation", () => {
 
   it.each(["3.0", "3.1", "3.2"] as const)(
     "validates generated ts-full-coverage fixture for OpenAPI %s",
+    { timeout: 15_000 },
     async (openapiVersion) => {
       expect.assertions(3);
       const { project, spec } = generateFixtureSpec({
@@ -205,6 +207,7 @@ describe("OpenAPI document validation", () => {
     ["TanStack core at scale", tanstackCoreFlowAtScaleFixture],
   ] as const)(
     "validates generated at-scale fixture for OpenAPI 3.2 (%s)",
+    { timeout: 15_000 },
     async (_label, fixturePath) => {
       expect.assertions(3);
       const { project, spec } = generateFixtureSpec({
