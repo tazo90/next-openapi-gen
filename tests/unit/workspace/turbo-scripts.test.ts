@@ -51,7 +51,7 @@ describe("workspace Turbo script ownership", () => {
       scripts: Record<string, string>;
     };
 
-    expect(packageJson.scripts.build).toBe("turbo run build");
+    expect(packageJson.scripts.build).toBe("turbo run build --concurrency=100%");
     expect(packageJson.scripts.check).toContain("pnpm exec turbo run check");
     expect(packageJson.scripts.test).toContain("pnpm exec turbo run test:unit");
     expect(packageJson.scripts.test).toContain("pnpm exec turbo run test:integration");

@@ -68,10 +68,13 @@ export function processImports(ast: t.File): ZodImportProcessingResult {
     },
   });
 
-  return {
+  const result: ZodImportProcessingResult = {
     importedModules,
     drizzleZodImports: [...drizzleZodImports],
     zodLocalName,
-    zodImportSource,
   };
+  if (zodImportSource) {
+    result.zodImportSource = zodImportSource;
+  }
+  return result;
 }

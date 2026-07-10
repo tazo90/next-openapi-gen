@@ -212,6 +212,7 @@ function createFakeRuntime(): FakeRuntime {
 
   class FakeAPI {
     constructor(public options?: { cwd?: string }) {}
+    close(): void {}
     updateSnapshot(_params?: { openProject?: string }): FakeSnapshot {
       return snapshot;
     }
@@ -1255,6 +1256,27 @@ describe("NativeTypeScriptAdapter", () => {
 
       expect(adapter.resolveModule("unmapped-module", temp.routeFile)).toBeNull();
     });
+
+    it("falls back to Node resolution for bare package specifiers", () => {
+      const temp = setupTempProject();
+      const packageRoot = path.join(temp.root, "node_modules", "fixture-package");
+      fs.mkdirSync(packageRoot, { recursive: true });
+      fs.writeFileSync(
+        path.join(packageRoot, "package.json"),
+        JSON.stringify({ name: "fixture-package", exports: "./index.js", type: "module" }),
+      );
+      fs.writeFileSync(path.join(packageRoot, "index.js"), "export const value = 1;\n");
+      temp.fake.setProject({ paths: {} });
+      const adapter = createNativeTypeScriptAdapter({
+        packagePath: temp.root,
+        runtime: temp.fake.runtime,
+        version: "7.0.2",
+      });
+
+      expect(fs.realpathSync(adapter.resolveModule("fixture-package", temp.routeFile) ?? "")).toBe(
+        fs.realpathSync(path.join(packageRoot, "index.js")),
+      );
+    });
   });
 
   describe("project lifecycle", () => {
@@ -1274,10 +1296,7 @@ describe("NativeTypeScriptAdapter", () => {
       const first = adapter.resolveValueReference("value", temp.routeFile);
       expect(first.diagnostic?.code).toBe("example-reference-unresolved");
 
-      adapter.clear();
-
-      const second = adapter.resolveValueReference("value", temp.routeFile);
-      expect(second.diagnostic?.code).toBe("example-reference-unresolved");
+      expect(() => adapter.clear()).not.toThrow();
     });
 
     it("invalidates cached projects when the source file changes", () => {

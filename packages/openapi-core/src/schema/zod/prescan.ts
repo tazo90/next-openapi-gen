@@ -81,12 +81,20 @@ export function collectImportMetadata(ast: t.File): {
   zodImportSource?: string;
 } {
   const { importedModules, drizzleZodImports, zodLocalName, zodImportSource } = processImports(ast);
-  return {
+  const metadata: {
+    importedModules: Record<string, string>;
+    drizzleZodImports: Set<string>;
+    zodLocalName: string;
+    zodImportSource?: string;
+  } = {
     importedModules,
     drizzleZodImports: new Set(drizzleZodImports),
     zodLocalName,
-    zodImportSource,
   };
+  if (zodImportSource) {
+    metadata.zodImportSource = zodImportSource;
+  }
+  return metadata;
 }
 
 export function isZodSchemaNode(

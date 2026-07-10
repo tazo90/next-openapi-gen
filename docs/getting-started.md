@@ -7,12 +7,18 @@ supported frameworks.
 ## Requirements
 
 - Node.js `>=24`
-- TypeScript `>=5.9 <8` when using TypeScript schemas or checker-assisted response inference. `next-openapi-gen` resolves the TypeScript compiler from your project first and uses its bundled compiler only as a fallback.
+- TypeScript `>=5.9 <8` when using TypeScript schemas or checker-assisted response inference. `next-openapi-gen` resolves the TypeScript compiler from your project first, uses TypeScript 7's native checker API when available, and uses its bundled TypeScript 6 compatibility compiler as a fallback.
 - One of the supported frameworks:
   - Next.js with App Router or Pages Router
   - TanStack Router
   - React Router
 - Route handlers documented with JSDoc tags when you want explicit metadata
+
+TypeScript 7 can be installed as your project `tsc` for faster builds and
+editor feedback. Because TypeScript 7.0 does not expose the stable JavaScript
+compiler API used by much of the ecosystem, the generator keeps TypeScript 5.9
+through 7 in its support window and automatically falls back to the TypeScript 6
+API package for checker features when a native TypeScript 7 API is unavailable.
 
 ## Install
 

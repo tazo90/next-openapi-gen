@@ -24,7 +24,7 @@ Generate OpenAPI `3.0`, `3.1`, and `3.2` from the routes and schemas you already
 ### Requirements
 
 - Node.js `>=24`
-- TypeScript `>=5.9 <8` for TypeScript schemas and checker-assisted response inference. The generator prefers your project-installed TypeScript and falls back to its bundled compiler when none is installed.
+- TypeScript `>=5.9 <8` for TypeScript schemas and checker-assisted response inference. The generator prefers your project-installed TypeScript, uses TypeScript 7's native checker API when available, and falls back to its bundled TypeScript 6 compatibility compiler when needed.
 - A supported app framework:
   - Next.js using App Router or Pages Router
   - TanStack Router
@@ -73,6 +73,13 @@ pnpm exec openapi-gen generate --watch
 
 Need the full setup flow, config walkthrough, or production notes? See
 [docs/getting-started.md](./docs/getting-started.md).
+
+> [!NOTE]
+> TypeScript 7 ships a faster native CLI and language server, but its stable
+> programmatic API is still in transition. Projects can use TypeScript 7 for
+> `tsc`; `next-openapi-gen` will use the native checker API when it is exposed
+> by the installed package, otherwise it falls back to the bundled TypeScript 6
+> API. TypeScript 5.9 remains the minimum supported compiler for consumers.
 
 ### What you get
 

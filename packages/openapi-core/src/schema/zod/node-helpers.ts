@@ -29,8 +29,6 @@ export type PrimitiveHelperContext = {
   resolveConstArrayValues?: (name: string) => (string | number)[] | null;
   /** Resolve an identifier referring to a `z.object({...})` (or equivalent) call. */
   resolveObjectSchemaNode?: (name: string) => t.CallExpression | null;
-  /** Local alias for the Zod import (`z`, `zod`, etc.). */
-  zodLocalName?: string;
   /** The name of the local zod import binding — defaults to `"z"`. */
   zodLocalName?: string;
 };

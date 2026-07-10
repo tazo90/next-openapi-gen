@@ -5,7 +5,8 @@
     "allowImportingTsExtensions": true,
     "module": "ESNext",
     "moduleResolution": "Bundler",
-    "noEmit": true
+    "noEmit": true,
+    "types": ["node"]
   },
   "include": [
     "commitlint.config.mts",

@@ -124,12 +124,24 @@ jobs:
       matrix:
         include:
           - typescript-version: 5.9.3
+            typescript-package: typescript@5.9.3
+            expected-adapter: classic
             experimental: false
-          - typescript-version: 6
+          - typescript-version: 6.0.2
+            typescript-package: typescript@6.0.2
+            expected-adapter: classic
             experimental: false
-          - typescript-version: 7.0.1-rc
+          - typescript-version: typescript6-alias
+            typescript-package: typescript@npm:@typescript/typescript6@6.0.2
+            expected-adapter: classic
+            experimental: false
+          - typescript-version: 7.0.2
+            typescript-package: typescript@7.0.2
+            expected-adapter: native
             experimental: false
           - typescript-version: next
+            typescript-package: typescript@next
+            expected-adapter: any
             experimental: true
     steps:
       - name: Checkout repository
@@ -152,10 +164,12 @@ jobs:
         run: pnpm ci
 
       - name: Build generator packages
-        run: pnpm exec turbo run build --filter=next-openapi-gen...
+        run: pnpm exec turbo run build --filter=next-openapi-gen... --concurrency=100%
 
       - name: Run TypeScript compatibility smoke
         env:
+          EXPECTED_TYPESCRIPT_ADAPTER: ${{ matrix.expected-adapter }}
+          TYPESCRIPT_PACKAGE: ${{ matrix.typescript-package }}
           TYPESCRIPT_VERSION: ${{ matrix.typescript-version }}
         run: |
           set -euo pipefail
@@ -173,8 +187,8 @@ jobs:
           done
           cp "$compat_root/core-flow/templates/openapi-3.0.json" "$compat_root/core-flow/next.openapi.json"
           cp "$compat_root/ts-full-coverage/templates/openapi-3.2.json" "$compat_root/ts-full-coverage/next.openapi.json"
-          pnpm --dir "$compat_root/core-flow" add -D "typescript@${TYPESCRIPT_VERSION}"
-          pnpm --dir "$compat_root/ts-full-coverage" add -D "typescript@${TYPESCRIPT_VERSION}"
+          pnpm --dir "$compat_root/core-flow" add -D "${TYPESCRIPT_PACKAGE}"
+          pnpm --dir "$compat_root/ts-full-coverage" add -D "${TYPESCRIPT_PACKAGE}"
 
           COMPAT_CORE_PROJECT="$compat_root/core-flow" COMPAT_TS_FULL_PROJECT="$compat_root/ts-full-coverage" node --input-type=module <<'NODE'
           import fs from "node:fs";
@@ -183,6 +197,7 @@ jobs:
 
           import { OpenApiGenerator } from "next-openapi-gen";
           import { inferResponsesForExport } from "@workspace/openapi-core/routes/typescript-response-inference.js";
+          import { getTypeScriptAdapter } from "@workspace/openapi-core/shared/typescript-project.js";
 
           const coreProjectRoot = process.env.COMPAT_CORE_PROJECT;
           const tsFullProjectRoot = process.env.COMPAT_TS_FULL_PROJECT;
@@ -199,11 +214,19 @@ jobs:
           );
           console.log(`Using project TypeScript ${projectTypeScriptPackageJson.version}`);
 
+          function time(label, action) {
+            const start = performance.now();
+            const result = action();
+            const duration = performance.now() - start;
+            console.log(`${label}: ${duration.toFixed(1)}ms`);
+            return result;
+          }
+
           function generateProject(projectRoot) {
             const templatePath = path.join(projectRoot, "next.openapi.json");
             process.chdir(projectRoot);
             const generator = new OpenApiGenerator({ templatePath });
-            const spec = generator.generate();
+            const spec = time(`generate ${path.basename(projectRoot)}`, () => generator.generate());
             const errors = generator
               .getDiagnostics()
               .filter((diagnostic) => diagnostic.severity === "error");
@@ -244,7 +267,16 @@ jobs:
             `,
           );
 
-          const inferred = inferResponsesForExport(checkerSmokeRoute, "GET");
+          const adapter = getTypeScriptAdapter(checkerSmokeRoute);
+          const expectedAdapter = process.env.EXPECTED_TYPESCRIPT_ADAPTER;
+          console.log(`Selected TypeScript adapter: ${adapter.kind} (${adapter.version})`);
+          if (expectedAdapter && expectedAdapter !== "any" && adapter.kind !== expectedAdapter) {
+            throw new Error(`Expected ${expectedAdapter} adapter, got ${adapter.kind}`);
+          }
+
+          const inferred = time("infer checker response", () =>
+            inferResponsesForExport(checkerSmokeRoute, "GET"),
+          );
           const inferredResponse = inferred.responses.find(
             (response) => response.statusCode === "201" && response.contentType === "application/json",
           );
@@ -259,6 +291,40 @@ jobs:
             );
           }
           NODE
+
+          if [[ "${TYPESCRIPT_VERSION}" == "5.9.3" ]]; then
+            consumer_root="$compat_root/declaration-consumer"
+            mkdir -p "$consumer_root/src" "$consumer_root/node_modules"
+            cat > "$consumer_root/package.json" <<'JSON'
+          {
+            "private": true,
+            "type": "module"
+          }
+          JSON
+            cat > "$consumer_root/tsconfig.json" <<'JSON'
+          {
+            "compilerOptions": {
+              "module": "NodeNext",
+              "moduleResolution": "NodeNext",
+              "strict": true,
+              "target": "ES2024",
+              "types": ["node"]
+            },
+            "include": ["src"]
+          }
+          JSON
+            cat > "$consumer_root/src/index.ts" <<'TS'
+          import { OpenApiGenerator } from "next-openapi-gen";
+          import { withNextOpenApi } from "next-openapi-gen/next";
+
+          const generator = new OpenApiGenerator({ templatePath: "next.openapi.json" });
+          withNextOpenApi({});
+          console.log(typeof generator.generate);
+          TS
+            pnpm --dir "$consumer_root" add -D typescript@5.9.3 @types/node
+            ln -s "$PWD/packages/next-openapi-gen" "$consumer_root/node_modules/next-openapi-gen"
+            pnpm --dir "$consumer_root" exec tsc --noEmit
+          fi
 
   bench-regression:
     name: Bench Regression

@@ -2578,7 +2578,12 @@ export class ZodSchemaConverter {
         }
         break;
       case "extend":
-        if (node.arguments.length > 0 && t.isObjectExpression(node.arguments[0])) {
+        if (
+          t.isMemberExpression(node.callee) &&
+          t.isExpression(node.callee.object) &&
+          node.arguments.length > 0 &&
+          t.isObjectExpression(node.arguments[0])
+        ) {
           const baseSchemaResult = this.processZodNode(node.callee.object);
           schema = this.mergeExtendedObject(baseSchemaResult, node.arguments[0]);
         }
