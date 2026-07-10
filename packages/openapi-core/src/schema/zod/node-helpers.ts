@@ -345,8 +345,34 @@ export function processZodUnion(
   }
 
   return {
-    oneOf: unionItems,
+    anyOf: unionItems,
   };
+}
+
+export function applyNullableWrapper(schema: OpenApiSchema): OpenApiSchema {
+  if (schema.allOf) {
+    return { anyOf: [...schema.allOf, { type: "null" }] };
+  }
+  return { ...schema, nullable: true };
+}
+
+function isZodLocalBinding(name: string, zodLocalName: string = "z"): boolean {
+  return name === "z" || name === zodLocalName;
+}
+
+function isZodFunctionalWrapper(
+  node: t.CallExpression,
+  methodName: "optional" | "nullable" | "nullish",
+  zodLocalName: string = "z",
+): boolean {
+  if (!t.isMemberExpression(node.callee) || !t.isIdentifier(node.callee.property)) {
+    return false;
+  }
+  if (node.callee.property.name !== methodName) {
+    return false;
+  }
+  const object = node.callee.object;
+  return t.isIdentifier(object) && isZodLocalBinding(object.name, zodLocalName);
 }
 
 export function extractDescriptionFromArguments(node: t.CallExpression): string | null {
@@ -371,9 +397,16 @@ export function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-export function hasOptionalMethod(node: t.CallExpression): boolean {
+export function hasOptionalMethod(node: t.CallExpression, zodLocalName: string = "z"): boolean {
   if (!t.isCallExpression(node)) {
     return false;
+  }
+
+  if (isZodFunctionalWrapper(node, "optional", zodLocalName)) {
+    return true;
+  }
+  if (isZodFunctionalWrapper(node, "nullish", zodLocalName)) {
+    return true;
   }
 
   if (
@@ -385,13 +418,17 @@ export function hasOptionalMethod(node: t.CallExpression): boolean {
   }
 
   if (t.isMemberExpression(node.callee) && t.isCallExpression(node.callee.object)) {
-    return hasOptionalMethod(node.callee.object);
+    return hasOptionalMethod(node.callee.object, zodLocalName);
   }
 
   return false;
 }
 
-export function isOptionalCall(node: t.CallExpression): boolean {
+export function isOptionalCall(node: t.CallExpression, zodLocalName: string = "z"): boolean {
+  if (isZodFunctionalWrapper(node, "optional", zodLocalName)) {
+    return true;
+  }
+
   if (
     t.isCallExpression(node) &&
     t.isMemberExpression(node.callee) &&
@@ -406,7 +443,7 @@ export function isOptionalCall(node: t.CallExpression): boolean {
     t.isMemberExpression(node.callee) &&
     t.isCallExpression(node.callee.object)
   ) {
-    return hasOptionalMethod(node);
+    return hasOptionalMethod(node, zodLocalName);
   }
 
   return false;

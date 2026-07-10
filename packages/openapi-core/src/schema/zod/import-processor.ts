@@ -2,6 +2,7 @@ import type { NodePath } from "@babel/traverse";
 import * as t from "@babel/types";
 
 import { traverse } from "../../shared/babel-traverse.js";
+import { isZodImportPath } from "./compat.js";
 
 type ZodImportProcessingResult = {
   importedModules: Record<string, string>;
@@ -32,7 +33,7 @@ export function processImports(ast: t.File): ZodImportProcessingResult {
         });
       }
 
-      if (source === "zod") {
+      if (isZodImportPath(source)) {
         path.node.specifiers.forEach((specifier: t.ImportDeclaration["specifiers"][number]) => {
           if (t.isImportSpecifier(specifier)) {
             // `{ z }` or `{ z as zod }` — imported === "z"

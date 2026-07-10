@@ -26,6 +26,7 @@ import {
 } from "./file-processor.js";
 import { processImports } from "./import-processor.js";
 import {
+  applyNullableWrapper,
   escapeRegExp,
   extractDescriptionFromArguments,
   hasOptionalMethod,
@@ -108,8 +109,11 @@ const SUPPORTED_ZOD_HELPERS = new Set([
   "nativeEnum",
   "never",
   "null",
+  "nullable",
+  "nullish",
   "number",
   "object",
+  "optional",
   "partialRecord",
   "pipe",
   "pipeline",
@@ -1330,6 +1334,24 @@ export class ZodSchemaConverter {
         return this.processZodDiscriminatedUnion(node);
       } else if (methodName === "literal" && node.arguments.length > 0) {
         return this.processZodLiteral(node);
+      } else if (methodName === "optional" && node.arguments.length > 0) {
+        const firstArgument = node.arguments[0];
+        if (!firstArgument || t.isArgumentPlaceholder(firstArgument)) {
+          return { type: "object" };
+        }
+        return this.processZodNode(firstArgument);
+      } else if (methodName === "nullable" && node.arguments.length > 0) {
+        const firstArgument = node.arguments[0];
+        if (!firstArgument || t.isArgumentPlaceholder(firstArgument)) {
+          return { type: "object" };
+        }
+        return applyNullableWrapper(this.processZodNode(firstArgument));
+      } else if (methodName === "nullish" && node.arguments.length > 0) {
+        const firstArgument = node.arguments[0];
+        if (!firstArgument || t.isArgumentPlaceholder(firstArgument)) {
+          return { type: "object" };
+        }
+        return applyNullableWrapper(this.processZodNode(firstArgument));
       } else {
         this.warnIfUnknownZodHelper(methodName);
         return this.processZodPrimitive(node);
@@ -2193,21 +2215,11 @@ export class ZodSchemaConverter {
         break;
       case "nullable":
         // nullable means T | null — field stays required but can be null
-        if (schema.allOf) {
-          // Transform allOf to anyOf with null branch to preserve null type
-          schema = { anyOf: [...schema.allOf, { type: "null" }] };
-        } else {
-          schema.nullable = true;
-        }
+        schema = applyNullableWrapper(schema);
         break;
       case "nullish": // T | null | undefined
         // Not in required array (handled by hasOptionalMethod) AND can be null
-        if (schema.allOf) {
-          // Transform allOf to anyOf with null branch to preserve null type
-          schema = { anyOf: [...schema.allOf, { type: "null" }] };
-        } else {
-          schema.nullable = true;
-        }
+        schema = applyNullableWrapper(schema);
         break;
       case "describe": {
         const descVal = this.resolveStringArg(node.arguments[0]);
@@ -2712,7 +2724,7 @@ export class ZodSchemaConverter {
           const alternativeSchema = this.processZodNode(firstArgument);
           if (alternativeSchema) {
             schema = {
-              oneOf: [schema, alternativeSchema],
+              anyOf: [schema, alternativeSchema],
             };
           }
         }
@@ -2796,14 +2808,18 @@ export class ZodSchemaConverter {
    * Check if a Zod schema is optional
    */
   isOptional(node: t.CallExpression) {
-    return isOptionalCall(node);
+    return isOptionalCall(node, this.getCurrentZodLocalName());
   }
 
   /**
    * Check if a node has .optional() in its method chain
    */
   hasOptionalMethod(node: t.CallExpression): boolean {
-    return hasOptionalMethod(node);
+    return hasOptionalMethod(node, this.getCurrentZodLocalName());
+  }
+
+  private getCurrentZodLocalName(): string {
+    return this.currentFilePath ? (this.zodImportAlias.get(this.currentFilePath) ?? "z") : "z";
   }
 
   /**

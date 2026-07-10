@@ -44,7 +44,7 @@ describe("Schema processors", () => {
 
     expect(processor.resolveSchema("StringOrNumberSchema")).toEqual(
       expect.objectContaining({
-        oneOf: expect.any(Array),
+        anyOf: expect.any(Array),
       }),
     );
   });

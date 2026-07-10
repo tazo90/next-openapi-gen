@@ -11,6 +11,44 @@ describe("Zod features › modifiers", () => {
     expect(convert("z.string().optional()", roots)).toMatchObject({ type: "string" });
   });
 
+  it("z.optional(inner) processes the inner schema", () => {
+    expect(convert("z.optional(z.string())", roots)).toMatchObject({ type: "string" });
+  });
+
+  it("z.nullable(inner) applies nullable to the inner schema", () => {
+    expect(convert("z.nullable(z.string())", roots)).toMatchObject({
+      type: "string",
+      nullable: true,
+    });
+  });
+
+  it("z.nullish(inner) applies nullable to the inner schema", () => {
+    expect(convert("z.nullish(z.string())", roots)).toMatchObject({
+      type: "string",
+      nullable: true,
+    });
+  });
+
+  it("functional wrappers affect object required tracking", () => {
+    const schema = convert(
+      `z.object({
+        id: z.string(),
+        name: z.optional(z.string()),
+        deletedAt: z.nullable(z.iso.datetime()),
+      })`,
+      roots,
+    );
+    expect(schema).toMatchObject({
+      type: "object",
+      required: ["id", "deletedAt"],
+      properties: {
+        id: { type: "string" },
+        name: { type: "string" },
+        deletedAt: { type: "string", format: "date-time", nullable: true },
+      },
+    });
+  });
+
   it(".nullable() sets nullable: true", () => {
     expect(convert("z.string().nullable()", roots)).toMatchObject({
       type: "string",

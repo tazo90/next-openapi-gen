@@ -163,6 +163,25 @@ export class ZodRuntimeExporter {
         return this.buildIntersection(node);
       case "tuple":
         return this.buildTuple(node);
+      case "optional":
+      case "nullable":
+      case "nullish": {
+        const arg = node.arguments[0];
+        if (!arg || !isProcessableNode(arg)) {
+          return null;
+        }
+        const innerSchema = this.buildSchema(arg);
+        if (!innerSchema) {
+          return null;
+        }
+        if (helper === "optional") {
+          return innerSchema.optional();
+        }
+        if (helper === "nullable") {
+          return innerSchema.nullable();
+        }
+        return innerSchema.nullish();
+      }
       case "templateLiteral":
         return this.buildTemplateLiteral(node);
       default:

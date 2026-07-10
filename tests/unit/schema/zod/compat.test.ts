@@ -4,10 +4,12 @@ import { ZOD_IMPORT_PATHS, isZodImportPath } from "@workspace/openapi-core/schem
 
 describe("zod compat helpers", () => {
   it("recognizes supported zod import paths", () => {
-    expect(ZOD_IMPORT_PATHS).toEqual(["zod", "zod/v3", "zod/v4"]);
+    expect(ZOD_IMPORT_PATHS).toEqual(["zod", "zod/v3", "zod/v4", "zod/mini", "zod/v4/mini"]);
     expect(isZodImportPath("zod")).toBe(true);
     expect(isZodImportPath("zod/v3")).toBe(true);
     expect(isZodImportPath("zod/v4")).toBe(true);
+    expect(isZodImportPath("zod/mini")).toBe(true);
+    expect(isZodImportPath("zod/v4/mini")).toBe(true);
     expect(isZodImportPath("zod/v5")).toBe(false);
     expect(isZodImportPath("./zod")).toBe(false);
   });

@@ -4,7 +4,7 @@
 import { z } from "zod";
 
 // ========================================
-// 1. Simple Unions (should use oneOf)
+// 1. Simple Unions (should use anyOf)
 // ========================================
 
 export const StringOrNumberSchema = z.union([z.string(), z.number()]);
@@ -63,7 +63,7 @@ export const NullableObjectSchema = z.union([
 ]);
 
 // ========================================
-// 4. Schema Reference Unions (should use oneOf with $ref)
+// 4. Schema Reference Unions (should use anyOf with $ref)
 // ========================================
 
 const SuccessResponseSchema = z.object({

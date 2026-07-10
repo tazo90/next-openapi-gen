@@ -79,8 +79,8 @@ describe("Regressions › PR #119-style Zod edge cases", () => {
     );
     expect(schema).toBeDefined();
     if (!schema) return;
-    expect(schema).toMatchObject({ oneOf: expect.any(Array) });
-    expect((schema as { oneOf: unknown[] }).oneOf.length).toBe(2);
+    expect(schema).toMatchObject({ anyOf: expect.any(Array) });
+    expect((schema as { anyOf: unknown[] }).anyOf.length).toBe(2);
   });
 
   it("export * re-exports still resolve through the barrel", () => {

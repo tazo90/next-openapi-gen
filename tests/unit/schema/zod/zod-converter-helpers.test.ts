@@ -642,7 +642,7 @@ describe("ZodSchemaConverter helper seams", () => {
       description: "Base schema",
     });
     expect(converter.processZodChain(getFirstInitializer("z.string().or(z.number())"))).toEqual({
-      oneOf: [{ type: "string" }, { type: "number" }],
+      anyOf: [{ type: "string" }, { type: "number" }],
     });
     expect(converter.processZodChain(getFirstInitializer("z.string().and(z.number())"))).toEqual({
       allOf: [{ type: "string" }, { type: "number" }],

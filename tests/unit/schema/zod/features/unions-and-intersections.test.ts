@@ -6,10 +6,10 @@ describe("Zod features › unions and intersections", () => {
   const roots: string[] = [];
   afterEach(() => cleanup(roots));
 
-  it("z.union([a, b]) emits oneOf", () => {
+  it("z.union([a, b]) emits anyOf", () => {
     const schema = convert("z.union([z.string(), z.number()])", roots);
     expect(schema).toEqual({
-      oneOf: [{ type: "string" }, { type: "number" }],
+      anyOf: [{ type: "string" }, { type: "number" }],
     });
   });
 
@@ -21,10 +21,10 @@ describe("Zod features › unions and intersections", () => {
     });
   });
 
-  it("z.union over mixed types stays as oneOf", () => {
+  it("z.union over mixed types stays as anyOf", () => {
     const schema = convert('z.union([z.literal("a"), z.number(), z.boolean()])', roots);
     expect(schema).toMatchObject({
-      oneOf: expect.arrayContaining([
+      anyOf: expect.arrayContaining([
         expect.objectContaining({ enum: ["a"] }),
         expect.objectContaining({ type: "number" }),
         expect.objectContaining({ type: "boolean" }),
@@ -64,10 +64,10 @@ describe("Zod features › unions and intersections", () => {
     });
   });
 
-  it(".or() produces oneOf with the alternative", () => {
+  it(".or() produces anyOf with the alternative", () => {
     const schema = convert("z.string().or(z.number())", roots);
     expect(schema).toEqual({
-      oneOf: [{ type: "string" }, { type: "number" }],
+      anyOf: [{ type: "string" }, { type: "number" }],
     });
   });
 
@@ -96,13 +96,23 @@ describe("Zod features › unions and intersections", () => {
     expect(schema).toEqual({ type: "integer", enum: [1, 2, 3] });
   });
 
-  it("z.union over mixed integer and float literals stays as oneOf", () => {
+  it("z.union over mixed integer and float literals stays as anyOf", () => {
     const schema = convert("z.union([z.literal(1), z.literal(2.5)])", roots);
     expect(schema).toMatchObject({
-      oneOf: expect.arrayContaining([
+      anyOf: expect.arrayContaining([
         expect.objectContaining({ type: "integer", enum: [1] }),
         expect.objectContaining({ type: "number", enum: [2.5] }),
       ]),
+    });
+  });
+
+  it("z.union over overlapping string formats emits anyOf", () => {
+    const schema = convert("z.union([z.cuid2(), z.uuid()])", roots);
+    expect(schema).toEqual({
+      anyOf: [
+        { type: "string", format: "cuid2" },
+        { type: "string", format: "uuid" },
+      ],
     });
   });
 });

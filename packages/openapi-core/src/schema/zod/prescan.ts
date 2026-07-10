@@ -5,6 +5,7 @@ import type { NodePath } from "@babel/traverse";
 import * as t from "@babel/types";
 
 import { traverse } from "../../shared/babel-traverse.js";
+import { isZodImportPath } from "./compat.js";
 
 type FileAccess = {
   existsSync: (filePath: string) => boolean;
@@ -94,7 +95,7 @@ export function collectImportMetadata(ast: t.File): {
         });
       }
 
-      if (source === "zod") {
+      if (isZodImportPath(source)) {
         path.node.specifiers.forEach((specifier) => {
           if (t.isImportSpecifier(specifier)) {
             const imported = specifier.imported;

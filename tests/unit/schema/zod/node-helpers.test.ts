@@ -208,9 +208,18 @@ describe("Zod node helpers", () => {
       ),
     ).toBe("Documented");
     expect(escapeRegExp("a+b")).toBe("a\\+b");
+    expect(isOptionalCall(getFirstInitializer("z.optional(z.string())") as t.CallExpression)).toBe(
+      true,
+    );
     expect(isOptionalCall(getFirstInitializer("z.string().optional()") as t.CallExpression)).toBe(
       true,
     );
+    expect(
+      hasOptionalMethod(getFirstInitializer("z.nullish(z.string())") as t.CallExpression),
+    ).toBe(true);
+    expect(
+      hasOptionalMethod(getFirstInitializer("z.nullable(z.string())") as t.CallExpression),
+    ).toBe(false);
     expect(
       hasOptionalMethod(
         getFirstInitializer("z.string().nullable().optional()") as t.CallExpression,
