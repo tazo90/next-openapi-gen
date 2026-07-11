@@ -1,3 +1,16 @@
+# [1.7.0](https://github.com/tazo90/next-openapi-gen/compare/v1.6.0...v1.7.0) (2026-07-11)
+
+
+### ✅ Tests
+
+* assert Pages Router transport and CRUD routes in example app ([#165](https://github.com/tazo90/next-openapi-gen/issues/165)) ([031edf8](https://github.com/tazo90/next-openapi-gen/commit/031edf8d58a02b48b4f5cb42d128ba6e468afffd)) by [@martijn00](https://github.com/martijn00)
+* assert TypeScript transport routes in next-app-typescript example app ([#164](https://github.com/tazo90/next-openapi-gen/issues/164)) ([6a48200](https://github.com/tazo90/next-openapi-gen/commit/6a482003a438c4381e44fba4050fab42be27b6f6)) by [@martijn00](https://github.com/martijn00)
+
+
+### ✨ Features
+
+* add generators for missing types and cli option to fail on errors ([#166](https://github.com/tazo90/next-openapi-gen/issues/166)) ([153da36](https://github.com/tazo90/next-openapi-gen/commit/153da36ed3e957ddfe5145a8af74c80e28e432b3)) by [@martijn00](https://github.com/martijn00)
+
 # [1.6.0](https://github.com/tazo90/next-openapi-gen/compare/v1.5.0...v1.6.0) (2026-07-03)
 
 ### ✨ Features
