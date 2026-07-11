@@ -63,6 +63,9 @@ function summarizeProfiles(
       profiles.map((profile) => profile.defaultComponentsAndErrorsMs),
     ),
     mergeSchemasMs: average(profiles.map((profile) => profile.mergeSchemasMs)),
+    zodPreScanMs: average(profiles.map((profile) => profile.zodPreScanMs)),
+    zodPreprocessMs: average(profiles.map((profile) => profile.zodPreprocessMs)),
+    zodConvertMs: average(profiles.map((profile) => profile.zodConvertMs)),
     finalizeDocumentMs: average(profiles.map((profile) => profile.finalizeDocumentMs)),
     totalMs: average(profiles.map((profile) => profile.totalMs)),
   };

@@ -24,7 +24,7 @@ Generate OpenAPI `3.0`, `3.1`, and `3.2` from the routes and schemas you already
 ### Requirements
 
 - Node.js `>=24`
-- TypeScript `>=5.9 <8` for TypeScript schemas and checker-assisted response inference. The generator prefers your project-installed TypeScript and falls back to its bundled compiler when none is installed.
+- TypeScript `>=5.9 <8` for TypeScript schemas and checker-assisted response inference. The generator prefers your project-installed TypeScript, uses TypeScript 7's native checker API when available, and falls back to its bundled TypeScript 6 compatibility compiler when needed.
 - A supported app framework:
   - Next.js using App Router or Pages Router
   - TanStack Router
@@ -73,6 +73,13 @@ pnpm exec openapi-gen generate --watch
 
 Need the full setup flow, config walkthrough, or production notes? See
 [docs/getting-started.md](./docs/getting-started.md).
+
+> [!NOTE]
+> TypeScript 7 ships a faster native CLI and language server, but its stable
+> programmatic API is still in transition. Projects can use TypeScript 7 for
+> `tsc`; `next-openapi-gen` will use the native checker API when it is exposed
+> by the installed package, otherwise it falls back to the bundled TypeScript 6
+> API. TypeScript 5.9 remains the minimum supported compiler for consumers.
 
 ### What you get
 
@@ -291,6 +298,9 @@ Version guidance:
 | `defaultResponseSet` / `responseSets` | Reusable error-response groups                                                          |
 | `errorConfig`                         | Shared error schema templates                                                           |
 | `authPresets`                         | Override or extend the `@auth` keyword → scheme-name mapping                            |
+| `diagnostics.failOn`                  | CI gate: `"never"` (default), `"warning"`, or `"error"`                                 |
+
+During generation, the CLI prints diagnostics grouped by severity (`error`, `warning`, `info`) and also writes them to `.openapi-gen/manifest.json` in non-production runs. Common codes include `missing-query-params-type`, `multipart-missing-body-schema`, `schema-not-found`, `schema-dir-empty`, `path-param-schema-conflict`, `unknown-zod-helper`, `unknown-zod-method`, `type-resolution-fallback`, `inferred-path-params`, `inferred-query-params`, and `inferred-body`.
 
 For a fuller setup guide, Pages Router notes, response sets, and route exclusion
 patterns, see [docs/getting-started.md](./docs/getting-started.md).
@@ -318,7 +328,7 @@ patterns, see [docs/getting-started.md](./docs/getting-started.md).
 | `@openapi-override`        | Deep-merge extra OpenAPI fields onto the operation                                                      |
 | `@ignore`                  | Exclude a route from generation                                                                         |
 | `@internal`                | Exclude a schema/type declaration from `components/schemas`                                             |
-| `@method`                  | Required HTTP method tag for Pages Router handlers                                                      |
+| `@method`                  | Override or declare the HTTP method; `QUERY` emits OpenAPI 3.2 `additionalOperations`                   |
 
 For the complete tag guide and usage recipes, see
 [docs/jsdoc-reference.md](./docs/jsdoc-reference.md).
@@ -442,11 +452,14 @@ pnpm exec openapi-gen generate --watch
 
 ### `generate` options
 
-| Option       | Purpose                                       |
-| ------------ | --------------------------------------------- |
-| `--config`   | Use a specific config file                    |
-| `--template` | Merge a specific OpenAPI template or fragment |
-| `--watch`    | Regenerate when routes or schema files change |
+| Option       | Purpose                                                                  |
+| ------------ | ------------------------------------------------------------------------ |
+| `--config`   | Use a specific config file                                               |
+| `--template` | Merge a specific OpenAPI template or fragment                            |
+| `--watch`    | Regenerate when routes or schema files change                            |
+| `--fail-on`  | Exit with an error when diagnostics reach `error`, `warning`, or `never` |
+
+Generated diagnostics are printed after each run and recorded in `.openapi-gen/manifest.json` (development only) for automation and CI review.
 
 ## Contributing
 

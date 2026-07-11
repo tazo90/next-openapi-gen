@@ -43,7 +43,7 @@ describe("TypeScript runtime adapter", () => {
 
     const runtime = resolveTypeScriptRuntime(sourceFile);
 
-    expect(runtime.version).toMatch(/^5\.9\./);
+    expect(runtime.version).toBe("6.0.2");
     expect(runtime.packagePath).not.toContain(root);
     expect(runtime.support).toBe("supported");
   });
@@ -86,6 +86,23 @@ describe("TypeScript runtime adapter", () => {
     expect(fs.realpathSync(runtime.packagePath)).toBe(
       fs.realpathSync(path.join(root, "node_modules", "typescript")),
     );
+  });
+
+  it("falls back to the bundled TypeScript 6 API when a TypeScript 7 package has no native exports", () => {
+    const root = createTempRoot("nxog-ts-runtime-native-missing-");
+    writeMockTypeScriptPackageWithoutApi(root, "7.0.2");
+    const sourceFile = path.join(root, "src", "route.ts");
+
+    const runtime = resolveTypeScriptRuntime(sourceFile);
+
+    expect(runtime.version).toBe("6.0.2");
+    expect(runtime.requestedVersion).toBe("7.0.2");
+    expect(fs.realpathSync(runtime.requestedPackagePath ?? "")).toBe(
+      fs.realpathSync(path.join(root, "node_modules", "typescript")),
+    );
+    expect(runtime.fallbackReason).toContain("does not expose the native compiler API");
+    expect(runtime.ts).toBeDefined();
+    expect(runtime.native).toBeUndefined();
   });
 
   function createTempRoot(prefix: string) {
@@ -133,5 +150,21 @@ function writeMockTypeScriptNativePackage(root: string, version: string) {
   fs.writeFileSync(
     path.join(packageRoot, "dist", "ast", "index.js"),
     "export const SyntaxKind = {};\n",
+  );
+}
+
+function writeMockTypeScriptPackageWithoutApi(root: string, version: string) {
+  const packageRoot = path.join(root, "node_modules", "typescript");
+  fs.mkdirSync(packageRoot, { recursive: true });
+  fs.writeFileSync(
+    path.join(packageRoot, "package.json"),
+    JSON.stringify({
+      name: "typescript",
+      version,
+      type: "module",
+      exports: {
+        "./package.json": "./package.json",
+      },
+    }),
   );
 }

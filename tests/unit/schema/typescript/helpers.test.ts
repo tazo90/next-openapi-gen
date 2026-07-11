@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   createFormDataSchema,
+  createMultipartEncoding,
   createTypeReferenceFromString,
   detectContentType,
   extractKeysFromLiteralType,
@@ -162,6 +163,10 @@ describe("TypeScript schema helpers", () => {
     expect(isDateNode(t.stringLiteral("not-a-date"))).toBe(false);
 
     expect(getExampleForParam("id", "string")).toBe("123");
+    expect(getExampleForParam("organizationId", { type: "string", format: "uuid" })).toBe(
+      "123e4567-e89b-12d3-a456-426614174000",
+    );
+    expect(getExampleForParam("count", "integer")).toBe(1);
     expect(getExampleForParam("count", "number")).toBe(1);
     expect(getExampleForParam("enabled", "boolean")).toBe(true);
     expect(getExampleForParam("date")).toBe("2023-01-01");
@@ -196,6 +201,26 @@ describe("TypeScript schema helpers", () => {
         note: {
           type: "string",
         },
+      },
+    });
+
+    expect(
+      createMultipartEncoding({
+        type: "object",
+        properties: {
+          images: {
+            type: "array",
+            items: {
+              type: "string",
+              format: "binary",
+              "x-contentMediaTypes": ["image/png", "image/jpeg"],
+            },
+          },
+        },
+      }),
+    ).toEqual({
+      images: {
+        contentType: "image/png, image/jpeg",
       },
     });
   });

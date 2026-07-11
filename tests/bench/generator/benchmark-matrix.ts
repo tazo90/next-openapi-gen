@@ -16,15 +16,15 @@ import {
   copyProjectFixture,
   getProjectFixturePath,
   materializeTemplateVariant,
-  type TempProject,
   withProjectCwd,
+  type TempProject,
 } from "../../helpers/test-project.js";
 
 export type BenchmarkOpenApiVersion = Extract<OpenApiVersion, "3.0" | "3.1" | "3.2">;
 export type BenchmarkSchemaFlavor = "typescript" | "zod" | "drizzle-zod" | "mixed" | "filtered";
 export type BenchmarkPackageEntry = "." | "./next" | "./vite" | "./react-router";
 export type BenchmarkRouterKind = RouterType | "generic";
-export type BenchmarkMode = "cold" | "warm" | "profile";
+export type BenchmarkMode = "cold" | "warm" | "profile" | "scale";
 
 export type BenchmarkScenario = {
   id: string;
@@ -75,6 +75,53 @@ const nextPagesRouterCoreFlow = getProjectFixturePath("next", "pages-router", "c
 const nextPagesRouterZodFlow = getProjectFixturePath("next", "pages-router", "zod-flow");
 const tanstackCoreFlow = getProjectFixturePath("tanstack", "core-flow");
 const reactRouterCoreFlow = getProjectFixturePath("react-router", "core-flow");
+const nextAppRouterCoreFlowAtScale = getProjectFixturePath(
+  "next",
+  "app-router",
+  "core-flow-at-scale",
+);
+const nextAppRouterTypescriptFullCoverageAtScale = getProjectFixturePath(
+  "next",
+  "app-router",
+  "ts-full-coverage-at-scale",
+);
+const nextAppRouterZodFullCoverageAtScale = getProjectFixturePath(
+  "next",
+  "app-router",
+  "zod-full-coverage-at-scale",
+);
+const nextAppRouterZodOnlyCoverageAtScale = getProjectFixturePath(
+  "next",
+  "app-router",
+  "zod-only-coverage-at-scale",
+);
+const nextAppRouterMixedSchemasAtScale = getProjectFixturePath(
+  "next",
+  "app-router",
+  "mixed-schemas-at-scale",
+);
+const nextAppRouterDrizzleZodAtScale = getProjectFixturePath(
+  "next",
+  "app-router",
+  "drizzle-zod-flow-at-scale",
+);
+const nextAppRouterIgnoreRoutesAtScale = getProjectFixturePath(
+  "next",
+  "app-router",
+  "ignore-routes-at-scale",
+);
+const nextPagesRouterCoreFlowAtScale = getProjectFixturePath(
+  "next",
+  "pages-router",
+  "core-flow-at-scale",
+);
+const nextPagesRouterZodFlowAtScale = getProjectFixturePath(
+  "next",
+  "pages-router",
+  "zod-flow-at-scale",
+);
+const tanstackCoreFlowAtScale = getProjectFixturePath("tanstack", "core-flow-at-scale");
+const reactRouterCoreFlowAtScale = getProjectFixturePath("react-router", "core-flow-at-scale");
 
 export const BENCHMARK_SCENARIOS: readonly BenchmarkScenario[] = [
   ...createVersionedScenarios({
@@ -180,6 +227,109 @@ export const BENCHMARK_SCENARIOS: readonly BenchmarkScenario[] = [
     router: "generic",
     schemaFlavor: "typescript",
   }),
+  ...createScaleScenarios({
+    idPrefix: "next-app-core-scale",
+    fixturePath: nextAppRouterCoreFlowAtScale,
+    fixtureName: "next/app-router/core-flow-at-scale",
+    packageEntry: "./next",
+    frameworkKind: FrameworkKind.Nextjs,
+    router: "app",
+    schemaFlavor: "typescript",
+  }),
+  ...createScaleScenarios({
+    idPrefix: "next-app-ts-full-scale",
+    fixturePath: nextAppRouterTypescriptFullCoverageAtScale,
+    fixtureName: "next/app-router/ts-full-coverage-at-scale",
+    packageEntry: "./next",
+    frameworkKind: FrameworkKind.Nextjs,
+    router: "app",
+    schemaFlavor: "typescript",
+  }),
+  ...createScaleScenarios({
+    idPrefix: "next-app-zod-full-scale",
+    fixturePath: nextAppRouterZodFullCoverageAtScale,
+    fixtureName: "next/app-router/zod-full-coverage-at-scale",
+    packageEntry: "./next",
+    frameworkKind: FrameworkKind.Nextjs,
+    router: "app",
+    schemaFlavor: "zod",
+  }),
+  ...createScaleScenarios({
+    idPrefix: "next-app-zod-scale",
+    fixturePath: nextAppRouterZodOnlyCoverageAtScale,
+    fixtureName: "next/app-router/zod-only-coverage-at-scale",
+    packageEntry: "./next",
+    frameworkKind: FrameworkKind.Nextjs,
+    router: "app",
+    schemaFlavor: "zod",
+  }),
+  ...createScaleScenarios({
+    idPrefix: "next-app-mixed-scale",
+    fixturePath: nextAppRouterMixedSchemasAtScale,
+    fixtureName: "next/app-router/mixed-schemas-at-scale",
+    packageEntry: "./next",
+    frameworkKind: FrameworkKind.Nextjs,
+    router: "app",
+    schemaFlavor: "mixed",
+  }),
+  ...createScaleScenarios({
+    idPrefix: "next-app-drizzle-zod-scale",
+    fixturePath: nextAppRouterDrizzleZodAtScale,
+    fixtureName: "next/app-router/drizzle-zod-flow-at-scale",
+    packageEntry: "./next",
+    frameworkKind: FrameworkKind.Nextjs,
+    router: "app",
+    schemaFlavor: "drizzle-zod",
+  }),
+  ...createScaleScenarios({
+    idPrefix: "next-app-ignore-scale",
+    fixturePath: nextAppRouterIgnoreRoutesAtScale,
+    fixtureName: "next/app-router/ignore-routes-at-scale",
+    packageEntry: "./next",
+    frameworkKind: FrameworkKind.Nextjs,
+    router: "app",
+    schemaFlavor: "filtered",
+    templateOverrides: {
+      ignoreRoutes: ["/admin/*", "/debug", "/public/info"],
+      includeOpenApiRoutes: true,
+    },
+  }),
+  ...createScaleScenarios({
+    idPrefix: "next-pages-core-scale",
+    fixturePath: nextPagesRouterCoreFlowAtScale,
+    fixtureName: "next/pages-router/core-flow-at-scale",
+    packageEntry: "./next",
+    frameworkKind: FrameworkKind.Nextjs,
+    router: "pages",
+    schemaFlavor: "typescript",
+  }),
+  ...createScaleScenarios({
+    idPrefix: "next-pages-zod-scale",
+    fixturePath: nextPagesRouterZodFlowAtScale,
+    fixtureName: "next/pages-router/zod-flow-at-scale",
+    packageEntry: "./next",
+    frameworkKind: FrameworkKind.Nextjs,
+    router: "pages",
+    schemaFlavor: "zod",
+  }),
+  ...createScaleScenarios({
+    idPrefix: "tanstack-core-scale",
+    fixturePath: tanstackCoreFlowAtScale,
+    fixtureName: "tanstack/core-flow-at-scale",
+    packageEntry: "./vite",
+    frameworkKind: FrameworkKind.Tanstack,
+    router: "generic",
+    schemaFlavor: "typescript",
+  }),
+  ...createScaleScenarios({
+    idPrefix: "react-router-core-scale",
+    fixturePath: reactRouterCoreFlowAtScale,
+    fixtureName: "react-router/core-flow-at-scale",
+    packageEntry: "./react-router",
+    frameworkKind: FrameworkKind.ReactRouter,
+    router: "generic",
+    schemaFlavor: "typescript",
+  }),
 ] as const;
 
 export function getBenchmarkScenarios(mode: BenchmarkMode): BenchmarkScenario[] {
@@ -258,6 +408,29 @@ export function collectProfiles(
   );
 }
 
+export function collectWarmProfiles(
+  project: BenchProject,
+  iterations: number,
+): GeneratorPerformanceProfile[] {
+  return Array.from({ length: iterations }, () =>
+    withProjectCwd(project.project.root, () => {
+      const runtime = createSharedGenerationRuntime();
+      const coldGenerator = new OpenApiGenerator({ templatePath: project.templatePath, runtime });
+      coldGenerator.generate();
+
+      const warmGenerator = new OpenApiGenerator({ templatePath: project.templatePath, runtime });
+      warmGenerator.generate();
+
+      const profile = warmGenerator.getPerformanceProfile();
+      if (!profile) {
+        throw new Error(`Expected warm performance profile for scenario "${project.scenario.id}".`);
+      }
+
+      return profile;
+    }),
+  );
+}
+
 export function getScenarioBenchmarkName(scenario: BenchmarkScenario): string {
   return [
     scenario.packageEntry,
@@ -284,4 +457,17 @@ function createVersionedScenarios(
     openapiVersion,
     modes: BENCHMARK_MODES,
   }));
+}
+
+function createScaleScenarios(
+  definition: VersionedScenarioDefinition,
+): readonly BenchmarkScenario[] {
+  return [
+    {
+      ...definition,
+      id: `${definition.idPrefix}-3.2`,
+      openapiVersion: "3.2",
+      modes: ["scale"],
+    },
+  ];
 }

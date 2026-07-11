@@ -23,7 +23,17 @@ describe("processImports", () => {
       },
       drizzleZodImports: ["drizzleDefault", "createInsertSchema", "makeSelect"],
       zodLocalName: "z",
+      zodImportSource: "zod",
     });
+  });
+
+  it("captures zod/mini import source", () => {
+    const ast = parseTypeScriptFile(`
+      import * as z from "zod/mini";
+    `);
+    const result = processImports(ast);
+    expect(result.zodLocalName).toBe("z");
+    expect(result.zodImportSource).toBe("zod/mini");
   });
 
   it("captures aliased z import local names", () => {

@@ -51,8 +51,13 @@ export function resolveImportPath(
     const currentDir = pathOps.dirname(currentFilePath);
     const resolvedPath = pathOps.resolve(currentDir, importSource);
     const extensions = [".ts", ".tsx", ".js", ".jsx"];
+    const hasSourceExtension = extensions.some((extension) => resolvedPath.endsWith(extension));
 
-    if (!pathOps.extname(resolvedPath)) {
+    if (hasSourceExtension && fileAccess.existsSync(resolvedPath)) {
+      return resolvedPath;
+    }
+
+    if (!hasSourceExtension) {
       for (const ext of extensions) {
         const withExt = resolvedPath + ext;
         if (fileAccess.existsSync(withExt)) {
@@ -66,8 +71,6 @@ export function resolveImportPath(
           return indexPath;
         }
       }
-    } else if (fileAccess.existsSync(resolvedPath)) {
-      return resolvedPath;
     }
   }
 
@@ -222,8 +225,26 @@ export function expandFactoryCall(
     if (t.isIdentifier(param) && arg) {
       paramMap.set(param.name, arg);
       logger.debug(`[Factory] Mapped parameter '${param.name}' to argument`);
-    } else if (t.isObjectPattern(param)) {
-      logger.debug(`[Factory] Skipping destructured parameter (not yet supported)`);
+    } else if (t.isObjectPattern(param) && t.isObjectExpression(arg)) {
+      for (const property of param.properties) {
+        if (!t.isObjectProperty(property) || !t.isIdentifier(property.value)) {
+          continue;
+        }
+
+        const keyName = getObjectKeyName(property.key);
+        if (!keyName) {
+          continue;
+        }
+
+        const matchingArgProperty = arg.properties.find(
+          (argProperty): argProperty is t.ObjectProperty =>
+            t.isObjectProperty(argProperty) && getObjectKeyName(argProperty.key) === keyName,
+        );
+        if (matchingArgProperty) {
+          paramMap.set(property.value.name, matchingArgProperty.value);
+          logger.debug(`[Factory] Mapped destructured parameter '${property.value.name}'`);
+        }
+      }
     }
   }
 
@@ -248,4 +269,16 @@ export function expandFactoryCall(
   }
 
   return result;
+}
+
+function getObjectKeyName(key: t.Node): string | null {
+  if (t.isIdentifier(key)) {
+    return key.name;
+  }
+
+  if (t.isStringLiteral(key)) {
+    return key.value;
+  }
+
+  return null;
 }

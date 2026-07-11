@@ -1,0 +1,3974 @@
+{
+  "generatedAt": "2026-07-05T20:57:38.103Z",
+  "iterations": 3,
+  "machine": {
+    "arch": "arm64",
+    "cpus": 1,
+    "model": "unknown",
+    "node": "v25.0.0",
+    "platform": "darwin",
+    "release": "25.5.0"
+  },
+  "scenarios": [
+    {
+      "id": "next-app-core-3.0",
+      "fixture": "next/app-router/core-flow",
+      "framework": "nextjs",
+      "mode": "cold",
+      "openapiVersion": "3.0",
+      "packageEntry": "./next",
+      "profile": {
+        "prepareTemplateMs": 0.05,
+        "loadCustomFragmentsMs": 0,
+        "prepareDocumentMs": 0.05,
+        "scanRouteFilesMs": 1.305,
+        "deriveRoutePathMs": 0.199,
+        "filterRouteCandidatesMs": 0.022,
+        "sourcePrecheckMs": 0.447,
+        "readRouteFilesMs": 0.115,
+        "parseRouteFilesMs": 3.557,
+        "analyzeRouteFilesMs": 4.594,
+        "typescriptResponseInferenceMs": 0,
+        "processRouteFilesMs": 8.317,
+        "registerRouteMs": 103.708,
+        "getSchemaContentMs": 55.483,
+        "createRequestParamsMs": 0.336,
+        "createRequestBodyMs": 0,
+        "processResponsesMs": 46.945,
+        "createResponseSchemaMs": 0,
+        "buildOperationsMs": 103.738,
+        "sortAndMergePathsMs": 0.312,
+        "buildPathsMs": 0.312,
+        "defaultComponentsAndErrorsMs": 0.117,
+        "mergeSchemasMs": 0.371,
+        "finalizeDocumentMs": 3.362,
+        "totalMs": 118.406,
+        "scanRoutesMs": 113.36
+      },
+      "router": "app",
+      "schemaFlavor": "typescript",
+      "topPhases": [
+        {
+          "name": "scanRoutesMs",
+          "ms": 113.36
+        },
+        {
+          "name": "buildOperationsMs",
+          "ms": 103.738
+        },
+        {
+          "name": "registerRouteMs",
+          "ms": 103.708
+        },
+        {
+          "name": "getSchemaContentMs",
+          "ms": 55.483
+        },
+        {
+          "name": "processResponsesMs",
+          "ms": 46.945
+        }
+      ]
+    },
+    {
+      "id": "next-app-core-3.0",
+      "fixture": "next/app-router/core-flow",
+      "framework": "nextjs",
+      "mode": "warm",
+      "openapiVersion": "3.0",
+      "packageEntry": "./next",
+      "profile": {
+        "prepareTemplateMs": 0.026,
+        "loadCustomFragmentsMs": 0,
+        "prepareDocumentMs": 0.026,
+        "scanRouteFilesMs": 0.051,
+        "deriveRoutePathMs": 0.14,
+        "filterRouteCandidatesMs": 0.007,
+        "sourcePrecheckMs": 0.248,
+        "readRouteFilesMs": 0,
+        "parseRouteFilesMs": 0,
+        "analyzeRouteFilesMs": 2.296,
+        "typescriptResponseInferenceMs": 0,
+        "processRouteFilesMs": 2.395,
+        "registerRouteMs": 85.871,
+        "getSchemaContentMs": 41.059,
+        "createRequestParamsMs": 0.232,
+        "createRequestBodyMs": 0,
+        "processResponsesMs": 44.039,
+        "createResponseSchemaMs": 0,
+        "buildOperationsMs": 85.889,
+        "sortAndMergePathsMs": 0.197,
+        "buildPathsMs": 0.197,
+        "defaultComponentsAndErrorsMs": 0.056,
+        "mergeSchemasMs": 0.256,
+        "finalizeDocumentMs": 1.864,
+        "totalMs": 91.196,
+        "scanRoutesMs": 88.335
+      },
+      "router": "app",
+      "schemaFlavor": "typescript",
+      "topPhases": [
+        {
+          "name": "scanRoutesMs",
+          "ms": 88.335
+        },
+        {
+          "name": "buildOperationsMs",
+          "ms": 85.889
+        },
+        {
+          "name": "registerRouteMs",
+          "ms": 85.871
+        },
+        {
+          "name": "processResponsesMs",
+          "ms": 44.039
+        },
+        {
+          "name": "getSchemaContentMs",
+          "ms": 41.059
+        }
+      ]
+    },
+    {
+      "id": "next-app-core-3.1",
+      "fixture": "next/app-router/core-flow",
+      "framework": "nextjs",
+      "mode": "cold",
+      "openapiVersion": "3.1",
+      "packageEntry": "./next",
+      "profile": {
+        "prepareTemplateMs": 0.034,
+        "loadCustomFragmentsMs": 0,
+        "prepareDocumentMs": 0.034,
+        "scanRouteFilesMs": 0.977,
+        "deriveRoutePathMs": 0.117,
+        "filterRouteCandidatesMs": 0.006,
+        "sourcePrecheckMs": 0.341,
+        "readRouteFilesMs": 0.121,
+        "parseRouteFilesMs": 0.564,
+        "analyzeRouteFilesMs": 2.458,
+        "typescriptResponseInferenceMs": 0,
+        "processRouteFilesMs": 3.122,
+        "registerRouteMs": 91.207,
+        "getSchemaContentMs": 48.103,
+        "createRequestParamsMs": 0.235,
+        "createRequestBodyMs": 0,
+        "processResponsesMs": 42.368,
+        "createResponseSchemaMs": 0,
+        "buildOperationsMs": 91.232,
+        "sortAndMergePathsMs": 0.191,
+        "buildPathsMs": 0.191,
+        "defaultComponentsAndErrorsMs": 0.063,
+        "mergeSchemasMs": 0.243,
+        "finalizeDocumentMs": 2.004,
+        "totalMs": 98.389,
+        "scanRoutesMs": 95.33
+      },
+      "router": "app",
+      "schemaFlavor": "typescript",
+      "topPhases": [
+        {
+          "name": "scanRoutesMs",
+          "ms": 95.33
+        },
+        {
+          "name": "buildOperationsMs",
+          "ms": 91.232
+        },
+        {
+          "name": "registerRouteMs",
+          "ms": 91.207
+        },
+        {
+          "name": "getSchemaContentMs",
+          "ms": 48.103
+        },
+        {
+          "name": "processResponsesMs",
+          "ms": 42.368
+        }
+      ]
+    },
+    {
+      "id": "next-app-core-3.1",
+      "fixture": "next/app-router/core-flow",
+      "framework": "nextjs",
+      "mode": "warm",
+      "openapiVersion": "3.1",
+      "packageEntry": "./next",
+      "profile": {
+        "prepareTemplateMs": 0.028,
+        "loadCustomFragmentsMs": 0,
+        "prepareDocumentMs": 0.028,
+        "scanRouteFilesMs": 0.045,
+        "deriveRoutePathMs": 0.131,
+        "filterRouteCandidatesMs": 0.008,
+        "sourcePrecheckMs": 0.231,
+        "readRouteFilesMs": 0,
+        "parseRouteFilesMs": 0,
+        "analyzeRouteFilesMs": 2.385,
+        "typescriptResponseInferenceMs": 0,
+        "processRouteFilesMs": 2.47,
+        "registerRouteMs": 86.673,
+        "getSchemaContentMs": 42.021,
+        "createRequestParamsMs": 0.24,
+        "createRequestBodyMs": 0,
+        "processResponsesMs": 43.899,
+        "createResponseSchemaMs": 0,
+        "buildOperationsMs": 86.699,
+        "sortAndMergePathsMs": 0.182,
+        "buildPathsMs": 0.182,
+        "defaultComponentsAndErrorsMs": 0.053,
+        "mergeSchemasMs": 0.244,
+        "finalizeDocumentMs": 2.084,
+        "totalMs": 92.227,
+        "scanRoutesMs": 89.213
+      },
+      "router": "app",
+      "schemaFlavor": "typescript",
+      "topPhases": [
+        {
+          "name": "scanRoutesMs",
+          "ms": 89.213
+        },
+        {
+          "name": "buildOperationsMs",
+          "ms": 86.699
+        },
+        {
+          "name": "registerRouteMs",
+          "ms": 86.673
+        },
+        {
+          "name": "processResponsesMs",
+          "ms": 43.899
+        },
+        {
+          "name": "getSchemaContentMs",
+          "ms": 42.021
+        }
+      ]
+    },
+    {
+      "id": "next-app-core-3.2",
+      "fixture": "next/app-router/core-flow",
+      "framework": "nextjs",
+      "mode": "cold",
+      "openapiVersion": "3.2",
+      "packageEntry": "./next",
+      "profile": {
+        "prepareTemplateMs": 0.028,
+        "loadCustomFragmentsMs": 0,
+        "prepareDocumentMs": 0.028,
+        "scanRouteFilesMs": 0.914,
+        "deriveRoutePathMs": 0.123,
+        "filterRouteCandidatesMs": 0.006,
+        "sourcePrecheckMs": 0.366,
+        "readRouteFilesMs": 0.152,
+        "parseRouteFilesMs": 0.52,
+        "analyzeRouteFilesMs": 2.59,
+        "typescriptResponseInferenceMs": 0,
+        "processRouteFilesMs": 3.213,
+        "registerRouteMs": 87.77,
+        "getSchemaContentMs": 44.583,
+        "createRequestParamsMs": 0.192,
+        "createRequestBodyMs": 0,
+        "processResponsesMs": 42.516,
+        "createResponseSchemaMs": 0,
+        "buildOperationsMs": 87.787,
+        "sortAndMergePathsMs": 0.178,
+        "buildPathsMs": 0.178,
+        "defaultComponentsAndErrorsMs": 0.048,
+        "mergeSchemasMs": 0.264,
+        "finalizeDocumentMs": 1.729,
+        "totalMs": 94.704,
+        "scanRoutesMs": 91.914
+      },
+      "router": "app",
+      "schemaFlavor": "typescript",
+      "topPhases": [
+        {
+          "name": "scanRoutesMs",
+          "ms": 91.914
+        },
+        {
+          "name": "buildOperationsMs",
+          "ms": 87.787
+        },
+        {
+          "name": "registerRouteMs",
+          "ms": 87.77
+        },
+        {
+          "name": "getSchemaContentMs",
+          "ms": 44.583
+        },
+        {
+          "name": "processResponsesMs",
+          "ms": 42.516
+        }
+      ]
+    },
+    {
+      "id": "next-app-core-3.2",
+      "fixture": "next/app-router/core-flow",
+      "framework": "nextjs",
+      "mode": "warm",
+      "openapiVersion": "3.2",
+      "packageEntry": "./next",
+      "profile": {
+        "prepareTemplateMs": 0.028,
+        "loadCustomFragmentsMs": 0,
+        "prepareDocumentMs": 0.028,
+        "scanRouteFilesMs": 0.041,
+        "deriveRoutePathMs": 0.119,
+        "filterRouteCandidatesMs": 0.006,
+        "sourcePrecheckMs": 0.214,
+        "readRouteFilesMs": 0,
+        "parseRouteFilesMs": 0,
+        "analyzeRouteFilesMs": 2.166,
+        "typescriptResponseInferenceMs": 0,
+        "processRouteFilesMs": 2.259,
+        "registerRouteMs": 81.598,
+        "getSchemaContentMs": 40.185,
+        "createRequestParamsMs": 0.212,
+        "createRequestBodyMs": 0,
+        "processResponsesMs": 40.731,
+        "createResponseSchemaMs": 0,
+        "buildOperationsMs": 81.615,
+        "sortAndMergePathsMs": 0.167,
+        "buildPathsMs": 0.167,
+        "defaultComponentsAndErrorsMs": 0.043,
+        "mergeSchemasMs": 0.226,
+        "finalizeDocumentMs": 1.728,
+        "totalMs": 86.499,
+        "scanRoutesMs": 83.915
+      },
+      "router": "app",
+      "schemaFlavor": "typescript",
+      "topPhases": [
+        {
+          "name": "scanRoutesMs",
+          "ms": 83.915
+        },
+        {
+          "name": "buildOperationsMs",
+          "ms": 81.615
+        },
+        {
+          "name": "registerRouteMs",
+          "ms": 81.598
+        },
+        {
+          "name": "processResponsesMs",
+          "ms": 40.731
+        },
+        {
+          "name": "getSchemaContentMs",
+          "ms": 40.185
+        }
+      ]
+    },
+    {
+      "id": "next-pages-core-3.0",
+      "fixture": "next/pages-router/core-flow",
+      "framework": "nextjs",
+      "mode": "cold",
+      "openapiVersion": "3.0",
+      "packageEntry": "./next",
+      "profile": {
+        "prepareTemplateMs": 0.013,
+        "loadCustomFragmentsMs": 0,
+        "prepareDocumentMs": 0.014,
+        "scanRouteFilesMs": 0.097,
+        "deriveRoutePathMs": 0.032,
+        "filterRouteCandidatesMs": 0,
+        "sourcePrecheckMs": 0.072,
+        "readRouteFilesMs": 0.01,
+        "parseRouteFilesMs": 0.067,
+        "analyzeRouteFilesMs": 0.287,
+        "typescriptResponseInferenceMs": 0,
+        "processRouteFilesMs": 0.435,
+        "registerRouteMs": 0.6,
+        "getSchemaContentMs": 0.44,
+        "createRequestParamsMs": 0.024,
+        "createRequestBodyMs": 0,
+        "processResponsesMs": 0.076,
+        "createResponseSchemaMs": 0,
+        "buildOperationsMs": 0.601,
+        "sortAndMergePathsMs": 0.012,
+        "buildPathsMs": 0.012,
+        "defaultComponentsAndErrorsMs": 0.004,
+        "mergeSchemasMs": 0.039,
+        "finalizeDocumentMs": 0.22,
+        "totalMs": 1.552,
+        "scanRoutesMs": 1.133
+      },
+      "router": "pages",
+      "schemaFlavor": "typescript",
+      "topPhases": [
+        {
+          "name": "scanRoutesMs",
+          "ms": 1.133
+        },
+        {
+          "name": "buildOperationsMs",
+          "ms": 0.601
+        },
+        {
+          "name": "registerRouteMs",
+          "ms": 0.6
+        },
+        {
+          "name": "getSchemaContentMs",
+          "ms": 0.44
+        },
+        {
+          "name": "processRouteFilesMs",
+          "ms": 0.435
+        }
+      ]
+    },
+    {
+      "id": "next-pages-core-3.0",
+      "fixture": "next/pages-router/core-flow",
+      "framework": "nextjs",
+      "mode": "warm",
+      "openapiVersion": "3.0",
+      "packageEntry": "./next",
+      "profile": {
+        "prepareTemplateMs": 0.007,
+        "loadCustomFragmentsMs": 0,
+        "prepareDocumentMs": 0.007,
+        "scanRouteFilesMs": 0.004,
+        "deriveRoutePathMs": 0.006,
+        "filterRouteCandidatesMs": 0,
+        "sourcePrecheckMs": 0.018,
+        "readRouteFilesMs": 0,
+        "parseRouteFilesMs": 0,
+        "analyzeRouteFilesMs": 0.103,
+        "typescriptResponseInferenceMs": 0,
+        "processRouteFilesMs": 0.113,
+        "registerRouteMs": 0.227,
+        "getSchemaContentMs": 0.131,
+        "createRequestParamsMs": 0.015,
+        "createRequestBodyMs": 0,
+        "processResponsesMs": 0.055,
+        "createResponseSchemaMs": 0,
+        "buildOperationsMs": 0.228,
+        "sortAndMergePathsMs": 0.007,
+        "buildPathsMs": 0.007,
+        "defaultComponentsAndErrorsMs": 0.002,
+        "mergeSchemasMs": 0.026,
+        "finalizeDocumentMs": 0.201,
+        "totalMs": 0.629,
+        "scanRoutesMs": 0.345
+      },
+      "router": "pages",
+      "schemaFlavor": "typescript",
+      "topPhases": [
+        {
+          "name": "scanRoutesMs",
+          "ms": 0.345
+        },
+        {
+          "name": "buildOperationsMs",
+          "ms": 0.228
+        },
+        {
+          "name": "registerRouteMs",
+          "ms": 0.227
+        },
+        {
+          "name": "finalizeDocumentMs",
+          "ms": 0.201
+        },
+        {
+          "name": "getSchemaContentMs",
+          "ms": 0.131
+        }
+      ]
+    },
+    {
+      "id": "next-pages-core-3.1",
+      "fixture": "next/pages-router/core-flow",
+      "framework": "nextjs",
+      "mode": "cold",
+      "openapiVersion": "3.1",
+      "packageEntry": "./next",
+      "profile": {
+        "prepareTemplateMs": 0.007,
+        "loadCustomFragmentsMs": 0,
+        "prepareDocumentMs": 0.007,
+        "scanRouteFilesMs": 0.069,
+        "deriveRoutePathMs": 0.004,
+        "filterRouteCandidatesMs": 0,
+        "sourcePrecheckMs": 0.017,
+        "readRouteFilesMs": 0.007,
+        "parseRouteFilesMs": 0.022,
+        "analyzeRouteFilesMs": 0.11,
+        "typescriptResponseInferenceMs": 0,
+        "processRouteFilesMs": 0.143,
+        "registerRouteMs": 0.503,
+        "getSchemaContentMs": 0.393,
+        "createRequestParamsMs": 0.017,
+        "createRequestBodyMs": 0,
+        "processResponsesMs": 0.057,
+        "createResponseSchemaMs": 0,
+        "buildOperationsMs": 0.504,
+        "sortAndMergePathsMs": 0.008,
+        "buildPathsMs": 0.008,
+        "defaultComponentsAndErrorsMs": 0.002,
+        "mergeSchemasMs": 0.034,
+        "finalizeDocumentMs": 0.195,
+        "totalMs": 1.005,
+        "scanRoutesMs": 0.716
+      },
+      "router": "pages",
+      "schemaFlavor": "typescript",
+      "topPhases": [
+        {
+          "name": "scanRoutesMs",
+          "ms": 0.716
+        },
+        {
+          "name": "buildOperationsMs",
+          "ms": 0.504
+        },
+        {
+          "name": "registerRouteMs",
+          "ms": 0.503
+        },
+        {
+          "name": "getSchemaContentMs",
+          "ms": 0.393
+        },
+        {
+          "name": "finalizeDocumentMs",
+          "ms": 0.195
+        }
+      ]
+    },
+    {
+      "id": "next-pages-core-3.1",
+      "fixture": "next/pages-router/core-flow",
+      "framework": "nextjs",
+      "mode": "warm",
+      "openapiVersion": "3.1",
+      "packageEntry": "./next",
+      "profile": {
+        "prepareTemplateMs": 0.006,
+        "loadCustomFragmentsMs": 0,
+        "prepareDocumentMs": 0.006,
+        "scanRouteFilesMs": 0.003,
+        "deriveRoutePathMs": 0.003,
+        "filterRouteCandidatesMs": 0,
+        "sourcePrecheckMs": 0.008,
+        "readRouteFilesMs": 0,
+        "parseRouteFilesMs": 0,
+        "analyzeRouteFilesMs": 0.08,
+        "typescriptResponseInferenceMs": 0,
+        "processRouteFilesMs": 0.087,
+        "registerRouteMs": 0.201,
+        "getSchemaContentMs": 0.114,
+        "createRequestParamsMs": 0.013,
+        "createRequestBodyMs": 0,
+        "processResponsesMs": 0.053,
+        "createResponseSchemaMs": 0,
+        "buildOperationsMs": 0.202,
+        "sortAndMergePathsMs": 0.006,
+        "buildPathsMs": 0.006,
+        "defaultComponentsAndErrorsMs": 0.001,
+        "mergeSchemasMs": 0.027,
+        "finalizeDocumentMs": 0.175,
+        "totalMs": 0.533,
+        "scanRoutesMs": 0.291
+      },
+      "router": "pages",
+      "schemaFlavor": "typescript",
+      "topPhases": [
+        {
+          "name": "scanRoutesMs",
+          "ms": 0.291
+        },
+        {
+          "name": "buildOperationsMs",
+          "ms": 0.202
+        },
+        {
+          "name": "registerRouteMs",
+          "ms": 0.201
+        },
+        {
+          "name": "finalizeDocumentMs",
+          "ms": 0.175
+        },
+        {
+          "name": "getSchemaContentMs",
+          "ms": 0.114
+        }
+      ]
+    },
+    {
+      "id": "next-pages-core-3.2",
+      "fixture": "next/pages-router/core-flow",
+      "framework": "nextjs",
+      "mode": "cold",
+      "openapiVersion": "3.2",
+      "packageEntry": "./next",
+      "profile": {
+        "prepareTemplateMs": 0.006,
+        "loadCustomFragmentsMs": 0,
+        "prepareDocumentMs": 0.007,
+        "scanRouteFilesMs": 0.064,
+        "deriveRoutePathMs": 0.004,
+        "filterRouteCandidatesMs": 0.002,
+        "sourcePrecheckMs": 0.013,
+        "readRouteFilesMs": 0.006,
+        "parseRouteFilesMs": 0.009,
+        "analyzeRouteFilesMs": 0.093,
+        "typescriptResponseInferenceMs": 0,
+        "processRouteFilesMs": 0.109,
+        "registerRouteMs": 0.462,
+        "getSchemaContentMs": 0.356,
+        "createRequestParamsMs": 0.017,
+        "createRequestBodyMs": 0,
+        "processResponsesMs": 0.056,
+        "createResponseSchemaMs": 0,
+        "buildOperationsMs": 0.464,
+        "sortAndMergePathsMs": 0.01,
+        "buildPathsMs": 0.01,
+        "defaultComponentsAndErrorsMs": 0.002,
+        "mergeSchemasMs": 0.038,
+        "finalizeDocumentMs": 0.189,
+        "totalMs": 0.92,
+        "scanRoutesMs": 0.638
+      },
+      "router": "pages",
+      "schemaFlavor": "typescript",
+      "topPhases": [
+        {
+          "name": "scanRoutesMs",
+          "ms": 0.638
+        },
+        {
+          "name": "buildOperationsMs",
+          "ms": 0.464
+        },
+        {
+          "name": "registerRouteMs",
+          "ms": 0.462
+        },
+        {
+          "name": "getSchemaContentMs",
+          "ms": 0.356
+        },
+        {
+          "name": "finalizeDocumentMs",
+          "ms": 0.189
+        }
+      ]
+    },
+    {
+      "id": "next-pages-core-3.2",
+      "fixture": "next/pages-router/core-flow",
+      "framework": "nextjs",
+      "mode": "warm",
+      "openapiVersion": "3.2",
+      "packageEntry": "./next",
+      "profile": {
+        "prepareTemplateMs": 0.008,
+        "loadCustomFragmentsMs": 0,
+        "prepareDocumentMs": 0.008,
+        "scanRouteFilesMs": 0.003,
+        "deriveRoutePathMs": 0.004,
+        "filterRouteCandidatesMs": 0,
+        "sourcePrecheckMs": 0.009,
+        "readRouteFilesMs": 0,
+        "parseRouteFilesMs": 0,
+        "analyzeRouteFilesMs": 0.088,
+        "typescriptResponseInferenceMs": 0,
+        "processRouteFilesMs": 0.096,
+        "registerRouteMs": 0.204,
+        "getSchemaContentMs": 0.119,
+        "createRequestParamsMs": 0.013,
+        "createRequestBodyMs": 0,
+        "processResponsesMs": 0.05,
+        "createResponseSchemaMs": 0,
+        "buildOperationsMs": 0.204,
+        "sortAndMergePathsMs": 0.006,
+        "buildPathsMs": 0.006,
+        "defaultComponentsAndErrorsMs": 0.002,
+        "mergeSchemasMs": 0.024,
+        "finalizeDocumentMs": 0.172,
+        "totalMs": 0.548,
+        "scanRoutesMs": 0.304
+      },
+      "router": "pages",
+      "schemaFlavor": "typescript",
+      "topPhases": [
+        {
+          "name": "scanRoutesMs",
+          "ms": 0.304
+        },
+        {
+          "name": "registerRouteMs",
+          "ms": 0.204
+        },
+        {
+          "name": "buildOperationsMs",
+          "ms": 0.204
+        },
+        {
+          "name": "finalizeDocumentMs",
+          "ms": 0.172
+        },
+        {
+          "name": "getSchemaContentMs",
+          "ms": 0.119
+        }
+      ]
+    },
+    {
+      "id": "next-pages-zod-3.0",
+      "fixture": "next/pages-router/zod-flow",
+      "framework": "nextjs",
+      "mode": "cold",
+      "openapiVersion": "3.0",
+      "packageEntry": "./next",
+      "profile": {
+        "prepareTemplateMs": 0.008,
+        "loadCustomFragmentsMs": 0,
+        "prepareDocumentMs": 0.008,
+        "scanRouteFilesMs": 0.03,
+        "deriveRoutePathMs": 0.003,
+        "filterRouteCandidatesMs": 0,
+        "sourcePrecheckMs": 0.011,
+        "readRouteFilesMs": 0.006,
+        "parseRouteFilesMs": 0.009,
+        "analyzeRouteFilesMs": 0.034,
+        "typescriptResponseInferenceMs": 0,
+        "processRouteFilesMs": 0.049,
+        "registerRouteMs": 0.268,
+        "getSchemaContentMs": 0,
+        "createRequestParamsMs": 0,
+        "createRequestBodyMs": 0,
+        "processResponsesMs": 0.26,
+        "createResponseSchemaMs": 0,
+        "buildOperationsMs": 0.269,
+        "sortAndMergePathsMs": 0.007,
+        "buildPathsMs": 0.007,
+        "defaultComponentsAndErrorsMs": 0.003,
+        "mergeSchemasMs": 0.006,
+        "finalizeDocumentMs": 0.065,
+        "totalMs": 0.465,
+        "scanRoutesMs": 0.347
+      },
+      "router": "pages",
+      "schemaFlavor": "zod",
+      "topPhases": [
+        {
+          "name": "scanRoutesMs",
+          "ms": 0.347
+        },
+        {
+          "name": "buildOperationsMs",
+          "ms": 0.269
+        },
+        {
+          "name": "registerRouteMs",
+          "ms": 0.268
+        },
+        {
+          "name": "processResponsesMs",
+          "ms": 0.26
+        },
+        {
+          "name": "finalizeDocumentMs",
+          "ms": 0.065
+        }
+      ]
+    },
+    {
+      "id": "next-pages-zod-3.0",
+      "fixture": "next/pages-router/zod-flow",
+      "framework": "nextjs",
+      "mode": "warm",
+      "openapiVersion": "3.0",
+      "packageEntry": "./next",
+      "profile": {
+        "prepareTemplateMs": 0.005,
+        "loadCustomFragmentsMs": 0,
+        "prepareDocumentMs": 0.005,
+        "scanRouteFilesMs": 0.002,
+        "deriveRoutePathMs": 0.004,
+        "filterRouteCandidatesMs": 0,
+        "sourcePrecheckMs": 0.007,
+        "readRouteFilesMs": 0,
+        "parseRouteFilesMs": 0,
+        "analyzeRouteFilesMs": 0.039,
+        "typescriptResponseInferenceMs": 0,
+        "processRouteFilesMs": 0.045,
+        "registerRouteMs": 0.281,
+        "getSchemaContentMs": 0,
+        "createRequestParamsMs": 0,
+        "createRequestBodyMs": 0,
+        "processResponsesMs": 0.272,
+        "createResponseSchemaMs": 0,
+        "buildOperationsMs": 0.282,
+        "sortAndMergePathsMs": 0.006,
+        "buildPathsMs": 0.006,
+        "defaultComponentsAndErrorsMs": 0.002,
+        "mergeSchemasMs": 0.004,
+        "finalizeDocumentMs": 0.061,
+        "totalMs": 0.435,
+        "scanRoutesMs": 0.329
+      },
+      "router": "pages",
+      "schemaFlavor": "zod",
+      "topPhases": [
+        {
+          "name": "scanRoutesMs",
+          "ms": 0.329
+        },
+        {
+          "name": "buildOperationsMs",
+          "ms": 0.282
+        },
+        {
+          "name": "registerRouteMs",
+          "ms": 0.281
+        },
+        {
+          "name": "processResponsesMs",
+          "ms": 0.272
+        },
+        {
+          "name": "finalizeDocumentMs",
+          "ms": 0.061
+        }
+      ]
+    },
+    {
+      "id": "next-pages-zod-3.1",
+      "fixture": "next/pages-router/zod-flow",
+      "framework": "nextjs",
+      "mode": "cold",
+      "openapiVersion": "3.1",
+      "packageEntry": "./next",
+      "profile": {
+        "prepareTemplateMs": 0.004,
+        "loadCustomFragmentsMs": 0,
+        "prepareDocumentMs": 0.004,
+        "scanRouteFilesMs": 0.026,
+        "deriveRoutePathMs": 0.002,
+        "filterRouteCandidatesMs": 0,
+        "sourcePrecheckMs": 0.01,
+        "readRouteFilesMs": 0.006,
+        "parseRouteFilesMs": 0.007,
+        "analyzeRouteFilesMs": 0.029,
+        "typescriptResponseInferenceMs": 0,
+        "processRouteFilesMs": 0.042,
+        "registerRouteMs": 0.216,
+        "getSchemaContentMs": 0,
+        "createRequestParamsMs": 0,
+        "createRequestBodyMs": 0,
+        "processResponsesMs": 0.21,
+        "createResponseSchemaMs": 0,
+        "buildOperationsMs": 0.216,
+        "sortAndMergePathsMs": 0.005,
+        "buildPathsMs": 0.005,
+        "defaultComponentsAndErrorsMs": 0.001,
+        "mergeSchemasMs": 0.003,
+        "finalizeDocumentMs": 0.063,
+        "totalMs": 0.386,
+        "scanRoutesMs": 0.284
+      },
+      "router": "pages",
+      "schemaFlavor": "zod",
+      "topPhases": [
+        {
+          "name": "scanRoutesMs",
+          "ms": 0.284
+        },
+        {
+          "name": "registerRouteMs",
+          "ms": 0.216
+        },
+        {
+          "name": "buildOperationsMs",
+          "ms": 0.216
+        },
+        {
+          "name": "processResponsesMs",
+          "ms": 0.21
+        },
+        {
+          "name": "finalizeDocumentMs",
+          "ms": 0.063
+        }
+      ]
+    },
+    {
+      "id": "next-pages-zod-3.1",
+      "fixture": "next/pages-router/zod-flow",
+      "framework": "nextjs",
+      "mode": "warm",
+      "openapiVersion": "3.1",
+      "packageEntry": "./next",
+      "profile": {
+        "prepareTemplateMs": 0.004,
+        "loadCustomFragmentsMs": 0,
+        "prepareDocumentMs": 0.004,
+        "scanRouteFilesMs": 0.002,
+        "deriveRoutePathMs": 0.002,
+        "filterRouteCandidatesMs": 0,
+        "sourcePrecheckMs": 0.005,
+        "readRouteFilesMs": 0,
+        "parseRouteFilesMs": 0,
+        "analyzeRouteFilesMs": 0.024,
+        "typescriptResponseInferenceMs": 0,
+        "processRouteFilesMs": 0.029,
+        "registerRouteMs": 0.218,
+        "getSchemaContentMs": 0,
+        "createRequestParamsMs": 0,
+        "createRequestBodyMs": 0,
+        "processResponsesMs": 0.213,
+        "createResponseSchemaMs": 0,
+        "buildOperationsMs": 0.219,
+        "sortAndMergePathsMs": 0.005,
+        "buildPathsMs": 0.005,
+        "defaultComponentsAndErrorsMs": 0.001,
+        "mergeSchemasMs": 0.003,
+        "finalizeDocumentMs": 0.055,
+        "totalMs": 0.336,
+        "scanRoutesMs": 0.25
+      },
+      "router": "pages",
+      "schemaFlavor": "zod",
+      "topPhases": [
+        {
+          "name": "scanRoutesMs",
+          "ms": 0.25
+        },
+        {
+          "name": "buildOperationsMs",
+          "ms": 0.219
+        },
+        {
+          "name": "registerRouteMs",
+          "ms": 0.218
+        },
+        {
+          "name": "processResponsesMs",
+          "ms": 0.213
+        },
+        {
+          "name": "finalizeDocumentMs",
+          "ms": 0.055
+        }
+      ]
+    },
+    {
+      "id": "next-pages-zod-3.2",
+      "fixture": "next/pages-router/zod-flow",
+      "framework": "nextjs",
+      "mode": "cold",
+      "openapiVersion": "3.2",
+      "packageEntry": "./next",
+      "profile": {
+        "prepareTemplateMs": 0.004,
+        "loadCustomFragmentsMs": 0,
+        "prepareDocumentMs": 0.004,
+        "scanRouteFilesMs": 0.025,
+        "deriveRoutePathMs": 0.002,
+        "filterRouteCandidatesMs": 0,
+        "sourcePrecheckMs": 0.01,
+        "readRouteFilesMs": 0.006,
+        "parseRouteFilesMs": 0.006,
+        "analyzeRouteFilesMs": 0.029,
+        "typescriptResponseInferenceMs": 0,
+        "processRouteFilesMs": 0.041,
+        "registerRouteMs": 0.207,
+        "getSchemaContentMs": 0,
+        "createRequestParamsMs": 0,
+        "createRequestBodyMs": 0,
+        "processResponsesMs": 0.202,
+        "createResponseSchemaMs": 0,
+        "buildOperationsMs": 0.208,
+        "sortAndMergePathsMs": 0.005,
+        "buildPathsMs": 0.005,
+        "defaultComponentsAndErrorsMs": 0.001,
+        "mergeSchemasMs": 0.003,
+        "finalizeDocumentMs": 0.053,
+        "totalMs": 0.368,
+        "scanRoutesMs": 0.274
+      },
+      "router": "pages",
+      "schemaFlavor": "zod",
+      "topPhases": [
+        {
+          "name": "scanRoutesMs",
+          "ms": 0.274
+        },
+        {
+          "name": "buildOperationsMs",
+          "ms": 0.208
+        },
+        {
+          "name": "registerRouteMs",
+          "ms": 0.207
+        },
+        {
+          "name": "processResponsesMs",
+          "ms": 0.202
+        },
+        {
+          "name": "finalizeDocumentMs",
+          "ms": 0.053
+        }
+      ]
+    },
+    {
+      "id": "next-pages-zod-3.2",
+      "fixture": "next/pages-router/zod-flow",
+      "framework": "nextjs",
+      "mode": "warm",
+      "openapiVersion": "3.2",
+      "packageEntry": "./next",
+      "profile": {
+        "prepareTemplateMs": 0.004,
+        "loadCustomFragmentsMs": 0,
+        "prepareDocumentMs": 0.004,
+        "scanRouteFilesMs": 0.002,
+        "deriveRoutePathMs": 0.003,
+        "filterRouteCandidatesMs": 0,
+        "sourcePrecheckMs": 0.006,
+        "readRouteFilesMs": 0,
+        "parseRouteFilesMs": 0,
+        "analyzeRouteFilesMs": 0.031,
+        "typescriptResponseInferenceMs": 0,
+        "processRouteFilesMs": 0.036,
+        "registerRouteMs": 0.236,
+        "getSchemaContentMs": 0,
+        "createRequestParamsMs": 0,
+        "createRequestBodyMs": 0,
+        "processResponsesMs": 0.229,
+        "createResponseSchemaMs": 0,
+        "buildOperationsMs": 0.236,
+        "sortAndMergePathsMs": 0.006,
+        "buildPathsMs": 0.006,
+        "defaultComponentsAndErrorsMs": 0.001,
+        "mergeSchemasMs": 0.004,
+        "finalizeDocumentMs": 0.061,
+        "totalMs": 0.373,
+        "scanRoutesMs": 0.274
+      },
+      "router": "pages",
+      "schemaFlavor": "zod",
+      "topPhases": [
+        {
+          "name": "scanRoutesMs",
+          "ms": 0.274
+        },
+        {
+          "name": "registerRouteMs",
+          "ms": 0.236
+        },
+        {
+          "name": "buildOperationsMs",
+          "ms": 0.236
+        },
+        {
+          "name": "processResponsesMs",
+          "ms": 0.229
+        },
+        {
+          "name": "finalizeDocumentMs",
+          "ms": 0.061
+        }
+      ]
+    },
+    {
+      "id": "next-app-mixed-3.0",
+      "fixture": "next/app-router/mixed-schemas",
+      "framework": "nextjs",
+      "mode": "cold",
+      "openapiVersion": "3.0",
+      "packageEntry": "./next",
+      "profile": {
+        "prepareTemplateMs": 0.009,
+        "loadCustomFragmentsMs": 0,
+        "prepareDocumentMs": 0.009,
+        "scanRouteFilesMs": 0.126,
+        "deriveRoutePathMs": 0.01,
+        "filterRouteCandidatesMs": 0.001,
+        "sourcePrecheckMs": 0.028,
+        "readRouteFilesMs": 0.012,
+        "parseRouteFilesMs": 0.012,
+        "analyzeRouteFilesMs": 0.103,
+        "typescriptResponseInferenceMs": 0,
+        "processRouteFilesMs": 0.126,
+        "registerRouteMs": 2.517,
+        "getSchemaContentMs": 1.427,
+        "createRequestParamsMs": 0.014,
+        "createRequestBodyMs": 0,
+        "processResponsesMs": 1.043,
+        "createResponseSchemaMs": 0,
+        "buildOperationsMs": 2.519,
+        "sortAndMergePathsMs": 0.032,
+        "buildPathsMs": 0.032,
+        "defaultComponentsAndErrorsMs": 0.005,
+        "mergeSchemasMs": 0.046,
+        "finalizeDocumentMs": 0.247,
+        "totalMs": 3.169,
+        "scanRoutesMs": 2.771
+      },
+      "router": "app",
+      "schemaFlavor": "mixed",
+      "topPhases": [
+        {
+          "name": "scanRoutesMs",
+          "ms": 2.771
+        },
+        {
+          "name": "buildOperationsMs",
+          "ms": 2.519
+        },
+        {
+          "name": "registerRouteMs",
+          "ms": 2.517
+        },
+        {
+          "name": "getSchemaContentMs",
+          "ms": 1.427
+        },
+        {
+          "name": "processResponsesMs",
+          "ms": 1.043
+        }
+      ]
+    },
+    {
+      "id": "next-app-mixed-3.0",
+      "fixture": "next/app-router/mixed-schemas",
+      "framework": "nextjs",
+      "mode": "warm",
+      "openapiVersion": "3.0",
+      "packageEntry": "./next",
+      "profile": {
+        "prepareTemplateMs": 0.008,
+        "loadCustomFragmentsMs": 0,
+        "prepareDocumentMs": 0.008,
+        "scanRouteFilesMs": 0.005,
+        "deriveRoutePathMs": 0.008,
+        "filterRouteCandidatesMs": 0.001,
+        "sourcePrecheckMs": 0.016,
+        "readRouteFilesMs": 0,
+        "parseRouteFilesMs": 0,
+        "analyzeRouteFilesMs": 0.084,
+        "typescriptResponseInferenceMs": 0,
+        "processRouteFilesMs": 0.095,
+        "registerRouteMs": 2.054,
+        "getSchemaContentMs": 1.209,
+        "createRequestParamsMs": 0.016,
+        "createRequestBodyMs": 0,
+        "processResponsesMs": 0.803,
+        "createResponseSchemaMs": 0,
+        "buildOperationsMs": 2.055,
+        "sortAndMergePathsMs": 0.028,
+        "buildPathsMs": 0.028,
+        "defaultComponentsAndErrorsMs": 0.004,
+        "mergeSchemasMs": 0.035,
+        "finalizeDocumentMs": 0.246,
+        "totalMs": 2.521,
+        "scanRoutesMs": 2.156
+      },
+      "router": "app",
+      "schemaFlavor": "mixed",
+      "topPhases": [
+        {
+          "name": "scanRoutesMs",
+          "ms": 2.156
+        },
+        {
+          "name": "buildOperationsMs",
+          "ms": 2.055
+        },
+        {
+          "name": "registerRouteMs",
+          "ms": 2.054
+        },
+        {
+          "name": "getSchemaContentMs",
+          "ms": 1.209
+        },
+        {
+          "name": "processResponsesMs",
+          "ms": 0.803
+        }
+      ]
+    },
+    {
+      "id": "next-app-mixed-3.1",
+      "fixture": "next/app-router/mixed-schemas",
+      "framework": "nextjs",
+      "mode": "cold",
+      "openapiVersion": "3.1",
+      "packageEntry": "./next",
+      "profile": {
+        "prepareTemplateMs": 0.02,
+        "loadCustomFragmentsMs": 0,
+        "prepareDocumentMs": 0.021,
+        "scanRouteFilesMs": 0.204,
+        "deriveRoutePathMs": 0.021,
+        "filterRouteCandidatesMs": 0.001,
+        "sourcePrecheckMs": 0.056,
+        "readRouteFilesMs": 0.028,
+        "parseRouteFilesMs": 0.074,
+        "analyzeRouteFilesMs": 0.238,
+        "typescriptResponseInferenceMs": 0,
+        "processRouteFilesMs": 0.329,
+        "registerRouteMs": 3.371,
+        "getSchemaContentMs": 2.461,
+        "createRequestParamsMs": 0.022,
+        "createRequestBodyMs": 0,
+        "processResponsesMs": 0.841,
+        "createResponseSchemaMs": 0,
+        "buildOperationsMs": 3.373,
+        "sortAndMergePathsMs": 0.049,
+        "buildPathsMs": 0.049,
+        "defaultComponentsAndErrorsMs": 0.006,
+        "mergeSchemasMs": 0.041,
+        "finalizeDocumentMs": 0.239,
+        "totalMs": 4.387,
+        "scanRoutesMs": 3.905
+      },
+      "router": "app",
+      "schemaFlavor": "mixed",
+      "topPhases": [
+        {
+          "name": "scanRoutesMs",
+          "ms": 3.905
+        },
+        {
+          "name": "buildOperationsMs",
+          "ms": 3.373
+        },
+        {
+          "name": "registerRouteMs",
+          "ms": 3.371
+        },
+        {
+          "name": "getSchemaContentMs",
+          "ms": 2.461
+        },
+        {
+          "name": "processResponsesMs",
+          "ms": 0.841
+        }
+      ]
+    },
+    {
+      "id": "next-app-mixed-3.1",
+      "fixture": "next/app-router/mixed-schemas",
+      "framework": "nextjs",
+      "mode": "warm",
+      "openapiVersion": "3.1",
+      "packageEntry": "./next",
+      "profile": {
+        "prepareTemplateMs": 0.013,
+        "loadCustomFragmentsMs": 0,
+        "prepareDocumentMs": 0.013,
+        "scanRouteFilesMs": 0.009,
+        "deriveRoutePathMs": 0.008,
+        "filterRouteCandidatesMs": 0,
+        "sourcePrecheckMs": 0.023,
+        "readRouteFilesMs": 0,
+        "parseRouteFilesMs": 0,
+        "analyzeRouteFilesMs": 0.091,
+        "typescriptResponseInferenceMs": 0,
+        "processRouteFilesMs": 0.101,
+        "registerRouteMs": 2.024,
+        "getSchemaContentMs": 1.071,
+        "createRequestParamsMs": 0.011,
+        "createRequestBodyMs": 0,
+        "processResponsesMs": 0.914,
+        "createResponseSchemaMs": 0,
+        "buildOperationsMs": 2.026,
+        "sortAndMergePathsMs": 0.031,
+        "buildPathsMs": 0.031,
+        "defaultComponentsAndErrorsMs": 0.004,
+        "mergeSchemasMs": 0.041,
+        "finalizeDocumentMs": 0.245,
+        "totalMs": 2.525,
+        "scanRoutesMs": 2.136
+      },
+      "router": "app",
+      "schemaFlavor": "mixed",
+      "topPhases": [
+        {
+          "name": "scanRoutesMs",
+          "ms": 2.136
+        },
+        {
+          "name": "buildOperationsMs",
+          "ms": 2.026
+        },
+        {
+          "name": "registerRouteMs",
+          "ms": 2.024
+        },
+        {
+          "name": "getSchemaContentMs",
+          "ms": 1.071
+        },
+        {
+          "name": "processResponsesMs",
+          "ms": 0.914
+        }
+      ]
+    },
+    {
+      "id": "next-app-mixed-3.2",
+      "fixture": "next/app-router/mixed-schemas",
+      "framework": "nextjs",
+      "mode": "cold",
+      "openapiVersion": "3.2",
+      "packageEntry": "./next",
+      "profile": {
+        "prepareTemplateMs": 0.006,
+        "loadCustomFragmentsMs": 0,
+        "prepareDocumentMs": 0.006,
+        "scanRouteFilesMs": 0.096,
+        "deriveRoutePathMs": 0.011,
+        "filterRouteCandidatesMs": 0,
+        "sourcePrecheckMs": 0.027,
+        "readRouteFilesMs": 0.012,
+        "parseRouteFilesMs": 0.011,
+        "analyzeRouteFilesMs": 0.114,
+        "typescriptResponseInferenceMs": 0,
+        "processRouteFilesMs": 0.137,
+        "registerRouteMs": 2.37,
+        "getSchemaContentMs": 1.512,
+        "createRequestParamsMs": 0.017,
+        "createRequestBodyMs": 0,
+        "processResponsesMs": 0.809,
+        "createResponseSchemaMs": 0,
+        "buildOperationsMs": 2.372,
+        "sortAndMergePathsMs": 0.032,
+        "buildPathsMs": 0.032,
+        "defaultComponentsAndErrorsMs": 0.004,
+        "mergeSchemasMs": 0.037,
+        "finalizeDocumentMs": 0.231,
+        "totalMs": 2.974,
+        "scanRoutesMs": 2.605
+      },
+      "router": "app",
+      "schemaFlavor": "mixed",
+      "topPhases": [
+        {
+          "name": "scanRoutesMs",
+          "ms": 2.605
+        },
+        {
+          "name": "buildOperationsMs",
+          "ms": 2.372
+        },
+        {
+          "name": "registerRouteMs",
+          "ms": 2.37
+        },
+        {
+          "name": "getSchemaContentMs",
+          "ms": 1.512
+        },
+        {
+          "name": "processResponsesMs",
+          "ms": 0.809
+        }
+      ]
+    },
+    {
+      "id": "next-app-mixed-3.2",
+      "fixture": "next/app-router/mixed-schemas",
+      "framework": "nextjs",
+      "mode": "warm",
+      "openapiVersion": "3.2",
+      "packageEntry": "./next",
+      "profile": {
+        "prepareTemplateMs": 0.006,
+        "loadCustomFragmentsMs": 0,
+        "prepareDocumentMs": 0.007,
+        "scanRouteFilesMs": 0.005,
+        "deriveRoutePathMs": 0.01,
+        "filterRouteCandidatesMs": 0,
+        "sourcePrecheckMs": 0.014,
+        "readRouteFilesMs": 0,
+        "parseRouteFilesMs": 0,
+        "analyzeRouteFilesMs": 0.074,
+        "typescriptResponseInferenceMs": 0,
+        "processRouteFilesMs": 0.084,
+        "registerRouteMs": 1.76,
+        "getSchemaContentMs": 0.978,
+        "createRequestParamsMs": 0.01,
+        "createRequestBodyMs": 0,
+        "processResponsesMs": 0.749,
+        "createResponseSchemaMs": 0,
+        "buildOperationsMs": 1.762,
+        "sortAndMergePathsMs": 0.025,
+        "buildPathsMs": 0.025,
+        "defaultComponentsAndErrorsMs": 0.003,
+        "mergeSchemasMs": 0.032,
+        "finalizeDocumentMs": 0.212,
+        "totalMs": 2.178,
+        "scanRoutesMs": 1.851
+      },
+      "router": "app",
+      "schemaFlavor": "mixed",
+      "topPhases": [
+        {
+          "name": "scanRoutesMs",
+          "ms": 1.851
+        },
+        {
+          "name": "buildOperationsMs",
+          "ms": 1.762
+        },
+        {
+          "name": "registerRouteMs",
+          "ms": 1.76
+        },
+        {
+          "name": "getSchemaContentMs",
+          "ms": 0.978
+        },
+        {
+          "name": "processResponsesMs",
+          "ms": 0.749
+        }
+      ]
+    },
+    {
+      "id": "next-app-zod-3.0",
+      "fixture": "next/app-router/zod-only-coverage",
+      "framework": "nextjs",
+      "mode": "cold",
+      "openapiVersion": "3.0",
+      "packageEntry": "./next",
+      "profile": {
+        "prepareTemplateMs": 0.007,
+        "loadCustomFragmentsMs": 0,
+        "prepareDocumentMs": 0.007,
+        "scanRouteFilesMs": 0.097,
+        "deriveRoutePathMs": 0.005,
+        "filterRouteCandidatesMs": 0,
+        "sourcePrecheckMs": 0.012,
+        "readRouteFilesMs": 0.006,
+        "parseRouteFilesMs": 0.007,
+        "analyzeRouteFilesMs": 0.081,
+        "typescriptResponseInferenceMs": 0,
+        "processRouteFilesMs": 0.094,
+        "registerRouteMs": 2.011,
+        "getSchemaContentMs": 1.875,
+        "createRequestParamsMs": 0.021,
+        "createRequestBodyMs": 0,
+        "processResponsesMs": 0.097,
+        "createResponseSchemaMs": 0,
+        "buildOperationsMs": 2.011,
+        "sortAndMergePathsMs": 0.011,
+        "buildPathsMs": 0.011,
+        "defaultComponentsAndErrorsMs": 0.004,
+        "mergeSchemasMs": 0.043,
+        "finalizeDocumentMs": 0.171,
+        "totalMs": 2.48,
+        "scanRoutesMs": 2.202
+      },
+      "router": "app",
+      "schemaFlavor": "zod",
+      "topPhases": [
+        {
+          "name": "scanRoutesMs",
+          "ms": 2.202
+        },
+        {
+          "name": "registerRouteMs",
+          "ms": 2.011
+        },
+        {
+          "name": "buildOperationsMs",
+          "ms": 2.011
+        },
+        {
+          "name": "getSchemaContentMs",
+          "ms": 1.875
+        },
+        {
+          "name": "finalizeDocumentMs",
+          "ms": 0.171
+        }
+      ]
+    },
+    {
+      "id": "next-app-zod-3.0",
+      "fixture": "next/app-router/zod-only-coverage",
+      "framework": "nextjs",
+      "mode": "warm",
+      "openapiVersion": "3.0",
+      "packageEntry": "./next",
+      "profile": {
+        "prepareTemplateMs": 0.005,
+        "loadCustomFragmentsMs": 0,
+        "prepareDocumentMs": 0.005,
+        "scanRouteFilesMs": 0.003,
+        "deriveRoutePathMs": 0.003,
+        "filterRouteCandidatesMs": 0,
+        "sourcePrecheckMs": 0.007,
+        "readRouteFilesMs": 0,
+        "parseRouteFilesMs": 0,
+        "analyzeRouteFilesMs": 0.046,
+        "typescriptResponseInferenceMs": 0,
+        "processRouteFilesMs": 0.05,
+        "registerRouteMs": 1.237,
+        "getSchemaContentMs": 1.152,
+        "createRequestParamsMs": 0.011,
+        "createRequestBodyMs": 0,
+        "processResponsesMs": 0.064,
+        "createResponseSchemaMs": 0,
+        "buildOperationsMs": 1.237,
+        "sortAndMergePathsMs": 0.006,
+        "buildPathsMs": 0.006,
+        "defaultComponentsAndErrorsMs": 0.003,
+        "mergeSchemasMs": 0.032,
+        "finalizeDocumentMs": 0.14,
+        "totalMs": 1.501,
+        "scanRoutesMs": 1.29
+      },
+      "router": "app",
+      "schemaFlavor": "zod",
+      "topPhases": [
+        {
+          "name": "scanRoutesMs",
+          "ms": 1.29
+        },
+        {
+          "name": "registerRouteMs",
+          "ms": 1.237
+        },
+        {
+          "name": "buildOperationsMs",
+          "ms": 1.237
+        },
+        {
+          "name": "getSchemaContentMs",
+          "ms": 1.152
+        },
+        {
+          "name": "finalizeDocumentMs",
+          "ms": 0.14
+        }
+      ]
+    },
+    {
+      "id": "next-app-zod-3.1",
+      "fixture": "next/app-router/zod-only-coverage",
+      "framework": "nextjs",
+      "mode": "cold",
+      "openapiVersion": "3.1",
+      "packageEntry": "./next",
+      "profile": {
+        "prepareTemplateMs": 0.006,
+        "loadCustomFragmentsMs": 0,
+        "prepareDocumentMs": 0.006,
+        "scanRouteFilesMs": 0.14,
+        "deriveRoutePathMs": 0.006,
+        "filterRouteCandidatesMs": 0,
+        "sourcePrecheckMs": 0.015,
+        "readRouteFilesMs": 0.008,
+        "parseRouteFilesMs": 0.01,
+        "analyzeRouteFilesMs": 0.083,
+        "typescriptResponseInferenceMs": 0,
+        "processRouteFilesMs": 0.1,
+        "registerRouteMs": 1.311,
+        "getSchemaContentMs": 1.211,
+        "createRequestParamsMs": 0.016,
+        "createRequestBodyMs": 0,
+        "processResponsesMs": 0.069,
+        "createResponseSchemaMs": 0,
+        "buildOperationsMs": 1.312,
+        "sortAndMergePathsMs": 0.009,
+        "buildPathsMs": 0.009,
+        "defaultComponentsAndErrorsMs": 0.004,
+        "mergeSchemasMs": 0.042,
+        "finalizeDocumentMs": 0.152,
+        "totalMs": 1.811,
+        "scanRoutesMs": 1.552
+      },
+      "router": "app",
+      "schemaFlavor": "zod",
+      "topPhases": [
+        {
+          "name": "scanRoutesMs",
+          "ms": 1.552
+        },
+        {
+          "name": "buildOperationsMs",
+          "ms": 1.312
+        },
+        {
+          "name": "registerRouteMs",
+          "ms": 1.311
+        },
+        {
+          "name": "getSchemaContentMs",
+          "ms": 1.211
+        },
+        {
+          "name": "finalizeDocumentMs",
+          "ms": 0.152
+        }
+      ]
+    },
+    {
+      "id": "next-app-zod-3.1",
+      "fixture": "next/app-router/zod-only-coverage",
+      "framework": "nextjs",
+      "mode": "warm",
+      "openapiVersion": "3.1",
+      "packageEntry": "./next",
+      "profile": {
+        "prepareTemplateMs": 0.005,
+        "loadCustomFragmentsMs": 0,
+        "prepareDocumentMs": 0.005,
+        "scanRouteFilesMs": 0.004,
+        "deriveRoutePathMs": 0.003,
+        "filterRouteCandidatesMs": 0,
+        "sourcePrecheckMs": 0.008,
+        "readRouteFilesMs": 0,
+        "parseRouteFilesMs": 0,
+        "analyzeRouteFilesMs": 0.075,
+        "typescriptResponseInferenceMs": 0,
+        "processRouteFilesMs": 0.081,
+        "registerRouteMs": 1.557,
+        "getSchemaContentMs": 1.441,
+        "createRequestParamsMs": 0.023,
+        "createRequestBodyMs": 0,
+        "processResponsesMs": 0.073,
+        "createResponseSchemaMs": 0,
+        "buildOperationsMs": 1.558,
+        "sortAndMergePathsMs": 0.01,
+        "buildPathsMs": 0.01,
+        "defaultComponentsAndErrorsMs": 0.005,
+        "mergeSchemasMs": 0.047,
+        "finalizeDocumentMs": 0.154,
+        "totalMs": 1.892,
+        "scanRoutesMs": 1.642
+      },
+      "router": "app",
+      "schemaFlavor": "zod",
+      "topPhases": [
+        {
+          "name": "scanRoutesMs",
+          "ms": 1.642
+        },
+        {
+          "name": "buildOperationsMs",
+          "ms": 1.558
+        },
+        {
+          "name": "registerRouteMs",
+          "ms": 1.557
+        },
+        {
+          "name": "getSchemaContentMs",
+          "ms": 1.441
+        },
+        {
+          "name": "finalizeDocumentMs",
+          "ms": 0.154
+        }
+      ]
+    },
+    {
+      "id": "next-app-zod-3.2",
+      "fixture": "next/app-router/zod-only-coverage",
+      "framework": "nextjs",
+      "mode": "cold",
+      "openapiVersion": "3.2",
+      "packageEntry": "./next",
+      "profile": {
+        "prepareTemplateMs": 0.005,
+        "loadCustomFragmentsMs": 0,
+        "prepareDocumentMs": 0.005,
+        "scanRouteFilesMs": 0.082,
+        "deriveRoutePathMs": 0.004,
+        "filterRouteCandidatesMs": 0,
+        "sourcePrecheckMs": 0.013,
+        "readRouteFilesMs": 0.007,
+        "parseRouteFilesMs": 0.015,
+        "analyzeRouteFilesMs": 0.083,
+        "typescriptResponseInferenceMs": 0,
+        "processRouteFilesMs": 0.102,
+        "registerRouteMs": 1.273,
+        "getSchemaContentMs": 1.17,
+        "createRequestParamsMs": 0.021,
+        "createRequestBodyMs": 0,
+        "processResponsesMs": 0.07,
+        "createResponseSchemaMs": 0,
+        "buildOperationsMs": 1.274,
+        "sortAndMergePathsMs": 0.008,
+        "buildPathsMs": 0.008,
+        "defaultComponentsAndErrorsMs": 0.003,
+        "mergeSchemasMs": 0.043,
+        "finalizeDocumentMs": 0.152,
+        "totalMs": 1.707,
+        "scanRoutesMs": 1.458
+      },
+      "router": "app",
+      "schemaFlavor": "zod",
+      "topPhases": [
+        {
+          "name": "scanRoutesMs",
+          "ms": 1.458
+        },
+        {
+          "name": "buildOperationsMs",
+          "ms": 1.274
+        },
+        {
+          "name": "registerRouteMs",
+          "ms": 1.273
+        },
+        {
+          "name": "getSchemaContentMs",
+          "ms": 1.17
+        },
+        {
+          "name": "finalizeDocumentMs",
+          "ms": 0.152
+        }
+      ]
+    },
+    {
+      "id": "next-app-zod-3.2",
+      "fixture": "next/app-router/zod-only-coverage",
+      "framework": "nextjs",
+      "mode": "warm",
+      "openapiVersion": "3.2",
+      "packageEntry": "./next",
+      "profile": {
+        "prepareTemplateMs": 0.005,
+        "loadCustomFragmentsMs": 0,
+        "prepareDocumentMs": 0.005,
+        "scanRouteFilesMs": 0.004,
+        "deriveRoutePathMs": 0.004,
+        "filterRouteCandidatesMs": 0,
+        "sourcePrecheckMs": 0.012,
+        "readRouteFilesMs": 0,
+        "parseRouteFilesMs": 0,
+        "analyzeRouteFilesMs": 0.064,
+        "typescriptResponseInferenceMs": 0,
+        "processRouteFilesMs": 0.069,
+        "registerRouteMs": 1.186,
+        "getSchemaContentMs": 1.096,
+        "createRequestParamsMs": 0.011,
+        "createRequestBodyMs": 0,
+        "processResponsesMs": 0.064,
+        "createResponseSchemaMs": 0,
+        "buildOperationsMs": 1.191,
+        "sortAndMergePathsMs": 0.006,
+        "buildPathsMs": 0.006,
+        "defaultComponentsAndErrorsMs": 0.002,
+        "mergeSchemasMs": 0.028,
+        "finalizeDocumentMs": 0.136,
+        "totalMs": 1.477,
+        "scanRoutesMs": 1.264
+      },
+      "router": "app",
+      "schemaFlavor": "zod",
+      "topPhases": [
+        {
+          "name": "scanRoutesMs",
+          "ms": 1.264
+        },
+        {
+          "name": "buildOperationsMs",
+          "ms": 1.191
+        },
+        {
+          "name": "registerRouteMs",
+          "ms": 1.186
+        },
+        {
+          "name": "getSchemaContentMs",
+          "ms": 1.096
+        },
+        {
+          "name": "finalizeDocumentMs",
+          "ms": 0.136
+        }
+      ]
+    },
+    {
+      "id": "next-app-zod-full-3.0",
+      "fixture": "next/app-router/zod-full-coverage",
+      "framework": "nextjs",
+      "mode": "cold",
+      "openapiVersion": "3.0",
+      "packageEntry": "./next",
+      "profile": {
+        "prepareTemplateMs": 0.007,
+        "loadCustomFragmentsMs": 0,
+        "prepareDocumentMs": 0.007,
+        "scanRouteFilesMs": 0.247,
+        "deriveRoutePathMs": 0.031,
+        "filterRouteCandidatesMs": 0.002,
+        "sourcePrecheckMs": 0.088,
+        "readRouteFilesMs": 0.03,
+        "parseRouteFilesMs": 0.06,
+        "analyzeRouteFilesMs": 0.507,
+        "typescriptResponseInferenceMs": 0,
+        "processRouteFilesMs": 0.597,
+        "registerRouteMs": 19.274,
+        "getSchemaContentMs": 1.991,
+        "createRequestParamsMs": 0,
+        "createRequestBodyMs": 0,
+        "processResponsesMs": 17.179,
+        "createResponseSchemaMs": 0,
+        "buildOperationsMs": 19.279,
+        "sortAndMergePathsMs": 0.071,
+        "buildPathsMs": 0.071,
+        "defaultComponentsAndErrorsMs": 0.005,
+        "mergeSchemasMs": 0.267,
+        "finalizeDocumentMs": 1.128,
+        "totalMs": 21.752,
+        "scanRoutesMs": 20.123
+      },
+      "router": "app",
+      "schemaFlavor": "zod",
+      "topPhases": [
+        {
+          "name": "scanRoutesMs",
+          "ms": 20.123
+        },
+        {
+          "name": "buildOperationsMs",
+          "ms": 19.279
+        },
+        {
+          "name": "registerRouteMs",
+          "ms": 19.274
+        },
+        {
+          "name": "processResponsesMs",
+          "ms": 17.179
+        },
+        {
+          "name": "getSchemaContentMs",
+          "ms": 1.991
+        }
+      ]
+    },
+    {
+      "id": "next-app-zod-full-3.0",
+      "fixture": "next/app-router/zod-full-coverage",
+      "framework": "nextjs",
+      "mode": "warm",
+      "openapiVersion": "3.0",
+      "packageEntry": "./next",
+      "profile": {
+        "prepareTemplateMs": 0.007,
+        "loadCustomFragmentsMs": 0,
+        "prepareDocumentMs": 0.007,
+        "scanRouteFilesMs": 0.011,
+        "deriveRoutePathMs": 0.028,
+        "filterRouteCandidatesMs": 0.002,
+        "sourcePrecheckMs": 0.066,
+        "readRouteFilesMs": 0,
+        "parseRouteFilesMs": 0,
+        "analyzeRouteFilesMs": 1.871,
+        "typescriptResponseInferenceMs": 0,
+        "processRouteFilesMs": 1.904,
+        "registerRouteMs": 17.028,
+        "getSchemaContentMs": 1.514,
+        "createRequestParamsMs": 0,
+        "createRequestBodyMs": 0,
+        "processResponsesMs": 15.406,
+        "createResponseSchemaMs": 0,
+        "buildOperationsMs": 17.033,
+        "sortAndMergePathsMs": 0.094,
+        "buildPathsMs": 0.094,
+        "defaultComponentsAndErrorsMs": 0.007,
+        "mergeSchemasMs": 0.265,
+        "finalizeDocumentMs": 0.976,
+        "totalMs": 20.421,
+        "scanRoutesMs": 18.948
+      },
+      "router": "app",
+      "schemaFlavor": "zod",
+      "topPhases": [
+        {
+          "name": "scanRoutesMs",
+          "ms": 18.948
+        },
+        {
+          "name": "buildOperationsMs",
+          "ms": 17.033
+        },
+        {
+          "name": "registerRouteMs",
+          "ms": 17.028
+        },
+        {
+          "name": "processResponsesMs",
+          "ms": 15.406
+        },
+        {
+          "name": "processRouteFilesMs",
+          "ms": 1.904
+        }
+      ]
+    },
+    {
+      "id": "next-app-zod-full-3.1",
+      "fixture": "next/app-router/zod-full-coverage",
+      "framework": "nextjs",
+      "mode": "cold",
+      "openapiVersion": "3.1",
+      "packageEntry": "./next",
+      "profile": {
+        "prepareTemplateMs": 0.008,
+        "loadCustomFragmentsMs": 0,
+        "prepareDocumentMs": 0.008,
+        "scanRouteFilesMs": 0.236,
+        "deriveRoutePathMs": 0.021,
+        "filterRouteCandidatesMs": 0.002,
+        "sourcePrecheckMs": 0.08,
+        "readRouteFilesMs": 0.029,
+        "parseRouteFilesMs": 0.057,
+        "analyzeRouteFilesMs": 0.448,
+        "typescriptResponseInferenceMs": 0,
+        "processRouteFilesMs": 0.536,
+        "registerRouteMs": 15.954,
+        "getSchemaContentMs": 1.526,
+        "createRequestParamsMs": 0,
+        "createRequestBodyMs": 0,
+        "processResponsesMs": 14.335,
+        "createResponseSchemaMs": 0,
+        "buildOperationsMs": 15.962,
+        "sortAndMergePathsMs": 0.089,
+        "buildPathsMs": 0.089,
+        "defaultComponentsAndErrorsMs": 0.008,
+        "mergeSchemasMs": 0.28,
+        "finalizeDocumentMs": 0.979,
+        "totalMs": 18.235,
+        "scanRoutesMs": 16.734
+      },
+      "router": "app",
+      "schemaFlavor": "zod",
+      "topPhases": [
+        {
+          "name": "scanRoutesMs",
+          "ms": 16.734
+        },
+        {
+          "name": "buildOperationsMs",
+          "ms": 15.962
+        },
+        {
+          "name": "registerRouteMs",
+          "ms": 15.954
+        },
+        {
+          "name": "processResponsesMs",
+          "ms": 14.335
+        },
+        {
+          "name": "getSchemaContentMs",
+          "ms": 1.526
+        }
+      ]
+    },
+    {
+      "id": "next-app-zod-full-3.1",
+      "fixture": "next/app-router/zod-full-coverage",
+      "framework": "nextjs",
+      "mode": "warm",
+      "openapiVersion": "3.1",
+      "packageEntry": "./next",
+      "profile": {
+        "prepareTemplateMs": 0.006,
+        "loadCustomFragmentsMs": 0,
+        "prepareDocumentMs": 0.006,
+        "scanRouteFilesMs": 0.012,
+        "deriveRoutePathMs": 0.025,
+        "filterRouteCandidatesMs": 0.002,
+        "sourcePrecheckMs": 0.059,
+        "readRouteFilesMs": 0,
+        "parseRouteFilesMs": 0,
+        "analyzeRouteFilesMs": 0.438,
+        "typescriptResponseInferenceMs": 0,
+        "processRouteFilesMs": 0.466,
+        "registerRouteMs": 16.352,
+        "getSchemaContentMs": 1.489,
+        "createRequestParamsMs": 0,
+        "createRequestBodyMs": 0,
+        "processResponsesMs": 14.757,
+        "createResponseSchemaMs": 0,
+        "buildOperationsMs": 16.357,
+        "sortAndMergePathsMs": 0.081,
+        "buildPathsMs": 0.081,
+        "defaultComponentsAndErrorsMs": 0.007,
+        "mergeSchemasMs": 0.264,
+        "finalizeDocumentMs": 0.928,
+        "totalMs": 18.238,
+        "scanRoutesMs": 16.834
+      },
+      "router": "app",
+      "schemaFlavor": "zod",
+      "topPhases": [
+        {
+          "name": "scanRoutesMs",
+          "ms": 16.834
+        },
+        {
+          "name": "buildOperationsMs",
+          "ms": 16.357
+        },
+        {
+          "name": "registerRouteMs",
+          "ms": 16.352
+        },
+        {
+          "name": "processResponsesMs",
+          "ms": 14.757
+        },
+        {
+          "name": "getSchemaContentMs",
+          "ms": 1.489
+        }
+      ]
+    },
+    {
+      "id": "next-app-zod-full-3.2",
+      "fixture": "next/app-router/zod-full-coverage",
+      "framework": "nextjs",
+      "mode": "cold",
+      "openapiVersion": "3.2",
+      "packageEntry": "./next",
+      "profile": {
+        "prepareTemplateMs": 0.007,
+        "loadCustomFragmentsMs": 0,
+        "prepareDocumentMs": 0.007,
+        "scanRouteFilesMs": 0.215,
+        "deriveRoutePathMs": 0.023,
+        "filterRouteCandidatesMs": 0.002,
+        "sourcePrecheckMs": 0.093,
+        "readRouteFilesMs": 0.037,
+        "parseRouteFilesMs": 0.075,
+        "analyzeRouteFilesMs": 0.491,
+        "typescriptResponseInferenceMs": 0,
+        "processRouteFilesMs": 0.6,
+        "registerRouteMs": 17.029,
+        "getSchemaContentMs": 1.548,
+        "createRequestParamsMs": 0,
+        "createRequestBodyMs": 0,
+        "processResponsesMs": 15.382,
+        "createResponseSchemaMs": 0,
+        "buildOperationsMs": 17.034,
+        "sortAndMergePathsMs": 0.086,
+        "buildPathsMs": 0.086,
+        "defaultComponentsAndErrorsMs": 0.006,
+        "mergeSchemasMs": 0.284,
+        "finalizeDocumentMs": 0.868,
+        "totalMs": 19.251,
+        "scanRoutesMs": 17.849
+      },
+      "router": "app",
+      "schemaFlavor": "zod",
+      "topPhases": [
+        {
+          "name": "scanRoutesMs",
+          "ms": 17.849
+        },
+        {
+          "name": "buildOperationsMs",
+          "ms": 17.034
+        },
+        {
+          "name": "registerRouteMs",
+          "ms": 17.029
+        },
+        {
+          "name": "processResponsesMs",
+          "ms": 15.382
+        },
+        {
+          "name": "getSchemaContentMs",
+          "ms": 1.548
+        }
+      ]
+    },
+    {
+      "id": "next-app-zod-full-3.2",
+      "fixture": "next/app-router/zod-full-coverage",
+      "framework": "nextjs",
+      "mode": "warm",
+      "openapiVersion": "3.2",
+      "packageEntry": "./next",
+      "profile": {
+        "prepareTemplateMs": 0.006,
+        "loadCustomFragmentsMs": 0,
+        "prepareDocumentMs": 0.006,
+        "scanRouteFilesMs": 0.011,
+        "deriveRoutePathMs": 0.03,
+        "filterRouteCandidatesMs": 0.002,
+        "sourcePrecheckMs": 0.069,
+        "readRouteFilesMs": 0,
+        "parseRouteFilesMs": 0,
+        "analyzeRouteFilesMs": 0.491,
+        "typescriptResponseInferenceMs": 0,
+        "processRouteFilesMs": 0.522,
+        "registerRouteMs": 16.662,
+        "getSchemaContentMs": 1.582,
+        "createRequestParamsMs": 0,
+        "createRequestBodyMs": 0,
+        "processResponsesMs": 14.961,
+        "createResponseSchemaMs": 0,
+        "buildOperationsMs": 16.667,
+        "sortAndMergePathsMs": 0.087,
+        "buildPathsMs": 0.087,
+        "defaultComponentsAndErrorsMs": 0.012,
+        "mergeSchemasMs": 0.262,
+        "finalizeDocumentMs": 0.886,
+        "totalMs": 18.582,
+        "scanRoutesMs": 17.2
+      },
+      "router": "app",
+      "schemaFlavor": "zod",
+      "topPhases": [
+        {
+          "name": "scanRoutesMs",
+          "ms": 17.2
+        },
+        {
+          "name": "buildOperationsMs",
+          "ms": 16.667
+        },
+        {
+          "name": "registerRouteMs",
+          "ms": 16.662
+        },
+        {
+          "name": "processResponsesMs",
+          "ms": 14.961
+        },
+        {
+          "name": "getSchemaContentMs",
+          "ms": 1.582
+        }
+      ]
+    },
+    {
+      "id": "next-app-ts-full-3.0",
+      "fixture": "next/app-router/ts-full-coverage",
+      "framework": "nextjs",
+      "mode": "cold",
+      "openapiVersion": "3.0",
+      "packageEntry": "./next",
+      "profile": {
+        "prepareTemplateMs": 0.007,
+        "loadCustomFragmentsMs": 0,
+        "prepareDocumentMs": 0.007,
+        "scanRouteFilesMs": 0.257,
+        "deriveRoutePathMs": 0.022,
+        "filterRouteCandidatesMs": 0.002,
+        "sourcePrecheckMs": 0.144,
+        "readRouteFilesMs": 0.071,
+        "parseRouteFilesMs": 0.08,
+        "analyzeRouteFilesMs": 0.448,
+        "typescriptResponseInferenceMs": 0,
+        "processRouteFilesMs": 0.556,
+        "registerRouteMs": 144.043,
+        "getSchemaContentMs": 40.984,
+        "createRequestParamsMs": 0,
+        "createRequestBodyMs": 0,
+        "processResponsesMs": 102.901,
+        "createResponseSchemaMs": 0,
+        "buildOperationsMs": 144.049,
+        "sortAndMergePathsMs": 0.083,
+        "buildPathsMs": 0.083,
+        "defaultComponentsAndErrorsMs": 0.005,
+        "mergeSchemasMs": 0.307,
+        "finalizeDocumentMs": 0.938,
+        "totalMs": 146.409,
+        "scanRoutesMs": 144.861
+      },
+      "router": "app",
+      "schemaFlavor": "typescript",
+      "topPhases": [
+        {
+          "name": "scanRoutesMs",
+          "ms": 144.861
+        },
+        {
+          "name": "buildOperationsMs",
+          "ms": 144.049
+        },
+        {
+          "name": "registerRouteMs",
+          "ms": 144.043
+        },
+        {
+          "name": "processResponsesMs",
+          "ms": 102.901
+        },
+        {
+          "name": "getSchemaContentMs",
+          "ms": 40.984
+        }
+      ]
+    },
+    {
+      "id": "next-app-ts-full-3.0",
+      "fixture": "next/app-router/ts-full-coverage",
+      "framework": "nextjs",
+      "mode": "warm",
+      "openapiVersion": "3.0",
+      "packageEntry": "./next",
+      "profile": {
+        "prepareTemplateMs": 0.007,
+        "loadCustomFragmentsMs": 0,
+        "prepareDocumentMs": 0.007,
+        "scanRouteFilesMs": 0.01,
+        "deriveRoutePathMs": 0.014,
+        "filterRouteCandidatesMs": 0.001,
+        "sourcePrecheckMs": 0.059,
+        "readRouteFilesMs": 0,
+        "parseRouteFilesMs": 0,
+        "analyzeRouteFilesMs": 0.292,
+        "typescriptResponseInferenceMs": 0,
+        "processRouteFilesMs": 0.315,
+        "registerRouteMs": 5.241,
+        "getSchemaContentMs": 0.701,
+        "createRequestParamsMs": 0,
+        "createRequestBodyMs": 0,
+        "processResponsesMs": 4.468,
+        "createResponseSchemaMs": 0,
+        "buildOperationsMs": 5.244,
+        "sortAndMergePathsMs": 0.077,
+        "buildPathsMs": 0.077,
+        "defaultComponentsAndErrorsMs": 0.006,
+        "mergeSchemasMs": 0.3,
+        "finalizeDocumentMs": 0.891,
+        "totalMs": 6.956,
+        "scanRoutesMs": 5.569
+      },
+      "router": "app",
+      "schemaFlavor": "typescript",
+      "topPhases": [
+        {
+          "name": "scanRoutesMs",
+          "ms": 5.569
+        },
+        {
+          "name": "buildOperationsMs",
+          "ms": 5.244
+        },
+        {
+          "name": "registerRouteMs",
+          "ms": 5.241
+        },
+        {
+          "name": "processResponsesMs",
+          "ms": 4.468
+        },
+        {
+          "name": "finalizeDocumentMs",
+          "ms": 0.891
+        }
+      ]
+    },
+    {
+      "id": "next-app-ts-full-3.1",
+      "fixture": "next/app-router/ts-full-coverage",
+      "framework": "nextjs",
+      "mode": "cold",
+      "openapiVersion": "3.1",
+      "packageEntry": "./next",
+      "profile": {
+        "prepareTemplateMs": 0.014,
+        "loadCustomFragmentsMs": 0,
+        "prepareDocumentMs": 0.014,
+        "scanRouteFilesMs": 0.342,
+        "deriveRoutePathMs": 0.066,
+        "filterRouteCandidatesMs": 0.002,
+        "sourcePrecheckMs": 0.171,
+        "readRouteFilesMs": 0.073,
+        "parseRouteFilesMs": 0.076,
+        "analyzeRouteFilesMs": 0.474,
+        "typescriptResponseInferenceMs": 0,
+        "processRouteFilesMs": 0.582,
+        "registerRouteMs": 84.419,
+        "getSchemaContentMs": 38.22,
+        "createRequestParamsMs": 0,
+        "createRequestBodyMs": 0,
+        "processResponsesMs": 46.075,
+        "createResponseSchemaMs": 0,
+        "buildOperationsMs": 84.425,
+        "sortAndMergePathsMs": 0.083,
+        "buildPathsMs": 0.083,
+        "defaultComponentsAndErrorsMs": 0.006,
+        "mergeSchemasMs": 0.291,
+        "finalizeDocumentMs": 0.961,
+        "totalMs": 86.986,
+        "scanRoutesMs": 85.35
+      },
+      "router": "app",
+      "schemaFlavor": "typescript",
+      "topPhases": [
+        {
+          "name": "scanRoutesMs",
+          "ms": 85.35
+        },
+        {
+          "name": "buildOperationsMs",
+          "ms": 84.425
+        },
+        {
+          "name": "registerRouteMs",
+          "ms": 84.419
+        },
+        {
+          "name": "processResponsesMs",
+          "ms": 46.075
+        },
+        {
+          "name": "getSchemaContentMs",
+          "ms": 38.22
+        }
+      ]
+    },
+    {
+      "id": "next-app-ts-full-3.1",
+      "fixture": "next/app-router/ts-full-coverage",
+      "framework": "nextjs",
+      "mode": "warm",
+      "openapiVersion": "3.1",
+      "packageEntry": "./next",
+      "profile": {
+        "prepareTemplateMs": 0.006,
+        "loadCustomFragmentsMs": 0,
+        "prepareDocumentMs": 0.006,
+        "scanRouteFilesMs": 0.01,
+        "deriveRoutePathMs": 0.014,
+        "filterRouteCandidatesMs": 0.001,
+        "sourcePrecheckMs": 0.052,
+        "readRouteFilesMs": 0,
+        "parseRouteFilesMs": 0,
+        "analyzeRouteFilesMs": 0.37,
+        "typescriptResponseInferenceMs": 0,
+        "processRouteFilesMs": 0.393,
+        "registerRouteMs": 4.693,
+        "getSchemaContentMs": 0.769,
+        "createRequestParamsMs": 0,
+        "createRequestBodyMs": 0,
+        "processResponsesMs": 3.854,
+        "createResponseSchemaMs": 0,
+        "buildOperationsMs": 4.697,
+        "sortAndMergePathsMs": 0.06,
+        "buildPathsMs": 0.06,
+        "defaultComponentsAndErrorsMs": 0.004,
+        "mergeSchemasMs": 0.272,
+        "finalizeDocumentMs": 0.796,
+        "totalMs": 6.331,
+        "scanRoutesMs": 5.1
+      },
+      "router": "app",
+      "schemaFlavor": "typescript",
+      "topPhases": [
+        {
+          "name": "scanRoutesMs",
+          "ms": 5.1
+        },
+        {
+          "name": "buildOperationsMs",
+          "ms": 4.697
+        },
+        {
+          "name": "registerRouteMs",
+          "ms": 4.693
+        },
+        {
+          "name": "processResponsesMs",
+          "ms": 3.854
+        },
+        {
+          "name": "finalizeDocumentMs",
+          "ms": 0.796
+        }
+      ]
+    },
+    {
+      "id": "next-app-ts-full-3.2",
+      "fixture": "next/app-router/ts-full-coverage",
+      "framework": "nextjs",
+      "mode": "cold",
+      "openapiVersion": "3.2",
+      "packageEntry": "./next",
+      "profile": {
+        "prepareTemplateMs": 0.006,
+        "loadCustomFragmentsMs": 0,
+        "prepareDocumentMs": 0.006,
+        "scanRouteFilesMs": 0.189,
+        "deriveRoutePathMs": 0.024,
+        "filterRouteCandidatesMs": 0.001,
+        "sourcePrecheckMs": 0.134,
+        "readRouteFilesMs": 0.064,
+        "parseRouteFilesMs": 0.072,
+        "analyzeRouteFilesMs": 0.384,
+        "typescriptResponseInferenceMs": 0,
+        "processRouteFilesMs": 0.485,
+        "registerRouteMs": 82.395,
+        "getSchemaContentMs": 38.215,
+        "createRequestParamsMs": 0,
+        "createRequestBodyMs": 0,
+        "processResponsesMs": 44.076,
+        "createResponseSchemaMs": 0,
+        "buildOperationsMs": 82.399,
+        "sortAndMergePathsMs": 0.072,
+        "buildPathsMs": 0.072,
+        "defaultComponentsAndErrorsMs": 0.005,
+        "mergeSchemasMs": 0.279,
+        "finalizeDocumentMs": 0.793,
+        "totalMs": 84.418,
+        "scanRoutesMs": 83.073
+      },
+      "router": "app",
+      "schemaFlavor": "typescript",
+      "topPhases": [
+        {
+          "name": "scanRoutesMs",
+          "ms": 83.073
+        },
+        {
+          "name": "buildOperationsMs",
+          "ms": 82.399
+        },
+        {
+          "name": "registerRouteMs",
+          "ms": 82.395
+        },
+        {
+          "name": "processResponsesMs",
+          "ms": 44.076
+        },
+        {
+          "name": "getSchemaContentMs",
+          "ms": 38.215
+        }
+      ]
+    },
+    {
+      "id": "next-app-ts-full-3.2",
+      "fixture": "next/app-router/ts-full-coverage",
+      "framework": "nextjs",
+      "mode": "warm",
+      "openapiVersion": "3.2",
+      "packageEntry": "./next",
+      "profile": {
+        "prepareTemplateMs": 0.007,
+        "loadCustomFragmentsMs": 0,
+        "prepareDocumentMs": 0.007,
+        "scanRouteFilesMs": 0.009,
+        "deriveRoutePathMs": 0.008,
+        "filterRouteCandidatesMs": 0.001,
+        "sourcePrecheckMs": 0.034,
+        "readRouteFilesMs": 0,
+        "parseRouteFilesMs": 0,
+        "analyzeRouteFilesMs": 0.214,
+        "typescriptResponseInferenceMs": 0,
+        "processRouteFilesMs": 0.231,
+        "registerRouteMs": 3.998,
+        "getSchemaContentMs": 0.451,
+        "createRequestParamsMs": 0,
+        "createRequestBodyMs": 0,
+        "processResponsesMs": 3.484,
+        "createResponseSchemaMs": 0,
+        "buildOperationsMs": 4,
+        "sortAndMergePathsMs": 0.054,
+        "buildPathsMs": 0.054,
+        "defaultComponentsAndErrorsMs": 0.004,
+        "mergeSchemasMs": 0.302,
+        "finalizeDocumentMs": 0.855,
+        "totalMs": 5.53,
+        "scanRoutesMs": 4.241
+      },
+      "router": "app",
+      "schemaFlavor": "typescript",
+      "topPhases": [
+        {
+          "name": "scanRoutesMs",
+          "ms": 4.241
+        },
+        {
+          "name": "buildOperationsMs",
+          "ms": 4
+        },
+        {
+          "name": "registerRouteMs",
+          "ms": 3.998
+        },
+        {
+          "name": "processResponsesMs",
+          "ms": 3.484
+        },
+        {
+          "name": "finalizeDocumentMs",
+          "ms": 0.855
+        }
+      ]
+    },
+    {
+      "id": "next-app-drizzle-zod-3.0",
+      "fixture": "next/app-router/drizzle-zod-flow",
+      "framework": "nextjs",
+      "mode": "cold",
+      "openapiVersion": "3.0",
+      "packageEntry": "./next",
+      "profile": {
+        "prepareTemplateMs": 0.023,
+        "loadCustomFragmentsMs": 0,
+        "prepareDocumentMs": 0.023,
+        "scanRouteFilesMs": 0.186,
+        "deriveRoutePathMs": 0.016,
+        "filterRouteCandidatesMs": 0.001,
+        "sourcePrecheckMs": 0.058,
+        "readRouteFilesMs": 0.025,
+        "parseRouteFilesMs": 0.181,
+        "analyzeRouteFilesMs": 1.018,
+        "typescriptResponseInferenceMs": 0,
+        "processRouteFilesMs": 1.22,
+        "registerRouteMs": 8.453,
+        "getSchemaContentMs": 7.188,
+        "createRequestParamsMs": 0.089,
+        "createRequestBodyMs": 0,
+        "processResponsesMs": 1.038,
+        "createResponseSchemaMs": 0,
+        "buildOperationsMs": 8.457,
+        "sortAndMergePathsMs": 0.056,
+        "buildPathsMs": 0.056,
+        "defaultComponentsAndErrorsMs": 0.041,
+        "mergeSchemasMs": 0.067,
+        "finalizeDocumentMs": 0.934,
+        "totalMs": 11.095,
+        "scanRoutesMs": 9.863
+      },
+      "router": "app",
+      "schemaFlavor": "drizzle-zod",
+      "topPhases": [
+        {
+          "name": "scanRoutesMs",
+          "ms": 9.863
+        },
+        {
+          "name": "buildOperationsMs",
+          "ms": 8.457
+        },
+        {
+          "name": "registerRouteMs",
+          "ms": 8.453
+        },
+        {
+          "name": "getSchemaContentMs",
+          "ms": 7.188
+        },
+        {
+          "name": "processRouteFilesMs",
+          "ms": 1.22
+        }
+      ]
+    },
+    {
+      "id": "next-app-drizzle-zod-3.0",
+      "fixture": "next/app-router/drizzle-zod-flow",
+      "framework": "nextjs",
+      "mode": "warm",
+      "openapiVersion": "3.0",
+      "packageEntry": "./next",
+      "profile": {
+        "prepareTemplateMs": 0.017,
+        "loadCustomFragmentsMs": 0,
+        "prepareDocumentMs": 0.017,
+        "scanRouteFilesMs": 0.01,
+        "deriveRoutePathMs": 0.014,
+        "filterRouteCandidatesMs": 0.001,
+        "sourcePrecheckMs": 0.038,
+        "readRouteFilesMs": 0,
+        "parseRouteFilesMs": 0,
+        "analyzeRouteFilesMs": 0.792,
+        "typescriptResponseInferenceMs": 0,
+        "processRouteFilesMs": 0.807,
+        "registerRouteMs": 7.555,
+        "getSchemaContentMs": 6.392,
+        "createRequestParamsMs": 0.069,
+        "createRequestBodyMs": 0,
+        "processResponsesMs": 0.992,
+        "createResponseSchemaMs": 0,
+        "buildOperationsMs": 7.559,
+        "sortAndMergePathsMs": 0.045,
+        "buildPathsMs": 0.045,
+        "defaultComponentsAndErrorsMs": 0.033,
+        "mergeSchemasMs": 0.059,
+        "finalizeDocumentMs": 2.474,
+        "totalMs": 11.085,
+        "scanRoutesMs": 8.376
+      },
+      "router": "app",
+      "schemaFlavor": "drizzle-zod",
+      "topPhases": [
+        {
+          "name": "scanRoutesMs",
+          "ms": 8.376
+        },
+        {
+          "name": "buildOperationsMs",
+          "ms": 7.559
+        },
+        {
+          "name": "registerRouteMs",
+          "ms": 7.555
+        },
+        {
+          "name": "getSchemaContentMs",
+          "ms": 6.392
+        },
+        {
+          "name": "finalizeDocumentMs",
+          "ms": 2.474
+        }
+      ]
+    },
+    {
+      "id": "next-app-drizzle-zod-3.1",
+      "fixture": "next/app-router/drizzle-zod-flow",
+      "framework": "nextjs",
+      "mode": "cold",
+      "openapiVersion": "3.1",
+      "packageEntry": "./next",
+      "profile": {
+        "prepareTemplateMs": 0.019,
+        "loadCustomFragmentsMs": 0,
+        "prepareDocumentMs": 0.019,
+        "scanRouteFilesMs": 0.175,
+        "deriveRoutePathMs": 0.011,
+        "filterRouteCandidatesMs": 0.001,
+        "sourcePrecheckMs": 0.043,
+        "readRouteFilesMs": 0.019,
+        "parseRouteFilesMs": 0.109,
+        "analyzeRouteFilesMs": 0.79,
+        "typescriptResponseInferenceMs": 0,
+        "processRouteFilesMs": 0.914,
+        "registerRouteMs": 7.178,
+        "getSchemaContentMs": 6.197,
+        "createRequestParamsMs": 0.06,
+        "createRequestBodyMs": 0,
+        "processResponsesMs": 0.828,
+        "createResponseSchemaMs": 0,
+        "buildOperationsMs": 7.182,
+        "sortAndMergePathsMs": 0.056,
+        "buildPathsMs": 0.056,
+        "defaultComponentsAndErrorsMs": 0.053,
+        "mergeSchemasMs": 0.063,
+        "finalizeDocumentMs": 1.02,
+        "totalMs": 9.566,
+        "scanRoutesMs": 8.27
+      },
+      "router": "app",
+      "schemaFlavor": "drizzle-zod",
+      "topPhases": [
+        {
+          "name": "scanRoutesMs",
+          "ms": 8.27
+        },
+        {
+          "name": "buildOperationsMs",
+          "ms": 7.182
+        },
+        {
+          "name": "registerRouteMs",
+          "ms": 7.178
+        },
+        {
+          "name": "getSchemaContentMs",
+          "ms": 6.197
+        },
+        {
+          "name": "finalizeDocumentMs",
+          "ms": 1.02
+        }
+      ]
+    },
+    {
+      "id": "next-app-drizzle-zod-3.1",
+      "fixture": "next/app-router/drizzle-zod-flow",
+      "framework": "nextjs",
+      "mode": "warm",
+      "openapiVersion": "3.1",
+      "packageEntry": "./next",
+      "profile": {
+        "prepareTemplateMs": 0.018,
+        "loadCustomFragmentsMs": 0,
+        "prepareDocumentMs": 0.018,
+        "scanRouteFilesMs": 0.009,
+        "deriveRoutePathMs": 0.014,
+        "filterRouteCandidatesMs": 0.001,
+        "sourcePrecheckMs": 0.048,
+        "readRouteFilesMs": 0,
+        "parseRouteFilesMs": 0,
+        "analyzeRouteFilesMs": 0.804,
+        "typescriptResponseInferenceMs": 0,
+        "processRouteFilesMs": 0.83,
+        "registerRouteMs": 9.205,
+        "getSchemaContentMs": 8.114,
+        "createRequestParamsMs": 0.08,
+        "createRequestBodyMs": 0,
+        "processResponsesMs": 0.903,
+        "createResponseSchemaMs": 0,
+        "buildOperationsMs": 9.208,
+        "sortAndMergePathsMs": 0.043,
+        "buildPathsMs": 0.043,
+        "defaultComponentsAndErrorsMs": 0.033,
+        "mergeSchemasMs": 0.054,
+        "finalizeDocumentMs": 0.918,
+        "totalMs": 11.204,
+        "scanRoutesMs": 10.048
+      },
+      "router": "app",
+      "schemaFlavor": "drizzle-zod",
+      "topPhases": [
+        {
+          "name": "scanRoutesMs",
+          "ms": 10.048
+        },
+        {
+          "name": "buildOperationsMs",
+          "ms": 9.208
+        },
+        {
+          "name": "registerRouteMs",
+          "ms": 9.205
+        },
+        {
+          "name": "getSchemaContentMs",
+          "ms": 8.114
+        },
+        {
+          "name": "finalizeDocumentMs",
+          "ms": 0.918
+        }
+      ]
+    },
+    {
+      "id": "next-app-drizzle-zod-3.2",
+      "fixture": "next/app-router/drizzle-zod-flow",
+      "framework": "nextjs",
+      "mode": "cold",
+      "openapiVersion": "3.2",
+      "packageEntry": "./next",
+      "profile": {
+        "prepareTemplateMs": 0.022,
+        "loadCustomFragmentsMs": 0,
+        "prepareDocumentMs": 0.022,
+        "scanRouteFilesMs": 0.176,
+        "deriveRoutePathMs": 0.011,
+        "filterRouteCandidatesMs": 0.001,
+        "sourcePrecheckMs": 0.043,
+        "readRouteFilesMs": 0.02,
+        "parseRouteFilesMs": 0.094,
+        "analyzeRouteFilesMs": 0.825,
+        "typescriptResponseInferenceMs": 0,
+        "processRouteFilesMs": 0.935,
+        "registerRouteMs": 6.87,
+        "getSchemaContentMs": 5.863,
+        "createRequestParamsMs": 0.066,
+        "createRequestBodyMs": 0,
+        "processResponsesMs": 0.855,
+        "createResponseSchemaMs": 0,
+        "buildOperationsMs": 6.873,
+        "sortAndMergePathsMs": 0.037,
+        "buildPathsMs": 0.037,
+        "defaultComponentsAndErrorsMs": 0.032,
+        "mergeSchemasMs": 0.055,
+        "finalizeDocumentMs": 0.882,
+        "totalMs": 9.095,
+        "scanRoutesMs": 7.984
+      },
+      "router": "app",
+      "schemaFlavor": "drizzle-zod",
+      "topPhases": [
+        {
+          "name": "scanRoutesMs",
+          "ms": 7.984
+        },
+        {
+          "name": "buildOperationsMs",
+          "ms": 6.873
+        },
+        {
+          "name": "registerRouteMs",
+          "ms": 6.87
+        },
+        {
+          "name": "getSchemaContentMs",
+          "ms": 5.863
+        },
+        {
+          "name": "processRouteFilesMs",
+          "ms": 0.935
+        }
+      ]
+    },
+    {
+      "id": "next-app-drizzle-zod-3.2",
+      "fixture": "next/app-router/drizzle-zod-flow",
+      "framework": "nextjs",
+      "mode": "warm",
+      "openapiVersion": "3.2",
+      "packageEntry": "./next",
+      "profile": {
+        "prepareTemplateMs": 0.023,
+        "loadCustomFragmentsMs": 0,
+        "prepareDocumentMs": 0.023,
+        "scanRouteFilesMs": 0.008,
+        "deriveRoutePathMs": 0.022,
+        "filterRouteCandidatesMs": 0.001,
+        "sourcePrecheckMs": 0.036,
+        "readRouteFilesMs": 0,
+        "parseRouteFilesMs": 0,
+        "analyzeRouteFilesMs": 0.731,
+        "typescriptResponseInferenceMs": 0,
+        "processRouteFilesMs": 0.746,
+        "registerRouteMs": 7.11,
+        "getSchemaContentMs": 6.084,
+        "createRequestParamsMs": 0.061,
+        "createRequestBodyMs": 0,
+        "processResponsesMs": 0.873,
+        "createResponseSchemaMs": 0,
+        "buildOperationsMs": 7.113,
+        "sortAndMergePathsMs": 0.051,
+        "buildPathsMs": 0.051,
+        "defaultComponentsAndErrorsMs": 0.034,
+        "mergeSchemasMs": 0.056,
+        "finalizeDocumentMs": 0.915,
+        "totalMs": 9.035,
+        "scanRoutesMs": 7.867
+      },
+      "router": "app",
+      "schemaFlavor": "drizzle-zod",
+      "topPhases": [
+        {
+          "name": "scanRoutesMs",
+          "ms": 7.867
+        },
+        {
+          "name": "buildOperationsMs",
+          "ms": 7.113
+        },
+        {
+          "name": "registerRouteMs",
+          "ms": 7.11
+        },
+        {
+          "name": "getSchemaContentMs",
+          "ms": 6.084
+        },
+        {
+          "name": "finalizeDocumentMs",
+          "ms": 0.915
+        }
+      ]
+    },
+    {
+      "id": "next-app-ignore-3.0",
+      "fixture": "next/app-router/ignore-routes",
+      "framework": "nextjs",
+      "mode": "cold",
+      "openapiVersion": "3.0",
+      "packageEntry": "./next",
+      "profile": {
+        "prepareTemplateMs": 0.006,
+        "loadCustomFragmentsMs": 0,
+        "prepareDocumentMs": 0.006,
+        "scanRouteFilesMs": 0.338,
+        "deriveRoutePathMs": 0.01,
+        "filterRouteCandidatesMs": 0.052,
+        "sourcePrecheckMs": 0.042,
+        "readRouteFilesMs": 0.029,
+        "parseRouteFilesMs": 0.023,
+        "analyzeRouteFilesMs": 0.072,
+        "typescriptResponseInferenceMs": 0,
+        "processRouteFilesMs": 0.102,
+        "registerRouteMs": 0.029,
+        "getSchemaContentMs": 0,
+        "createRequestParamsMs": 0,
+        "createRequestBodyMs": 0,
+        "processResponsesMs": 0.01,
+        "createResponseSchemaMs": 0,
+        "buildOperationsMs": 0.03,
+        "sortAndMergePathsMs": 0.007,
+        "buildPathsMs": 0.007,
+        "defaultComponentsAndErrorsMs": 0.003,
+        "mergeSchemasMs": 0.002,
+        "finalizeDocumentMs": 0.032,
+        "totalMs": 0.662,
+        "scanRoutesMs": 0.47
+      },
+      "router": "app",
+      "schemaFlavor": "filtered",
+      "topPhases": [
+        {
+          "name": "scanRoutesMs",
+          "ms": 0.47
+        },
+        {
+          "name": "scanRouteFilesMs",
+          "ms": 0.338
+        },
+        {
+          "name": "processRouteFilesMs",
+          "ms": 0.102
+        },
+        {
+          "name": "analyzeRouteFilesMs",
+          "ms": 0.072
+        },
+        {
+          "name": "filterRouteCandidatesMs",
+          "ms": 0.052
+        }
+      ]
+    },
+    {
+      "id": "next-app-ignore-3.0",
+      "fixture": "next/app-router/ignore-routes",
+      "framework": "nextjs",
+      "mode": "warm",
+      "openapiVersion": "3.0",
+      "packageEntry": "./next",
+      "profile": {
+        "prepareTemplateMs": 0.004,
+        "loadCustomFragmentsMs": 0,
+        "prepareDocumentMs": 0.004,
+        "scanRouteFilesMs": 0.013,
+        "deriveRoutePathMs": 0.005,
+        "filterRouteCandidatesMs": 0.001,
+        "sourcePrecheckMs": 0.008,
+        "readRouteFilesMs": 0,
+        "parseRouteFilesMs": 0,
+        "analyzeRouteFilesMs": 0.022,
+        "typescriptResponseInferenceMs": 0,
+        "processRouteFilesMs": 0.025,
+        "registerRouteMs": 0.006,
+        "getSchemaContentMs": 0,
+        "createRequestParamsMs": 0,
+        "createRequestBodyMs": 0,
+        "processResponsesMs": 0.001,
+        "createResponseSchemaMs": 0,
+        "buildOperationsMs": 0.006,
+        "sortAndMergePathsMs": 0.004,
+        "buildPathsMs": 0.004,
+        "defaultComponentsAndErrorsMs": 0.001,
+        "mergeSchemasMs": 0.001,
+        "finalizeDocumentMs": 0.023,
+        "totalMs": 0.105,
+        "scanRoutesMs": 0.045
+      },
+      "router": "app",
+      "schemaFlavor": "filtered",
+      "topPhases": [
+        {
+          "name": "scanRoutesMs",
+          "ms": 0.045
+        },
+        {
+          "name": "processRouteFilesMs",
+          "ms": 0.025
+        },
+        {
+          "name": "finalizeDocumentMs",
+          "ms": 0.023
+        },
+        {
+          "name": "analyzeRouteFilesMs",
+          "ms": 0.022
+        },
+        {
+          "name": "scanRouteFilesMs",
+          "ms": 0.013
+        }
+      ]
+    },
+    {
+      "id": "next-app-ignore-3.1",
+      "fixture": "next/app-router/ignore-routes",
+      "framework": "nextjs",
+      "mode": "cold",
+      "openapiVersion": "3.1",
+      "packageEntry": "./next",
+      "profile": {
+        "prepareTemplateMs": 0.005,
+        "loadCustomFragmentsMs": 0,
+        "prepareDocumentMs": 0.005,
+        "scanRouteFilesMs": 0.208,
+        "deriveRoutePathMs": 0.005,
+        "filterRouteCandidatesMs": 0.002,
+        "sourcePrecheckMs": 0.021,
+        "readRouteFilesMs": 0.013,
+        "parseRouteFilesMs": 0.011,
+        "analyzeRouteFilesMs": 0.031,
+        "typescriptResponseInferenceMs": 0,
+        "processRouteFilesMs": 0.046,
+        "registerRouteMs": 0.006,
+        "getSchemaContentMs": 0,
+        "createRequestParamsMs": 0,
+        "createRequestBodyMs": 0,
+        "processResponsesMs": 0.001,
+        "createResponseSchemaMs": 0,
+        "buildOperationsMs": 0.006,
+        "sortAndMergePathsMs": 0.008,
+        "buildPathsMs": 0.008,
+        "defaultComponentsAndErrorsMs": 0.001,
+        "mergeSchemasMs": 0.001,
+        "finalizeDocumentMs": 0.023,
+        "totalMs": 0.34,
+        "scanRoutesMs": 0.26
+      },
+      "router": "app",
+      "schemaFlavor": "filtered",
+      "topPhases": [
+        {
+          "name": "scanRoutesMs",
+          "ms": 0.26
+        },
+        {
+          "name": "scanRouteFilesMs",
+          "ms": 0.208
+        },
+        {
+          "name": "processRouteFilesMs",
+          "ms": 0.046
+        },
+        {
+          "name": "analyzeRouteFilesMs",
+          "ms": 0.031
+        },
+        {
+          "name": "finalizeDocumentMs",
+          "ms": 0.023
+        }
+      ]
+    },
+    {
+      "id": "next-app-ignore-3.1",
+      "fixture": "next/app-router/ignore-routes",
+      "framework": "nextjs",
+      "mode": "warm",
+      "openapiVersion": "3.1",
+      "packageEntry": "./next",
+      "profile": {
+        "prepareTemplateMs": 0.004,
+        "loadCustomFragmentsMs": 0,
+        "prepareDocumentMs": 0.004,
+        "scanRouteFilesMs": 0.007,
+        "deriveRoutePathMs": 0.005,
+        "filterRouteCandidatesMs": 0.001,
+        "sourcePrecheckMs": 0.008,
+        "readRouteFilesMs": 0,
+        "parseRouteFilesMs": 0,
+        "analyzeRouteFilesMs": 0.021,
+        "typescriptResponseInferenceMs": 0,
+        "processRouteFilesMs": 0.024,
+        "registerRouteMs": 0.005,
+        "getSchemaContentMs": 0,
+        "createRequestParamsMs": 0,
+        "createRequestBodyMs": 0,
+        "processResponsesMs": 0.001,
+        "createResponseSchemaMs": 0,
+        "buildOperationsMs": 0.005,
+        "sortAndMergePathsMs": 0.004,
+        "buildPathsMs": 0.004,
+        "defaultComponentsAndErrorsMs": 0.001,
+        "mergeSchemasMs": 0.001,
+        "finalizeDocumentMs": 0.022,
+        "totalMs": 0.094,
+        "scanRoutesMs": 0.036
+      },
+      "router": "app",
+      "schemaFlavor": "filtered",
+      "topPhases": [
+        {
+          "name": "scanRoutesMs",
+          "ms": 0.036
+        },
+        {
+          "name": "processRouteFilesMs",
+          "ms": 0.024
+        },
+        {
+          "name": "finalizeDocumentMs",
+          "ms": 0.022
+        },
+        {
+          "name": "analyzeRouteFilesMs",
+          "ms": 0.021
+        },
+        {
+          "name": "sourcePrecheckMs",
+          "ms": 0.008
+        }
+      ]
+    },
+    {
+      "id": "next-app-ignore-3.2",
+      "fixture": "next/app-router/ignore-routes",
+      "framework": "nextjs",
+      "mode": "cold",
+      "openapiVersion": "3.2",
+      "packageEntry": "./next",
+      "profile": {
+        "prepareTemplateMs": 0.004,
+        "loadCustomFragmentsMs": 0,
+        "prepareDocumentMs": 0.004,
+        "scanRouteFilesMs": 0.208,
+        "deriveRoutePathMs": 0.005,
+        "filterRouteCandidatesMs": 0.002,
+        "sourcePrecheckMs": 0.02,
+        "readRouteFilesMs": 0.013,
+        "parseRouteFilesMs": 0.005,
+        "analyzeRouteFilesMs": 0.026,
+        "typescriptResponseInferenceMs": 0,
+        "processRouteFilesMs": 0.035,
+        "registerRouteMs": 0.005,
+        "getSchemaContentMs": 0,
+        "createRequestParamsMs": 0,
+        "createRequestBodyMs": 0,
+        "processResponsesMs": 0.001,
+        "createResponseSchemaMs": 0,
+        "buildOperationsMs": 0.006,
+        "sortAndMergePathsMs": 0.004,
+        "buildPathsMs": 0.004,
+        "defaultComponentsAndErrorsMs": 0.001,
+        "mergeSchemasMs": 0.001,
+        "finalizeDocumentMs": 0.021,
+        "totalMs": 0.322,
+        "scanRoutesMs": 0.249
+      },
+      "router": "app",
+      "schemaFlavor": "filtered",
+      "topPhases": [
+        {
+          "name": "scanRoutesMs",
+          "ms": 0.249
+        },
+        {
+          "name": "scanRouteFilesMs",
+          "ms": 0.208
+        },
+        {
+          "name": "processRouteFilesMs",
+          "ms": 0.035
+        },
+        {
+          "name": "analyzeRouteFilesMs",
+          "ms": 0.026
+        },
+        {
+          "name": "finalizeDocumentMs",
+          "ms": 0.021
+        }
+      ]
+    },
+    {
+      "id": "next-app-ignore-3.2",
+      "fixture": "next/app-router/ignore-routes",
+      "framework": "nextjs",
+      "mode": "warm",
+      "openapiVersion": "3.2",
+      "packageEntry": "./next",
+      "profile": {
+        "prepareTemplateMs": 0.009,
+        "loadCustomFragmentsMs": 0,
+        "prepareDocumentMs": 0.01,
+        "scanRouteFilesMs": 0.011,
+        "deriveRoutePathMs": 0.007,
+        "filterRouteCandidatesMs": 0.002,
+        "sourcePrecheckMs": 0.014,
+        "readRouteFilesMs": 0,
+        "parseRouteFilesMs": 0,
+        "analyzeRouteFilesMs": 0.044,
+        "typescriptResponseInferenceMs": 0,
+        "processRouteFilesMs": 0.05,
+        "registerRouteMs": 0.011,
+        "getSchemaContentMs": 0,
+        "createRequestParamsMs": 0,
+        "createRequestBodyMs": 0,
+        "processResponsesMs": 0.001,
+        "createResponseSchemaMs": 0,
+        "buildOperationsMs": 0.011,
+        "sortAndMergePathsMs": 0.007,
+        "buildPathsMs": 0.007,
+        "defaultComponentsAndErrorsMs": 0.002,
+        "mergeSchemasMs": 0.002,
+        "finalizeDocumentMs": 0.029,
+        "totalMs": 0.167,
+        "scanRoutesMs": 0.071
+      },
+      "router": "app",
+      "schemaFlavor": "filtered",
+      "topPhases": [
+        {
+          "name": "scanRoutesMs",
+          "ms": 0.071
+        },
+        {
+          "name": "processRouteFilesMs",
+          "ms": 0.05
+        },
+        {
+          "name": "analyzeRouteFilesMs",
+          "ms": 0.044
+        },
+        {
+          "name": "finalizeDocumentMs",
+          "ms": 0.029
+        },
+        {
+          "name": "sourcePrecheckMs",
+          "ms": 0.014
+        }
+      ]
+    },
+    {
+      "id": "tanstack-core-3.0",
+      "fixture": "tanstack/core-flow",
+      "framework": "tanstack",
+      "mode": "cold",
+      "openapiVersion": "3.0",
+      "packageEntry": "./vite",
+      "profile": {
+        "prepareTemplateMs": 0.021,
+        "loadCustomFragmentsMs": 0,
+        "prepareDocumentMs": 0.022,
+        "scanRouteFilesMs": 0.08,
+        "deriveRoutePathMs": 0.109,
+        "filterRouteCandidatesMs": 0.002,
+        "sourcePrecheckMs": 0.102,
+        "readRouteFilesMs": 0.018,
+        "parseRouteFilesMs": 0.033,
+        "analyzeRouteFilesMs": 0.231,
+        "typescriptResponseInferenceMs": 0,
+        "processRouteFilesMs": 0.295,
+        "registerRouteMs": 1.079,
+        "getSchemaContentMs": 0.857,
+        "createRequestParamsMs": 0.022,
+        "createRequestBodyMs": 0,
+        "processResponsesMs": 0.16,
+        "createResponseSchemaMs": 0,
+        "buildOperationsMs": 1.081,
+        "sortAndMergePathsMs": 0.03,
+        "buildPathsMs": 0.03,
+        "defaultComponentsAndErrorsMs": 0.028,
+        "mergeSchemasMs": 0.033,
+        "finalizeDocumentMs": 0.386,
+        "totalMs": 2.184,
+        "scanRoutesMs": 1.456
+      },
+      "router": "generic",
+      "schemaFlavor": "typescript",
+      "topPhases": [
+        {
+          "name": "scanRoutesMs",
+          "ms": 1.456
+        },
+        {
+          "name": "buildOperationsMs",
+          "ms": 1.081
+        },
+        {
+          "name": "registerRouteMs",
+          "ms": 1.079
+        },
+        {
+          "name": "getSchemaContentMs",
+          "ms": 0.857
+        },
+        {
+          "name": "finalizeDocumentMs",
+          "ms": 0.386
+        }
+      ]
+    },
+    {
+      "id": "tanstack-core-3.0",
+      "fixture": "tanstack/core-flow",
+      "framework": "tanstack",
+      "mode": "warm",
+      "openapiVersion": "3.0",
+      "packageEntry": "./vite",
+      "profile": {
+        "prepareTemplateMs": 0.019,
+        "loadCustomFragmentsMs": 0,
+        "prepareDocumentMs": 0.02,
+        "scanRouteFilesMs": 0.006,
+        "deriveRoutePathMs": 0.019,
+        "filterRouteCandidatesMs": 0,
+        "sourcePrecheckMs": 0.021,
+        "readRouteFilesMs": 0,
+        "parseRouteFilesMs": 0,
+        "analyzeRouteFilesMs": 0.127,
+        "typescriptResponseInferenceMs": 0,
+        "processRouteFilesMs": 0.14,
+        "registerRouteMs": 0.346,
+        "getSchemaContentMs": 0.172,
+        "createRequestParamsMs": 0.013,
+        "createRequestBodyMs": 0,
+        "processResponsesMs": 0.135,
+        "createResponseSchemaMs": 0,
+        "buildOperationsMs": 0.347,
+        "sortAndMergePathsMs": 0.021,
+        "buildPathsMs": 0.021,
+        "defaultComponentsAndErrorsMs": 0.02,
+        "mergeSchemasMs": 0.026,
+        "finalizeDocumentMs": 0.323,
+        "totalMs": 0.952,
+        "scanRoutesMs": 0.493
+      },
+      "router": "generic",
+      "schemaFlavor": "typescript",
+      "topPhases": [
+        {
+          "name": "scanRoutesMs",
+          "ms": 0.493
+        },
+        {
+          "name": "buildOperationsMs",
+          "ms": 0.347
+        },
+        {
+          "name": "registerRouteMs",
+          "ms": 0.346
+        },
+        {
+          "name": "finalizeDocumentMs",
+          "ms": 0.323
+        },
+        {
+          "name": "getSchemaContentMs",
+          "ms": 0.172
+        }
+      ]
+    },
+    {
+      "id": "tanstack-core-3.1",
+      "fixture": "tanstack/core-flow",
+      "framework": "tanstack",
+      "mode": "cold",
+      "openapiVersion": "3.1",
+      "packageEntry": "./vite",
+      "profile": {
+        "prepareTemplateMs": 0.02,
+        "loadCustomFragmentsMs": 0,
+        "prepareDocumentMs": 0.02,
+        "scanRouteFilesMs": 0.062,
+        "deriveRoutePathMs": 0.019,
+        "filterRouteCandidatesMs": 0.001,
+        "sourcePrecheckMs": 0.056,
+        "readRouteFilesMs": 0.029,
+        "parseRouteFilesMs": 0.026,
+        "analyzeRouteFilesMs": 0.149,
+        "typescriptResponseInferenceMs": 0,
+        "processRouteFilesMs": 0.188,
+        "registerRouteMs": 0.927,
+        "getSchemaContentMs": 0.72,
+        "createRequestParamsMs": 0.018,
+        "createRequestBodyMs": 0,
+        "processResponsesMs": 0.16,
+        "createResponseSchemaMs": 0,
+        "buildOperationsMs": 0.929,
+        "sortAndMergePathsMs": 0.027,
+        "buildPathsMs": 0.027,
+        "defaultComponentsAndErrorsMs": 0.025,
+        "mergeSchemasMs": 0.029,
+        "finalizeDocumentMs": 0.341,
+        "totalMs": 1.709,
+        "scanRoutesMs": 1.18
+      },
+      "router": "generic",
+      "schemaFlavor": "typescript",
+      "topPhases": [
+        {
+          "name": "scanRoutesMs",
+          "ms": 1.18
+        },
+        {
+          "name": "buildOperationsMs",
+          "ms": 0.929
+        },
+        {
+          "name": "registerRouteMs",
+          "ms": 0.927
+        },
+        {
+          "name": "getSchemaContentMs",
+          "ms": 0.72
+        },
+        {
+          "name": "finalizeDocumentMs",
+          "ms": 0.341
+        }
+      ]
+    },
+    {
+      "id": "tanstack-core-3.1",
+      "fixture": "tanstack/core-flow",
+      "framework": "tanstack",
+      "mode": "warm",
+      "openapiVersion": "3.1",
+      "packageEntry": "./vite",
+      "profile": {
+        "prepareTemplateMs": 0.016,
+        "loadCustomFragmentsMs": 0,
+        "prepareDocumentMs": 0.016,
+        "scanRouteFilesMs": 0.004,
+        "deriveRoutePathMs": 0.014,
+        "filterRouteCandidatesMs": 0,
+        "sourcePrecheckMs": 0.017,
+        "readRouteFilesMs": 0,
+        "parseRouteFilesMs": 0,
+        "analyzeRouteFilesMs": 0.101,
+        "typescriptResponseInferenceMs": 0,
+        "processRouteFilesMs": 0.114,
+        "registerRouteMs": 0.316,
+        "getSchemaContentMs": 0.158,
+        "createRequestParamsMs": 0.011,
+        "createRequestBodyMs": 0,
+        "processResponsesMs": 0.126,
+        "createResponseSchemaMs": 0,
+        "buildOperationsMs": 0.317,
+        "sortAndMergePathsMs": 0.025,
+        "buildPathsMs": 0.025,
+        "defaultComponentsAndErrorsMs": 0.018,
+        "mergeSchemasMs": 0.027,
+        "finalizeDocumentMs": 0.364,
+        "totalMs": 0.926,
+        "scanRoutesMs": 0.436
+      },
+      "router": "generic",
+      "schemaFlavor": "typescript",
+      "topPhases": [
+        {
+          "name": "scanRoutesMs",
+          "ms": 0.436
+        },
+        {
+          "name": "finalizeDocumentMs",
+          "ms": 0.364
+        },
+        {
+          "name": "buildOperationsMs",
+          "ms": 0.317
+        },
+        {
+          "name": "registerRouteMs",
+          "ms": 0.316
+        },
+        {
+          "name": "getSchemaContentMs",
+          "ms": 0.158
+        }
+      ]
+    },
+    {
+      "id": "tanstack-core-3.2",
+      "fixture": "tanstack/core-flow",
+      "framework": "tanstack",
+      "mode": "cold",
+      "openapiVersion": "3.2",
+      "packageEntry": "./vite",
+      "profile": {
+        "prepareTemplateMs": 0.014,
+        "loadCustomFragmentsMs": 0,
+        "prepareDocumentMs": 0.014,
+        "scanRouteFilesMs": 0.048,
+        "deriveRoutePathMs": 0.013,
+        "filterRouteCandidatesMs": 0,
+        "sourcePrecheckMs": 0.031,
+        "readRouteFilesMs": 0.016,
+        "parseRouteFilesMs": 0.026,
+        "analyzeRouteFilesMs": 0.122,
+        "typescriptResponseInferenceMs": 0,
+        "processRouteFilesMs": 0.158,
+        "registerRouteMs": 0.803,
+        "getSchemaContentMs": 0.641,
+        "createRequestParamsMs": 0.011,
+        "createRequestBodyMs": 0,
+        "processResponsesMs": 0.129,
+        "createResponseSchemaMs": 0,
+        "buildOperationsMs": 0.804,
+        "sortAndMergePathsMs": 0.015,
+        "buildPathsMs": 0.015,
+        "defaultComponentsAndErrorsMs": 0.018,
+        "mergeSchemasMs": 0.024,
+        "finalizeDocumentMs": 0.314,
+        "totalMs": 1.448,
+        "scanRoutesMs": 1.01
+      },
+      "router": "generic",
+      "schemaFlavor": "typescript",
+      "topPhases": [
+        {
+          "name": "scanRoutesMs",
+          "ms": 1.01
+        },
+        {
+          "name": "buildOperationsMs",
+          "ms": 0.804
+        },
+        {
+          "name": "registerRouteMs",
+          "ms": 0.803
+        },
+        {
+          "name": "getSchemaContentMs",
+          "ms": 0.641
+        },
+        {
+          "name": "finalizeDocumentMs",
+          "ms": 0.314
+        }
+      ]
+    },
+    {
+      "id": "tanstack-core-3.2",
+      "fixture": "tanstack/core-flow",
+      "framework": "tanstack",
+      "mode": "warm",
+      "openapiVersion": "3.2",
+      "packageEntry": "./vite",
+      "profile": {
+        "prepareTemplateMs": 0.014,
+        "loadCustomFragmentsMs": 0,
+        "prepareDocumentMs": 0.014,
+        "scanRouteFilesMs": 0.004,
+        "deriveRoutePathMs": 0.013,
+        "filterRouteCandidatesMs": 0,
+        "sourcePrecheckMs": 0.014,
+        "readRouteFilesMs": 0,
+        "parseRouteFilesMs": 0,
+        "analyzeRouteFilesMs": 0.099,
+        "typescriptResponseInferenceMs": 0,
+        "processRouteFilesMs": 0.109,
+        "registerRouteMs": 0.329,
+        "getSchemaContentMs": 0.159,
+        "createRequestParamsMs": 0.017,
+        "createRequestBodyMs": 0,
+        "processResponsesMs": 0.131,
+        "createResponseSchemaMs": 0,
+        "buildOperationsMs": 0.33,
+        "sortAndMergePathsMs": 0.017,
+        "buildPathsMs": 0.017,
+        "defaultComponentsAndErrorsMs": 0.018,
+        "mergeSchemasMs": 0.025,
+        "finalizeDocumentMs": 0.31,
+        "totalMs": 0.863,
+        "scanRoutesMs": 0.443
+      },
+      "router": "generic",
+      "schemaFlavor": "typescript",
+      "topPhases": [
+        {
+          "name": "scanRoutesMs",
+          "ms": 0.443
+        },
+        {
+          "name": "buildOperationsMs",
+          "ms": 0.33
+        },
+        {
+          "name": "registerRouteMs",
+          "ms": 0.329
+        },
+        {
+          "name": "finalizeDocumentMs",
+          "ms": 0.31
+        },
+        {
+          "name": "getSchemaContentMs",
+          "ms": 0.159
+        }
+      ]
+    },
+    {
+      "id": "react-router-core-3.0",
+      "fixture": "react-router/core-flow",
+      "framework": "reactrouter",
+      "mode": "cold",
+      "openapiVersion": "3.0",
+      "packageEntry": "./react-router",
+      "profile": {
+        "prepareTemplateMs": 0.02,
+        "loadCustomFragmentsMs": 0,
+        "prepareDocumentMs": 0.02,
+        "scanRouteFilesMs": 0.069,
+        "deriveRoutePathMs": 0.018,
+        "filterRouteCandidatesMs": 0.001,
+        "sourcePrecheckMs": 0.036,
+        "readRouteFilesMs": 0.014,
+        "parseRouteFilesMs": 0.017,
+        "analyzeRouteFilesMs": 0.145,
+        "typescriptResponseInferenceMs": 0,
+        "processRouteFilesMs": 0.174,
+        "registerRouteMs": 0.793,
+        "getSchemaContentMs": 0.617,
+        "createRequestParamsMs": 0.012,
+        "createRequestBodyMs": 0,
+        "processResponsesMs": 0.13,
+        "createResponseSchemaMs": 0,
+        "buildOperationsMs": 0.794,
+        "sortAndMergePathsMs": 0.022,
+        "buildPathsMs": 0.022,
+        "defaultComponentsAndErrorsMs": 0.022,
+        "mergeSchemasMs": 0.023,
+        "finalizeDocumentMs": 0.321,
+        "totalMs": 1.51,
+        "scanRoutesMs": 1.037
+      },
+      "router": "generic",
+      "schemaFlavor": "typescript",
+      "topPhases": [
+        {
+          "name": "scanRoutesMs",
+          "ms": 1.037
+        },
+        {
+          "name": "buildOperationsMs",
+          "ms": 0.794
+        },
+        {
+          "name": "registerRouteMs",
+          "ms": 0.793
+        },
+        {
+          "name": "getSchemaContentMs",
+          "ms": 0.617
+        },
+        {
+          "name": "finalizeDocumentMs",
+          "ms": 0.321
+        }
+      ]
+    },
+    {
+      "id": "react-router-core-3.0",
+      "fixture": "react-router/core-flow",
+      "framework": "reactrouter",
+      "mode": "warm",
+      "openapiVersion": "3.0",
+      "packageEntry": "./react-router",
+      "profile": {
+        "prepareTemplateMs": 0.014,
+        "loadCustomFragmentsMs": 0,
+        "prepareDocumentMs": 0.014,
+        "scanRouteFilesMs": 0.005,
+        "deriveRoutePathMs": 0.012,
+        "filterRouteCandidatesMs": 0,
+        "sourcePrecheckMs": 0.017,
+        "readRouteFilesMs": 0,
+        "parseRouteFilesMs": 0,
+        "analyzeRouteFilesMs": 0.104,
+        "typescriptResponseInferenceMs": 0,
+        "processRouteFilesMs": 0.114,
+        "registerRouteMs": 0.25,
+        "getSchemaContentMs": 0.104,
+        "createRequestParamsMs": 0.009,
+        "createRequestBodyMs": 0,
+        "processResponsesMs": 0.115,
+        "createResponseSchemaMs": 0,
+        "buildOperationsMs": 0.251,
+        "sortAndMergePathsMs": 0.018,
+        "buildPathsMs": 0.018,
+        "defaultComponentsAndErrorsMs": 0.018,
+        "mergeSchemasMs": 0.02,
+        "finalizeDocumentMs": 0.299,
+        "totalMs": 0.779,
+        "scanRoutesMs": 0.37
+      },
+      "router": "generic",
+      "schemaFlavor": "typescript",
+      "topPhases": [
+        {
+          "name": "scanRoutesMs",
+          "ms": 0.37
+        },
+        {
+          "name": "finalizeDocumentMs",
+          "ms": 0.299
+        },
+        {
+          "name": "buildOperationsMs",
+          "ms": 0.251
+        },
+        {
+          "name": "registerRouteMs",
+          "ms": 0.25
+        },
+        {
+          "name": "processResponsesMs",
+          "ms": 0.115
+        }
+      ]
+    },
+    {
+      "id": "react-router-core-3.1",
+      "fixture": "react-router/core-flow",
+      "framework": "reactrouter",
+      "mode": "cold",
+      "openapiVersion": "3.1",
+      "packageEntry": "./react-router",
+      "profile": {
+        "prepareTemplateMs": 0.016,
+        "loadCustomFragmentsMs": 0.002,
+        "prepareDocumentMs": 0.017,
+        "scanRouteFilesMs": 0.058,
+        "deriveRoutePathMs": 0.018,
+        "filterRouteCandidatesMs": 0.001,
+        "sourcePrecheckMs": 0.035,
+        "readRouteFilesMs": 0.02,
+        "parseRouteFilesMs": 0.024,
+        "analyzeRouteFilesMs": 0.154,
+        "typescriptResponseInferenceMs": 0,
+        "processRouteFilesMs": 0.194,
+        "registerRouteMs": 0.84,
+        "getSchemaContentMs": 0.667,
+        "createRequestParamsMs": 0.011,
+        "createRequestBodyMs": 0,
+        "processResponsesMs": 0.13,
+        "createResponseSchemaMs": 0,
+        "buildOperationsMs": 0.842,
+        "sortAndMergePathsMs": 0.025,
+        "buildPathsMs": 0.025,
+        "defaultComponentsAndErrorsMs": 0.025,
+        "mergeSchemasMs": 0.023,
+        "finalizeDocumentMs": 0.321,
+        "totalMs": 1.569,
+        "scanRoutesMs": 1.093
+      },
+      "router": "generic",
+      "schemaFlavor": "typescript",
+      "topPhases": [
+        {
+          "name": "scanRoutesMs",
+          "ms": 1.093
+        },
+        {
+          "name": "buildOperationsMs",
+          "ms": 0.842
+        },
+        {
+          "name": "registerRouteMs",
+          "ms": 0.84
+        },
+        {
+          "name": "getSchemaContentMs",
+          "ms": 0.667
+        },
+        {
+          "name": "finalizeDocumentMs",
+          "ms": 0.321
+        }
+      ]
+    },
+    {
+      "id": "react-router-core-3.1",
+      "fixture": "react-router/core-flow",
+      "framework": "reactrouter",
+      "mode": "warm",
+      "openapiVersion": "3.1",
+      "packageEntry": "./react-router",
+      "profile": {
+        "prepareTemplateMs": 0.012,
+        "loadCustomFragmentsMs": 0,
+        "prepareDocumentMs": 0.012,
+        "scanRouteFilesMs": 0.003,
+        "deriveRoutePathMs": 0.01,
+        "filterRouteCandidatesMs": 0,
+        "sourcePrecheckMs": 0.011,
+        "readRouteFilesMs": 0,
+        "parseRouteFilesMs": 0,
+        "analyzeRouteFilesMs": 0.083,
+        "typescriptResponseInferenceMs": 0,
+        "processRouteFilesMs": 0.091,
+        "registerRouteMs": 0.227,
+        "getSchemaContentMs": 0.094,
+        "createRequestParamsMs": 0.007,
+        "createRequestBodyMs": 0,
+        "processResponsesMs": 0.109,
+        "createResponseSchemaMs": 0,
+        "buildOperationsMs": 0.228,
+        "sortAndMergePathsMs": 0.013,
+        "buildPathsMs": 0.013,
+        "defaultComponentsAndErrorsMs": 0.016,
+        "mergeSchemasMs": 0.018,
+        "finalizeDocumentMs": 0.28,
+        "totalMs": 0.69,
+        "scanRoutesMs": 0.322
+      },
+      "router": "generic",
+      "schemaFlavor": "typescript",
+      "topPhases": [
+        {
+          "name": "scanRoutesMs",
+          "ms": 0.322
+        },
+        {
+          "name": "finalizeDocumentMs",
+          "ms": 0.28
+        },
+        {
+          "name": "buildOperationsMs",
+          "ms": 0.228
+        },
+        {
+          "name": "registerRouteMs",
+          "ms": 0.227
+        },
+        {
+          "name": "processResponsesMs",
+          "ms": 0.109
+        }
+      ]
+    },
+    {
+      "id": "react-router-core-3.2",
+      "fixture": "react-router/core-flow",
+      "framework": "reactrouter",
+      "mode": "cold",
+      "openapiVersion": "3.2",
+      "packageEntry": "./react-router",
+      "profile": {
+        "prepareTemplateMs": 0.015,
+        "loadCustomFragmentsMs": 0,
+        "prepareDocumentMs": 0.016,
+        "scanRouteFilesMs": 0.053,
+        "deriveRoutePathMs": 0.018,
+        "filterRouteCandidatesMs": 0.001,
+        "sourcePrecheckMs": 0.028,
+        "readRouteFilesMs": 0.013,
+        "parseRouteFilesMs": 0.011,
+        "analyzeRouteFilesMs": 0.133,
+        "typescriptResponseInferenceMs": 0,
+        "processRouteFilesMs": 0.153,
+        "registerRouteMs": 0.835,
+        "getSchemaContentMs": 0.659,
+        "createRequestParamsMs": 0.013,
+        "createRequestBodyMs": 0,
+        "processResponsesMs": 0.128,
+        "createResponseSchemaMs": 0,
+        "buildOperationsMs": 0.837,
+        "sortAndMergePathsMs": 0.028,
+        "buildPathsMs": 0.028,
+        "defaultComponentsAndErrorsMs": 0.025,
+        "mergeSchemasMs": 0.023,
+        "finalizeDocumentMs": 0.334,
+        "totalMs": 1.524,
+        "scanRoutesMs": 1.043
+      },
+      "router": "generic",
+      "schemaFlavor": "typescript",
+      "topPhases": [
+        {
+          "name": "scanRoutesMs",
+          "ms": 1.043
+        },
+        {
+          "name": "buildOperationsMs",
+          "ms": 0.837
+        },
+        {
+          "name": "registerRouteMs",
+          "ms": 0.835
+        },
+        {
+          "name": "getSchemaContentMs",
+          "ms": 0.659
+        },
+        {
+          "name": "finalizeDocumentMs",
+          "ms": 0.334
+        }
+      ]
+    },
+    {
+      "id": "react-router-core-3.2",
+      "fixture": "react-router/core-flow",
+      "framework": "reactrouter",
+      "mode": "warm",
+      "openapiVersion": "3.2",
+      "packageEntry": "./react-router",
+      "profile": {
+        "prepareTemplateMs": 0.02,
+        "loadCustomFragmentsMs": 0,
+        "prepareDocumentMs": 0.02,
+        "scanRouteFilesMs": 0.006,
+        "deriveRoutePathMs": 0.015,
+        "filterRouteCandidatesMs": 0.001,
+        "sourcePrecheckMs": 0.02,
+        "readRouteFilesMs": 0,
+        "parseRouteFilesMs": 0,
+        "analyzeRouteFilesMs": 0.119,
+        "typescriptResponseInferenceMs": 0,
+        "processRouteFilesMs": 0.128,
+        "registerRouteMs": 0.286,
+        "getSchemaContentMs": 0.119,
+        "createRequestParamsMs": 0.01,
+        "createRequestBodyMs": 0,
+        "processResponsesMs": 0.127,
+        "createResponseSchemaMs": 0,
+        "buildOperationsMs": 0.287,
+        "sortAndMergePathsMs": 0.025,
+        "buildPathsMs": 0.025,
+        "defaultComponentsAndErrorsMs": 0.021,
+        "mergeSchemasMs": 0.023,
+        "finalizeDocumentMs": 0.334,
+        "totalMs": 0.892,
+        "scanRoutesMs": 0.421
+      },
+      "router": "generic",
+      "schemaFlavor": "typescript",
+      "topPhases": [
+        {
+          "name": "scanRoutesMs",
+          "ms": 0.421
+        },
+        {
+          "name": "finalizeDocumentMs",
+          "ms": 0.334
+        },
+        {
+          "name": "buildOperationsMs",
+          "ms": 0.287
+        },
+        {
+          "name": "registerRouteMs",
+          "ms": 0.286
+        },
+        {
+          "name": "processRouteFilesMs",
+          "ms": 0.128
+        }
+      ]
+    }
+  ]
+}

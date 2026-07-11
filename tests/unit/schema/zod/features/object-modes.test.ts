@@ -59,6 +59,18 @@ describe("Zod features › object modes", () => {
     });
   });
 
+  it("z.looseObject() emits additionalProperties: true", () => {
+    const schema = convert(`z.looseObject({ id: z.string() })`, roots);
+    expect(schema).toMatchObject({
+      type: "object",
+      properties: {
+        id: { type: "string" },
+      },
+      required: ["id"],
+      additionalProperties: true,
+    });
+  });
+
   it("z.strictObject() without arguments emits plain object", () => {
     const schema = convert(`z.strictObject({})`, roots);
     expect(schema).toMatchObject({
@@ -127,6 +139,13 @@ describe("Zod features › object modes", () => {
     const schema = convert(`${base}.required()`, roots);
     expect(schema).toMatchObject({ type: "object" });
     expect((schema as { required: string[] }).required.toSorted()).toEqual(["id", "name"]);
+  });
+
+  it("keyof() emits an enum of object keys", () => {
+    expect(convert(`${base}.keyof()`, roots)).toEqual({
+      type: "string",
+      enum: ["id", "name"],
+    });
   });
 
   it("deepPartial() strips required arrays recursively", () => {

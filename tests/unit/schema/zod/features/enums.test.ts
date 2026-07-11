@@ -34,6 +34,13 @@ describe("Zod features › enums", () => {
     expect(asEnum.enum?.slice().toSorted()).toEqual(asEnum.enum ? ["blue", "red"] : undefined);
   });
 
+  it("z.enum object form preserves numeric values", () => {
+    expect(convert("z.enum({ One: 1, Two: 2 })", roots)).toEqual({
+      type: "number",
+      enum: [1, 2],
+    });
+  });
+
   it("enum chained with describe() keeps the values", () => {
     const schema = convert('z.enum(["a", "b"]).describe("Letters")', roots);
     expect(schema).toMatchObject({

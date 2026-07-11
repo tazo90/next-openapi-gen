@@ -3,6 +3,7 @@ import * as t from "@babel/types";
 import { logger } from "../../shared/logger.js";
 import type { OpenApiSchema } from "../../shared/types.js";
 import { resolveTypeScriptModule } from "../../shared/typescript-project.js";
+import { applyNullableWrapper } from "./nullability.js";
 
 type DrizzleZodProcessingContext = {
   currentAST?: t.File | undefined;
@@ -32,6 +33,15 @@ type DrizzleColumnMetadata = {
  * This processor extracts field definitions and refinements to generate OpenAPI schemas.
  */
 export class DrizzleZodProcessor {
+  private static readonly tableSchemaCache = new WeakMap<
+    t.CallExpression,
+    Map<string, OpenApiSchema>
+  >();
+  private static readonly variableInitializerCache = new WeakMap<
+    t.File,
+    Map<string, t.Expression | null>
+  >();
+
   /**
    * Known drizzle-zod helper function names
    */
@@ -113,7 +123,11 @@ export class DrizzleZodProcessor {
     tableArgument: t.CallExpression["arguments"][number] | undefined,
     context: DrizzleZodProcessingContext,
   ): OpenApiSchema {
-    if (functionName !== "createSelectSchema") {
+    if (
+      functionName !== "createSelectSchema" &&
+      functionName !== "createInsertSchema" &&
+      functionName !== "createUpdateSchema"
+    ) {
       return {
         type: "object",
         properties: {},
@@ -122,7 +136,7 @@ export class DrizzleZodProcessor {
     }
 
     const tableCall = tableArgument ? this.resolveTableCall(tableArgument, context) : null;
-    const schema = tableCall ? this.extractSelectSchemaFromTable(tableCall) : null;
+    const schema = tableCall ? this.extractSchemaFromTable(tableCall, functionName) : null;
     if (schema) {
       return schema;
     }
@@ -157,8 +171,10 @@ export class DrizzleZodProcessor {
     }
 
     const resolvedPath =
-      context.resolveImportPath?.(context.currentFilePath, importSource) ||
-      resolveTypeScriptModule(importSource, context.currentFilePath);
+      context.resolveImportPath?.(context.currentFilePath, importSource) ??
+      (importSource.startsWith(".")
+        ? null
+        : resolveTypeScriptModule(importSource, context.currentFilePath));
     if (!resolvedPath) {
       return null;
     }
@@ -178,6 +194,12 @@ export class DrizzleZodProcessor {
       return null;
     }
 
+    const cachedInitializers = this.variableInitializerCache.get(ast);
+    if (cachedInitializers) {
+      return cachedInitializers.get(name) ?? null;
+    }
+
+    const initializers = new Map<string, t.Expression | null>();
     for (const statement of ast.program.body) {
       const declaration =
         t.isExportNamedDeclaration(statement) && statement.declaration
@@ -189,24 +211,33 @@ export class DrizzleZodProcessor {
       }
 
       for (const declarator of declaration.declarations) {
-        if (
-          t.isIdentifier(declarator.id, { name }) &&
-          declarator.init &&
-          t.isExpression(declarator.init)
-        ) {
-          return declarator.init;
+        if (t.isIdentifier(declarator.id)) {
+          initializers.set(
+            declarator.id.name,
+            declarator.init && t.isExpression(declarator.init) ? declarator.init : null,
+          );
         }
       }
     }
 
-    return null;
+    this.variableInitializerCache.set(ast, initializers);
+    return initializers.get(name) ?? null;
   }
 
   private static isPgTableCall(node: t.CallExpression): boolean {
     return t.isIdentifier(node.callee, { name: "pgTable" });
   }
 
-  private static extractSelectSchemaFromTable(node: t.CallExpression): OpenApiSchema | null {
+  private static extractSchemaFromTable(
+    node: t.CallExpression,
+    functionName: string,
+  ): OpenApiSchema | null {
+    const cachedByFunction = this.tableSchemaCache.get(node);
+    const cachedSchema = cachedByFunction?.get(functionName);
+    if (cachedSchema) {
+      return structuredClone(cachedSchema);
+    }
+
     const columnsArgument = node.arguments[1];
     if (!t.isObjectExpression(columnsArgument)) {
       return null;
@@ -234,14 +265,35 @@ export class DrizzleZodProcessor {
         ...column.schema,
         ...(column.isNotNull ? {} : { nullable: true }),
       };
-      required.push(key);
+      if (this.isRequiredColumnForSchema(column, functionName)) {
+        required.push(key);
+      }
     });
 
-    return {
+    const schema = {
       type: "object",
       properties,
       required,
     };
+    const schemaMap = cachedByFunction ?? new Map<string, OpenApiSchema>();
+    schemaMap.set(functionName, schema);
+    this.tableSchemaCache.set(node, schemaMap);
+    return structuredClone(schema);
+  }
+
+  private static isRequiredColumnForSchema(
+    column: DrizzleColumnMetadata,
+    functionName: string,
+  ): boolean {
+    if (functionName === "createUpdateSchema") {
+      return false;
+    }
+
+    if (functionName === "createInsertSchema") {
+      return column.isNotNull && !column.hasDefault && !column.isGenerated;
+    }
+
+    return true;
   }
 
   private static extractColumnMetadata(node: t.Expression): DrizzleColumnMetadata | null {
@@ -629,11 +681,9 @@ export class DrizzleZodProcessor {
         // Handled by isFieldOptional check, no schema modification needed
         break;
       case "nullable":
-        result.nullable = true;
-        break;
+        return applyNullableWrapper(result);
       case "nullish":
-        result.nullable = true;
-        break;
+        return applyNullableWrapper(result);
 
       case "describe":
         if (args.length > 0 && t.isStringLiteral(args[0])) {

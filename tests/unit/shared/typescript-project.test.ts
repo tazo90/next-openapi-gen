@@ -100,6 +100,7 @@ export const SymbolFlags = { Alias: 1, Function: 2, Type: 4, Value: 8, Variable:
 export const TypeFlags = {};
 export const ObjectFlags = {};
 export class API {
+  close() {}
   updateSnapshot() {
     const project = {
       checker: {},

@@ -80,7 +80,7 @@
     "fs-extra": "catalog:",
     "js-yaml": "catalog:",
     "ora": "catalog:",
-    "typescript": ">=5.9 <8"
+    "typescript": "npm:@typescript/typescript6@6.0.2"
   },
   "devDependencies": {
     "@types/node": "catalog:",

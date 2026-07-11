@@ -1,7 +1,7 @@
 export type {
-  GenerationAdapters,
   DocsArtifactEmitter,
   FrameworkSourceFactory,
+  GenerationAdapters,
 } from "./core/adapters.js";
 export { defineConfig } from "./core/config/define-config.js";
 export {
@@ -25,4 +25,9 @@ export { watchProject } from "./core/watch.js";
 export { OpenApiGenerator } from "./generator/openapi-generator.js";
 export type { GeneratorPerformanceProfile } from "./generator/openapi-generator.js";
 export { FrameworkKind } from "./shared/types.js";
-export type { Diagnostic, OpenApiDocument, OpenApiTemplate } from "./shared/types.js";
+export type {
+  Diagnostic,
+  DiagnosticFailOn,
+  OpenApiDocument,
+  OpenApiTemplate,
+} from "./shared/types.js";

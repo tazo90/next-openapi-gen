@@ -1,4 +1,5 @@
 import fs from "fs";
+import { createRequire } from "module";
 import os from "os";
 import path from "path";
 
@@ -9,6 +10,8 @@ import type {
   TypeScriptValueReferenceResult,
 } from "./typescript-adapter.js";
 import type { NativeTypeScriptRuntime } from "./typescript-runtime.js";
+
+const moduleRequire = createRequire(import.meta.url);
 
 type NativeProject = {
   configPath: string | null;
@@ -165,6 +168,7 @@ class NativeTypeScriptAdapter implements TypeScriptCompilerAdapter {
       disposeNativeProject(cachedProject);
     }
     this.projectCache.clear();
+    this.api.close();
   }
 
   public invalidate(filePath: string): void {
@@ -187,7 +191,10 @@ class NativeTypeScriptAdapter implements TypeScriptCompilerAdapter {
     }
 
     const project = this.getProject(fromFilePath);
-    return resolvePathMappedModule(importPath, fromFilePath, project.project.compilerOptions);
+    return (
+      resolvePathMappedModule(importPath, fromFilePath, project.project.compilerOptions) ??
+      resolveNodeModule(importPath, fromFilePath)
+    );
   }
 
   public resolveValueReference(
@@ -1250,6 +1257,17 @@ function resolvePathMappedModule(
   return null;
 }
 
+function resolveNodeModule(importPath: string, fromFilePath: string): string | null {
+  try {
+    const resolvedPath = moduleRequire.resolve(importPath, {
+      paths: [path.dirname(path.resolve(fromFilePath))],
+    });
+    return resolvedPath.endsWith(".d.ts") ? null : resolvedPath;
+  } catch {
+    return null;
+  }
+}
+
 function resolveFileCandidate(basePath: string): string | null {
   const candidates = [
     basePath,
@@ -1299,5 +1317,7 @@ function isIgnoredRuntimeType(typeName: string): boolean {
 }
 
 function isUsableTypeName(typeName: string): boolean {
-  return typeName !== "__type" && /^[A-Za-z_$][\w$]*$/.test(typeName);
+  return (
+    typeName !== "__type" && !typeName.startsWith("__object") && /^[A-Za-z_$][\w$]*$/.test(typeName)
+  );
 }

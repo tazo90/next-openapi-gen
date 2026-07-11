@@ -4,13 +4,17 @@ import path from "path";
 import * as t from "@babel/types";
 import type * as ts from "typescript";
 
+import type { GenerationPerformanceProfile } from "../../core/performance.js";
 import type { SharedGenerationRuntime } from "../../core/runtime.js";
+import type { DiagnosticsCollector } from "../../diagnostics/collector.js";
+import { traverse } from "../../shared/babel-traverse.js";
 import { logger } from "../../shared/logger.js";
 import { SymbolResolver } from "../../shared/symbol-resolver.js";
 import type {
   ContentType,
   OpenAPIDefinition,
   OpenApiExampleMap,
+  OpenApiSchemaLike,
   ParamSchema,
   PropertyOptions,
   SchemaType,
@@ -80,6 +84,8 @@ export class SchemaProcessor {
   private fileASTCache: Map<string, t.File> = new Map();
   private processingTypes: Set<string> = new Set();
   private inlineTypeCache: Map<string, OpenAPIDefinition> = new Map();
+  private schemaContentCache: Map<string, ReturnType<typeof getSchemaContent>> = new Map();
+  private resolvedSchemaCache: Set<string> = new Set();
 
   private zodSchemaConverter: ZodSchemaConverter | null = null;
   private zodSchemaProcessor: ZodSchemaProcessor | null = null;
@@ -89,11 +95,13 @@ export class SchemaProcessor {
   private internalSchemaNames: Set<string> = new Set();
   private readonly fileAccess: SchemaProcessorFileAccess;
   private readonly symbolResolver: SymbolResolver;
+  private readonly diagnostics: DiagnosticsCollector | undefined;
 
   // Track imports per file for resolving ReturnType<typeof func>
   private importMap: Record<string, Record<string, string>> = {}; // { filePath: { importName: importPath } }
   // Inverted index: typeName → first filePath that imports it (O(1) lookup for findFileImportingType)
   private typeToFileIndex: Map<string, string> = new Map();
+  private indexedReExportFiles: Set<string> = new Set();
   private currentFilePath: string = ""; // Track the file being processed
 
   constructor(
@@ -103,12 +111,15 @@ export class SchemaProcessor {
     apiDir?: string,
     fileAccess: SchemaProcessorFileAccess = defaultFileAccess,
     runtime?: SharedGenerationRuntime,
+    diagnostics?: DiagnosticsCollector,
+    performanceProfile?: GenerationPerformanceProfile,
   ) {
     this.schemaDirs = normalizeSchemaDirs(schemaDir).map((d) =>
       path.isAbsolute(d) ? d : path.resolve(d),
     );
     this.schemaTypes = normalizeSchemaTypes(schemaType);
     this.fileAccess = fileAccess;
+    this.diagnostics = diagnostics;
     this.sharedRuntime = runtime;
     if (runtime) {
       this.directoryCache = runtime.schema.directoryCache;
@@ -123,7 +134,15 @@ export class SchemaProcessor {
 
     // Initialize Zod converter if Zod is enabled
     if (this.schemaTypes.includes("zod")) {
-      this.zodSchemaConverter = new ZodSchemaConverter(schemaDir, apiDir);
+      this.zodSchemaConverter = new ZodSchemaConverter(
+        schemaDir,
+        apiDir,
+        undefined,
+        diagnostics,
+        this.fileASTCache,
+        runtime?.schema.zod,
+        performanceProfile,
+      );
       this.zodSchemaProcessor = new ZodSchemaProcessor(this.zodSchemaConverter);
       // Share the AST cache across TS + Zod converters so each file is parsed once.
       this.symbolResolver = this.zodSchemaConverter.symbolResolver;
@@ -179,6 +198,14 @@ export class SchemaProcessor {
     return result;
   }
 
+  public preprocessZodSchemas(): void {
+    this.zodSchemaConverter?.preprocessSchemaDirectories();
+    const zodDefinitions = this.zodSchemaProcessor?.getDefinedSchemas();
+    if (zodDefinitions) {
+      Object.assign(this.openapiDefinitions, zodDefinitions);
+    }
+  }
+
   public findSchemaDefinition(schemaName: string, contentType: ContentType): OpenAPIDefinition {
     // Assign type that is actually processed
     this.contentType = contentType;
@@ -194,8 +221,9 @@ export class SchemaProcessor {
       return this.findSchemaDefinition(overrideId, contentType);
     }
 
-    if (this.openapiDefinitions[schemaName]) {
-      return this.openapiDefinitions[schemaName];
+    const cachedDefinition = this.openapiDefinitions[schemaName];
+    if (cachedDefinition && this.isConcreteOpenApiDefinition(cachedDefinition)) {
+      return cachedDefinition;
     }
 
     // Priority 1: Check custom schemas first (highest priority)
@@ -231,6 +259,13 @@ export class SchemaProcessor {
     return this.openapiDefinitions[schemaName] || {};
   }
 
+  public hasSchemaCandidate(schemaName: string): boolean {
+    this.ensureSchemaIndex();
+    return Boolean(
+      this.openapiDefinitions[schemaName] || this.schemaDefinitionIndex[schemaName]?.length,
+    );
+  }
+
   private scanAllSchemaDirs(schemaName: string) {
     this.ensureSchemaIndex();
 
@@ -256,10 +291,26 @@ export class SchemaProcessor {
     for (const dir of this.schemaDirs) {
       if (!this.fileAccess.existsSync(dir)) {
         logger.warn(`Schema directory not found: ${dir}`);
+        this.diagnostics?.add({
+          code: "schema-dir-empty",
+          severity: "warning",
+          message: `Configured schema directory does not exist: ${dir}`,
+          filePath: dir,
+        });
         continue;
       }
 
+      const definitionCountBefore = Object.keys(this.schemaDefinitionIndex).length;
       this.scanSchemaDir(dir);
+      const definitionCountAfter = Object.keys(this.schemaDefinitionIndex).length;
+      if (definitionCountAfter === definitionCountBefore) {
+        this.diagnostics?.add({
+          code: "schema-dir-empty",
+          severity: "warning",
+          message: `Configured schema directory produced no concrete schema declarations: ${dir}`,
+          filePath: dir,
+        });
+      }
     }
   }
 
@@ -324,6 +375,42 @@ export class SchemaProcessor {
         this.schemaDefinitionIndex[aliasName].push(filePath);
       }
     });
+
+    this.followSchemaReExports(ast, filePath);
+  }
+
+  private followSchemaReExports(ast: t.File, filePath: string): void {
+    const normalizedPath = path.normalize(filePath);
+    if (this.indexedReExportFiles.has(normalizedPath)) {
+      return;
+    }
+
+    this.indexedReExportFiles.add(normalizedPath);
+
+    traverse(ast, {
+      ExportAllDeclaration: (nodePath) => {
+        const source = nodePath.node.source?.value;
+        if (typeof source !== "string") {
+          return;
+        }
+
+        const resolvedPath = resolveImportPath(source, filePath, this.fileAccess);
+        if (resolvedPath) {
+          this.indexSchemaFile(resolvedPath);
+        }
+      },
+      ExportNamedDeclaration: (nodePath) => {
+        if (!nodePath.node.source) {
+          return;
+        }
+
+        const source = nodePath.node.source.value;
+        const resolvedPath = resolveImportPath(source, filePath, this.fileAccess);
+        if (resolvedPath) {
+          this.indexSchemaFile(resolvedPath);
+        }
+      },
+    });
   }
 
   private getParsedSchemaFile(filePath: string): t.File {
@@ -381,6 +468,34 @@ export class SchemaProcessor {
     collectTypeDefinitions(ast, schemaName, this.typeDefinitions, filePath || this.currentFilePath);
   }
 
+  private isConcreteOpenApiDefinition(definition: OpenAPIDefinition): boolean {
+    if (definition.$ref) {
+      return true;
+    }
+
+    if (definition.properties && Object.keys(definition.properties).length > 0) {
+      return true;
+    }
+
+    if (definition.enum || definition.const) {
+      return true;
+    }
+
+    if (definition.allOf || definition.oneOf || definition.anyOf) {
+      return true;
+    }
+
+    if (definition.items || definition.prefixItems) {
+      return true;
+    }
+
+    if (definition.type && definition.type !== "object") {
+      return true;
+    }
+
+    return false;
+  }
+
   private resolveType(typeName: string): OpenAPIDefinition {
     if (this.processingTypes.has(typeName)) {
       // Return reference to type to avoid infinite recursion
@@ -427,6 +542,18 @@ export class SchemaProcessor {
         logger.debug(
           `resolveType: no TypeScript definition found for "${typeName}" in ${this.currentFilePath}; returning empty schema`,
         );
+        this.diagnostics?.add({
+          code: "schema-not-found",
+          severity: "warning",
+          message: `No TypeScript or Zod schema definition found for "${typeName}"; emitting an empty schema.`,
+          filePath: this.currentFilePath || undefined,
+          metadata: {
+            typeName,
+            contextFile,
+            suggestedFix:
+              "Add the type to schemaDir, export it from an indexed schema file, or reference an explicit @response/@body/@params schema.",
+          },
+        });
         return {};
       }
       const typeNode = typeDefEntry.node || typeDefEntry; // Support both old and new format
@@ -506,6 +633,7 @@ export class SchemaProcessor {
           : (typeNode as any).members;
 
         if (members) {
+          let additionalProperties: OpenAPIDefinition | boolean | undefined;
           (members || []).forEach((member: any) => {
             if (t.isTSPropertySignature(member) && t.isIdentifier(member.key)) {
               const propName = member.key.name;
@@ -521,8 +649,24 @@ export class SchemaProcessor {
               if (!member.optional) {
                 required.push(propName);
               }
+              return;
+            }
+
+            if (t.isTSIndexSignature(member)) {
+              additionalProperties = member.typeAnnotation?.typeAnnotation
+                ? this.resolveTSNodeType(member.typeAnnotation.typeAnnotation)
+                : true;
             }
           });
+
+          const result: OpenAPIDefinition = { type: "object", properties };
+          if (required.length > 0) {
+            result.required = required;
+          }
+          if (additionalProperties !== undefined) {
+            result.additionalProperties = additionalProperties;
+          }
+          return result;
         }
 
         return required.length > 0
@@ -665,6 +809,16 @@ export class SchemaProcessor {
     return `^${parts.join("")}$`;
   }
 
+  private addTypeResolutionFallbackDiagnostic(message: string, metadata?: Record<string, unknown>) {
+    this.diagnostics?.add({
+      code: "type-resolution-fallback",
+      severity: "info",
+      message,
+      filePath: this.currentFilePath || undefined,
+      metadata,
+    });
+  }
+
   /**
    * Follow `$ref` back to its target schema (if known) and return the properties
    * map, so callers like `keyof` can enumerate the keys. Returns `null` when no
@@ -709,10 +863,16 @@ export class SchemaProcessor {
   private shouldUseTypeScriptChecker(node: t.Node): boolean {
     return (
       t.isTSConditionalType(node) ||
+      t.isTSIndexedAccessType(node) ||
       t.isTSMappedType(node) ||
       t.isTSTemplateLiteralType(node) ||
       t.isTSImportType(node) ||
-      (t.isTSTypeOperator(node) && node.operator === "keyof")
+      t.isTSInferType(node) ||
+      t.isTSInstantiationExpression(node) ||
+      t.isTSFunctionType(node) ||
+      t.isTSConstructorType(node) ||
+      t.isTSIntersectionType(node) ||
+      (t.isTSTypeOperator(node) && (node.operator === "keyof" || node.operator === "readonly"))
     );
   }
 
@@ -1179,6 +1339,32 @@ export class SchemaProcessor {
       return this.resolveTSNodeType(node.typeAnnotation);
     }
 
+    if (t.isTSTypeReference(node) && t.isTSQualifiedName(node.typeName)) {
+      const left = node.typeName.left;
+      const right = node.typeName.right;
+      if (
+        t.isIdentifier(left, { name: "z" }) &&
+        t.isIdentifier(right, { name: "infer" }) &&
+        node.typeParameters?.params.length
+      ) {
+        const firstTypeParameter = node.typeParameters.params[0];
+        if (
+          t.isTSTypeQuery(firstTypeParameter) &&
+          t.isIdentifier(firstTypeParameter.exprName) &&
+          this.schemaTypes.includes("zod") &&
+          this.zodSchemaConverter
+        ) {
+          const schema = this.zodSchemaConverter.convertZodSchemaToOpenApi(
+            firstTypeParameter.exprName.name,
+            this.contentType,
+          );
+          if (schema) {
+            return schema;
+          }
+        }
+      }
+    }
+
     if (t.isTSTypeReference(node) && t.isIdentifier(node.typeName)) {
       const typeName = node.typeName.name;
 
@@ -1204,6 +1390,35 @@ export class SchemaProcessor {
         }
         // Unknown element type — emit `type: "array"` without forcing `items: {type: object}`.
         return { type: "array" };
+      }
+
+      if (typeName === "Map" || typeName === "ReadonlyMap") {
+        if (node.typeParameters && node.typeParameters.params.length > 1) {
+          const keyType = this.resolveTSNodeType(node.typeParameters.params[0]);
+          const valueType = this.resolveTSNodeType(node.typeParameters.params[1]);
+          const schema: OpenAPIDefinition = {
+            type: "object",
+            additionalProperties: valueType,
+          };
+          const isTrivialStringKey =
+            keyType.type === "string" && !keyType.enum && !keyType.pattern && !keyType.format;
+          if (!isTrivialStringKey) {
+            schema.propertyNames = keyType;
+          }
+          return schema;
+        }
+        return { type: "object", additionalProperties: true };
+      }
+
+      if (typeName === "Set" || typeName === "ReadonlySet") {
+        if (node.typeParameters && node.typeParameters.params.length > 0) {
+          return {
+            type: "array",
+            items: this.resolveTSNodeType(node.typeParameters.params[0]),
+            uniqueItems: true,
+          };
+        }
+        return { type: "array", uniqueItems: true };
       }
 
       if (typeName === "Record") {
@@ -1430,6 +1645,21 @@ export class SchemaProcessor {
     }
 
     if (t.isTSIntersectionType(node)) {
+      const primitiveMember = node.types
+        .map((typeNode: any) => this.resolveTSNodeType(typeNode))
+        .find((schema) => schema.type && schema.type !== "object");
+      const objectMembers = node.types
+        .map((typeNode: any) => this.resolveTSNodeType(typeNode))
+        .filter((schema) => schema.type === "object" && schema.properties);
+      const hasOnlyBrandObjects =
+        objectMembers.length > 0 &&
+        objectMembers.every((schema) =>
+          Object.keys(schema.properties ?? {}).every((key) => key === "__brand" || key === "brand"),
+        );
+      if (primitiveMember && hasOnlyBrandObjects) {
+        return primitiveMember;
+      }
+
       // For intersection types, we combine properties
       const allProperties: Record<string, any> = {};
       const requiredProperties: string[] = [];
@@ -1468,6 +1698,13 @@ export class SchemaProcessor {
     }
 
     logger.debug("Unrecognized TypeScript type node:", node);
+    this.addTypeResolutionFallbackDiagnostic(
+      "Unrecognized TypeScript type node; emitting object schema.",
+      {
+        nodeType: node.type,
+        suggestedFix: "Use an exported named interface/type or add an explicit schema annotation.",
+      },
+    );
     return { type: "object" }; // By default we return an object
   }
 
@@ -1546,8 +1783,11 @@ export class SchemaProcessor {
   /**
    * Generate example values based on parameter type and name
    */
-  public getExampleForParam(paramName: string, type: string = "string"): any {
-    return getExampleForParam(paramName, type);
+  public getExampleForParam(
+    paramName: string,
+    typeOrSchema: string | OpenApiSchemaLike = "string",
+  ): any {
+    return getExampleForParam(paramName, typeOrSchema);
   }
 
   public detectContentType(bodyType: string, explicitContentType?: string): string {
@@ -1648,7 +1888,20 @@ export class SchemaProcessor {
     body: OpenAPIDefinition;
     responses: OpenAPIDefinition;
   } {
-    return getSchemaContent(
+    const cacheKey = JSON.stringify({
+      tag,
+      paramsType,
+      querystringType,
+      pathParamsType,
+      bodyType,
+      responseType,
+    });
+    const cachedContent = this.schemaContentCache.get(cacheKey);
+    if (cachedContent) {
+      return cachedContent;
+    }
+
+    const content = getSchemaContent(
       { tag, paramsType, querystringType, pathParamsType, bodyType, responseType },
       {
         openapiDefinitions: this.openapiDefinitions,
@@ -1657,6 +1910,8 @@ export class SchemaProcessor {
           this.findSchemaDefinition(schemaName, contentType as ContentType),
       },
     );
+    this.schemaContentCache.set(cacheKey, content);
+    return content;
   }
 
   public ensureSchemaResolved(typeName: string, contentType: ContentType = "response"): void {
@@ -1669,9 +1924,15 @@ export class SchemaProcessor {
       return;
     }
 
+    const cacheKey = `${contentType}:${baseTypeName}`;
+    if (this.resolvedSchemaCache.has(cacheKey)) {
+      return;
+    }
+
     if (!this.openapiDefinitions[baseTypeName]) {
       this.findSchemaDefinition(baseTypeName, contentType);
     }
+    this.resolvedSchemaCache.add(cacheKey);
   }
 
   public getSchemaReferenceName(typeName: string, contentType: ContentType = "response"): string {

@@ -5,6 +5,7 @@ export type SchemaType = "typescript" | "zod";
 export type RouterType = "app" | "pages";
 export type OpenApiVersion = "3.0" | "3.1" | "3.2" | "4.0";
 export type DiagnosticSeverity = "info" | "warning" | "error";
+export type DiagnosticFailOn = "error" | "warning" | "never";
 export type JsonPrimitive = string | number | boolean | null;
 export type JsonValue = JsonPrimitive | JsonValue[] | { [key: string]: JsonValue | undefined };
 
@@ -18,6 +19,7 @@ export type LegacyFrameworkKind = "next" | "tanstack" | "react-router";
 
 export type DiagnosticsConfig = {
   enabled?: boolean | undefined;
+  failOn?: DiagnosticFailOn | undefined;
 };
 
 export type NextFrameworkConfig = {
@@ -75,11 +77,19 @@ export type OpenApiConfig = {
     adapterPath?: string | undefined;
   };
   diagnostics?: DiagnosticsConfig | undefined;
+  /** Reuse process-local and disk-backed caches when inputs are unchanged. */
+  cache?: boolean | undefined;
+  experimental?: GeneratorExperimentalConfig | undefined;
   /** Override or extend the default JSDoc @auth → security-scheme-name mapping.
    *  Defaults: { bearer: "BearerAuth", basic: "BasicAuth", apikey: "ApiKeyAuth" }.
    *  User keys win on conflict; lookup is case-insensitive. */
   authPresets?: Record<string, string> | undefined;
   debug: boolean;
+};
+
+export type GeneratorExperimentalConfig = {
+  /** Prototype flag reserved for benchmark-only route parsing experiments. */
+  parallelRoutes?: boolean | undefined;
 };
 
 export type ResolvedOpenApiConfig = Omit<
@@ -186,6 +196,8 @@ export type OpenApiTemplate = OpenApiDocument & {
     adapterPath?: string | undefined;
   };
   diagnostics?: DiagnosticsConfig | undefined;
+  cache?: boolean | undefined;
+  experimental?: GeneratorExperimentalConfig | undefined;
   authPresets?: Record<string, string> | undefined;
   debug?: boolean | undefined;
 };
@@ -399,6 +411,9 @@ export type DataTypes = {
   requestExamples?: OpenApiExampleMap | undefined;
   responseExamples?: OpenApiExampleMap | undefined;
   querystringExamples?: OpenApiExampleMap | undefined;
+  inferredPathParamsType?: string | undefined;
+  inferredQueryParamsType?: string | undefined;
+  inferredBodyType?: string | undefined;
   inferredResponses?: InferredResponseDefinition[] | undefined;
   inferredQueryParamNames?: string[] | undefined;
   summary?: string | undefined;

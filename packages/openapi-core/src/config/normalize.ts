@@ -13,8 +13,10 @@ import { FrameworkKind as ResolvedFrameworkKind } from "../shared/types.js";
 import { DEFAULT_AUTH_PRESET_REPLACEMENTS } from "../shared/utils.js";
 import {
   DEFAULT_API_DIR,
+  DEFAULT_CACHE,
   DEFAULT_DEBUG,
   DEFAULT_DIAGNOSTICS_ENABLED,
+  DEFAULT_DIAGNOSTICS_FAIL_ON,
   DEFAULT_DOCS_URL,
   DEFAULT_GENERATED_OPENAPI_FILENAME,
   DEFAULT_INCLUDE_OPENAPI_ROUTES,
@@ -115,6 +117,10 @@ function normalizeFramework(
   };
 }
 
+export function resolveCacheSetting(template: Pick<OpenApiTemplate, "cache">): boolean {
+  return template.cache ?? DEFAULT_CACHE;
+}
+
 export function normalizeOpenApiConfig(
   template: OpenApiTemplate | OpenApiConfig,
 ): ResolvedOpenApiConfig {
@@ -147,7 +153,12 @@ export function normalizeOpenApiConfig(
     next: {
       adapterPath: template.next?.adapterPath,
     },
-    diagnostics: template.diagnostics ?? { enabled: DEFAULT_DIAGNOSTICS_ENABLED },
+    diagnostics: {
+      enabled: template.diagnostics?.enabled ?? DEFAULT_DIAGNOSTICS_ENABLED,
+      failOn: template.diagnostics?.failOn ?? DEFAULT_DIAGNOSTICS_FAIL_ON,
+    },
+    cache: resolveCacheSetting(template),
+    experimental: template.experimental,
     authPresets: { ...DEFAULT_AUTH_PRESET_REPLACEMENTS, ...template.authPresets },
     debug: template.debug ?? DEFAULT_DEBUG,
   };

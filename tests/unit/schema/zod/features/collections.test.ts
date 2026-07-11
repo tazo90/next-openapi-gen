@@ -70,6 +70,18 @@ describe("Zod features › collections", () => {
     });
   });
 
+  it("z.partialRecord(keyEnum, value) emits an object with typed additional properties", () => {
+    const schema = convert('z.partialRecord(z.enum(["a", "b"]), z.string())', roots);
+    expect(schema).toMatchObject({
+      type: "object",
+      additionalProperties: { type: "string" },
+      propertyNames: {
+        type: "string",
+        enum: ["a", "b"],
+      },
+    });
+  });
+
   it("z.set(T) / z.map(K, V) degrade gracefully to array / object schemas", () => {
     const setSchema = convert("z.set(z.string())", roots);
     expect(setSchema).toMatchObject({ type: "array", items: { type: "string" } });

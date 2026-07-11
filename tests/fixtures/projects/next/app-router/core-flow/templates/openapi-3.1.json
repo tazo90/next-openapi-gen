@@ -101,7 +101,7 @@
   },
   "apiDir": "./src/app/api",
   "schemaDir": "./src",
-  "schemaType": "typescript",
+  "schemaType": ["zod", "typescript"],
   "docsUrl": "api-docs",
   "ui": "scalar",
   "outputDir": "./public",

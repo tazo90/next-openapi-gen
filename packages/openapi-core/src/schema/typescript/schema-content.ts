@@ -39,26 +39,14 @@ export function createMultipleResponsesSchema(
 
 export function createDefaultPathParamsSchema(paramNames: string[]): ParamSchema[] {
   return paramNames.map((paramName) => {
-    let type = "string";
-    if (
-      paramName === "id" ||
-      paramName.endsWith("Id") ||
-      paramName === "page" ||
-      paramName === "limit" ||
-      paramName === "size" ||
-      paramName === "count"
-    ) {
-      type = "number";
-    }
+    const schema: OpenApiSchemaLike = { type: "string" };
 
     return {
       name: paramName,
       in: "path",
       required: true,
-      schema: {
-        type,
-      },
-      example: getExampleForParam(paramName, type),
+      schema,
+      example: getExampleForParam(paramName, schema),
       description: `Path parameter: ${paramName}`,
     };
   });
@@ -123,10 +111,10 @@ export function createRequestParamsSchema(
         param.explode = true;
       }
 
-      if (isPathLike) {
-        param.example = getExampleForParam(name, getPrimarySchemaType(value.type));
-      } else if (typeof value.example !== "undefined") {
+      if (typeof value.example !== "undefined") {
         param.example = value.example;
+      } else if (param.schema) {
+        param.example = getExampleForParam(name, param.schema);
       }
 
       if (value.examples && typeof value.examples === "object" && !Array.isArray(value.examples)) {
@@ -311,26 +299,16 @@ export function getSchemaContent(
   const querystring = baseQuerystringType
     ? context.openapiDefinitions[baseQuerystringType] || {}
     : {};
-  const pathParams = pathParamsType ? context.openapiDefinitions[pathParamsType] || {} : {};
+  let pathParams = pathParamsType ? context.openapiDefinitions[pathParamsType] || {} : {};
   const body = baseBodyType ? context.openapiDefinitions[baseBodyType] || {} : {};
   const responses = baseResponseType ? context.openapiDefinitions[baseResponseType] || {} : {};
 
-  if (context.schemaTypes.includes("zod")) {
-    if (paramsType && !context.openapiDefinitions[paramsType]) {
-      context.findSchemaDefinition(paramsType, "params");
-    }
-    if (baseQuerystringType && !context.openapiDefinitions[baseQuerystringType]) {
-      context.findSchemaDefinition(baseQuerystringType, "params");
-    }
-    if (pathParamsType && !context.openapiDefinitions[pathParamsType]) {
-      context.findSchemaDefinition(pathParamsType, "pathParams");
-    }
-    if (baseBodyType && !context.openapiDefinitions[baseBodyType]) {
-      context.findSchemaDefinition(baseBodyType, "body");
-    }
-    if (baseResponseType && !context.openapiDefinitions[baseResponseType]) {
-      context.findSchemaDefinition(baseResponseType, "response");
-    }
+  if (
+    pathParamsType &&
+    (!pathParams.properties || Object.keys(pathParams.properties).length === 0)
+  ) {
+    context.findSchemaDefinition(pathParamsType, "pathParams");
+    pathParams = context.openapiDefinitions[pathParamsType] || pathParams;
   }
 
   return {

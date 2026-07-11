@@ -14,11 +14,18 @@ export type NativeTypeScriptRuntime = {
 export type TypeScriptVersionSupport = "supported" | "too-old" | "too-new";
 
 export type ResolvedTypeScriptRuntime = {
+  fallbackReason?: string;
   native?: NativeTypeScriptRuntime;
   ts?: TypeScriptRuntime;
   packagePath: string;
+  requestedPackagePath?: string;
+  requestedVersion?: string;
   version: string;
   support: TypeScriptVersionSupport;
+};
+
+type LoadedTypeScriptRuntime = Omit<ResolvedTypeScriptRuntime, "packagePath"> & {
+  packagePath?: string;
 };
 
 const MINIMUM_TYPESCRIPT_MAJOR = 5;
@@ -53,7 +60,7 @@ export function resolveTypeScriptRuntime(fromPath: string): ResolvedTypeScriptRu
   const loadedPackage = loadTypeScriptPackage(packageRoot);
   const resolvedRuntime = {
     ...loadedPackage,
-    packagePath: packageRoot,
+    packagePath: loadedPackage.packagePath ?? packageRoot,
   };
   runtimeCache.set(packageRoot, resolvedRuntime);
   return resolvedRuntime;
@@ -110,32 +117,81 @@ function resolveFallbackTypeScriptPackageRoot(): string {
   return fallbackTypeScriptPackageRoot;
 }
 
-function loadTypeScriptPackage(
-  packageRoot: string,
-): Omit<ResolvedTypeScriptRuntime, "packagePath"> {
-  const packageJson = JSON.parse(
-    fs.readFileSync(path.join(packageRoot, "package.json"), "utf8"),
-  ) as { version?: string };
-  const version = packageJson.version ?? "0.0.0";
+function loadTypeScriptPackage(packageRoot: string): LoadedTypeScriptRuntime {
+  const version = readTypeScriptPackageVersion(packageRoot);
   const support = getTypeScriptVersionSupport(version);
   if (support !== "supported") {
     return { version, support };
   }
 
   if (parseTypeScriptVersion(version)?.major === 7) {
+    const nativeRuntime = tryLoadNativeTypeScriptPackage(packageRoot);
+    if (nativeRuntime.runtime) {
+      return {
+        native: nativeRuntime.runtime,
+        version,
+        support,
+      };
+    }
+
+    const fallbackRuntime = tryLoadBundledClassicTypeScriptPackage(packageRoot);
+    if (fallbackRuntime) {
+      return {
+        ...fallbackRuntime,
+        fallbackReason: `TypeScript ${version} at ${packageRoot} does not expose the native compiler API (${formatLoadError(nativeRuntime.error)}); using bundled TypeScript ${fallbackRuntime.version} at ${fallbackRuntime.packagePath}.`,
+        requestedPackagePath: packageRoot,
+        requestedVersion: version,
+      };
+    }
+
     return {
-      native: loadNativeTypeScriptPackage(packageRoot),
       version,
       support,
+      fallbackReason: `TypeScript ${version} at ${packageRoot} does not expose the native compiler API (${formatLoadError(nativeRuntime.error)}) and no bundled TypeScript 6 compatibility package could be loaded.`,
     };
   }
 
+  return loadClassicTypeScriptPackage(packageRoot, version);
+}
+
+function readTypeScriptPackageVersion(packageRoot: string): string {
+  const packageJson = JSON.parse(
+    fs.readFileSync(path.join(packageRoot, "package.json"), "utf8"),
+  ) as { version?: string };
+  return packageJson.version ?? "0.0.0";
+}
+
+function loadClassicTypeScriptPackage(
+  packageRoot: string,
+  version: string = readTypeScriptPackageVersion(packageRoot),
+): LoadedTypeScriptRuntime {
   const classicTypeScriptPath = require.resolve(path.join(packageRoot, "lib", "typescript.js"));
   return {
+    packagePath: packageRoot,
     ts: require(classicTypeScriptPath) as TypeScriptRuntime,
     version,
-    support,
+    support: getTypeScriptVersionSupport(version),
   };
+}
+
+function tryLoadBundledClassicTypeScriptPackage(
+  originalPackageRoot: string,
+): LoadedTypeScriptRuntime | null {
+  try {
+    const fallbackPackageRoot = resolveFallbackTypeScriptPackageRoot();
+    if (fallbackPackageRoot === originalPackageRoot) {
+      return null;
+    }
+
+    const fallbackVersion = readTypeScriptPackageVersion(fallbackPackageRoot);
+    if (getTypeScriptVersionSupport(fallbackVersion) !== "supported") {
+      return null;
+    }
+
+    return loadClassicTypeScriptPackage(fallbackPackageRoot, fallbackVersion);
+  } catch {
+    return null;
+  }
 }
 
 function loadNativeTypeScriptPackage(packageRoot: string): NativeTypeScriptRuntime {
@@ -147,12 +203,34 @@ function loadNativeTypeScriptPackage(packageRoot: string): NativeTypeScriptRunti
   };
 }
 
+function tryLoadNativeTypeScriptPackage(packageRoot: string): {
+  error?: unknown;
+  runtime?: NativeTypeScriptRuntime;
+} {
+  try {
+    return { runtime: loadNativeTypeScriptPackage(packageRoot) };
+  } catch (error) {
+    return { error };
+  }
+}
+
 function getTypeScriptUnavailableMessage(runtime: ResolvedTypeScriptRuntime): string {
   if (runtime.support === "too-old") {
     return `TypeScript ${runtime.version} is too old for next-openapi-gen. Install TypeScript 5.9 or newer.`;
   }
 
+  if (runtime.fallbackReason) {
+    return `TypeScript checker features are unavailable. ${runtime.fallbackReason}`;
+  }
+
   return `TypeScript ${runtime.version} is not supported by next-openapi-gen.`;
+}
+
+function formatLoadError(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message;
+  }
+  return String(error);
 }
 
 function parseTypeScriptVersion(version: string): { major: number; minor: number } | null {

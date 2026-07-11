@@ -692,13 +692,27 @@ function downgradeSchemaForOpenApi30(schema: OpenApiSchema, mediaTypeName?: stri
   }
 
   if (typeof nextSchema.exclusiveMinimum === "number") {
-    nextSchema.minimum = nextSchema.exclusiveMinimum;
-    nextSchema.exclusiveMinimum = true;
+    if (
+      typeof nextSchema.minimum !== "number" ||
+      nextSchema.exclusiveMinimum >= nextSchema.minimum
+    ) {
+      nextSchema.minimum = nextSchema.exclusiveMinimum;
+      nextSchema.exclusiveMinimum = true;
+    } else {
+      delete nextSchema.exclusiveMinimum;
+    }
   }
 
   if (typeof nextSchema.exclusiveMaximum === "number") {
-    nextSchema.maximum = nextSchema.exclusiveMaximum;
-    nextSchema.exclusiveMaximum = true;
+    if (
+      typeof nextSchema.maximum !== "number" ||
+      nextSchema.exclusiveMaximum <= nextSchema.maximum
+    ) {
+      nextSchema.maximum = nextSchema.exclusiveMaximum;
+      nextSchema.exclusiveMaximum = true;
+    } else {
+      delete nextSchema.exclusiveMaximum;
+    }
   }
 
   if (Array.isArray(nextSchema.examples) && nextSchema.examples.length > 0) {
@@ -722,6 +736,17 @@ function downgradeSchemaForOpenApi30(schema: OpenApiSchema, mediaTypeName?: stri
   delete nextSchema.contentEncoding;
   delete nextSchema.contentMediaType;
   delete nextSchema.$schema;
+
+  if (Array.isArray(nextSchema.prefixItems) && nextSchema.prefixItems.length > 0) {
+    const prefixItems = nextSchema.prefixItems;
+    const restItems = isRecord(nextSchema.items) ? nextSchema.items : null;
+
+    nextSchema.items =
+      restItems || prefixItems.length > 1
+        ? { oneOf: [...prefixItems, ...(restItems ? [restItems] : [])] }
+        : prefixItems[0];
+    delete nextSchema.prefixItems;
+  }
 
   // OpenAPI 3.0 does not support several JSON Schema 2020-12 keywords. Strip them so
   // generated specs keep validating; the information is preserved in 3.1/3.2 output.

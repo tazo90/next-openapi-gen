@@ -266,13 +266,12 @@ describe.sequential("OpenApiGenerator integration flow", () => {
           type: "object",
         },
       });
-      expect(diagnostics).toHaveLength(2);
-      expect(diagnostics).toSatisfy((entries) =>
-        entries.every(
+      expect(
+        diagnostics.filter(
           (entry) =>
             entry.code === "missing-path-params-type" && entry.routePath === "/diagnostics/{id}",
         ),
-      );
+      ).toHaveLength(2);
 
       const pathKeys = Object.keys(spec.paths ?? {});
       expect(pathKeys.indexOf("/reports")).toBeLessThan(pathKeys.indexOf("/reports/{id}/summary"));

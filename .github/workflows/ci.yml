@@ -124,12 +124,24 @@ jobs:
       matrix:
         include:
           - typescript-version: 5.9.3
+            typescript-package: typescript@5.9.3
+            expected-adapter: classic
             experimental: false
-          - typescript-version: 6
+          - typescript-version: 6.0.2
+            typescript-package: typescript@6.0.2
+            expected-adapter: classic
             experimental: false
-          - typescript-version: 7.0.1-rc
+          - typescript-version: typescript6-alias
+            typescript-package: typescript@npm:@typescript/typescript6@6.0.2
+            expected-adapter: classic
+            experimental: false
+          - typescript-version: 7.0.2
+            typescript-package: typescript@7.0.2
+            expected-adapter: native
             experimental: false
           - typescript-version: next
+            typescript-package: typescript@next
+            expected-adapter: any
             experimental: true
     steps:
       - name: Checkout repository
@@ -152,62 +164,95 @@ jobs:
         run: pnpm ci
 
       - name: Build generator packages
-        run: pnpm exec turbo run build --filter=next-openapi-gen...
+        run: pnpm exec turbo run build --filter=next-openapi-gen... --concurrency=100%
 
       - name: Run TypeScript compatibility smoke
         env:
+          EXPECTED_TYPESCRIPT_ADAPTER: ${{ matrix.expected-adapter }}
+          TYPESCRIPT_PACKAGE: ${{ matrix.typescript-package }}
           TYPESCRIPT_VERSION: ${{ matrix.typescript-version }}
         run: |
           set -euo pipefail
 
           compat_root="$(mktemp -d)"
-          cp -R tests/fixtures/projects/next/app-router/core-flow "$compat_root/app"
-          cat > "$compat_root/app/package.json" <<'JSON'
+          cp -R tests/fixtures/projects/next/app-router/core-flow "$compat_root/core-flow"
+          cp -R tests/fixtures/projects/next/app-router/ts-full-coverage "$compat_root/ts-full-coverage"
+          for compat_project in "$compat_root/core-flow" "$compat_root/ts-full-coverage"; do
+            cat > "$compat_project/package.json" <<'JSON'
           {
             "private": true,
             "type": "module"
           }
           JSON
-          cp "$compat_root/app/templates/openapi-3.0.json" "$compat_root/app/next.openapi.json"
-          pnpm --dir "$compat_root/app" add -D "typescript@${TYPESCRIPT_VERSION}"
+          done
+          cp "$compat_root/core-flow/templates/openapi-3.0.json" "$compat_root/core-flow/next.openapi.json"
+          cp "$compat_root/ts-full-coverage/templates/openapi-3.2.json" "$compat_root/ts-full-coverage/next.openapi.json"
+          pnpm --dir "$compat_root/core-flow" add -D "${TYPESCRIPT_PACKAGE}"
+          pnpm --dir "$compat_root/ts-full-coverage" add -D "${TYPESCRIPT_PACKAGE}"
 
-          COMPAT_PROJECT="$compat_root/app" node --input-type=module <<'NODE'
+          COMPAT_CORE_PROJECT="$compat_root/core-flow" COMPAT_TS_FULL_PROJECT="$compat_root/ts-full-coverage" node --input-type=module <<'NODE'
           import fs from "node:fs";
           import path from "node:path";
           import { createRequire } from "node:module";
 
           import { OpenApiGenerator } from "next-openapi-gen";
           import { inferResponsesForExport } from "@workspace/openapi-core/routes/typescript-response-inference.js";
+          import { getTypeScriptAdapter } from "@workspace/openapi-core/shared/typescript-project.js";
 
-          const projectRoot = process.env.COMPAT_PROJECT;
-          if (!projectRoot) {
-            throw new Error("COMPAT_PROJECT is required");
+          const coreProjectRoot = process.env.COMPAT_CORE_PROJECT;
+          const tsFullProjectRoot = process.env.COMPAT_TS_FULL_PROJECT;
+          if (!coreProjectRoot || !tsFullProjectRoot) {
+            throw new Error("COMPAT_CORE_PROJECT and COMPAT_TS_FULL_PROJECT are required");
           }
 
           const require = createRequire(import.meta.url);
           const projectTypeScriptPackageJsonPath = require.resolve("typescript/package.json", {
-            paths: [projectRoot],
+            paths: [coreProjectRoot],
           });
           const projectTypeScriptPackageJson = JSON.parse(
             fs.readFileSync(projectTypeScriptPackageJsonPath, "utf8"),
           );
           console.log(`Using project TypeScript ${projectTypeScriptPackageJson.version}`);
 
-          const templatePath = path.join(projectRoot, "next.openapi.json");
-          process.chdir(projectRoot);
-          const generator = new OpenApiGenerator({ templatePath });
-          const spec = generator.generate();
-          const errors = generator.getDiagnostics().filter((diagnostic) => diagnostic.severity === "error");
-
-          if (errors.length > 0) {
-            throw new Error(`Unexpected generator errors: ${JSON.stringify(errors, null, 2)}`);
+          function time(label, action) {
+            const start = performance.now();
+            const result = action();
+            const duration = performance.now() - start;
+            console.log(`${label}: ${duration.toFixed(1)}ms`);
+            return result;
           }
 
-          if (!spec.paths?.["/users/{id}"]?.get) {
+          function generateProject(projectRoot) {
+            const templatePath = path.join(projectRoot, "next.openapi.json");
+            process.chdir(projectRoot);
+            const generator = new OpenApiGenerator({ templatePath });
+            const spec = time(`generate ${path.basename(projectRoot)}`, () => generator.generate());
+            const errors = generator
+              .getDiagnostics()
+              .filter((diagnostic) => diagnostic.severity === "error");
+
+            if (errors.length > 0) {
+              throw new Error(`Unexpected generator errors: ${JSON.stringify(errors, null, 2)}`);
+            }
+
+            return spec;
+          }
+
+          const coreSpec = generateProject(coreProjectRoot);
+          if (!coreSpec.paths?.["/users/{id}"]?.get) {
             throw new Error("Expected /users/{id} GET operation to be generated");
           }
 
-          const checkerSmokeRoute = path.join(projectRoot, "src", "app", "api", "ts7-smoke", "route.ts");
+          const tsFullSpec = generateProject(tsFullProjectRoot);
+          if (
+            !tsFullSpec.components?.schemas?.FixedTuple ||
+            !tsFullSpec.components?.schemas?.Versioned ||
+            !tsFullSpec.paths?.["/utilities"]?.post
+          ) {
+            throw new Error("Expected ts-full-coverage schemas and utility route to be generated");
+          }
+
+          const checkerSmokeRoute = path.join(coreProjectRoot, "src", "app", "api", "ts7-smoke", "route.ts");
           fs.mkdirSync(path.dirname(checkerSmokeRoute), { recursive: true });
           fs.writeFileSync(
             checkerSmokeRoute,
@@ -222,7 +267,16 @@ jobs:
             `,
           );
 
-          const inferred = inferResponsesForExport(checkerSmokeRoute, "GET");
+          const adapter = getTypeScriptAdapter(checkerSmokeRoute);
+          const expectedAdapter = process.env.EXPECTED_TYPESCRIPT_ADAPTER;
+          console.log(`Selected TypeScript adapter: ${adapter.kind} (${adapter.version})`);
+          if (expectedAdapter && expectedAdapter !== "any" && adapter.kind !== expectedAdapter) {
+            throw new Error(`Expected ${expectedAdapter} adapter, got ${adapter.kind}`);
+          }
+
+          const inferred = time("infer checker response", () =>
+            inferResponsesForExport(checkerSmokeRoute, "GET"),
+          );
           const inferredResponse = inferred.responses.find(
             (response) => response.statusCode === "201" && response.contentType === "application/json",
           );
@@ -237,6 +291,40 @@ jobs:
             );
           }
           NODE
+
+          if [[ "${TYPESCRIPT_VERSION}" == "5.9.3" ]]; then
+            consumer_root="$compat_root/declaration-consumer"
+            mkdir -p "$consumer_root/src" "$consumer_root/node_modules"
+            cat > "$consumer_root/package.json" <<'JSON'
+          {
+            "private": true,
+            "type": "module"
+          }
+          JSON
+            cat > "$consumer_root/tsconfig.json" <<'JSON'
+          {
+            "compilerOptions": {
+              "module": "NodeNext",
+              "moduleResolution": "NodeNext",
+              "strict": true,
+              "target": "ES2024",
+              "types": ["node"]
+            },
+            "include": ["src"]
+          }
+          JSON
+            cat > "$consumer_root/src/index.ts" <<'TS'
+          import { OpenApiGenerator } from "next-openapi-gen";
+          import { withNextOpenApi } from "next-openapi-gen/next";
+
+          const generator = new OpenApiGenerator({ templatePath: "next.openapi.json" });
+          withNextOpenApi({});
+          console.log(typeof generator.generate);
+          TS
+            pnpm --dir "$consumer_root" add -D typescript@5.9.3 @types/node
+            ln -s "$PWD/packages/next-openapi-gen" "$consumer_root/node_modules/next-openapi-gen"
+            pnpm --dir "$consumer_root" exec tsc --noEmit
+          fi
 
   bench-regression:
     name: Bench Regression
@@ -269,12 +357,24 @@ jobs:
       - name: Run schema micro-benchmarks and compare against baseline
         run: pnpm test:bench:schema:check
 
-      - name: Upload current bench report
+      - name: Run generator benchmarks and compare against baseline
+        run: pnpm test:bench:generator:check
+
+      - name: Upload current schema bench report
         if: always()
         uses: actions/upload-artifact@v7
         with:
           name: schema-bench-report
           path: tests/bench/schema/current.json
+          if-no-files-found: warn
+          retention-days: 7
+
+      - name: Upload current generator bench report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: generator-bench-report
+          path: tests/bench/generator/current.json
           if-no-files-found: warn
           retention-days: 7
 

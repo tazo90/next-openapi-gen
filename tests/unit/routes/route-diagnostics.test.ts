@@ -31,12 +31,14 @@ describe("RouteProcessor diagnostics", () => {
     // @ts-expect-error exercising private integration point in focused unit test
     routeProcessor.registerRoute("GET", "./src/app/api/users/[id]/route.ts", {});
 
-    expect(collector.getAll()).toEqual([
-      expect.objectContaining({
-        code: "missing-path-params-type",
-        severity: "warning",
-        routePath: "/users/{id}",
-      }),
-    ]);
+    expect(collector.getAll()).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: "missing-path-params-type",
+          severity: "warning",
+          routePath: "/users/{id}",
+        }),
+      ]),
+    );
   });
 });

@@ -1,5 +1,6 @@
 import type { GenerationPerformanceProfile } from "../core/performance.js";
 import { measurePerformance } from "../core/performance.js";
+import type { DiagnosticsCollector } from "../diagnostics/collector.js";
 import { createMultipartEncoding } from "../schema/typescript/helpers.js";
 import type { SchemaProcessor } from "../schema/typescript/schema-processor.js";
 import type {
@@ -14,6 +15,7 @@ import {
   DEFAULT_AUTH_PRESET_REPLACEMENTS,
   getOperationId,
   performAuthPresetReplacements,
+  resolveAnnotationTypeName,
 } from "../shared/utils.js";
 import type { ResponseProcessor } from "./response-processor.js";
 
@@ -28,6 +30,7 @@ export class OperationProcessor {
     private readonly responseProcessor: ResponseProcessor,
     options: {
       authPresets?: Record<string, string> | undefined;
+      diagnostics?: DiagnosticsCollector | undefined;
       performanceProfile?: GenerationPerformanceProfile | undefined;
     } = {},
   ) {
@@ -36,15 +39,19 @@ export class OperationProcessor {
       ...options.authPresets,
     };
     this.performanceProfile = options.performanceProfile;
+    this.diagnostics = options.diagnostics;
   }
+
+  private readonly diagnostics: DiagnosticsCollector | undefined;
 
   public processOperation(
     varName: string,
     routePath: string,
     dataTypes: DataTypes,
     pathParamNames: string[] = [],
+    filePath?: string,
   ): { routePath: string; method: string; definition: RouteDefinition } {
-    const method = varName.toLowerCase();
+    const method = (dataTypes.method || varName).toLowerCase();
     const rootSegment = routePath.split("/")[1] || "";
     const rootPath = capitalize(rootSegment);
     const operationId = dataTypes.operationId || getOperationId(routePath, method);
@@ -65,13 +72,29 @@ export class OperationProcessor {
       responseDescription,
       openapiOverride,
     } = dataTypes;
+    let paramsType = resolveAnnotationTypeName(
+      dataTypes.paramsType,
+      dataTypes.inferredQueryParamsType,
+    );
+    let pathParamsType = resolveAnnotationTypeName(
+      dataTypes.pathParamsType,
+      dataTypes.inferredPathParamsType,
+    );
+    const bodyType = resolveAnnotationTypeName(dataTypes.bodyType, dataTypes.inferredBodyType);
+    if (!paramsType && dataTypes.inferredQueryParamNames?.length) {
+      paramsType = this.findQueryParamsCandidate(rootPath);
+    }
+    if (!pathParamsType && pathParamNames.length > 0) {
+      pathParamsType = this.findPathParamsObjectCandidate(rootPath, pathParamNames);
+    }
+    this.addInferenceDiagnostics(dataTypes, routePath);
 
     const { params, pathParams } =
-      dataTypes.paramsType || dataTypes.pathParamsType
+      paramsType || pathParamsType
         ? measurePerformance(this.performanceProfile, "getSchemaContentMs", () =>
             this.schemaProcessor.getSchemaContent({
-              paramsType: dataTypes.paramsType,
-              pathParamsType: dataTypes.pathParamsType,
+              paramsType,
+              pathParamsType,
             }),
           )
         : { params: undefined, pathParams: undefined };
@@ -132,6 +155,22 @@ export class OperationProcessor {
     }
 
     if (dataTypes.inferredQueryParamNames?.length) {
+      if (!paramsType) {
+        this.diagnostics?.add({
+          code: "missing-query-params-type",
+          severity: "warning",
+          message:
+            "Query parameters were inferred from searchParams usage, but no @queryParams type is defined.",
+          filePath,
+          routePath,
+          metadata: {
+            names: dataTypes.inferredQueryParamNames,
+            suggestedFix:
+              "Add @queryParams <SchemaName> or validate URL search parameters with a Zod schema in the handler.",
+          },
+        });
+      }
+
       const knownQueryParameterNames = new Set(
         definition.parameters
           .filter((parameter) => parameter.in === "query")
@@ -156,18 +195,34 @@ export class OperationProcessor {
     }
 
     if (pathParamNames.length > 0) {
-      if (!pathParams) {
-        const defaultPathParams = measurePerformance(
-          this.performanceProfile,
-          "createRequestParamsMs",
-          () => this.schemaProcessor.createDefaultPathParamsSchema(pathParamNames),
-        );
-        definition.parameters.push(...defaultPathParams);
+      const resolvedPathParams =
+        pathParams?.properties && Object.keys(pathParams.properties).length > 0
+          ? pathParams
+          : undefined;
+
+      if (!resolvedPathParams) {
+        const candidatePathParams = this.createPathParamsFromIndividualCandidates(pathParamNames);
+        if (candidatePathParams) {
+          const candidateParams = measurePerformance(
+            this.performanceProfile,
+            "createRequestParamsMs",
+            () => this.schemaProcessor.createRequestParamsSchema(candidatePathParams, true),
+          );
+          definition.parameters.push(...candidateParams);
+        } else {
+          this.addPathParamCandidateDiagnostics(pathParamNames, routePath, filePath);
+          const defaultPathParams = measurePerformance(
+            this.performanceProfile,
+            "createRequestParamsMs",
+            () => this.schemaProcessor.createDefaultPathParamsSchema(pathParamNames),
+          );
+          definition.parameters.push(...defaultPathParams);
+        }
       } else {
         const moreParams = measurePerformance(
           this.performanceProfile,
           "createRequestParamsMs",
-          () => this.schemaProcessor.createRequestParamsSchema(pathParams, true),
+          () => this.schemaProcessor.createRequestParamsSchema(resolvedPathParams, true),
         );
         definition.parameters.push(...moreParams);
       }
@@ -218,7 +273,7 @@ export class OperationProcessor {
     }
 
     if (this.responseProcessor.supportsRequestBody(method)) {
-      const requestBody = this.createRequestBody(dataTypes);
+      const requestBody = this.createRequestBody({ ...dataTypes, bodyType }, routePath);
       if (requestBody) {
         definition.requestBody = requestBody;
       }
@@ -273,6 +328,98 @@ export class OperationProcessor {
       }
     });
     return [...mergedTags];
+  }
+
+  private findQueryParamsCandidate(rootPath: string): string | undefined {
+    return this.findFirstSchemaCandidate([
+      `${rootPath}QuerySchema`,
+      `${rootPath}ParamsSchema`,
+      `${rootPath}QueryParamsSchema`,
+    ]);
+  }
+
+  private findPathParamsObjectCandidate(
+    rootPath: string,
+    pathParamNames: string[],
+  ): string | undefined {
+    const candidates = [
+      `${rootPath}PathParamsSchema`,
+      `${rootPath}ParamsSchema`,
+      ...pathParamNames.map((name) => `${capitalize(name)}ParamsSchema`),
+    ];
+    return this.findFirstSchemaCandidate(candidates);
+  }
+
+  private createPathParamsFromIndividualCandidates(
+    pathParamNames: string[],
+  ):
+    | { type: "object"; required: string[]; properties: Record<string, { $ref: string }> }
+    | undefined {
+    const properties: Record<string, { $ref: string }> = {};
+
+    for (const name of pathParamNames) {
+      const schemaName = this.findFirstSchemaCandidate([
+        `${name}Schema`,
+        `${capitalize(name)}Schema`,
+      ]);
+      if (!schemaName) {
+        return undefined;
+      }
+
+      properties[name] = {
+        $ref: `#/components/schemas/${this.schemaProcessor.getSchemaReferenceName(
+          schemaName,
+          "pathParams",
+        )}`,
+      };
+    }
+
+    return {
+      type: "object",
+      required: pathParamNames,
+      properties,
+    };
+  }
+
+  private addPathParamCandidateDiagnostics(
+    pathParamNames: string[],
+    routePath: string,
+    filePath: string | undefined,
+  ): void {
+    pathParamNames.forEach((name) => {
+      const schemaName = this.findFirstSchemaCandidate([
+        `${name}Schema`,
+        `${capitalize(name)}Schema`,
+      ]);
+      if (!schemaName) {
+        return;
+      }
+
+      this.diagnostics?.add({
+        code: "path-param-schema-conflict",
+        severity: "info",
+        message: `Path parameter "${name}" is using fallback schema inference even though "${schemaName}" exists. Add @pathParams or validate context.params with that schema to preserve constraints.`,
+        filePath,
+        routePath,
+        metadata: {
+          parameterName: name,
+          schemaName,
+          suggestedFix: `Add @pathParams ${schemaName}Params or validate context.params with a schema that includes "${name}".`,
+        },
+      });
+    });
+  }
+
+  private findFirstSchemaCandidate(candidateNames: string[]): string | undefined {
+    const hasSchemaCandidate =
+      "hasSchemaCandidate" in this.schemaProcessor
+        ? this.schemaProcessor.hasSchemaCandidate.bind(this.schemaProcessor)
+        : undefined;
+    if (!hasSchemaCandidate) {
+      return undefined;
+    }
+
+    return candidateNames.find((candidateName) => hasSchemaCandidate(candidateName));
   }
 
   private appendDeprecationReason(
@@ -376,16 +523,64 @@ export class OperationProcessor {
     }
   }
 
+  private addInferenceDiagnostics(dataTypes: DataTypes, routePath: string): void {
+    if (
+      !resolveAnnotationTypeName(dataTypes.pathParamsType) &&
+      dataTypes.inferredPathParamsType?.trim()
+    ) {
+      this.diagnostics?.add({
+        code: "inferred-path-params",
+        severity: "info",
+        message: `Inferred path parameter schema from handler validation: ${dataTypes.inferredPathParamsType}`,
+        routePath,
+        metadata: { schemaName: dataTypes.inferredPathParamsType },
+      });
+    }
+
+    if (
+      !resolveAnnotationTypeName(dataTypes.paramsType) &&
+      dataTypes.inferredQueryParamsType?.trim()
+    ) {
+      this.diagnostics?.add({
+        code: "inferred-query-params",
+        severity: "info",
+        message: `Inferred query parameter schema from handler validation: ${dataTypes.inferredQueryParamsType}`,
+        routePath,
+        metadata: { schemaName: dataTypes.inferredQueryParamsType },
+      });
+    }
+
+    if (!resolveAnnotationTypeName(dataTypes.bodyType) && dataTypes.inferredBodyType?.trim()) {
+      this.diagnostics?.add({
+        code: "inferred-body",
+        severity: "info",
+        message: `Inferred request body schema from handler validation: ${dataTypes.inferredBodyType}`,
+        routePath,
+        metadata: { schemaName: dataTypes.inferredBodyType },
+      });
+    }
+  }
+
   private applyPreset(scheme: string): string {
     return this.authPresets[scheme.toLowerCase()] ?? scheme;
   }
 
-  private createRequestBody(dataTypes: DataTypes): OpenApiRequestBody | undefined {
+  private createRequestBody(
+    dataTypes: DataTypes,
+    routePath: string,
+  ): OpenApiRequestBody | undefined {
     if (dataTypes.bodyType) {
       return this.createSchemaBackedRequestBody(dataTypes);
     }
 
     if (dataTypes.contentType?.toLowerCase() === "multipart/form-data") {
+      this.diagnostics?.add({
+        code: "multipart-missing-body-schema",
+        severity: "warning",
+        message:
+          "Route declares @contentType multipart/form-data without @body; using the default file-only multipart request body.",
+        routePath,
+      });
       return this.createDefaultMultipartRequestBody(dataTypes.bodyDescription);
     }
 

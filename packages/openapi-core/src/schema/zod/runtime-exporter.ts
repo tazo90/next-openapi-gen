@@ -6,10 +6,14 @@ import type { ContentType, JsonValue, OpenApiSchema } from "../../shared/types.j
 
 type RuntimeExportOptions = {
   contentType: ContentType;
+  zodLocalName?: string;
 };
 
 export class ZodRuntimeExporter {
+  private zodLocalName = "z";
+
   public exportSchema(node: t.Node, options: RuntimeExportOptions): OpenApiSchema | null {
+    this.zodLocalName = options.zodLocalName ?? "z";
     const runtimeSchema = this.buildSchema(node);
     if (!runtimeSchema) {
       return null;
@@ -35,7 +39,7 @@ export class ZodRuntimeExporter {
 
   private buildSchema(node: t.Node): z.ZodTypeAny | null {
     if (t.isCallExpression(node)) {
-      const helperPath = getZodHelperPath(node);
+      const helperPath = getZodHelperPath(node, this.zodLocalName);
       if (helperPath) {
         return this.buildRootSchema(node, helperPath);
       }
@@ -61,6 +65,34 @@ export class ZodRuntimeExporter {
         return z.string();
       case "number":
         return z.number();
+      case "float32":
+        return typeof (z as { float32?: () => z.ZodTypeAny }).float32 === "function"
+          ? (z as { float32: () => z.ZodTypeAny }).float32()
+          : z.number();
+      case "float64":
+        return typeof (z as { float64?: () => z.ZodTypeAny }).float64 === "function"
+          ? (z as { float64: () => z.ZodTypeAny }).float64()
+          : z.number();
+      case "int":
+        return typeof (z as { int?: () => z.ZodTypeAny }).int === "function"
+          ? (z as { int: () => z.ZodTypeAny }).int()
+          : z.number().int();
+      case "int32":
+        return typeof (z as { int32?: () => z.ZodTypeAny }).int32 === "function"
+          ? (z as { int32: () => z.ZodTypeAny }).int32()
+          : z.number().int();
+      case "int64":
+        return typeof (z as { int64?: () => z.ZodTypeAny }).int64 === "function"
+          ? (z as { int64: () => z.ZodTypeAny }).int64()
+          : z.bigint();
+      case "uint32":
+        return typeof (z as { uint32?: () => z.ZodTypeAny }).uint32 === "function"
+          ? (z as { uint32: () => z.ZodTypeAny }).uint32()
+          : z.number().int().nonnegative().max(4294967295);
+      case "uint64":
+        return typeof (z as { uint64?: () => z.ZodTypeAny }).uint64 === "function"
+          ? (z as { uint64: () => z.ZodTypeAny }).uint64()
+          : z.bigint().nonnegative();
       case "boolean":
         return z.boolean();
       case "any":
@@ -135,6 +167,25 @@ export class ZodRuntimeExporter {
         return this.buildIntersection(node);
       case "tuple":
         return this.buildTuple(node);
+      case "optional":
+      case "nullable":
+      case "nullish": {
+        const arg = node.arguments[0];
+        if (!arg || !isProcessableNode(arg)) {
+          return null;
+        }
+        const innerSchema = this.buildSchema(arg);
+        if (!innerSchema) {
+          return null;
+        }
+        if (helper === "optional") {
+          return innerSchema.optional();
+        }
+        if (helper === "nullable") {
+          return innerSchema.nullable();
+        }
+        return innerSchema.nullish();
+      }
       case "templateLiteral":
         return this.buildTemplateLiteral(node);
       default:
@@ -561,7 +612,7 @@ export class ZodRuntimeExporter {
   }
 }
 
-function getZodHelperPath(node: t.CallExpression): string[] | null {
+function getZodHelperPath(node: t.CallExpression, zodLocalName: string = "z"): string[] | null {
   if (!t.isMemberExpression(node.callee) || !t.isIdentifier(node.callee.property)) {
     return null;
   }
@@ -577,7 +628,11 @@ function getZodHelperPath(node: t.CallExpression): string[] | null {
     currentObject = currentObject.object;
   }
 
-  return t.isIdentifier(currentObject, { name: "z" }) ? path : null;
+  if (!t.isIdentifier(currentObject)) {
+    return null;
+  }
+
+  return currentObject.name === "z" || currentObject.name === zodLocalName ? path : null;
 }
 
 function getObjectKey(key: t.ObjectProperty["key"]): string | null {

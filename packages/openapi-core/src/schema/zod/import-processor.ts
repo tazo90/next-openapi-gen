@@ -2,6 +2,7 @@ import type { NodePath } from "@babel/traverse";
 import * as t from "@babel/types";
 
 import { traverse } from "../../shared/babel-traverse.js";
+import { isZodImportPath } from "./compat.js";
 
 type ZodImportProcessingResult = {
   importedModules: Record<string, string>;
@@ -13,12 +14,15 @@ type ZodImportProcessingResult = {
    * Defaults to `"z"` for files that don't import `z` (e.g. barrel re-exports).
    */
   zodLocalName: string;
+  /** Import path for the Zod package when present (`zod`, `zod/mini`, etc.). */
+  zodImportSource?: string;
 };
 
 export function processImports(ast: t.File): ZodImportProcessingResult {
   const importedModules: Record<string, string> = {};
   const drizzleZodImports = new Set<string>();
   let zodLocalName = "z";
+  let zodImportSource: string | undefined;
 
   traverse(ast, {
     ImportDeclaration: (path: NodePath<t.ImportDeclaration>) => {
@@ -32,7 +36,8 @@ export function processImports(ast: t.File): ZodImportProcessingResult {
         });
       }
 
-      if (source === "zod") {
+      if (isZodImportPath(source)) {
+        zodImportSource = source;
         path.node.specifiers.forEach((specifier: t.ImportDeclaration["specifiers"][number]) => {
           if (t.isImportSpecifier(specifier)) {
             // `{ z }` or `{ z as zod }` — imported === "z"
@@ -63,9 +68,13 @@ export function processImports(ast: t.File): ZodImportProcessingResult {
     },
   });
 
-  return {
+  const result: ZodImportProcessingResult = {
     importedModules,
     drizzleZodImports: [...drizzleZodImports],
     zodLocalName,
   };
+  if (zodImportSource) {
+    result.zodImportSource = zodImportSource;
+  }
+  return result;
 }

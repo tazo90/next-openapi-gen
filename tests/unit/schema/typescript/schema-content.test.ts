@@ -36,14 +36,23 @@ describe("TypeScript schema content helpers", () => {
 
   it("creates path params, request params, and request bodies", () => {
     expect(createDefaultPathParamsSchema(["id", "slug"])).toEqual([
-      expect.objectContaining({ name: "id", example: 123 }),
+      expect.objectContaining({ name: "id", schema: { type: "string" }, example: "123" }),
       expect.objectContaining({ name: "slug", example: "slug" }),
     ]);
+    expect(createDefaultPathParamsSchema(["organizationId"])[0]).toMatchObject({
+      name: "organizationId",
+      schema: { type: "string" },
+    });
     expect(createRequestParamsSchema({})).toEqual([]);
     expect(
       createRequestParamsSchema(
         {
           properties: {
+            organizationId: {
+              type: "string",
+              format: "uuid",
+              required: true,
+            },
             teamId: {
               type: "string",
               description: "Team ID",
@@ -54,6 +63,16 @@ describe("TypeScript schema content helpers", () => {
         true,
       ),
     ).toEqual([
+      {
+        in: "path",
+        name: "organizationId",
+        schema: {
+          type: "string",
+          format: "uuid",
+        },
+        required: true,
+        example: "123e4567-e89b-12d3-a456-426614174000",
+      },
       {
         in: "path",
         name: "teamId",
@@ -100,6 +119,7 @@ describe("TypeScript schema content helpers", () => {
           $ref: "#/components/schemas/ProviderSchema",
         },
         required: true,
+        example: "example",
       },
       {
         in: "query",
@@ -108,6 +128,7 @@ describe("TypeScript schema content helpers", () => {
           allOf: [{ $ref: "#/components/schemas/SafeRedirectPathSchema" }],
         },
         required: false,
+        example: "example",
       },
       {
         in: "query",
@@ -123,6 +144,7 @@ describe("TypeScript schema content helpers", () => {
         required: false,
         style: "deepObject",
         explode: true,
+        example: "example",
       },
       {
         in: "query",
@@ -134,6 +156,7 @@ describe("TypeScript schema content helpers", () => {
         style: "form",
         explode: false,
         allowReserved: true,
+        example: "example",
       },
     ]);
     expect(createRequestBodySchema({ type: "string" })).toEqual({

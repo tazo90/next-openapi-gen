@@ -1,0 +1,20 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "App Router Mixed Schemas At Scale",
+    "version": "1.0.0",
+    "description": "Large-scale mixed TypeScript and Zod fixture"
+  },
+  "apiDir": "./src/app/api",
+  "schemaDir": "./src",
+  "schemaType": [
+    "typescript",
+    "zod"
+  ],
+  "docsUrl": "api-docs",
+  "ui": "scalar",
+  "outputDir": "./public",
+  "outputFile": "openapi.json",
+  "includeOpenApiRoutes": true,
+  "debug": false
+}

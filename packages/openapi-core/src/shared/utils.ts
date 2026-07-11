@@ -1,5 +1,5 @@
-import { parse } from "@babel/parser";
 import type { ParserOptions } from "@babel/parser";
+import { parse } from "@babel/parser";
 import type { NodePath } from "@babel/traverse";
 import type * as t from "@babel/types";
 
@@ -16,6 +16,16 @@ import { resolveTypeScriptValueReference } from "./typescript-project.js";
 
 export function capitalize(string: string) {
   return string.charAt(0).toUpperCase() + string.slice(1);
+}
+
+export function resolveAnnotationTypeName(primary?: string, fallback?: string): string | undefined {
+  const normalizedPrimary = primary?.trim();
+  if (normalizedPrimary) {
+    return normalizedPrimary;
+  }
+
+  const normalizedFallback = fallback?.trim();
+  return normalizedFallback || undefined;
 }
 
 /**

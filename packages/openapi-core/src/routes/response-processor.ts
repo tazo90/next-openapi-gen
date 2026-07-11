@@ -21,6 +21,8 @@ const DEFAULT_ERROR_DESCRIPTIONS: Record<string, string> = {
 };
 
 export class ResponseProcessor {
+  private readonly schemaReferenceCache = new Map<string, OpenApiSchemaLike>();
+
   constructor(
     private readonly config: ResolvedOpenApiConfig,
     private readonly schemaProcessor: SchemaProcessor,
@@ -191,9 +193,18 @@ export class ResponseProcessor {
         !response.itemTypeName &&
         !dataTypes.responseItemType)
     ) {
-      return {
+      const responseObject: OpenApiResponseDefinition = {
         description,
       };
+      if (this.isRedirectStatus(statusCode)) {
+        responseObject.headers = {
+          Location: {
+            description: "Redirect target URL",
+            schema: { type: "string", format: "uri" },
+          },
+        };
+      }
+      return responseObject;
     }
 
     const mediaType = this.createResponseMediaType(response, dataTypes);
@@ -203,6 +214,11 @@ export class ResponseProcessor {
         [response.contentType || dataTypes.responseContentType || "application/json"]: mediaType,
       },
     };
+  }
+
+  private isRedirectStatus(statusCode: string): boolean {
+    const numericStatus = Number(statusCode);
+    return numericStatus >= 300 && numericStatus < 400;
   }
 
   private createResponseMediaType(
@@ -252,6 +268,12 @@ export class ResponseProcessor {
   }
 
   private buildSchemaReference(typeName: string, contentType: "response"): OpenApiSchemaLike {
+    const cacheKey = `${contentType}:${typeName}`;
+    const cachedSchema = this.schemaReferenceCache.get(cacheKey);
+    if (cachedSchema) {
+      return structuredClone(cachedSchema);
+    }
+
     let baseType = typeName;
     let arrayDepth = 0;
 
@@ -268,6 +290,7 @@ export class ResponseProcessor {
       };
     }
 
+    this.schemaReferenceCache.set(cacheKey, schema);
     return schema;
   }
 

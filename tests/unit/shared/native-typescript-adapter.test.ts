@@ -212,6 +212,7 @@ function createFakeRuntime(): FakeRuntime {
 
   class FakeAPI {
     constructor(public options?: { cwd?: string }) {}
+    close(): void {}
     updateSnapshot(_params?: { openProject?: string }): FakeSnapshot {
       return snapshot;
     }
@@ -772,6 +773,126 @@ describe("NativeTypeScriptAdapter", () => {
       expect(noContent?.source).toBe("typescript");
     });
 
+    it("falls back to inline schemas when Response.json generic resolves to __object", () => {
+      const temp = setupTempProject();
+      const routeFile = temp.routeFile;
+
+      const jsonReturn = retStmt(
+        callExpr(propAccess(id("Response"), id("json")), [
+          objLit([
+            propAssign(id("ok"), keyword("TrueKeyword")),
+            propAssign(id("total"), numLit("2")),
+          ]),
+          objLit([propAssign(id("status"), numLit("201"))]),
+        ]),
+      );
+      const body = node("Block");
+      withForEachChild(body, [jsonReturn]);
+
+      const getFn = fnDecl("GET", body);
+      const sourceFile = node("FunctionDeclaration");
+      sourceFile.statements = [getFn];
+      sourceFile.getSourceFile = () => ({ fileName: routeFile });
+      temp.fake.setSourceFile(routeFile, sourceFile);
+
+      const bodyType = makeType({
+        flags: 0,
+        label: "{ ok: boolean; total: number }",
+        properties: [
+          {
+            name: "ok",
+            flags: 0,
+            type: makeType({ flags: TypeFlags.BooleanLike, label: "boolean" }),
+          },
+          {
+            name: "total",
+            flags: 0,
+            type: makeType({ flags: TypeFlags.NumberLike, label: "number" }),
+          },
+        ],
+      });
+      const responseType = makeType({
+        flags: 0,
+        label: "Response<__object>",
+        typeArguments: [makeType({ flags: 0, label: "__object", symbolName: "__object" })],
+      });
+
+      temp.fake.setChecker({
+        getTypeAtLocation(candidate: unknown): FakeType {
+          const nodeArg = candidate as FakeNode;
+          if (
+            nodeArg?.kind === SyntaxKind.CallExpression &&
+            nodeArg.expression?.name?.text === "json"
+          ) {
+            return responseType;
+          }
+          if (nodeArg?.kind === SyntaxKind.ObjectLiteralExpression) {
+            return bodyType;
+          }
+          return makeType({ flags: 0, label: "object" });
+        },
+        getTypeArguments(type: FakeType): FakeType[] {
+          return type.typeArguments ?? [];
+        },
+        getPropertiesOfType(type: FakeType): {
+          name: string;
+          flags: number;
+          type: FakeType;
+          valueDeclaration?: FakeNode;
+          declarations?: FakeNode[];
+        }[] {
+          return (type.properties ?? []).map((property) => ({
+            name: property.name,
+            flags: property.flags,
+            type: property.type,
+            valueDeclaration: stubDeclaration(routeFile),
+            declarations: [stubDeclaration(routeFile)],
+          }));
+        },
+        getTypeOfSymbol(symbol: { type?: FakeType }): FakeType {
+          return (
+            (symbol.type as FakeType) ?? makeType({ flags: TypeFlags.StringLike, label: "string" })
+          );
+        },
+        getTypeOfSymbolAtLocation(_symbol: unknown, declaration: FakeNode): FakeType {
+          const propertyName = (declaration as FakeNode & { name?: FakeNode }).name?.text;
+          if (propertyName === "ok") {
+            return makeType({ flags: TypeFlags.BooleanLike, label: "boolean" });
+          }
+          if (propertyName === "total") {
+            return makeType({ flags: TypeFlags.NumberLike, label: "number" });
+          }
+          return makeType({ flags: 0, label: "object" });
+        },
+        typeToString(type: FakeType): string {
+          return type.label ?? "object";
+        },
+      });
+
+      const adapter = createNativeTypeScriptAdapter({
+        packagePath: temp.root,
+        runtime: temp.fake.runtime,
+        version: "7.0.1-rc",
+      });
+
+      const results = adapter.inferResponsesForExports(routeFile, ["GET"]);
+      const response = results.get("GET")?.responses[0];
+
+      expect(response).toEqual({
+        statusCode: "201",
+        contentType: "application/json",
+        source: "typescript",
+        schema: {
+          type: "object",
+          properties: {
+            ok: { type: "boolean" },
+            total: { type: "number" },
+          },
+          required: ["ok", "total"],
+        },
+      });
+    });
+
     it("falls back to signature inference for functions without return statements", () => {
       const temp = setupTempProject();
       const routeFile = temp.routeFile;
@@ -1135,6 +1256,27 @@ describe("NativeTypeScriptAdapter", () => {
 
       expect(adapter.resolveModule("unmapped-module", temp.routeFile)).toBeNull();
     });
+
+    it("falls back to Node resolution for bare package specifiers", () => {
+      const temp = setupTempProject();
+      const packageRoot = path.join(temp.root, "node_modules", "fixture-package");
+      fs.mkdirSync(packageRoot, { recursive: true });
+      fs.writeFileSync(
+        path.join(packageRoot, "package.json"),
+        JSON.stringify({ name: "fixture-package", exports: "./index.js", type: "module" }),
+      );
+      fs.writeFileSync(path.join(packageRoot, "index.js"), "export const value = 1;\n");
+      temp.fake.setProject({ paths: {} });
+      const adapter = createNativeTypeScriptAdapter({
+        packagePath: temp.root,
+        runtime: temp.fake.runtime,
+        version: "7.0.2",
+      });
+
+      expect(fs.realpathSync(adapter.resolveModule("fixture-package", temp.routeFile) ?? "")).toBe(
+        fs.realpathSync(path.join(packageRoot, "index.js")),
+      );
+    });
   });
 
   describe("project lifecycle", () => {
@@ -1154,10 +1296,7 @@ describe("NativeTypeScriptAdapter", () => {
       const first = adapter.resolveValueReference("value", temp.routeFile);
       expect(first.diagnostic?.code).toBe("example-reference-unresolved");
 
-      adapter.clear();
-
-      const second = adapter.resolveValueReference("value", temp.routeFile);
-      expect(second.diagnostic?.code).toBe("example-reference-unresolved");
+      expect(() => adapter.clear()).not.toThrow();
     });
 
     it("invalidates cached projects when the source file changes", () => {

@@ -1,0 +1,6 @@
+{
+  "generator": "scripts/generate-scale-fixtures.mts",
+  "target": "next-pages-zod-at-scale",
+  "routeCount": 125,
+  "schemaModules": 50
+}

@@ -11,6 +11,44 @@ describe("Zod features › modifiers", () => {
     expect(convert("z.string().optional()", roots)).toMatchObject({ type: "string" });
   });
 
+  it("z.optional(inner) processes the inner schema", () => {
+    expect(convert("z.optional(z.string())", roots)).toMatchObject({ type: "string" });
+  });
+
+  it("z.nullable(inner) applies nullable to the inner schema", () => {
+    expect(convert("z.nullable(z.string())", roots)).toMatchObject({
+      type: "string",
+      nullable: true,
+    });
+  });
+
+  it("z.nullish(inner) applies nullable to the inner schema", () => {
+    expect(convert("z.nullish(z.string())", roots)).toMatchObject({
+      type: "string",
+      nullable: true,
+    });
+  });
+
+  it("functional wrappers affect object required tracking", () => {
+    const schema = convert(
+      `z.object({
+        id: z.string(),
+        name: z.optional(z.string()),
+        deletedAt: z.nullable(z.iso.datetime()),
+      })`,
+      roots,
+    );
+    expect(schema).toMatchObject({
+      type: "object",
+      required: ["id", "deletedAt"],
+      properties: {
+        id: { type: "string" },
+        name: { type: "string" },
+        deletedAt: { type: "string", format: "date-time", nullable: true },
+      },
+    });
+  });
+
   it(".nullable() sets nullable: true", () => {
     expect(convert("z.string().nullable()", roots)).toMatchObject({
       type: "string",
@@ -88,11 +126,20 @@ describe("Zod features › modifiers", () => {
     expect(convert("z.string().superRefine((v, ctx) => {})", roots)).toMatchObject({
       type: "string",
     });
+    expect(convert("z.string().check((v) => true)", roots)).toMatchObject({
+      type: "string",
+    });
   });
 
   it(".pipe(schema) merges the piped schema onto the base", () => {
     const schema = convert("z.string().pipe(z.string().email())", roots);
     expect(schema).toMatchObject({ type: "string", format: "email" });
+  });
+
+  it(".overwrite() and .nonoptional() preserve the value schema", () => {
+    expect(convert("z.string().overwrite((v) => v.trim()).nonoptional()", roots)).toMatchObject({
+      type: "string",
+    });
   });
 
   it(".describe() with a concrete example sets description", () => {
@@ -195,6 +242,73 @@ describe("Zod features › modifiers", () => {
         examples: [42],
       });
       expect(result).not.toHaveProperty("anyOf");
+    });
+
+    it("title and deprecated map from .meta()", () => {
+      expect(convert('z.string().meta({ title: "Label", deprecated: true })', roots)).toMatchObject(
+        {
+          type: "string",
+          title: "Label",
+          deprecated: true,
+        },
+      );
+    });
+  });
+
+  it("z.extend(base, shape) merges object schemas", () => {
+    const schema = convert("z.extend(z.object({ name: z.string() }), { age: z.number() })", roots);
+    expect(schema).toMatchObject({
+      type: "object",
+      required: ["name", "age"],
+      properties: {
+        name: { type: "string" },
+        age: { type: "number" },
+      },
+    });
+  });
+
+  it("functional wrappers mirror chain behavior", () => {
+    expect(convert("z.readonly(z.string())", roots)).toMatchObject({
+      type: "string",
+      readOnly: true,
+    });
+    expect(convert('z.default(z.string(), "hi")', roots)).toMatchObject({
+      type: "string",
+      default: "hi",
+    });
+    expect(convert('z.describe(z.number(), "count")', roots)).toMatchObject({
+      type: "number",
+      description: "count",
+    });
+    expect(convert('z.catch(z.string(), "fallback")', roots)).toMatchObject({
+      type: "string",
+      default: "fallback",
+    });
+  });
+
+  it(".check() with functional minLength/maxLength refinements", () => {
+    expect(convert("z.string().check(z.minLength(10), z.maxLength(100))", roots)).toMatchObject({
+      type: "string",
+      minLength: 10,
+      maxLength: 100,
+    });
+  });
+
+  it("z.union([T, z.undefined()]) treats undefined as optional semantics", () => {
+    const schema = convert(
+      `z.object({
+        name: z.union([z.string(), z.undefined()]),
+        id: z.string(),
+      })`,
+      roots,
+    );
+    expect(schema).toMatchObject({
+      type: "object",
+      required: ["id"],
+      properties: {
+        name: { type: "string" },
+        id: { type: "string" },
+      },
     });
   });
 });
