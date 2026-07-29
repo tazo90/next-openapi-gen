@@ -4,6 +4,7 @@ import os from "os";
 import path from "path";
 
 import type { Diagnostic, InferredResponseDefinition, OpenAPIDefinition } from "./types.js";
+import { isDateType } from "./typescript-adapter.js";
 import type {
   InferredRouteResponses,
   TypeScriptCompilerAdapter,
@@ -836,6 +837,10 @@ class NativeTypeScriptAdapter implements TypeScriptCompilerAdapter {
     project: NativeProjectApi,
     seen: Set<string>,
   ): OpenAPIDefinition {
+    if (isDateType(type, checker)) {
+      return { type: "string", format: "date-time" };
+    }
+
     const typeFlags = this.sync.TypeFlags;
     const primitiveLikeFlags =
       (typeFlags.StringLike ?? 0) |

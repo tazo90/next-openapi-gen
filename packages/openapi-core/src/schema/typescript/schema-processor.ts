@@ -19,6 +19,7 @@ import type {
   PropertyOptions,
   SchemaType,
 } from "../../shared/types.js";
+import { isDateType } from "../../shared/typescript-adapter.js";
 import { getTypeScriptAdapter, getTypeScriptProject } from "../../shared/typescript-project.js";
 import type { TypeScriptRuntime } from "../../shared/typescript-runtime.js";
 import { parseOpenApiOverrideTag, parseTypeScriptFile } from "../../shared/utils.js";
@@ -968,6 +969,10 @@ export class SchemaProcessor {
     seen: Set<string>,
     ts: TypeScriptRuntime,
   ): OpenAPIDefinition {
+    if (isDateType(type, checker)) {
+      return { type: "string", format: "date-time" };
+    }
+
     const primitiveLikeFlags =
       ts.TypeFlags.StringLike |
       ts.TypeFlags.NumberLike |

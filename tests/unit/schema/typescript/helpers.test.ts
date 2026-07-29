@@ -172,6 +172,23 @@ describe("TypeScript schema helpers", () => {
     expect(getExampleForParam("date")).toBe("2023-01-01");
     expect(getExampleForParam("role")).toBe("admin");
     expect(getExampleForParam("custom", "other")).toBe("example");
+
+    // A synthesized example must be a member of the schema's own enum.
+    expect(getExampleForParam("status", { type: "string", enum: ["active", "archived"] })).toBe(
+      "active",
+    );
+    // Enumerated values win over the name-based heuristics above.
+    expect(getExampleForParam("id", { type: "string", enum: ["first", "second"] })).toBe("first");
+    expect(getExampleForParam("page", { type: "number", enum: [10, 20] })).toBe(10);
+    expect(
+      getExampleForParam("organizationId", {
+        type: "string",
+        format: "uuid",
+        enum: ["11111111-1111-1111-1111-111111111111"],
+      }),
+    ).toBe("11111111-1111-1111-1111-111111111111");
+    // An empty enum carries no usable value, so the heuristics still apply.
+    expect(getExampleForParam("custom", { type: "string", enum: [] })).toBe("example");
     expect(detectContentType("UserBody", "text/plain")).toBe("text/plain");
     expect(detectContentType("MultipartFormData")).toBe("multipart/form-data");
     expect(detectContentType("UserBody")).toBe("application/json");

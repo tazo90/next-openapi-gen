@@ -10,6 +10,36 @@ export type TypeScriptValueReferenceResult = {
   diagnostic?: Diagnostic;
 };
 
+/**
+ * The pieces of a compiler type needed to recognise `Date`. Satisfied structurally
+ * by both the classic `ts.Type` and the native adapter's `NativeType`.
+ */
+type DateTypeLike = {
+  getSymbol?: (() => { name?: string | undefined } | undefined) | undefined;
+};
+
+/**
+ * `Date` is declared as an interface in `lib.es5.d.ts`, so a checker-driven
+ * conversion that expands object properties turns it into an object listing every
+ * `Date` prototype method rather than a date-time string. Both compiler adapters
+ * short-circuit it, and must do so before consulting their recursion guard —
+ * otherwise a second `Date` property collapses to a bare `{ type: "object" }`.
+ */
+export function isDateType<TType extends DateTypeLike>(
+  type: TType,
+  checker: { typeToString: (type: TType) => string },
+): boolean {
+  if (type.getSymbol?.()?.name === "Date") {
+    return true;
+  }
+
+  try {
+    return checker.typeToString(type) === "Date";
+  } catch {
+    return false;
+  }
+}
+
 export type TypeScriptCompilerAdapter = {
   kind: "classic" | "native";
   packagePath: string;

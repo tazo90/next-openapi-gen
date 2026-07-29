@@ -159,6 +159,44 @@ describe("TypeScript schema content helpers", () => {
         example: "example",
       },
     ]);
+    // Enum-constrained parameters must not document an example their own schema
+    // rejects, so the synthesized value is the first allowed member.
+    expect(
+      createRequestParamsSchema({
+        properties: {
+          status: {
+            type: "string",
+            enum: ["in_progress", "completed", "failed"],
+            description: "Filter by status",
+          },
+        },
+      }),
+    ).toEqual([
+      {
+        in: "query",
+        name: "status",
+        schema: {
+          type: "string",
+          enum: ["in_progress", "completed", "failed"],
+          description: "Filter by status",
+        },
+        required: false,
+        description: "Filter by status",
+        example: "in_progress",
+      },
+    ]);
+    // An explicit example still wins over the synthesized one.
+    expect(
+      createRequestParamsSchema({
+        properties: {
+          status: {
+            type: "string",
+            enum: ["in_progress", "completed"],
+            example: "completed",
+          },
+        },
+      })[0],
+    ).toMatchObject({ example: "completed" });
     expect(createRequestBodySchema({ type: "string" })).toEqual({
       content: {
         "application/json": {
