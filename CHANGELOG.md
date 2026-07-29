@@ -1,9 +1,9 @@
 ## [1.7.2](https://github.com/tazo90/next-openapi-gen/compare/v1.7.1...v1.7.2) (2026-07-29)
 
-
 ### 🐛 Bug Fixes
 
-* changelog formatting ([88005bc](https://github.com/tazo90/next-openapi-gen/commit/88005bc9f59f54397a97816e906b9f169fe2c20b))
+- changelog formatting ([88005bc](https://github.com/tazo90/next-openapi-gen/commit/88005bc9f59f54397a97816e906b9f169fe2c20b)) by [@tazo90](https://github.com/tazo90)
+
 ## [1.7.1](https://github.com/tazo90/next-openapi-gen/compare/v1.7.0...v1.7.1) (2026-07-29)
 
 ### 🐛 Bug Fixes
