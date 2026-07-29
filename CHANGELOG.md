@@ -1,3 +1,10 @@
+## [1.7.1](https://github.com/tazo90/next-openapi-gen/compare/v1.7.0...v1.7.1) (2026-07-29)
+
+
+### 🐛 Bug Fixes
+
+* correct Date expansion and enum-constrained parameter examples ([#170](https://github.com/tazo90/next-openapi-gen/issues/170)) ([bd2bbdd](https://github.com/tazo90/next-openapi-gen/commit/bd2bbddd37fdd7d5b82c648f3ff53dac7b5827a4)) by [@kristoferma](https://github.com/kristoferma)
+
 # [1.7.0](https://github.com/tazo90/next-openapi-gen/compare/v1.6.0...v1.7.0) (2026-07-11)
 
 
