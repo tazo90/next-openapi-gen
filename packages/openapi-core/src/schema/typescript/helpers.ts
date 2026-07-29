@@ -203,9 +203,17 @@ export function getExampleForParam(
   paramName: string,
   typeOrSchema: string | OpenApiSchemaLike = "string",
 ): any {
-  const schema = typeof typeOrSchema === "string" ? { type: typeOrSchema } : typeOrSchema;
+  const schema: OpenApiSchemaLike =
+    typeof typeOrSchema === "string" ? { type: typeOrSchema } : typeOrSchema;
   const type = getPrimaryType(schema.type);
   const format = typeof schema.format === "string" ? schema.format : undefined;
+
+  // A synthesized example has to satisfy the schema it documents. When the schema
+  // enumerates its allowed values, every name-based guess below is invalid by
+  // construction, so the first member is the only safe choice.
+  if (schema.enum && schema.enum.length > 0) {
+    return schema.enum[0];
+  }
 
   if (format === "uuid" || paramName.toLowerCase().includes("uuid")) {
     return "123e4567-e89b-12d3-a456-426614174000";

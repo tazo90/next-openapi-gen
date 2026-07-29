@@ -96,7 +96,8 @@ describe("SchemaProcessor", () => {
         },
         required: true,
         description: "Filter status",
-        example: "example",
+        // First enum member: an example outside the enum is invalid against the schema.
+        example: "draft",
       },
     ]);
 
