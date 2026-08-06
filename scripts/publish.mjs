@@ -31,6 +31,13 @@ writeFileSync(pkgPath, JSON.stringify(pkg, null, "\t") + "\n");
 copyFileSync(readmeSrc, readmeDst);
 
 try {
+  // Rebuild from source so we never pack a stale dist/ (turbo builds workspace
+  // deps first via ^build, then tsup bundles them into dist).
+  execSync("pnpm exec turbo run build --filter=next-openapi-gen --force", {
+    cwd: rootDir,
+    stdio: "inherit",
+  });
+
   // pnpm pack resolves catalog: → real versions
   execSync("pnpm pack", { cwd: pkgDir, stdio: "inherit" });
 
