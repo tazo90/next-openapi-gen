@@ -1,3 +1,13 @@
+## [1.7.3](https://github.com/tazo90/next-openapi-gen/compare/v1.7.2...v1.7.3) (2026-08-06)
+
+### 🐛 Bug Fixes
+
+- build fresh dist before publishing [#171](https://github.com/tazo90/next-openapi-gen/issues/171) ([38981e6](https://github.com/tazo90/next-openapi-gen/commit/38981e6ed7de8c491c11a51a1700aa3096449b95)) by [@tazo90](https://github.com/tazo90)
+
+### 📝 Documentation
+
+- update changelog ([657d23d](https://github.com/tazo90/next-openapi-gen/commit/657d23d6f131f04988c7d3bb0b3ef2ca1a7fba56)) by [@tazo90](https://github.com/tazo90)
+
 ## [1.7.2](https://github.com/tazo90/next-openapi-gen/compare/v1.7.1...v1.7.2) (2026-07-29)
 
 ### 🐛 Bug Fixes
