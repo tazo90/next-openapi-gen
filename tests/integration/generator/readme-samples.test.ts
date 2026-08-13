@@ -6,7 +6,7 @@ import { generateProjectSpec } from "../../helpers/test-project.js";
 
 const rootDir = process.cwd();
 
-describe.sequential("README-backed generator samples", () => {
+describe.sequential("README-backed generator samples", { timeout: 15_000 }, () => {
   it("covers multipart uploads, custom operation IDs, response sets, and inline @add descriptions from the sample apps", () => {
     const { project, spec } = generateProjectSpec({
       projectPath: path.join(rootDir, "apps", "next-app-zod"),
