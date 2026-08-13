@@ -150,7 +150,7 @@ describe("normalizeOpenApiConfig", () => {
         openapi: "4.0.0",
         info: { title: "Fixture", version: "1.0.0", description: "Fixture" },
       } as never).openapiVersion,
-    ).toBe("3.0");
+    ).toBe("3.2");
   });
 
   it("defaults config-style inputs without an explicit openapi version", () => {
@@ -188,7 +188,7 @@ describe("normalizeOpenApiConfig", () => {
       overlay: { version: "1.1.0", apply: ["./overlays/public.overlay.yaml"] },
     } as never);
 
-    expect(config.openapiVersion).toBe("3.0");
+    expect(config.openapiVersion).toBe("3.2");
     expect(config.arazzo).toEqual({ version: "1.1.0", files: ["./arazzo/**/*.yaml"] });
     expect(config.overlay).toEqual({
       version: "1.1.0",

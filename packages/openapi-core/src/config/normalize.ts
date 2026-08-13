@@ -48,11 +48,19 @@ function normalizeOpenApiVersion(template: Pick<OpenApiTemplate, "openapi">): Op
     return "3.1";
   }
 
+  if (template.openapi.startsWith("3.0")) {
+    return "3.0";
+  }
+
   if (/^3\.3(\.0)?-preview/.test(template.openapi)) {
     return "3.3-preview";
   }
 
-  // Unreleased versions such as 3.3, and unsupported versions such as 4.0, fall back to 3.0.
+  // Unreleased 3.3.0 and unsupported 4.x fall back to the latest released target.
+  if (template.openapi.startsWith("3.3") || template.openapi.startsWith("4.")) {
+    return "3.2";
+  }
+
   return DEFAULT_OPENAPI_VERSION;
 }
 

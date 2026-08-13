@@ -24,7 +24,7 @@ Feature status uses three buckets:
 - **OpenAPI 3.0**: safest default when downstream tooling compatibility matters more than newer schema and document features.
 - **OpenAPI 3.1**: best when you want JSON Schema 2020-12-aligned output such as type-array nullability, numeric exclusives, and `jsonSchemaDialect`.
 - **OpenAPI 3.2**: best when you want richer route metadata such as `querystring`, enhanced tags, sequential media, and richer example objects.
-- **`3.3-preview`**: experimental 3.2-compatible preview. Set `openapi` to `3.3-preview` (or `3.3.0-preview`). It is not a released OpenAPI 3.3 document, and OpenAPI 4.0 is not supported.
+- **`3.3-preview`**: experimental 3.2-compatible preview. Set `openapi` to `3.3-preview` (or `3.3.0-preview`). It is not a released OpenAPI 3.3 document. Unreleased `3.3.0` and OpenAPI `4.x` fall back to `3.2`.
 
 ## OpenAPI 3.0 Baseline
 
@@ -102,9 +102,10 @@ emit an `unregistered-tag-kind` info diagnostic. Unregistered Zod formats emit
 `unregistered-format` and keep a `pattern` when one is known.
 
 OpenAPI 3.3 is not a released generated version. Use `3.3-preview` for the
-experimental 3.2-compatible selector. Security scheme `type` stays an open
-string, cookie parameters are isolated, and Overlay/Arazzo share the JSONPath
-subset used for later security-profile pointers. OpenAPI 4.0 is not supported.
+experimental 3.2-compatible selector. Unreleased `3.3.0` and OpenAPI `4.x`
+fall back to `3.2`, the latest released target. Security scheme `type` stays an
+open string, cookie parameters are isolated, and Overlay/Arazzo share the
+JSONPath subset used for later security-profile pointers.
 
 ## Companion specifications
 

@@ -5,6 +5,7 @@ import { defineConfig } from "vitest/config";
 
 const rootDir = path.dirname(fileURLToPath(import.meta.url));
 const packageSrcDirs = {
+  "@workspace/openapi-arazzo": path.join(rootDir, "packages", "openapi-arazzo", "src"),
   "@workspace/openapi-cli": path.join(rootDir, "packages", "openapi-cli", "src"),
   "@workspace/openapi-core": path.join(rootDir, "packages", "openapi-core", "src"),
   "@workspace/openapi-framework-next": path.join(
@@ -26,6 +27,7 @@ const packageSrcDirs = {
     "src",
   ),
   "@workspace/openapi-init": path.join(rootDir, "packages", "openapi-init", "src"),
+  "@workspace/openapi-overlay": path.join(rootDir, "packages", "openapi-overlay", "src"),
   "@next-openapi-gen": path.join(rootDir, "packages", "next-openapi-gen", "src"),
   "next-openapi-gen": path.join(rootDir, "packages", "next-openapi-gen", "src"),
 } as const;

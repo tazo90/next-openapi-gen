@@ -72,4 +72,36 @@ describe("Arazzo version processor", () => {
       }),
     ]);
   });
+
+  it("keeps string successCriteria types and non-querystring parameters on 1.0", () => {
+    const diagnostics = new DiagnosticsCollector();
+    const finalized = finalizeArazzoDocument(
+      {
+        arazzo: "1.1.0",
+        info: { title: "Purchase", version: "1.0.0" },
+        sourceDescriptions: [],
+        workflows: [
+          {
+            workflowId: "purchaseOrder",
+            parameters: [{ name: "id", in: "path", value: "$inputs.id" }],
+            steps: [
+              {
+                stepId: "get",
+                operationId: "getOrder",
+                successCriteria: [{ condition: "$statusCode == 200", type: "simple" }],
+              },
+            ],
+          },
+        ],
+      },
+      "1.0.0",
+      diagnostics,
+    );
+
+    expect(finalized.workflows[0]?.parameters?.[0]?.in).toBe("path");
+    expect(finalized.workflows[0]?.steps[0]?.successCriteria?.[0]).toEqual({
+      condition: "$statusCode == 200",
+      type: "simple",
+    });
+  });
 });

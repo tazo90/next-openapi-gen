@@ -44,4 +44,18 @@ describe("overlay version processor", () => {
       ]),
     );
   });
+
+  it("drops copy-only actions when finalizing Overlay 1.0", () => {
+    const finalized = getOverlayVersionProcessor("1.0.0").finalize({
+      overlay: "1.1.0",
+      info: { title: "Overlay", version: "1.0.0" },
+      actions: [
+        { target: "$.info.title", copy: "$.info.version" },
+        { target: "$.info", update: { title: "Public" }, copy: "$.unused" },
+      ],
+    });
+
+    expect(finalized.overlay).toBe("1.0.0");
+    expect(finalized.actions).toEqual([{ target: "$.info", update: { title: "Public" } }]);
+  });
 });
