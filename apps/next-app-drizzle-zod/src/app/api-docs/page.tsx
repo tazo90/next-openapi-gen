@@ -1,16 +1,12 @@
-"use client";
-
-import { ApiReferenceReact } from "@scalar/api-reference-react";
-
-import "@scalar/api-reference-react/style.css";
+import { ApiDocsView } from "./api-docs-view";
 
 export default function ApiDocsPage() {
   return (
-    <ApiReferenceReact
-      configuration={{
-        _integration: "nextjs",
-        url: "/openapi.json",
-      }}
-    />
+    <main>
+      <h1 data-testid="api-docs-shell-marker" className="sr-only">
+        Drizzle-Zod Blog API
+      </h1>
+      <ApiDocsView />
+    </main>
   );
 }

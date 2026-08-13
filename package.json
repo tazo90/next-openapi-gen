@@ -89,6 +89,7 @@
     "@commitlint/cli": "catalog:",
     "@commitlint/config-conventional": "catalog:",
     "@commitlint/types": "catalog:",
+    "@next/playwright": "catalog:nextjs",
     "@playwright/test": "catalog:",
     "@seriousme/openapi-schema-validator": "catalog:",
     "@types/node": "catalog:",
