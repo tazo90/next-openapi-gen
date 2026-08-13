@@ -8,16 +8,15 @@ const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   cacheComponents: true,
+  partialPrefetching: true,
+  agentRules: false,
   transpilePackages,
   experimental: {
-    prefetchInlining: true,
-    appNewScrollHandler: true,
     cachedNavigations: true,
     authInterrupts: true,
-    rootParams: true,
     typedEnv: true,
-    turbopackFileSystemCacheForBuild: true,
-    viewTransition: true,
+    // TypeScript 6 is catalog-aliased as @typescript/typescript6 and ships `tsc6`, not `tsc`.
+    useTypeScriptCli: false,
     webVitalsAttribution: ["CLS", "LCP"],
   },
   compiler: {
