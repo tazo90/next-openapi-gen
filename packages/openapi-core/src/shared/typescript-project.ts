@@ -4,6 +4,7 @@ import type * as ts from "typescript";
 
 import { logger } from "./logger.js";
 import { createNativeTypeScriptAdapter } from "./native-typescript-adapter.js";
+import { findTypeScriptConfigFile } from "./tsconfig-file.js";
 import type { Diagnostic } from "./types.js";
 import type { TypeScriptCompilerAdapter } from "./typescript-adapter.js";
 import {
@@ -61,21 +62,38 @@ export function getTypeScriptProject(filePath: string): TypeScriptProject {
     throw new TypeScriptUnavailableError(runtime);
   }
 
-  const configPath = ts.findConfigFile(
-    path.dirname(absoluteFilePath),
-    ts.sys.fileExists,
-    "tsconfig.json",
-  );
+  const configPath = findTypeScriptConfigFile(absoluteFilePath);
   const cacheKey = `${runtime.packagePath}:${configPath || absoluteFilePath}`;
   const cachedProject = projectCache.get(cacheKey);
-  if (cachedProject) {
+  if (cachedProject && (!configPath || hasSourceFile(cachedProject.program, absoluteFilePath))) {
     return cachedProject;
   }
 
-  const project = configPath
-    ? createConfiguredProject(configPath, ts, runtime.packagePath, runtime.version)
-    : createSingleFileProject(absoluteFilePath, ts, runtime.packagePath, runtime.version);
-  projectCache.set(cacheKey, project);
+  if (configPath) {
+    const configuredProject =
+      cachedProject ??
+      createConfiguredProject(configPath, ts, runtime.packagePath, runtime.version);
+    if (!cachedProject) {
+      projectCache.set(cacheKey, configuredProject);
+    }
+    if (hasSourceFile(configuredProject.program, absoluteFilePath)) {
+      return configuredProject;
+    }
+  }
+
+  const singleFileCacheKey = `${runtime.packagePath}:${absoluteFilePath}`;
+  const cachedSingleFileProject = projectCache.get(singleFileCacheKey);
+  if (cachedSingleFileProject) {
+    return cachedSingleFileProject;
+  }
+
+  const project = createSingleFileProject(
+    absoluteFilePath,
+    ts,
+    runtime.packagePath,
+    runtime.version,
+  );
+  projectCache.set(singleFileCacheKey, project);
   return project;
 }
 
@@ -167,18 +185,13 @@ function createClassicTypeScriptAdapter(
 function invalidateClassicTypeScriptProject(filePath: string): void {
   const absoluteFilePath = path.resolve(filePath);
   const runtime = resolveTypeScriptRuntime(absoluteFilePath);
-  const ts = runtime.ts;
-  if (!ts) {
+  if (!runtime.ts) {
     throw new TypeScriptUnavailableError(runtime);
   }
 
-  const configPath = ts.findConfigFile(
-    path.dirname(absoluteFilePath),
-    ts.sys.fileExists,
-    "tsconfig.json",
-  );
-  const cacheKey = `${runtime.packagePath}:${configPath || absoluteFilePath}`;
-  projectCache.delete(cacheKey);
+  const configPath = findTypeScriptConfigFile(absoluteFilePath);
+  projectCache.delete(`${runtime.packagePath}:${configPath || absoluteFilePath}`);
+  projectCache.delete(`${runtime.packagePath}:${absoluteFilePath}`);
 }
 
 function resolveClassicTypeScriptModule(importPath: string, fromFilePath: string): string | null {
@@ -501,6 +514,12 @@ function getPropertyName(
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function hasSourceFile(program: ts.Program, filePath: string): boolean {
+  return Boolean(
+    program.getSourceFile(filePath) ?? program.getSourceFile(filePath.replace(/\\/g, "/")),
+  );
 }
 
 function createConfiguredProject(
