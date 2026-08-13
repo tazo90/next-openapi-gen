@@ -50,7 +50,7 @@ function readJsonObject(filePath: string): Record<string, unknown> | undefined {
   try {
     const parsed: unknown = JSON.parse(fs.readFileSync(filePath, "utf8").replace(/^\uFEFF/, ""));
     if (typeof parsed === "object" && parsed !== null && !Array.isArray(parsed)) {
-      return parsed;
+      return parsed as Record<string, unknown>;
     }
     return undefined;
   } catch {

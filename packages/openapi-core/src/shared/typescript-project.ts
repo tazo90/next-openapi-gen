@@ -65,35 +65,14 @@ export function getTypeScriptProject(filePath: string): TypeScriptProject {
   const configPath = findTypeScriptConfigFile(absoluteFilePath);
   const cacheKey = `${runtime.packagePath}:${configPath || absoluteFilePath}`;
   const cachedProject = projectCache.get(cacheKey);
-  if (cachedProject && (!configPath || hasSourceFile(cachedProject.program, absoluteFilePath))) {
+  if (cachedProject) {
     return cachedProject;
   }
 
-  if (configPath) {
-    const configuredProject =
-      cachedProject ??
-      createConfiguredProject(configPath, ts, runtime.packagePath, runtime.version);
-    if (!cachedProject) {
-      projectCache.set(cacheKey, configuredProject);
-    }
-    if (hasSourceFile(configuredProject.program, absoluteFilePath)) {
-      return configuredProject;
-    }
-  }
-
-  const singleFileCacheKey = `${runtime.packagePath}:${absoluteFilePath}`;
-  const cachedSingleFileProject = projectCache.get(singleFileCacheKey);
-  if (cachedSingleFileProject) {
-    return cachedSingleFileProject;
-  }
-
-  const project = createSingleFileProject(
-    absoluteFilePath,
-    ts,
-    runtime.packagePath,
-    runtime.version,
-  );
-  projectCache.set(singleFileCacheKey, project);
+  const project = configPath
+    ? createConfiguredProject(configPath, ts, runtime.packagePath, runtime.version)
+    : createSingleFileProject(absoluteFilePath, ts, runtime.packagePath, runtime.version);
+  projectCache.set(cacheKey, project);
   return project;
 }
 
@@ -191,7 +170,6 @@ function invalidateClassicTypeScriptProject(filePath: string): void {
 
   const configPath = findTypeScriptConfigFile(absoluteFilePath);
   projectCache.delete(`${runtime.packagePath}:${configPath || absoluteFilePath}`);
-  projectCache.delete(`${runtime.packagePath}:${absoluteFilePath}`);
 }
 
 function resolveClassicTypeScriptModule(importPath: string, fromFilePath: string): string | null {
@@ -514,12 +492,6 @@ function getPropertyName(
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-function hasSourceFile(program: ts.Program, filePath: string): boolean {
-  return Boolean(
-    program.getSourceFile(filePath) ?? program.getSourceFile(filePath.replace(/\\/g, "/")),
-  );
 }
 
 function createConfiguredProject(
