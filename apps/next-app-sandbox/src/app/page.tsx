@@ -1,3 +1,9 @@
-export default function Home() {
-  return <div>Go do /api-docs to check openapi example</div>;
+import { Home } from "./home";
+
+export default function HomePage() {
+  return (
+    <Home.Frame>
+      <Home.Lead>Go do /api-docs to check openapi example</Home.Lead>
+    </Home.Frame>
+  );
 }
