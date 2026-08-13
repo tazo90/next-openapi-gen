@@ -3,6 +3,7 @@ import * as z from "zod";
 
 import { logger } from "../../shared/logger.js";
 import type { ContentType, JsonValue, OpenApiSchema } from "../../shared/types.js";
+import { applyZodStringFormat } from "./string-formats.js";
 
 type RuntimeExportOptions = {
   contentType: ContentType;
@@ -664,6 +665,9 @@ function normalizeJsonSchema(schema: z.core.JSONSchema.BaseSchema | boolean): Op
   delete normalized.$schema;
   if (normalized.format && typeof normalized.pattern === "string") {
     delete normalized.pattern;
+  }
+  if (typeof normalized.format === "string") {
+    return applyZodStringFormat(normalized, normalized.format);
   }
   return normalized;
 }

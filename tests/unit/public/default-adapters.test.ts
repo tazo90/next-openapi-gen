@@ -71,4 +71,19 @@ describe("next-openapi-gen default adapters", () => {
 
     expect(adapters.emitDocsArtifact).toBe(emitNextDocsArtifact);
   });
+
+  it("creates overlay and arazzo emitters only when those config blocks exist", () => {
+    const adapters = createDefaultGenerationAdapters();
+
+    expect(adapters.createSpecEmitters?.(baseConfig as never)).toEqual([]);
+    expect(
+      adapters
+        .createSpecEmitters?.({
+          ...baseConfig,
+          overlay: { apply: ["./overlays/public.overlay.yaml"] },
+          arazzo: { files: ["./arazzo/**/*.yaml"] },
+        } as never)
+        ?.map((emitter) => emitter.kind),
+    ).toEqual(["overlay", "arazzo"]);
+  });
 });

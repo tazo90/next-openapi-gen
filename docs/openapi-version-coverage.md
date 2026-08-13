@@ -1,6 +1,6 @@
 # OpenAPI Version Coverage
 
-This document describes how `next-openapi-gen` supports OpenAPI `3.0`, `3.1`, and `3.2`.
+This document describes how `next-openapi-gen` supports OpenAPI `3.0`, `3.1`, `3.2`, and experimental `3.3-preview`.
 
 Feature status uses three buckets:
 
@@ -24,6 +24,7 @@ Feature status uses three buckets:
 - **OpenAPI 3.0**: safest default when downstream tooling compatibility matters more than newer schema and document features.
 - **OpenAPI 3.1**: best when you want JSON Schema 2020-12-aligned output such as type-array nullability, numeric exclusives, and `jsonSchemaDialect`.
 - **OpenAPI 3.2**: best when you want richer route metadata such as `querystring`, enhanced tags, sequential media, and richer example objects.
+- **`3.3-preview`**: experimental 3.2-compatible preview. Set `openapi` to `3.3-preview` (or `3.3.0-preview`). It is not a released OpenAPI 3.3 document, and OpenAPI 4.0 is not supported.
 
 ## OpenAPI 3.0 Baseline
 
@@ -50,16 +51,16 @@ Feature status uses three buckets:
 
 ## OpenAPI 3.2 Additions
 
-| Feature                                                           | Status                                      | Notes                                                                                                             |
-| ----------------------------------------------------------------- | ------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| Enhanced tags (`summary`, `kind`, `parent`)                       | `generated`, `template/custom`, `validated` | Route JSDoc metadata and template/custom tags are preserved for 3.2 and stripped for older targets.               |
-| `querystring` parameters                                          | `generated`, `template/custom`, `validated` | Route JSDoc metadata can emit `querystring` parameters directly; older targets downgrade them to `query`.         |
-| Sequential media (`itemSchema`, `itemEncoding`, `prefixEncoding`) | `generated`, `template/custom`, `validated` | Route JSDoc metadata or template fragments can emit sequential media; older targets remove the 3.2-only fields.   |
-| Example Object `dataValue` / `serializedValue` / `externalValue`  | `generated`, `template/custom`, `validated` | Route examples and template/custom examples preserve 3.2 example fields and downgrade older targets where needed. |
-| Discriminator `defaultMapping`                                    | `template/custom`, `validated`              | Preserved through the shared document model.                                                                      |
-| `server.name` and root `$self`                                    | `template/custom`, `validated`              | Preserved for 3.2 and removed for older versions.                                                                 |
-| `additionalOperations` / HTTP `QUERY`                             | `generated`, `template/custom`, `validated` | `@method QUERY` emits an OpenAPI 3.2 `additionalOperations.query` operation; older targets strip it.              |
-| `oauth2MetadataUrl` and OAuth `deviceAuthorization` flow          | `template/custom`, `validated`              | Preserved for 3.2 and stripped for older versions.                                                                |
+| Feature                                                           | Status                                      | Notes                                                                                                                                                                                                          |
+| ----------------------------------------------------------------- | ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Enhanced tags (`summary`, `kind`, `parent`)                       | `generated`, `template/custom`, `validated` | Route JSDoc metadata and template/custom tags are preserved for 3.2 and stripped for older targets.                                                                                                            |
+| `querystring` parameters                                          | `generated`, `template/custom`, `validated` | Route JSDoc metadata can emit `querystring` parameters directly; older targets downgrade them to `query`.                                                                                                      |
+| Sequential media (`itemSchema`, `itemEncoding`, `prefixEncoding`) | `generated`, `template/custom`, `validated` | Route JSDoc metadata or template fragments can emit sequential media; older targets backport the 3.2-only fields onto `x-oai-*` extensions.                                                                    |
+| Example Object `dataValue` / `serializedValue` / `externalValue`  | `generated`, `template/custom`, `validated` | Route examples and template/custom examples preserve 3.2 example fields and downgrade older targets where needed.                                                                                              |
+| Discriminator `defaultMapping`                                    | `template/custom`, `validated`              | Preserved through the shared document model.                                                                                                                                                                   |
+| `server.name` and root `$self`                                    | `template/custom`, `validated`              | Preserved for 3.2 and backported to `x-oai-name` / `x-oai-$self` for older versions.                                                                                                                           |
+| `additionalOperations` / HTTP `QUERY`                             | `generated`, `template/custom`, `validated` | `@method QUERY` emits the OpenAPI 3.2 Path Item `query` field; `additionalOperations` is only used for methods without a fixed Path Item field. Older targets backport both onto `x-oai-additionalOperations`. |
+| `oauth2MetadataUrl` and OAuth `deviceAuthorization` flow          | `template/custom`, `validated`              | Preserved for 3.2; `deviceAuthorization` backports to `x-oai-deviceAuthorization`, while `oauth2MetadataUrl` is stripped for older versions.                                                                   |
 
 ## First-Class Route Features
 
@@ -68,7 +69,7 @@ Feature status uses three buckets:
 | Examples                | `@examples`                                                                                 | Supports inline values, serialized payloads, external URLs, and exported typed references for request, response, and querystring examples. |
 | Structured tag metadata | `@tag`, `@tagSummary`, `@tagKind`, `@tagParent`                                             | Tag metadata is synthesized into root `tags` entries.                                                                                      |
 | `querystring`           | `@querystring FilterSchema as advancedQuery`                                                | Emits an OpenAPI 3.2 `querystring` parameter with form content.                                                                            |
-| HTTP `QUERY`            | `@method QUERY`                                                                             | Emits the operation under `additionalOperations.query` for OpenAPI 3.2 output.                                                             |
+| HTTP `QUERY`            | `@method QUERY`                                                                             | Emits the operation under the Path Item `query` field for OpenAPI 3.2 output.                                                              |
 | Sequential media        | `@responseContentType`, `@responseItem`, `@responseItemEncoding`, `@responsePrefixEncoding` | Emits 3.2 media objects for streaming or record-oriented responses.                                                                        |
 
 ## Checker-Assisted Improvements
@@ -86,3 +87,29 @@ Feature status uses three buckets:
 - Integration tests cover generated schema differences between `3.0` and `3.1`, version-specific template metadata passthrough, and first-class 3.2 route annotations and inference behavior.
 - Validation tests run generated `3.0`, `3.1`, and `3.2` specs through `@seriousme/openapi-schema-validator`, including a Zod-heavy fixture that exercises top-level Zod 4 helpers, transformed query params, and pure-Zod alias behavior.
 - Template/custom-fragment tests verify that advanced reusable OpenAPI objects survive generation without being dropped.
+
+## OAI registries
+
+Format, Tag Kind, Media Type, Extension, and Namespace snapshots live in
+`packages/openapi-core/src/openapi/registries/` (snapshot date **2026-08-13**).
+Generation maps Zod string formats onto registered `format` values when one
+exists, prefers `contentEncoding` / `contentMediaType` over deprecated
+`binary` / `byte`, and backports 3.2-only fields onto registered `x-oai-*` /
+`x-jsonschema-*` extensions instead of dropping them.
+
+Unknown `@tagKind` values are allowed (the Tag Kind registry is not closed) and
+emit an `unregistered-tag-kind` info diagnostic. Unregistered Zod formats emit
+`unregistered-format` and keep a `pattern` when one is known.
+
+OpenAPI 3.3 is not a released generated version. Use `3.3-preview` for the
+experimental 3.2-compatible selector. Security scheme `type` stays an open
+string, cookie parameters are isolated, and Overlay/Arazzo share the JSONPath
+subset used for later security-profile pointers. OpenAPI 4.0 is not supported.
+
+## Companion specifications
+
+Arazzo and Overlay are optional config-gated sibling packages. They are not
+OpenAPI versions and do not add JSDoc tags.
+
+- [Arazzo workflows](./arazzo.md)
+- [OpenAPI Overlay](./overlay.md)

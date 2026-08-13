@@ -117,19 +117,19 @@ describe("ZodSchemaConverter", () => {
     });
     expect(converter.processZodNode(parseInitializer("z.custom<File>()"))).toEqual({
       type: "string",
-      format: "binary",
+      contentMediaType: "application/octet-stream",
     });
     expect(converter.processZodNode(parseInitializer("z.custom<Blob>()"))).toEqual({
       type: "string",
-      format: "binary",
+      contentMediaType: "application/octet-stream",
     });
     expect(converter.processZodNode(parseInitializer("z.custom<Buffer>()"))).toEqual({
       type: "string",
-      format: "binary",
+      contentMediaType: "application/octet-stream",
     });
     expect(converter.processZodNode(parseInitializer("z.custom<Uint8Array>()"))).toEqual({
       type: "string",
-      format: "binary",
+      contentMediaType: "application/octet-stream",
     });
     expect(converter.processZodNode(parseInitializer("z.custom(() => true)"))).toEqual({
       type: "object",

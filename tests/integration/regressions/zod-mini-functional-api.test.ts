@@ -31,7 +31,7 @@ describe("Zod Mini functional API regressions (issue #167)", () => {
       expect(schema?.required).toEqual(["id", "deletedAt"]);
       expect(schema?.properties?.id).toEqual({
         anyOf: [
-          { type: "string", format: "cuid2" },
+          { type: "string", pattern: "^[0-9a-z]+$" },
           { type: "string", format: "uuid" },
         ],
       });

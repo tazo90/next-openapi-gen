@@ -2,7 +2,10 @@ export type {
   DocsArtifactEmitter,
   FrameworkSourceFactory,
   GenerationAdapters,
+  GenerationContext,
+  SpecEmitter,
 } from "./core/adapters.js";
+export type { GenerationIR } from "./core/generation-ir.js";
 export { defineConfig } from "./core/config/define-config.js";
 export {
   DEFAULT_CONFIG_FILENAMES,
@@ -26,8 +29,10 @@ export { OpenApiGenerator } from "./generator/openapi-generator.js";
 export type { GeneratorPerformanceProfile } from "./generator/openapi-generator.js";
 export { FrameworkKind } from "./shared/types.js";
 export type {
+  ArazzoGeneratorConfig,
   Diagnostic,
   DiagnosticFailOn,
   OpenApiDocument,
   OpenApiTemplate,
+  OverlayGeneratorConfig,
 } from "./shared/types.js";

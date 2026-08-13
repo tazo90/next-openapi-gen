@@ -1,9 +1,11 @@
+import { isSequentialMediaType } from "../openapi/registries/index.js";
 import type { SchemaProcessor } from "../schema/typescript/schema-processor.js";
 import type {
   DataTypes,
   InferredResponseDefinition,
-  OpenApiMediaTypeDefinition,
-  OpenApiResponseDefinition,
+  OpenApiMediaType,
+  OpenApiResponse,
+  OpenApiResponseOrReference,
   OpenApiSchemaLike,
   ResolvedOpenApiConfig,
 } from "../shared/types.js";
@@ -31,8 +33,8 @@ export class ResponseProcessor {
   public processResponses(
     dataTypes: DataTypes,
     method: string,
-  ): Record<string, OpenApiResponseDefinition> {
-    const responses: Record<string, OpenApiResponseDefinition> = {};
+  ): Record<string, OpenApiResponseOrReference> {
+    const responses: Record<string, OpenApiResponseOrReference> = {};
     const inferredPrimarySuccessCode = this.getPrimaryInferredSuccessCode(
       dataTypes.inferredResponses,
     );
@@ -152,7 +154,27 @@ export class ResponseProcessor {
       };
     }
 
+    this.applyResponseSummaries(responses, dataTypes, successCode);
+
     return responses;
+  }
+
+  private applyResponseSummaries(
+    responses: Record<string, OpenApiResponseOrReference>,
+    dataTypes: DataTypes,
+    primaryCode: string,
+  ): void {
+    for (const [code, response] of Object.entries(responses)) {
+      if (!response || "$ref" in response) {
+        continue;
+      }
+      const summary =
+        dataTypes.responseSummaries?.[code] ||
+        (code === primaryCode ? dataTypes.responseSummary : undefined);
+      if (summary) {
+        response.summary = summary;
+      }
+    }
   }
 
   public supportsRequestBody(method: string): boolean {
@@ -178,7 +200,7 @@ export class ResponseProcessor {
     response: InferredResponseDefinition,
     dataTypes: DataTypes,
     method: string,
-  ): OpenApiResponseDefinition | undefined {
+  ): OpenApiResponse | undefined {
     const statusCode =
       response.statusCode || dataTypes.successCode || this.getDefaultSuccessCode(method);
     const description =
@@ -193,7 +215,7 @@ export class ResponseProcessor {
         !response.itemTypeName &&
         !dataTypes.responseItemType)
     ) {
-      const responseObject: OpenApiResponseDefinition = {
+      const responseObject: OpenApiResponse = {
         description,
       };
       if (this.isRedirectStatus(statusCode)) {
@@ -207,11 +229,12 @@ export class ResponseProcessor {
       return responseObject;
     }
 
-    const mediaType = this.createResponseMediaType(response, dataTypes);
+    const contentType = response.contentType || dataTypes.responseContentType || "application/json";
+    const mediaType = this.createResponseMediaType(response, dataTypes, contentType);
     return {
       description,
       content: {
-        [response.contentType || dataTypes.responseContentType || "application/json"]: mediaType,
+        [contentType]: mediaType,
       },
     };
   }
@@ -224,10 +247,11 @@ export class ResponseProcessor {
   private createResponseMediaType(
     response: InferredResponseDefinition,
     dataTypes: DataTypes,
-  ): OpenApiMediaTypeDefinition {
+    contentType: string,
+  ): OpenApiMediaType {
     const typeName = response.typeName || dataTypes.responseType;
     const itemTypeName = response.itemTypeName || dataTypes.responseItemType;
-    const mediaType: OpenApiMediaTypeDefinition = {};
+    const mediaType: OpenApiMediaType = {};
 
     if (itemTypeName) {
       mediaType.itemSchema = this.buildSchemaReference(itemTypeName, "response");
@@ -236,6 +260,12 @@ export class ResponseProcessor {
       }
       if (dataTypes.responsePrefixEncoding) {
         mediaType.prefixEncoding = structuredClone(dataTypes.responsePrefixEncoding);
+      }
+    } else if (isSequentialMediaType(contentType)) {
+      if (response.schema) {
+        mediaType.itemSchema = structuredClone(response.schema);
+      } else if (typeName) {
+        mediaType.itemSchema = this.buildSchemaReference(typeName, "response");
       }
     } else if (response.schema) {
       mediaType.schema = structuredClone(response.schema);

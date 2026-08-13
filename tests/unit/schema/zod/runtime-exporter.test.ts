@@ -95,7 +95,7 @@ describe("ZodRuntimeExporter", () => {
     it("exports z.cuid()", () => {
       expect(
         exporter.exportSchema(parseInitializer("z.cuid()"), { contentType: "response" }),
-      ).toEqual({ type: "string", format: "cuid" });
+      ).toEqual({ type: "string", pattern: "^c[^\\s-]{8,}$" });
     });
 
     it("exports z.ipv4()", () => {
@@ -970,7 +970,7 @@ describe("ZodRuntimeExporter", () => {
         exporter.exportSchema(parseInitializer("z.string().cuid()"), {
           contentType: "response",
         }),
-      ).toEqual({ type: "string", format: "cuid" });
+      ).toEqual({ type: "string", pattern: "^c[^\\s-]{8,}$" });
     });
 
     it("handles superRefine gracefully", () => {

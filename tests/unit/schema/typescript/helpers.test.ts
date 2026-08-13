@@ -212,7 +212,7 @@ describe("TypeScript schema helpers", () => {
       properties: {
         avatarFile: {
           type: "string",
-          format: "binary",
+          contentMediaType: "application/octet-stream",
           description: "profile file",
         },
         note: {

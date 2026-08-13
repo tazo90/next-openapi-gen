@@ -22,13 +22,12 @@ describe("Zod features › primitives", () => {
     ["z.json()", "z.json()", {}],
     ["z.nan()", "z.nan()", { type: "number" }],
     ["z.symbol()", "z.symbol()", { type: "string" }],
-    ["z.file()", "z.file()", { type: "string", format: "binary" }],
+    ["z.file()", "z.file()", { type: "string", contentMediaType: "application/octet-stream" }],
     [
       "z.file().mime().minSize().maxSize()",
       'z.file().mime("image/png").minSize(1).maxSize(1024)',
       {
         type: "string",
-        format: "binary",
         contentMediaType: "image/png",
         minLength: 1,
         maxLength: 1024,
@@ -39,7 +38,6 @@ describe("Zod features › primitives", () => {
       'z.file().mime(["image/png", "image/jpeg"])',
       {
         type: "string",
-        format: "binary",
         "x-contentMediaTypes": ["image/png", "image/jpeg"],
       },
     ],
@@ -50,7 +48,6 @@ describe("Zod features › primitives", () => {
         type: "array",
         items: {
           type: "string",
-          format: "binary",
           "x-contentMediaTypes": ["image/png", "image/jpeg"],
         },
       },

@@ -1,0 +1,39 @@
+{
+  "snapshotDate": "2026-08-13",
+  "source": "https://spec.openapis.org/registry/extension/",
+  "extensions": [
+    { "name": "x-jsonschema-$anchor", "field": "$anchor", "since": "3.1" },
+    { "name": "x-jsonschema-contains", "field": "contains", "since": "3.1" },
+    { "name": "x-jsonschema-contentEncoding", "field": "contentEncoding", "since": "3.1" },
+    { "name": "x-jsonschema-contentMediaType", "field": "contentMediaType", "since": "3.1" },
+    { "name": "x-jsonschema-contentSchema", "field": "contentSchema", "since": "3.1" },
+    { "name": "x-jsonschema-dependentSchemas", "field": "dependentSchemas", "since": "3.1" },
+    { "name": "x-jsonschema-else", "field": "else", "since": "3.1" },
+    { "name": "x-jsonschema-examples", "field": "examples", "since": "3.1" },
+    { "name": "x-jsonschema-if", "field": "if", "since": "3.1" },
+    { "name": "x-jsonschema-maxContains", "field": "maxContains", "since": "3.1" },
+    { "name": "x-jsonschema-minContains", "field": "minContains", "since": "3.1" },
+    { "name": "x-jsonschema-patternProperties", "field": "patternProperties", "since": "3.1" },
+    { "name": "x-jsonschema-propertyNames", "field": "propertyNames", "since": "3.1" },
+    { "name": "x-jsonschema-then", "field": "then", "since": "3.1" },
+    {
+      "name": "x-jsonschema-unevaluatedProperties",
+      "field": "unevaluatedProperties",
+      "since": "3.1"
+    },
+    { "name": "x-oai-$self", "field": "$self", "since": "3.2" },
+    { "name": "x-oai-additionalOperations", "field": "additionalOperations", "since": "3.2" },
+    { "name": "x-oai-dataValue", "field": "dataValue", "since": "3.2" },
+    { "name": "x-oai-deprecated", "field": "deprecated", "since": "3.2" },
+    { "name": "x-oai-deviceAuthorization", "field": "deviceAuthorization", "since": "3.2" },
+    { "name": "x-oai-deviceAuthorizationUrl", "field": "deviceAuthorizationUrl", "since": "3.2" },
+    { "name": "x-oai-encoding", "field": "encoding", "since": "3.2" },
+    { "name": "x-oai-itemEncoding", "field": "itemEncoding", "since": "3.2" },
+    { "name": "x-oai-itemSchema", "field": "itemSchema", "since": "3.2" },
+    { "name": "x-oai-license-identifier", "field": "identifier", "since": "3.1" },
+    { "name": "x-oai-name", "field": "name", "since": "3.2" },
+    { "name": "x-oai-prefixEncoding", "field": "prefixEncoding", "since": "3.2" },
+    { "name": "x-oai-serializedValue", "field": "serializedValue", "since": "3.2" },
+    { "name": "x-oai-summary", "field": "summary", "since": "3.2" }
+  ]
+}

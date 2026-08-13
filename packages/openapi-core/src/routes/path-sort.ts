@@ -1,6 +1,17 @@
-import type { OpenApiPathDefinition } from "../shared/types.js";
+import { getPathItemOperations } from "../openapi/path-item.js";
+import type { OpenApiPathItem, OpenApiPaths } from "../shared/types.js";
 
-const METHOD_ORDER = ["get", "post", "put", "patch", "delete", "options", "head", "trace"] as const;
+const METHOD_ORDER = [
+  "get",
+  "post",
+  "put",
+  "patch",
+  "delete",
+  "options",
+  "head",
+  "trace",
+  "query",
+] as const;
 
 const METHOD_RANK: Record<string, number> = METHOD_ORDER.reduce<Record<string, number>>(
   (accumulator, method, index) => {
@@ -16,15 +27,11 @@ function compareStringsStable(a: string, b: string): number {
   return a.localeCompare(b, "en", LOCALE_COMPARE_OPTIONS);
 }
 
-export function comparePathDefinitions(
-  paths: Record<string, OpenApiPathDefinition>,
-  a: string,
-  b: string,
-): number {
+export function comparePathDefinitions(paths: OpenApiPaths, a: string, b: string): number {
   const aMethods = paths[a] || {};
   const bMethods = paths[b] || {};
-  const aTags = Object.values(aMethods).flatMap((method) => method.tags || []);
-  const bTags = Object.values(bMethods).flatMap((method) => method.tags || []);
+  const aTags = getPathItemOperations(aMethods).flatMap(([, method]) => method.tags || []);
+  const bTags = getPathItemOperations(bMethods).flatMap(([, method]) => method.tags || []);
   const aPrimaryTag = aTags[0] || "";
   const bPrimaryTag = bTags[0] || "";
   const tagComparison = aPrimaryTag.localeCompare(bPrimaryTag);
@@ -71,25 +78,21 @@ function compareMethods(a: string, b: string): number {
   return compareStringsStable(a, b);
 }
 
-function sortPathMethods(pathDefinition: OpenApiPathDefinition): OpenApiPathDefinition {
-  const sortedMethodEntries = Object.entries(pathDefinition).toSorted(([a], [b]) =>
-    compareMethods(a, b),
-  );
-  return sortedMethodEntries.reduce<OpenApiPathDefinition>((sorted, [method, operation]) => {
-    sorted[method] = operation;
+function sortPathMethods(pathItem: OpenApiPathItem): OpenApiPathItem {
+  const sortedEntries = Object.entries(pathItem).toSorted(([a], [b]) => compareMethods(a, b));
+  return sortedEntries.reduce<OpenApiPathItem>((sorted, [key, value]) => {
+    sorted[key] = value;
     return sorted;
   }, {});
 }
 
-export function sortPathDefinitions(
-  paths: Record<string, OpenApiPathDefinition>,
-): Record<string, OpenApiPathDefinition> {
+export function sortPathDefinitions(paths: OpenApiPaths): OpenApiPaths {
   return Object.keys(paths)
     .toSorted((a, b) => comparePathDefinitions(paths, a, b))
-    .reduce<Record<string, OpenApiPathDefinition>>((sorted, key) => {
-      const pathDefinition = paths[key];
-      if (pathDefinition) {
-        sorted[key] = sortPathMethods(pathDefinition);
+    .reduce<OpenApiPaths>((sorted, key) => {
+      const pathItem = paths[key];
+      if (pathItem) {
+        sorted[key] = sortPathMethods(pathItem);
       }
 
       return sorted;

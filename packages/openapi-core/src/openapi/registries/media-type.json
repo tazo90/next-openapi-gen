@@ -1,0 +1,48 @@
+{
+  "snapshotDate": "2026-08-13",
+  "source": "https://spec.openapis.org/registry/media-type/",
+  "groups": [
+    {
+      "id": "binary",
+      "mediaTypes": ["application/octet-stream", "audio/*", "image/*", "video/*"]
+    },
+    {
+      "id": "forms",
+      "mediaTypes": ["application/x-www-form-urlencoded", "multipart/form-data"]
+    },
+    {
+      "id": "linksets",
+      "mediaTypes": ["application/linkset", "application/linkset+json"]
+    },
+    {
+      "id": "sequential-json",
+      "mediaTypes": ["application/jsonl", "application/json-seq", "application/x-ndjson"]
+    },
+    {
+      "id": "sequential-multipart",
+      "mediaTypes": [
+        "multipart/*",
+        "multipart/mixed",
+        "multipart/alternative",
+        "multipart/related",
+        "multipart/byteranges"
+      ]
+    },
+    {
+      "id": "sse",
+      "mediaTypes": ["text/event-stream"]
+    },
+    {
+      "id": "text",
+      "mediaTypes": ["text/*", "text/plain"]
+    },
+    {
+      "id": "toon",
+      "mediaTypes": ["text/toon"]
+    },
+    {
+      "id": "xml",
+      "mediaTypes": ["application/xml"]
+    }
+  ]
+}

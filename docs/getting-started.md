@@ -175,21 +175,23 @@ Framework-specific defaults mainly change `apiDir`, `framework.kind`, and
 
 ## Important options
 
-| Option                                | Purpose                                                                  |
-| ------------------------------------- | ------------------------------------------------------------------------ |
-| `openapi`                             | Target OpenAPI version: `"3.0.0"`, `"3.1.0"`, or `"3.2.0"`               |
-| `apiDir`                              | Route directory to scan                                                  |
-| `routerType`                          | `"app"` for App Router or `"pages"` for Pages Router                     |
-| `schemaDir`                           | One directory or an array of directories to search for types and schemas |
-| `schemaType`                          | `"zod"`, `"typescript"`, or both                                         |
-| `schemaFiles`                         | YAML or JSON OpenAPI fragments merged into the final document            |
-| `outputDir` / `outputFile`            | Where the generated spec is written                                      |
-| `docsUrl`                             | Route path for the generated docs UI                                     |
-| `includeOpenApiRoutes`                | When `true`, only handlers tagged with `@openapi` are included           |
-| `ignoreRoutes`                        | Wildcard patterns for routes you never want in the output                |
-| `defaultResponseSet` / `responseSets` | Shared error-response bundles                                            |
-| `errorConfig`                         | Templates for consistent generated error schemas                         |
-| `debug`                               | Extra generation logs for diagnosing route or schema discovery           |
+| Option                                | Purpose                                                                     |
+| ------------------------------------- | --------------------------------------------------------------------------- |
+| `openapi`                             | Target OpenAPI version: `"3.0.0"`, `"3.1.0"`, `"3.2.0"`, or `"3.3-preview"` |
+| `apiDir`                              | Route directory to scan                                                     |
+| `routerType`                          | `"app"` for App Router or `"pages"` for Pages Router                        |
+| `schemaDir`                           | One directory or an array of directories to search for types and schemas    |
+| `schemaType`                          | `"zod"`, `"typescript"`, or both                                            |
+| `schemaFiles`                         | YAML or JSON OpenAPI fragments merged into the final document               |
+| `outputDir` / `outputFile`            | Where the generated spec is written                                         |
+| `docsUrl`                             | Route path for the generated docs UI                                        |
+| `includeOpenApiRoutes`                | When `true`, only handlers tagged with `@openapi` are included              |
+| `ignoreRoutes`                        | Wildcard patterns for routes you never want in the output                   |
+| `defaultResponseSet` / `responseSets` | Shared error-response bundles                                               |
+| `errorConfig`                         | Templates for consistent generated error schemas                            |
+| `debug`                               | Extra generation logs for diagnosing route or schema discovery              |
+| `arazzo`                              | Optional Arazzo workflow generation; see [Arazzo](./arazzo.md)              |
+| `overlay`                             | Optional Overlay apply/generate; see [Overlay](./overlay.md)                |
 
 ## Choosing a schema strategy
 

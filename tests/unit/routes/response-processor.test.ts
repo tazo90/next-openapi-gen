@@ -370,6 +370,7 @@ describe("ResponseProcessor", () => {
       {
         responseItemType: "EventChunk",
         responseContentType: "text/event-stream",
+        responseSummary: "Event stream",
         responseItemEncoding: {
           headers: {
             "content-type": "application/json",
@@ -389,6 +390,7 @@ describe("ResponseProcessor", () => {
     );
 
     expect(responses["200"]).toEqual({
+      summary: "Event stream",
       description: "Successful response",
       content: {
         "text/event-stream": {

@@ -5,6 +5,7 @@ import { defineConfig } from "vitest/config";
 
 const rootDir = path.dirname(fileURLToPath(import.meta.url));
 const packageSrcDirs = {
+  "@workspace/openapi-arazzo": path.join(rootDir, "packages", "openapi-arazzo", "src"),
   "@workspace/openapi-cli": path.join(rootDir, "packages", "openapi-cli", "src"),
   "@workspace/openapi-core": path.join(rootDir, "packages", "openapi-core", "src"),
   "@workspace/openapi-framework-next": path.join(
@@ -26,6 +27,7 @@ const packageSrcDirs = {
     "src",
   ),
   "@workspace/openapi-init": path.join(rootDir, "packages", "openapi-init", "src"),
+  "@workspace/openapi-overlay": path.join(rootDir, "packages", "openapi-overlay", "src"),
   "@next-openapi-gen": path.join(rootDir, "packages", "next-openapi-gen", "src"),
   "next-openapi-gen": path.join(rootDir, "packages", "next-openapi-gen", "src"),
 } as const;
@@ -40,6 +42,16 @@ const coverageScopes = {
       "tests/unit/react-router/**/*.test.ts",
       "tests/unit/vite/**/*.test.ts",
     ],
+    thresholds: {
+      statements: 75,
+      branches: 75,
+      functions: 75,
+      lines: 75,
+    },
+  },
+  "openapi-arazzo": {
+    include: ["packages/openapi-arazzo/src/**/*.ts"],
+    testInclude: ["tests/unit/arazzo/**/*.test.ts", "tests/integration/arazzo/**/*.test.ts"],
     thresholds: {
       statements: 75,
       branches: 75,
@@ -115,6 +127,16 @@ const coverageScopes = {
       lines: 75,
     },
   },
+  "openapi-overlay": {
+    include: ["packages/openapi-overlay/src/**/*.ts"],
+    testInclude: ["tests/unit/overlay/**/*.test.ts", "tests/integration/overlay/**/*.test.ts"],
+    thresholds: {
+      statements: 75,
+      branches: 75,
+      functions: 75,
+      lines: 75,
+    },
+  },
 } as const;
 const coverageScope = process.env.COVERAGE_SCOPE as keyof typeof coverageScopes | undefined;
 const selectedCoverageScope = coverageScope ? coverageScopes[coverageScope] : undefined;
@@ -136,12 +158,14 @@ export default defineConfig({
       reporter: ["text", "json", "html"],
       include: [
         ...(selectedCoverageScope?.include ?? [
+          "packages/openapi-arazzo/src/**/*.ts",
           "packages/openapi-cli/src/**/*.ts",
           "packages/openapi-core/src/**/*.ts",
           "packages/openapi-framework-next/src/**/*.ts",
           "packages/openapi-framework-react-router/src/**/*.ts",
           "packages/openapi-framework-tanstack/src/**/*.ts",
           "packages/openapi-init/src/**/*.ts",
+          "packages/openapi-overlay/src/**/*.ts",
           "packages/next-openapi-gen/src/**/*.ts",
         ]),
       ],
@@ -166,10 +190,12 @@ export default defineConfig({
         // OpenAPI version coercion is covered via validation fixtures and integration flows.
         "packages/openapi-core/src/openapi/version-processor.ts",
         // Pure re-export barrels (non-openapi-core — see packages above).
+        "packages/openapi-arazzo/src/index.ts",
         "packages/openapi-framework-next/src/index.ts",
         "packages/openapi-framework-tanstack/src/index.ts",
         "packages/openapi-framework-react-router/src/index.ts",
         "packages/openapi-init/src/index.ts",
+        "packages/openapi-overlay/src/index.ts",
       ],
       thresholds: selectedCoverageScope?.thresholds ?? {
         statements: 80,

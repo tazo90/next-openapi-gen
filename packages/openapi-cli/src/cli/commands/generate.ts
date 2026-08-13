@@ -14,7 +14,7 @@ export type GenerateOptions = {
 
 export async function generate(options: GenerateOptions): Promise<void> {
   const configPath = options.config ?? options.template;
-  const spinner = ora("Generating OpenAPI specification...\n").start();
+  const spinner = ora("Generating specification(s)...\n").start();
   const adapters = createDefaultGenerationAdapters();
   if (options.watch) {
     spinner.info("Watching for route and schema changes...");
@@ -30,7 +30,11 @@ export async function generate(options: GenerateOptions): Promise<void> {
     configPath,
   });
 
-  spinner.succeed(`OpenAPI specification generated at ${result.outputFile}`);
+  const artifactPaths = result.artifacts.map((artifact) => artifact.path);
+  const listedPaths = artifactPaths.length > 0 ? artifactPaths : [result.outputFile];
+  spinner.succeed(
+    `Specifications generated:\n${listedPaths.map((filePath) => `  ${filePath}`).join("\n")}`,
+  );
   printDiagnostics(result.diagnostics ?? []);
 
   const failOn = options.failOn ?? result.diagnosticsFailOn;

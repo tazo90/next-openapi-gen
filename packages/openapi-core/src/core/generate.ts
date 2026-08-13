@@ -6,13 +6,17 @@ import path from "node:path";
 import fse from "fs-extra";
 
 import { resolveCacheSetting } from "../config/normalize.js";
+import { DiagnosticsCollector } from "../diagnostics/collector.js";
 import { OpenApiGenerator } from "../generator/openapi-generator.js";
 import { logger } from "../shared/logger.js";
 import type { Diagnostic, DiagnosticFailOn } from "../shared/types.js";
-import type { GenerationAdapters } from "./adapters.js";
+import type { GenerationAdapters, GenerationContext, SpecEmitter } from "./adapters.js";
+import { writeDocumentArtifact } from "./artifact-writer.js";
 import { loadConfig } from "./config/load-config.js";
 import type { GeneratedArtifact, LoadedConfigFile } from "./config/types.js";
+import { expandFileGlobs } from "./file-globs.js";
 import { resolveGeneratedWorkspaceDir } from "./generated-workspace.js";
+import { buildGenerationIR } from "./generation-ir.js";
 import {
   createSharedGenerationRuntime,
   type CachedRouteFragment,
@@ -95,12 +99,35 @@ export async function generateFromLoadedConfig(
   }
 
   const document = generator.generate();
+  const diagnostics = new DiagnosticsCollector();
+  for (const diagnostic of generator.getDiagnostics()) {
+    diagnostics.add(diagnostic);
+  }
+
+  const cwd = loadedConfig.configPath ? path.dirname(loadedConfig.configPath) : process.cwd();
+  const context: GenerationContext = {
+    config,
+    ir: buildGenerationIR(document),
+    openapiDocument: document,
+    diagnostics,
+    outputFile,
+    outputDir,
+    cwd,
+  };
+
+  const specEmitters = adapters?.createSpecEmitters?.(config) ?? [];
+  const overlayEmitters = specEmitters.filter((emitter) => emitter.kind === "overlay");
+  const arazzoEmitters = specEmitters.filter((emitter) => emitter.kind === "arazzo");
+
+  const artifacts: GeneratedArtifact[] = [];
+  artifacts.push(...(await emitSpecEmitters(overlayEmitters, context)));
 
   await fse.ensureDir(outputDir);
+  writeDocumentArtifact(outputFile, context.openapiDocument);
+  artifacts.unshift({ kind: "spec", path: outputFile });
 
-  fs.writeFileSync(outputFile, `${JSON.stringify(document, null, 2)}\n`);
-
-  const artifacts: GeneratedArtifact[] = [{ kind: "spec", path: outputFile }];
+  context.ir = buildGenerationIR(context.openapiDocument);
+  artifacts.push(...(await emitSpecEmitters(arazzoEmitters, context)));
 
   // Dev-only metadata (diagnostics, perf): omit during production builds so deploy
   // artifacts stay limited to the OpenAPI spec and optional docs/SDK outputs.
@@ -114,7 +141,7 @@ export async function generateFromLoadedConfig(
         {
           configPath: loadedConfig.configPath,
           outputFile,
-          diagnostics: generator.getDiagnostics(),
+          diagnostics: diagnostics.getAll(),
           performance: generator.getPerformanceProfile(),
         },
         null,
@@ -126,7 +153,7 @@ export async function generateFromLoadedConfig(
   if (diskCache) {
     writeDiskCacheRecord(diskCache, {
       configPath: loadedConfig.configPath,
-      diagnostics: generator.getDiagnostics(),
+      diagnostics: diagnostics.getAll(),
       fingerprint: diskCache.fingerprint,
       inputCount: diskCache.inputCount,
       inputs: diskCache.inputs,
@@ -157,7 +184,7 @@ export async function generateFromLoadedConfig(
   return {
     artifacts,
     cached: false,
-    diagnostics: generator.getDiagnostics(),
+    diagnostics: diagnostics.getAll(),
     diagnosticsFailOn: config.diagnostics.failOn ?? "never",
     outputFile,
     configPath: loadedConfig.configPath,
@@ -196,7 +223,9 @@ function isCacheEnabled(config: LoadedConfigFile["config"]): boolean {
 function hasArtifactSideEffects(loadedConfig: LoadedConfigFile): boolean {
   return (
     (loadedConfig.config.docs ? loadedConfig.config.docs.enabled !== false : false) ||
-    (loadedConfig.config.clientSdk?.some((sdkConfig) => sdkConfig.enabled !== false) ?? false)
+    (loadedConfig.config.clientSdk?.some((sdkConfig) => sdkConfig.enabled !== false) ?? false) ||
+    Boolean(loadedConfig.config.arazzo) ||
+    Boolean(loadedConfig.config.overlay)
   );
 }
 
@@ -306,6 +335,16 @@ function collectCacheInputFiles(loadedConfig: LoadedConfigFile): string[] {
     if (fs.existsSync(resolvedFile) && fs.statSync(resolvedFile).isFile()) {
       files.add(resolvedFile);
     }
+  }
+
+  const companionPatterns = [
+    ...(loadedConfig.config.arazzo?.files ?? []),
+    ...(loadedConfig.config.overlay?.apply ?? []),
+    ...(loadedConfig.config.overlay?.generate?.files ?? []),
+  ];
+  const cwd = loadedConfig.configPath ? path.dirname(loadedConfig.configPath) : process.cwd();
+  for (const file of expandFileGlobs(companionPatterns, cwd)) {
+    files.add(file);
   }
 
   return [...files].toSorted((a, b) => a.localeCompare(b, "en", { sensitivity: "base" }));
@@ -426,6 +465,17 @@ function canReuseRouteFragments(
     const relativePath = path.relative(apiDir, filePath);
     return relativePath !== "" && !relativePath.startsWith("..") && !path.isAbsolute(relativePath);
   });
+}
+
+async function emitSpecEmitters(
+  emitters: SpecEmitter[],
+  context: GenerationContext,
+): Promise<GeneratedArtifact[]> {
+  const artifacts: GeneratedArtifact[] = [];
+  for (const emitter of emitters) {
+    artifacts.push(...(await emitter.emit(context)));
+  }
+  return artifacts;
 }
 
 async function emitDocsArtifacts(

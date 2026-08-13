@@ -9,6 +9,9 @@ This folder contains the longer-form guides that support the main
   setup, config naming, watch mode, and integration entrypoints
 - [JSDoc reference](./jsdoc-reference.md): route tags, multipart encoding, and
   query serialization behavior
+- [Arazzo workflows](./arazzo.md): compile workflow files against generated
+  `operationId`s
+- [OpenAPI Overlay](./overlay.md): apply or generate Overlay documents
 - [Workflows and integrations](./workflows-and-integrations.md): Next.js,
   TanStack Router, React Router, schema migration, and downstream OpenAPI use
 - [FAQ and troubleshooting](./faq.md)

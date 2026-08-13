@@ -48,10 +48,11 @@ function normalizeOpenApiVersion(template: Pick<OpenApiTemplate, "openapi">): Op
     return "3.1";
   }
 
-  if (template.openapi.startsWith("4.")) {
-    return "4.0";
+  if (/^3\.3(\.0)?-preview/.test(template.openapi)) {
+    return "3.3-preview";
   }
 
+  // Unreleased versions such as 3.3, and unsupported versions such as 4.0, fall back to 3.0.
   return DEFAULT_OPENAPI_VERSION;
 }
 
@@ -160,6 +161,8 @@ export function normalizeOpenApiConfig(
     cache: resolveCacheSetting(template),
     experimental: template.experimental,
     authPresets: { ...DEFAULT_AUTH_PRESET_REPLACEMENTS, ...template.authPresets },
+    arazzo: template.arazzo,
+    overlay: template.overlay,
     debug: template.debug ?? DEFAULT_DEBUG,
   };
 }

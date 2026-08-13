@@ -110,7 +110,7 @@ describe("Zod features › unions and intersections", () => {
     const schema = convert("z.union([z.cuid2(), z.uuid()])", roots);
     expect(schema).toEqual({
       anyOf: [
-        { type: "string", format: "cuid2" },
+        { type: "string", pattern: "^[0-9a-z]+$" },
         { type: "string", format: "uuid" },
       ],
     });

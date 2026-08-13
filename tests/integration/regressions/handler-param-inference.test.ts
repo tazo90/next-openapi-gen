@@ -47,7 +47,7 @@ describe("handler param inference", () => {
     });
 
     try {
-      expect(spec.paths?.["/search"]?.additionalOperations?.query).toMatchObject({
+      expect(spec.paths?.["/search"]?.query).toMatchObject({
         parameters: [
           {
             in: "query",

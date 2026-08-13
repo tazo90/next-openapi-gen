@@ -88,5 +88,5 @@ function scanFixtureRoutes(projectRoot: string, overrides: Partial<OpenApiConfig
 
   routeProcessor.scanApiRoutes(apiDir);
 
-  return routeProcessor.getSwaggerPaths();
+  return routeProcessor.getPaths();
 }

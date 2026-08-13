@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 /**
  * Get paginated users
  * @description Retrieve users with cursor-based pagination using factory-generated schema
- * @params PaginationMeta
+ * @query PaginationMeta
  * @response PaginatedUsersSchema
  * @openapi
  */

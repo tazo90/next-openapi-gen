@@ -15,14 +15,16 @@ import {
  * @tag Events
  * @tags Platform, Observability
  * @tagSummary Event navigation
+ * @tagDescription Platform event navigation
  * @tagKind nav
  * @tagParent Platform
  * @querystring EventStreamQuery as advancedQuery
  * @responseContentType text/event-stream
- * @responseItem EventChunk
- * @responseItemEncoding {"headers":{"content-type":"application/json"}}
- * @responsePrefixEncoding [{"type":"text","text":"event: message\ndata: "},{"type":"text","text":"\n\n"}]
+ * @itemSchema EventChunk
+ * @itemEncoding {"headers":{"content-type":"application/json"}}
+ * @prefixEncoding [{"type":"text","text":"event: message\ndata: "},{"type":"text","text":"\n\n"}]
  * @responseHeader 200 X-Stream-Id string Opaque stream identifier for reconnects
+ * @responseSummary Event stream
  * @examples querystring:eventStreamQueryExamples
  * @examples response:eventStreamResponseExamples
  * @servers https://api.example.com/v1, https://staging.example.com/v1
@@ -58,7 +60,7 @@ export async function GET(request: Request) {
  * Search platform events
  * @description Searches the retained event log and can schedule an async export job for larger result sets.
  * @tag Events
- * @body EventSearchRequest
+ * @requestBody EventSearchRequest required
  * @response EventSearchResponse
  * @add 202:EventExportJob:Async export job accepted
  * @examples body:eventSearchBodyExamples

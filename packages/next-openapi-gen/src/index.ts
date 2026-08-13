@@ -15,6 +15,7 @@ export {
   MODERN_CONFIG_FILENAMES,
 } from "@workspace/openapi-core";
 export type {
+  ArazzoGeneratorConfig,
   ClientSdkEmitterConfig,
   DocsEmitterConfig,
   GeneratedArtifact,
@@ -26,6 +27,8 @@ export type {
   Diagnostic,
   OpenApiDocument,
   OpenApiTemplate,
+  OverlayGeneratorConfig,
+  SpecEmitter,
 } from "@workspace/openapi-core";
 export { resolveGeneratedWorkspaceDir } from "@workspace/openapi-core";
 export { FrameworkKind } from "@workspace/openapi-core";

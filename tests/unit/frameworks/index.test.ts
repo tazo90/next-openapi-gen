@@ -79,4 +79,17 @@ describe("createDefaultGenerationAdapters", () => {
       } as never),
     ).toBeTruthy();
   });
+
+  it("creates companion-spec emitters from overlay and arazzo config", () => {
+    const adapters = createDefaultGenerationAdapters();
+
+    expect(
+      adapters
+        .createSpecEmitters?.({
+          overlay: { apply: ["./overlays/*.yaml"] },
+          arazzo: { files: ["./arazzo/*.yaml"] },
+        } as never)
+        ?.map((emitter) => emitter.kind),
+    ).toEqual(["overlay", "arazzo"]);
+  });
 });

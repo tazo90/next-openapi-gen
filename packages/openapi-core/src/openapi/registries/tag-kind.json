@@ -1,0 +1,5 @@
+{
+  "snapshotDate": "2026-08-13",
+  "source": "https://spec.openapis.org/registry/tag-kind/",
+  "kinds": ["audience", "badge", "nav"]
+}

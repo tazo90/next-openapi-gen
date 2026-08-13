@@ -54,6 +54,7 @@ import {
   returnsZodSchemaNode,
 } from "./prescan.js";
 import { ZodRuntimeExporter } from "./runtime-exporter.js";
+import { applyZodStringFormat } from "./string-formats.js";
 
 type ZodConverterFileAccess = Pick<
   typeof fs,
@@ -2348,34 +2349,14 @@ export class ZodSchemaConverter {
         }
         break;
       case "email":
-        schema.format = "email";
-        break;
       case "url":
-        schema.format = "uri";
-        break;
       case "uri":
-        schema.format = "uri";
-        break;
       case "uuid":
       case "uuidv4":
       case "uuidv6":
       case "uuidv7":
       case "guid":
-        schema.format = "uuid";
-        break;
       case "cuid":
-        schema.format = "cuid";
-        break;
-      case "ipv4":
-        schema.format = "ipv4";
-        break;
-      case "ipv6":
-        schema.format = "ipv6";
-        break;
-      case "duration":
-      case "iso.duration":
-        schema.format = "duration";
-        break;
       case "cuid2":
       case "ulid":
       case "nanoid":
@@ -2393,19 +2374,23 @@ export class ZodSchemaConverter {
       case "cidrv4":
       case "cidrv6":
       case "e164":
-        schema.format = methodName;
-        break;
+      case "ipv4":
+      case "ipv6":
+      case "duration":
+      case "iso.duration":
       case "httpUrl":
-        schema.format = "uri";
-        break;
       case "datetime":
-        schema.format = "date-time";
-        break;
       case "date":
-        schema.format = "date";
-        break;
       case "time":
-        schema.format = "time";
+        schema = applyZodStringFormat(schema, methodName, (formatName) => {
+          this.diagnostics?.add({
+            code: "unregistered-format",
+            severity: "info",
+            message: `Zod format "${formatName}" is not in the OAI Format registry; emitting a pattern or registered equivalent instead.`,
+            filePath: this.currentFilePath,
+            metadata: { format: formatName },
+          });
+        });
         break;
       case "regex":
         if (node.arguments.length > 0 && t.isRegExpLiteral(node.arguments[0])) {

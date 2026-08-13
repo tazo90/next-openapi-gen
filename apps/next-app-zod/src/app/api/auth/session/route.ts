@@ -15,6 +15,8 @@ import { NextResponse } from "next/server";
  * @tags Auth, Platform
  * @header SessionRequestHeaders
  * @cookie SessionCookies
+ * @examples header:{"X-Request-Id":"req_123"}
+ * @examples cookie:session:"sess_abc"
  * @response SessionResponse
  * @response 4XX:AuthErrorResponse:Any authentication error
  * @response default:AuthErrorResponse:Fallback error envelope
@@ -34,8 +36,8 @@ export async function GET() {
  * @description Exchanges credentials for a fresh session token. Exercises `@link` for follow-up navigation.
  * @tag Sessions
  * @tags Auth
- * @body CreateSessionBody
- * @bodyDescription Credentials plus optional second factor
+ * @requestBody CreateSessionBody required
+ * @requestBodyDescription Credentials plus optional second factor
  * @response 201:SessionResponse:New session created
  * @response 4XX:AuthErrorResponse:Authentication failed
  * @response 5XX:AuthErrorResponse:Upstream auth provider failure

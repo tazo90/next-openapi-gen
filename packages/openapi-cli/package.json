@@ -28,11 +28,13 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@workspace/openapi-arazzo": "workspace:*",
     "@workspace/openapi-core": "workspace:*",
     "@workspace/openapi-framework-next": "workspace:*",
     "@workspace/openapi-framework-react-router": "workspace:*",
     "@workspace/openapi-framework-tanstack": "workspace:*",
     "@workspace/openapi-init": "workspace:*",
+    "@workspace/openapi-overlay": "workspace:*",
     "commander": "catalog:",
     "fs-extra": "catalog:",
     "ora": "catalog:"

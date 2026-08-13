@@ -716,7 +716,7 @@ export class SchemaProcessor {
 
   private isBinaryNode(node: any): boolean {
     // Match TS references to common runtime binary types so `File`, `Blob`, etc. become
-    // `{ type: "string", format: "binary" }` instead of falling back to `{}`.
+    // `{ type: "string", contentMediaType: "application/octet-stream" }` instead of falling back to `{}`.
     if (!t.isTSTypeReference(node)) return false;
     const typeName = node.typeName;
     if (!t.isIdentifier(typeName)) return false;
@@ -1170,7 +1170,8 @@ export class SchemaProcessor {
     if (t.isTSVoidKeyword(node) || t.isTSNullKeyword(node) || t.isTSUndefinedKeyword(node))
       return { type: "null" };
     if (this.isDateNode(node)) return { type: "string", format: "date-time" };
-    if (this.isBinaryNode(node)) return { type: "string", format: "binary" };
+    if (this.isBinaryNode(node))
+      return { type: "string", contentMediaType: "application/octet-stream" };
 
     // Handle literal types like "admin" | "member" | "guest"
     if (t.isTSLiteralType(node)) {
@@ -1807,9 +1808,12 @@ export class SchemaProcessor {
   }
 
   private createFormDataSchema(body: OpenAPIDefinition): OpenAPIDefinition {
-    return createRequestBodySchema(body, undefined, "multipart/form-data").content[
+    const mediaType = createRequestBodySchema(body, undefined, "multipart/form-data").content[
       "multipart/form-data"
-    ]?.schema as OpenAPIDefinition;
+    ];
+    return mediaType && "schema" in mediaType
+      ? (mediaType.schema as OpenAPIDefinition)
+      : { type: "object" };
   }
 
   /**

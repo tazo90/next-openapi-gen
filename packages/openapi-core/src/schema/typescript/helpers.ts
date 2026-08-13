@@ -287,7 +287,7 @@ export function createFormDataSchema(body: OpenAPIDefinition): OpenAPIDefinition
     ) {
       formDataProperties[key] = {
         type: "string",
-        format: "binary",
+        contentMediaType: "application/octet-stream",
         description: value.description,
       };
     } else {

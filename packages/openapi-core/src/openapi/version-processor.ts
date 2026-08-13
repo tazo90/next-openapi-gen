@@ -1,17 +1,20 @@
 import type {
   OpenApiDocument,
   OpenApiExampleMap,
-  OpenApiMediaTypeDefinition,
-  OpenApiPathDefinition,
+  OpenApiMediaType,
+  OpenApiOperation,
+  OpenApiParameter,
+  OpenApiPathItem,
+  OpenApiReference,
   OpenApiRequestBody,
-  OpenApiResponseDefinition,
+  OpenApiResponseOrReference,
   OpenApiSchema,
-  OpenApiTagDefinition,
+  OpenApiSecurityScheme,
+  OpenApiTag,
   OpenApiVersion,
-  ParamSchema,
-  RouteDefinition,
 } from "../shared/types.js";
 import { cleanSpec } from "../shared/utils.js";
+import { moveFieldToExtension, promoteExtensionField } from "./registries/index.js";
 
 interface OpenApiVersionProcessor {
   readonly id: OpenApiVersion;
@@ -20,12 +23,14 @@ interface OpenApiVersionProcessor {
 }
 
 type OpenApiVersionCapabilities = {
+  readonly version: OpenApiVersion;
   readonly supportsJsonSchemaDialect: boolean;
   readonly supportsOpenApi31Schema: boolean;
   readonly supportsRichExamples: boolean;
   readonly supportsQuerystring: boolean;
   readonly supportsEnhancedTags: boolean;
   readonly supportsAdditionalOperations: boolean;
+  readonly supportsQueryOperation: boolean;
   readonly supportsSequentialMedia: boolean;
   readonly supportsServerName: boolean;
   readonly supportsDocumentSelf: boolean;
@@ -55,22 +60,40 @@ class DefaultOpenApiVersionProcessor implements OpenApiVersionProcessor {
     }
 
     if (!this.capabilities.supportsDocumentSelf) {
-      delete nextDocument.$self;
+      moveFieldToExtension(nextDocument, "$self", this.capabilities.version);
+    } else {
+      promoteExtensionField(nextDocument, "$self", this.capabilities.version);
     }
 
     if (nextDocument.servers) {
       nextDocument.servers = nextDocument.servers.map((server) => {
         const nextServer = structuredClone(server);
         if (!this.capabilities.supportsServerName) {
-          delete nextServer.name;
+          moveFieldToExtension(nextServer, "name", this.capabilities.version);
+        } else {
+          promoteExtensionField(nextServer, "name", this.capabilities.version);
         }
         return nextServer;
       });
     }
 
+    if (nextDocument.info?.license && !this.capabilities.supportsOpenApi31Schema) {
+      moveFieldToExtension(
+        nextDocument.info.license as Record<string, unknown>,
+        "identifier",
+        this.capabilities.version,
+      );
+    } else if (nextDocument.info?.license) {
+      promoteExtensionField(
+        nextDocument.info.license as Record<string, unknown>,
+        "identifier",
+        this.capabilities.version,
+      );
+    }
+
     if (nextDocument.tags) {
       nextDocument.tags = nextDocument.tags.map(
-        (tag) => transformTagDefinition(tag, this.capabilities) as OpenApiTagDefinition,
+        (tag) => transformTagDefinition(tag, this.capabilities) as OpenApiTag,
       );
     }
 
@@ -93,30 +116,24 @@ class DefaultOpenApiVersionProcessor implements OpenApiVersionProcessor {
     }
 
     if (nextDocument.components?.parameters) {
-      nextDocument.components.parameters = Object.fromEntries(
-        Object.entries(nextDocument.components.parameters).map(([name, parameter]) => [
-          name,
-          transformParameterDefinition(parameter, this.capabilities),
-        ]),
-      ) as Record<string, unknown>;
+      nextDocument.components.parameters = mapObjectValues(
+        nextDocument.components.parameters,
+        (parameter) => transformParameterDefinition(parameter, this.capabilities),
+      );
     }
 
     if (nextDocument.components?.requestBodies) {
-      nextDocument.components.requestBodies = Object.fromEntries(
-        Object.entries(nextDocument.components.requestBodies).map(([name, requestBody]) => [
-          name,
-          transformRequestBodyDefinition(requestBody, this.capabilities),
-        ]),
-      ) as Record<string, unknown>;
+      nextDocument.components.requestBodies = mapObjectValues(
+        nextDocument.components.requestBodies,
+        (requestBody) => transformRequestBodyDefinition(requestBody, this.capabilities),
+      );
     }
 
     if (nextDocument.components?.securitySchemes) {
-      nextDocument.components.securitySchemes = Object.fromEntries(
-        Object.entries(nextDocument.components.securitySchemes).map(([name, scheme]) => [
-          name,
-          transformSecurityScheme(scheme, this.capabilities),
-        ]),
-      ) as Record<string, unknown>;
+      nextDocument.components.securitySchemes = mapObjectValues(
+        nextDocument.components.securitySchemes,
+        (scheme) => transformSecurityScheme(scheme, this.capabilities),
+      );
     }
 
     if (nextDocument.paths) {
@@ -127,10 +144,9 @@ class DefaultOpenApiVersionProcessor implements OpenApiVersionProcessor {
       if (!this.capabilities.supportsWebhooks) {
         delete nextDocument.webhooks;
       } else {
-        nextDocument.webhooks = transformWebhookCollection(
-          nextDocument.webhooks,
-          this.capabilities,
-        ) as Record<string, unknown>;
+        nextDocument.webhooks = mapObjectValues(nextDocument.webhooks, (definition) =>
+          transformPathItem(definition, this.capabilities),
+        );
       }
     }
 
@@ -149,12 +165,14 @@ class DefaultOpenApiVersionProcessor implements OpenApiVersionProcessor {
 
 const OPENAPI_VERSION_PROCESSORS: Record<OpenApiVersion, OpenApiVersionProcessor> = {
   "3.0": new DefaultOpenApiVersionProcessor("3.0", "3.0.0", {
+    version: "3.0",
     supportsJsonSchemaDialect: false,
     supportsOpenApi31Schema: false,
     supportsRichExamples: false,
     supportsQuerystring: false,
     supportsEnhancedTags: false,
     supportsAdditionalOperations: false,
+    supportsQueryOperation: false,
     supportsSequentialMedia: false,
     supportsServerName: false,
     supportsDocumentSelf: false,
@@ -168,12 +186,14 @@ const OPENAPI_VERSION_PROCESSORS: Record<OpenApiVersion, OpenApiVersionProcessor
     supportsMediaTypesComponent: false,
   }),
   "3.1": new DefaultOpenApiVersionProcessor("3.1", "3.1.0", {
+    version: "3.1",
     supportsJsonSchemaDialect: true,
     supportsOpenApi31Schema: true,
     supportsRichExamples: false,
     supportsQuerystring: false,
     supportsEnhancedTags: false,
     supportsAdditionalOperations: false,
+    supportsQueryOperation: false,
     supportsSequentialMedia: false,
     supportsServerName: false,
     supportsDocumentSelf: false,
@@ -187,12 +207,14 @@ const OPENAPI_VERSION_PROCESSORS: Record<OpenApiVersion, OpenApiVersionProcessor
     supportsMediaTypesComponent: false,
   }),
   "3.2": new DefaultOpenApiVersionProcessor("3.2", "3.2.0", {
+    version: "3.2",
     supportsJsonSchemaDialect: true,
     supportsOpenApi31Schema: true,
     supportsRichExamples: true,
     supportsQuerystring: true,
     supportsEnhancedTags: true,
     supportsAdditionalOperations: true,
+    supportsQueryOperation: true,
     supportsSequentialMedia: true,
     supportsServerName: true,
     supportsDocumentSelf: true,
@@ -205,13 +227,16 @@ const OPENAPI_VERSION_PROCESSORS: Record<OpenApiVersion, OpenApiVersionProcessor
     supportsConstKeyword: true,
     supportsMediaTypesComponent: true,
   }),
-  "4.0": new DefaultOpenApiVersionProcessor("4.0", "4.0.0", {
+  // Experimental 3.2-compatible preview. Do not emit OpenAPI 3.3 or 4.0.
+  "3.3-preview": new DefaultOpenApiVersionProcessor("3.3-preview", "3.3-preview", {
+    version: "3.3-preview",
     supportsJsonSchemaDialect: true,
     supportsOpenApi31Schema: true,
     supportsRichExamples: true,
     supportsQuerystring: true,
     supportsEnhancedTags: true,
     supportsAdditionalOperations: true,
+    supportsQueryOperation: true,
     supportsSequentialMedia: true,
     supportsServerName: true,
     supportsDocumentSelf: true,
@@ -233,32 +258,18 @@ export function getOpenApiVersionProcessor(
 }
 
 function transformPathCollection(
-  paths: Record<string, OpenApiPathDefinition>,
+  paths: Record<string, OpenApiPathItem>,
   capabilities: OpenApiVersionCapabilities,
-): Record<string, OpenApiPathDefinition> {
-  return Object.fromEntries(
-    Object.entries(paths).map(([path, definition]) => [
-      path,
-      transformPathItem(definition, capabilities),
-    ]),
-  ) as Record<string, OpenApiPathDefinition>;
+): Record<string, OpenApiPathItem> {
+  return mapObjectValues(paths, (definition) => transformPathItem(definition, capabilities));
 }
 
-function transformWebhookCollection(
-  webhooks: Record<string, unknown>,
+function transformPathItem(
+  definition: unknown,
   capabilities: OpenApiVersionCapabilities,
-) {
-  return Object.fromEntries(
-    Object.entries(webhooks).map(([name, definition]) => [
-      name,
-      transformPathItem(definition, capabilities),
-    ]),
-  );
-}
-
-function transformPathItem(definition: unknown, capabilities: OpenApiVersionCapabilities) {
+): OpenApiPathItem {
   if (!isRecord(definition)) {
-    return definition;
+    return {};
   }
 
   const nextDefinition = structuredClone(definition);
@@ -270,16 +281,38 @@ function transformPathItem(definition: unknown, capabilities: OpenApiVersionCapa
   }
 
   if (isRecord(nextDefinition.additionalOperations)) {
-    if (!capabilities.supportsAdditionalOperations) {
-      delete nextDefinition.additionalOperations;
-    } else {
-      nextDefinition.additionalOperations = Object.fromEntries(
-        Object.entries(nextDefinition.additionalOperations).map(([name, operation]) => [
-          name,
-          transformOperation(operation, capabilities),
-        ]),
-      );
-    }
+    nextDefinition.additionalOperations = Object.fromEntries(
+      Object.entries(nextDefinition.additionalOperations).map(([name, operation]) => [
+        name,
+        transformOperation(operation, capabilities),
+      ]),
+    );
+  }
+
+  if (nextDefinition.query) {
+    nextDefinition.query = transformOperation(nextDefinition.query, capabilities);
+  }
+
+  promotePathItemOperations(nextDefinition, capabilities);
+
+  if (!capabilities.supportsQueryOperation && nextDefinition.query) {
+    const backported = isRecord(nextDefinition["x-oai-additionalOperations"])
+      ? nextDefinition["x-oai-additionalOperations"]
+      : {};
+    backported.query = nextDefinition.query;
+    nextDefinition["x-oai-additionalOperations"] = backported;
+    delete nextDefinition.query;
+  }
+
+  if (!capabilities.supportsAdditionalOperations && isRecord(nextDefinition.additionalOperations)) {
+    const backported = isRecord(nextDefinition["x-oai-additionalOperations"])
+      ? nextDefinition["x-oai-additionalOperations"]
+      : {};
+    nextDefinition["x-oai-additionalOperations"] = {
+      ...nextDefinition.additionalOperations,
+      ...backported,
+    };
+    delete nextDefinition.additionalOperations;
   }
 
   for (const [method, operation] of Object.entries(nextDefinition)) {
@@ -293,16 +326,47 @@ function transformPathItem(definition: unknown, capabilities: OpenApiVersionCapa
   return nextDefinition;
 }
 
-function transformOperation(operation: unknown, capabilities: OpenApiVersionCapabilities) {
-  if (!isRecord(operation)) {
-    return operation;
+function promotePathItemOperations(
+  pathItem: Record<string, any>,
+  capabilities: OpenApiVersionCapabilities,
+): void {
+  const backported = pathItem["x-oai-additionalOperations"];
+  if (!isRecord(backported)) {
+    return;
   }
 
-  const nextOperation = structuredClone(operation) as RouteDefinition;
+  if (capabilities.supportsQueryOperation && backported.query && !pathItem.query) {
+    pathItem.query = backported.query;
+    delete backported.query;
+  }
+
+  if (capabilities.supportsAdditionalOperations) {
+    const remaining = Object.fromEntries(
+      Object.entries(backported).filter(([, operation]) => operation !== undefined),
+    );
+    if (Object.keys(remaining).length > 0) {
+      pathItem.additionalOperations = {
+        ...remaining,
+        ...(isRecord(pathItem.additionalOperations) ? pathItem.additionalOperations : {}),
+      };
+    }
+    delete pathItem["x-oai-additionalOperations"];
+  }
+}
+
+function transformOperation(
+  operation: unknown,
+  capabilities: OpenApiVersionCapabilities,
+): OpenApiOperation {
+  if (!isRecord(operation)) {
+    return {};
+  }
+
+  const nextOperation = structuredClone(operation) as OpenApiOperation;
 
   if (Array.isArray(nextOperation.parameters)) {
-    nextOperation.parameters = nextOperation.parameters.map(
-      (parameter) => transformParameterDefinition(parameter, capabilities) as ParamSchema,
+    nextOperation.parameters = nextOperation.parameters.map((parameter) =>
+      transformParameterDefinition(parameter, capabilities),
     );
   }
 
@@ -310,7 +374,7 @@ function transformOperation(operation: unknown, capabilities: OpenApiVersionCapa
     nextOperation.requestBody = transformRequestBodyDefinition(
       nextOperation.requestBody,
       capabilities,
-    ) as RouteDefinition["requestBody"];
+    );
   }
 
   if (nextOperation.responses) {
@@ -332,12 +396,12 @@ function transformOperation(operation: unknown, capabilities: OpenApiVersionCapa
 function transformParameterDefinition(
   parameter: unknown,
   capabilities: OpenApiVersionCapabilities,
-) {
+): OpenApiParameter | OpenApiReference {
   if (!isRecord(parameter)) {
-    return parameter;
+    return parameter as OpenApiParameter;
   }
 
-  const nextParameter = structuredClone(parameter) as ParamSchema;
+  const nextParameter = structuredClone(parameter) as OpenApiParameter;
 
   if (nextParameter.schema) {
     nextParameter.schema = transformSchema(nextParameter.schema, capabilities);
@@ -366,13 +430,13 @@ function transformParameterDefinition(
 function transformRequestBodyDefinition(
   requestBody: unknown,
   capabilities: OpenApiVersionCapabilities,
-) {
+): OpenApiRequestBody | OpenApiReference {
   if (!isRecord(requestBody)) {
-    return requestBody;
+    return requestBody as OpenApiRequestBody;
   }
 
   if ("$ref" in requestBody && !("content" in requestBody)) {
-    return structuredClone(requestBody);
+    return structuredClone(requestBody) as OpenApiReference;
   }
 
   const nextRequestBody = structuredClone(requestBody) as OpenApiRequestBody;
@@ -389,19 +453,24 @@ function transformRequestBodyDefinition(
 }
 
 function transformResponseDefinition(
-  response: OpenApiResponseDefinition,
+  response: OpenApiResponseOrReference,
   capabilities: OpenApiVersionCapabilities,
-): OpenApiResponseDefinition {
+): OpenApiResponseOrReference {
   if (!isRecord(response)) {
     return response;
   }
 
   if ("$ref" in response && !("description" in response)) {
-    return transformSchema(response, capabilities);
+    return structuredClone(response);
   }
 
-  const nextResponse = structuredClone(response);
-  if ("content" in nextResponse && nextResponse.content && isRecord(nextResponse.content)) {
+  const nextResponse = structuredClone(response) as Record<string, unknown>;
+  if (!capabilities.supportsRichExamples) {
+    moveFieldToExtension(nextResponse, "summary", capabilities.version);
+  } else {
+    promoteExtensionField(nextResponse, "summary", capabilities.version);
+  }
+  if (nextResponse.content && isRecord(nextResponse.content)) {
     nextResponse.content = Object.fromEntries(
       Object.entries(nextResponse.content).map(([mediaType, definition]) => [
         mediaType,
@@ -410,15 +479,22 @@ function transformResponseDefinition(
     );
   }
 
-  return nextResponse;
+  return nextResponse as OpenApiResponseOrReference;
 }
 
 function transformMediaTypeDefinition(
-  mediaTypeDefinition: OpenApiMediaTypeDefinition,
+  mediaTypeDefinition: OpenApiMediaType | unknown,
   capabilities: OpenApiVersionCapabilities,
   mediaTypeName: string,
-): OpenApiMediaTypeDefinition {
-  const nextMediaType = structuredClone(mediaTypeDefinition);
+): OpenApiMediaType {
+  if (
+    !isRecord(mediaTypeDefinition) ||
+    ("$ref" in mediaTypeDefinition && !("schema" in mediaTypeDefinition))
+  ) {
+    return mediaTypeDefinition as OpenApiMediaType;
+  }
+
+  const nextMediaType = structuredClone(mediaTypeDefinition) as OpenApiMediaType;
 
   if (nextMediaType.schema) {
     nextMediaType.schema = transformSchema(nextMediaType.schema, capabilities, mediaTypeName);
@@ -431,14 +507,18 @@ function transformMediaTypeDefinition(
         capabilities,
         mediaTypeName,
       );
+      promoteExtensionField(nextMediaType, "itemSchema", capabilities.version);
     } else {
-      delete nextMediaType.itemSchema;
+      moveFieldToExtension(nextMediaType, "itemSchema", capabilities.version);
     }
   }
 
   if (!capabilities.supportsSequentialMedia) {
-    delete nextMediaType.itemEncoding;
-    delete nextMediaType.prefixEncoding;
+    moveFieldToExtension(nextMediaType, "itemEncoding", capabilities.version);
+    moveFieldToExtension(nextMediaType, "prefixEncoding", capabilities.version);
+  } else {
+    promoteExtensionField(nextMediaType, "itemEncoding", capabilities.version);
+    promoteExtensionField(nextMediaType, "prefixEncoding", capabilities.version);
   }
 
   if (nextMediaType.examples) {
@@ -448,9 +528,12 @@ function transformMediaTypeDefinition(
   return nextMediaType;
 }
 
-function transformSecurityScheme(scheme: unknown, capabilities: OpenApiVersionCapabilities) {
+function transformSecurityScheme(
+  scheme: unknown,
+  capabilities: OpenApiVersionCapabilities,
+): OpenApiSecurityScheme | OpenApiReference {
   if (!isRecord(scheme)) {
-    return scheme;
+    return scheme as OpenApiSecurityScheme;
   }
 
   const nextScheme = structuredClone(scheme);
@@ -463,10 +546,16 @@ function transformSecurityScheme(scheme: unknown, capabilities: OpenApiVersionCa
     isRecord(nextScheme.flows) &&
     "deviceAuthorization" in nextScheme.flows
   ) {
-    delete nextScheme.flows.deviceAuthorization;
+    moveFieldToExtension(nextScheme.flows, "deviceAuthorization", capabilities.version);
+  } else if (isRecord(nextScheme.flows)) {
+    promoteExtensionField(nextScheme.flows, "deviceAuthorization", capabilities.version);
   }
 
-  return nextScheme;
+  if ("deprecated" in nextScheme && !capabilities.supportsDocumentSelf) {
+    moveFieldToExtension(nextScheme, "deprecated", capabilities.version);
+  }
+
+  return nextScheme as OpenApiSecurityScheme;
 }
 
 function transformTagDefinition(tag: unknown, capabilities: OpenApiVersionCapabilities) {
@@ -488,6 +577,13 @@ function transformExampleMap(
   const nextExamples = structuredClone(examples);
 
   if (capabilities.supportsRichExamples) {
+    for (const example of Object.values(nextExamples)) {
+      if (!isRecord(example) || "$ref" in example) {
+        continue;
+      }
+      promoteExtensionField(example, "dataValue", capabilities.version);
+      promoteExtensionField(example, "serializedValue", capabilities.version);
+    }
     return nextExamples;
   }
 
@@ -496,12 +592,14 @@ function transformExampleMap(
       continue;
     }
 
-    if (!("value" in example) && "dataValue" in example) {
+    if (!("value" in example) && "dataValue" in example && !("$ref" in example)) {
       example.value = example.dataValue;
     }
 
-    delete example.dataValue;
-    delete example.serializedValue;
+    if (!("$ref" in example)) {
+      moveFieldToExtension(example, "dataValue", capabilities.version);
+      moveFieldToExtension(example, "serializedValue", capabilities.version);
+    }
   }
 
   return nextExamples;
@@ -733,8 +831,8 @@ function downgradeSchemaForOpenApi30(schema: OpenApiSchema, mediaTypeName?: stri
     }
   }
 
-  delete nextSchema.contentEncoding;
-  delete nextSchema.contentMediaType;
+  moveFieldToExtension(nextSchema as Record<string, unknown>, "contentEncoding", "3.0");
+  moveFieldToExtension(nextSchema as Record<string, unknown>, "contentMediaType", "3.0");
   delete nextSchema.$schema;
 
   if (Array.isArray(nextSchema.prefixItems) && nextSchema.prefixItems.length > 0) {
@@ -748,8 +846,8 @@ function downgradeSchemaForOpenApi30(schema: OpenApiSchema, mediaTypeName?: stri
     delete nextSchema.prefixItems;
   }
 
-  // OpenAPI 3.0 does not support several JSON Schema 2020-12 keywords. Strip them so
-  // generated specs keep validating; the information is preserved in 3.1/3.2 output.
+  // OpenAPI 3.0 does not support several JSON Schema 2020-12 keywords natively.
+  // Registered OAI extensions keep the data; unregistered keywords are dropped.
   const unsupportedOpenApi30Keywords: readonly string[] = [
     "propertyNames",
     "dependentSchemas",
@@ -760,10 +858,16 @@ function downgradeSchemaForOpenApi30(schema: OpenApiSchema, mediaTypeName?: stri
     "contentSchema",
     "prefixItems",
     "$defs",
+    "if",
+    "then",
+    "else",
   ];
   for (const keyword of unsupportedOpenApi30Keywords) {
     if (keyword in nextSchema) {
-      delete (nextSchema as Record<string, unknown>)[keyword];
+      moveFieldToExtension(nextSchema as Record<string, unknown>, keyword, "3.0");
+      if (keyword in nextSchema) {
+        delete (nextSchema as Record<string, unknown>)[keyword];
+      }
     }
   }
 
@@ -772,6 +876,15 @@ function downgradeSchemaForOpenApi30(schema: OpenApiSchema, mediaTypeName?: stri
 
 function isRecord(value: unknown): value is Record<string, any> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function mapObjectValues<T, U>(
+  record: Record<string, T>,
+  map: (value: T, key: string) => U,
+): Record<string, U> {
+  return Object.fromEntries(
+    Object.entries(record).map(([key, value]) => [key, map(value, key)]),
+  ) as Record<string, U>;
 }
 
 const HTTP_METHODS = new Set([
