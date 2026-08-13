@@ -5,7 +5,7 @@ import { pathToFileURL } from "node:url";
 import type { OpenApiTemplate } from "../../shared/types.js";
 import type { LoadedConfigFile, NextOpenApiConfigFile } from "./types.js";
 
-export const LEGACY_CONFIG_FILENAMES = [
+export const LEGACY_CONFIG_FILENAMES: readonly string[] = [
   "next-openapi.config.ts",
   "next-openapi.config.mts",
   "next-openapi.config.js",
@@ -15,9 +15,9 @@ export const LEGACY_CONFIG_FILENAMES = [
   path.join("src", "next-openapi.config.js"),
   path.join("src", "next-openapi.config.mjs"),
   "next.openapi.json",
-] as const;
+];
 
-export const MODERN_CONFIG_FILENAMES = [
+export const MODERN_CONFIG_FILENAMES: readonly string[] = [
   "openapi-gen.config.ts",
   "openapi-gen.config.mts",
   "openapi-gen.config.js",
@@ -27,12 +27,12 @@ export const MODERN_CONFIG_FILENAMES = [
   path.join("src", "openapi-gen.config.js"),
   path.join("src", "openapi-gen.config.mjs"),
   "openapi-gen.config.json",
-] as const;
+];
 
-export const DEFAULT_CONFIG_FILENAMES = [
+export const DEFAULT_CONFIG_FILENAMES: readonly string[] = [
   ...LEGACY_CONFIG_FILENAMES,
   ...MODERN_CONFIG_FILENAMES,
-] as const;
+];
 
 const warnedLegacyConfigPaths = new Set<string>();
 

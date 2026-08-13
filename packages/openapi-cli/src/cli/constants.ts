@@ -28,7 +28,7 @@ export const GENERATE_FAIL_ON_OPTION_DESCRIPTION =
   "Fail generation when diagnostics include the selected severity";
 
 export const CLI_FRAMEWORK_CHOICES = ["next", "tanstack", "react-router"] as const;
-export const CLI_SCHEMA_CHOICES = [...SCHEMA_TYPES] as const;
+export const CLI_SCHEMA_CHOICES: typeof SCHEMA_TYPES = SCHEMA_TYPES;
 export const CLI_UI_CHOICES = [
   "scalar",
   "swagger",
@@ -38,17 +38,25 @@ export const CLI_UI_CHOICES = [
   "none",
 ] as const;
 
-export const INIT_DEFAULTS = {
+export const INIT_DEFAULTS: {
+  readonly docsUrl: typeof DEFAULT_DOCS_URL;
+  readonly framework: (typeof CLI_FRAMEWORK_CHOICES)[number];
+  readonly output: typeof DEFAULT_GENERATE_TEMPLATE_PATH;
+  readonly schema: typeof DEFAULT_INIT_SCHEMA_TYPE;
+  readonly ui: typeof DEFAULT_UI;
+} = {
   docsUrl: DEFAULT_DOCS_URL,
-  framework: CLI_FRAMEWORK_CHOICES[0],
+  framework: "next",
   output: DEFAULT_GENERATE_TEMPLATE_PATH,
   schema: DEFAULT_INIT_SCHEMA_TYPE,
   ui: DEFAULT_UI,
-} as const;
+};
 
-export const GENERATE_DEFAULTS = {
+export const GENERATE_DEFAULTS: {
+  readonly template: typeof DEFAULT_GENERATE_TEMPLATE_PATH;
+} = {
   template: DEFAULT_GENERATE_TEMPLATE_PATH,
-} as const;
+};
 
 type PackageJson = {
   version?: string;

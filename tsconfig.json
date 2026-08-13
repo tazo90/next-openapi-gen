@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "files": [],
+  "references": [
+    { "path": "packages/openapi-core" },
+    { "path": "packages/openapi-init" },
+    { "path": "packages/openapi-framework-next" },
+    { "path": "packages/openapi-framework-tanstack" },
+    { "path": "packages/openapi-framework-react-router" },
+    { "path": "packages/openapi-cli" }
+  ]
+}

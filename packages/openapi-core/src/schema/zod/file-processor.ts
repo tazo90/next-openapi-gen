@@ -3,7 +3,14 @@ import path from "path";
 
 import { logger } from "../../shared/logger.js";
 
-export const IGNORED_DIRS = new Set(["node_modules", ".git", "dist", ".next", ".turbo", ".cache"]);
+export const IGNORED_DIRS: ReadonlySet<string> = new Set([
+  "node_modules",
+  ".git",
+  "dist",
+  ".next",
+  ".turbo",
+  ".cache",
+]);
 
 export function collectZodRouteFiles(apiDir?: string): string[] {
   const routeFiles: string[] = [];

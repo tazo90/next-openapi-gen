@@ -12,7 +12,7 @@ export function extendOpenApiTemplate(spec: OpenApiTemplate, options: InitOption
   spec.schemaType = options.schema ?? spec.schemaType;
 }
 
-export function getOutputPath(output?: string) {
+export function getOutputPath(output?: string): string {
   if (output) {
     return path.isAbsolute(output) ? output : path.join(process.cwd(), output);
   }

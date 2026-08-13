@@ -14,7 +14,7 @@ import type {
 } from "./types.js";
 import { resolveTypeScriptValueReference } from "./typescript-project.js";
 
-export function capitalize(string: string) {
+export function capitalize(string: string): string {
   return string.charAt(0).toUpperCase() + string.slice(1);
 }
 

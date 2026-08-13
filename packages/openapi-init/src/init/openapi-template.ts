@@ -118,6 +118,6 @@ export function createOpenApiTemplate(framework: InitFramework = "next"): OpenAp
   };
 }
 
-const openapiTemplate = createOpenApiTemplate();
+const openapiTemplate: OpenApiTemplate = createOpenApiTemplate();
 
 export default openapiTemplate;

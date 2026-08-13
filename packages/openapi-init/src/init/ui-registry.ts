@@ -6,7 +6,14 @@ import type { UiType } from "./types.js";
 import { renderUiTemplate, resolveUiTemplatePath } from "./ui-template.js";
 
 export const UI_TYPES = ["scalar", "swagger", "redoc", "stoplight", "rapidoc"] as const;
-export const UI_TYPES_WITH_NONE = [...UI_TYPES, "none"] as const;
+export const UI_TYPES_WITH_NONE = [
+  "scalar",
+  "swagger",
+  "redoc",
+  "stoplight",
+  "rapidoc",
+  "none",
+] as const;
 const SCALAR_DEPS = ["@scalar/api-reference-react", "ajv"];
 const SWAGGER_DEPS = ["swagger-ui", "swagger-ui-react"];
 const SWAGGER_DEV_DEPS = ["@types/swagger-ui-react"];

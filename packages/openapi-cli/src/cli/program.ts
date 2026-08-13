@@ -21,7 +21,7 @@ import {
   resolveCliName,
 } from "./constants.js";
 
-export function buildProgram(options: { argv?: string[] } = {}) {
+export function buildProgram(options: { argv?: string[] } = {}): Command {
   const program = new Command();
 
   program.name(resolveCliName(options.argv)).version(getCliVersion()).description(CLI_DESCRIPTION);

@@ -1,9 +1,10 @@
 import traverseModule from "@babel/traverse";
+import type { Node, TraverseOptions } from "@babel/traverse";
 
-type TraverseModule = typeof traverseModule & {
-  default?: typeof traverseModule;
-};
+type BabelTraverse = (parent: Node, opts?: TraverseOptions) => void;
 
-const resolvedTraverse = (traverseModule as TraverseModule).default ?? traverseModule;
+const resolvedTraverse: BabelTraverse =
+  (traverseModule as unknown as { default?: BabelTraverse }).default ??
+  (traverseModule as unknown as BabelTraverse);
 
-export { resolvedTraverse as traverse };
+export const traverse: BabelTraverse = resolvedTraverse;

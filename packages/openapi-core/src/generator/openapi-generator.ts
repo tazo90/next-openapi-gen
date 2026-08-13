@@ -11,6 +11,7 @@ import type { SharedGenerationRuntime } from "../core/runtime.js";
 import { getErrorMessage } from "../shared/error.js";
 import { logger } from "../shared/logger.js";
 import type {
+  Diagnostic,
   OpenApiDocument,
   OpenApiConfig,
   OpenApiTemplate,
@@ -53,7 +54,7 @@ export class OpenApiGenerator {
     return normalizeOpenApiConfig(this.template);
   }
 
-  public getDiagnostics() {
+  public getDiagnostics(): Diagnostic[] {
     return this.diagnostics;
   }
 

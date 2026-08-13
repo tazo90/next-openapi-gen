@@ -27,7 +27,7 @@ type RenderUiTemplateOptions = {
   routePath: string;
 };
 
-export function resolveUiTemplatePath(framework: InitFramework, templateFile: string) {
+export function resolveUiTemplatePath(framework: InitFramework, templateFile: string): string {
   return path.join(uiTemplatesDir, getUiFrameworkDirectory(framework), templateFile);
 }
 
@@ -35,7 +35,7 @@ export function renderUiTemplate(
   framework: InitFramework,
   templateFile: string,
   options: RenderUiTemplateOptions,
-) {
+): string {
   let template = fs.readFileSync(resolveUiTemplatePath(framework, templateFile), "utf8");
 
   if (templateFile === "rapidoc.tsx") {

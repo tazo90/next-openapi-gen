@@ -1,5 +1,5 @@
 {
-  "extends": "../typescript-config/base.json",
+  "extends": "../typescript-config/library.json",
   "compilerOptions": {
     "lib": ["ES2024"],
     "outDir": "./dist",
@@ -8,5 +8,6 @@
     "types": ["node"]
   },
   "include": ["src"],
-  "exclude": ["dist", "build", "node_modules", "tests", "**/*.test.ts", "**/*.spec.ts"]
+  "exclude": ["dist", "build", "node_modules", "tests", "**/*.test.ts", "**/*.spec.ts"],
+  "references": [{ "path": "../openapi-core" }]
 }
