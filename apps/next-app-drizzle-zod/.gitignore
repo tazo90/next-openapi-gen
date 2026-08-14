@@ -12,3 +12,6 @@ build
 src/app/api/generated/
 src/schemas/generated/
 src/db/schema.generated.ts
+
+# drizzle-kit output from `pnpm db:generate`. The sample API uses mock data.
+drizzle/

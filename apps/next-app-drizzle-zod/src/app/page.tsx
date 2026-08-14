@@ -17,7 +17,7 @@ export default function Home() {
             <li className="flex items-start">
               <span className="text-green-500 mr-2">✓</span>
               <span>
-                <strong>Drizzle ORM</strong> - Type-safe database queries
+                <strong>Drizzle ORM</strong> - Table schemas that drizzle-zod turns into Zod types
               </span>
             </li>
             <li className="flex items-start">
