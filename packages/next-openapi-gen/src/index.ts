@@ -47,14 +47,18 @@ export class OpenApiGenerator extends CoreOpenApiGenerator {
   }
 }
 
-export function generateProject(options: GenerateProjectOptions = {}) {
+export function generateProject(
+  options: GenerateProjectOptions = {},
+): ReturnType<typeof coreGenerateProject> {
   return coreGenerateProject({
     ...options,
     adapters: createDefaultGenerationAdapters(),
   });
 }
 
-export function watchProject(options: WatchProjectOptions = {}) {
+export function watchProject(
+  options: WatchProjectOptions = {},
+): ReturnType<typeof coreWatchProject> {
   return coreWatchProject({
     ...options,
     adapters: createDefaultGenerationAdapters(),

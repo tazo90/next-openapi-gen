@@ -3,7 +3,7 @@ import type { OpenApiConfig } from "./types.js";
 class Logger {
   private config: OpenApiConfig | null = null;
 
-  init(config: OpenApiConfig) {
+  init(config: OpenApiConfig): void {
     this.config = config;
   }
 
@@ -27,22 +27,22 @@ class Logger {
     return "Unknown";
   }
 
-  log(message: string, ...args: unknown[]) {
+  log(message: string, ...args: unknown[]): void {
     const source = this.getCallerInfo();
     console.log(`[${source}] ${message}`, ...args);
   }
 
-  warn(message: string, ...args: unknown[]) {
+  warn(message: string, ...args: unknown[]): void {
     const source = this.getCallerInfo();
     console.warn(`[${source}] ${message}`, ...args);
   }
 
-  error(message: string, ...args: unknown[]) {
+  error(message: string, ...args: unknown[]): void {
     const source = this.getCallerInfo();
     console.error(`[${source}] ${message}`, ...args);
   }
 
-  debug(message: string, ...args: unknown[]) {
+  debug(message: string, ...args: unknown[]): void {
     if (this.config?.debug) {
       const source = this.getCallerInfo();
       console.log(`[${source}] ${message}`, ...args);
@@ -50,4 +50,10 @@ class Logger {
   }
 }
 
-export const logger = new Logger();
+export const logger: {
+  init(config: OpenApiConfig): void;
+  log(message: string, ...args: unknown[]): void;
+  warn(message: string, ...args: unknown[]): void;
+  error(message: string, ...args: unknown[]): void;
+  debug(message: string, ...args: unknown[]): void;
+} = new Logger();

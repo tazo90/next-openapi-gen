@@ -18,7 +18,7 @@ export const FUNCTIONAL_CHECK_TO_CHAIN_METHOD: Record<string, string> = {
 };
 
 /** Format helpers that can appear as zero-arg functional checks inside `.check()`. */
-export const FUNCTIONAL_FORMAT_CHECKS = new Set([
+export const FUNCTIONAL_FORMAT_CHECKS: ReadonlySet<string> = new Set([
   "email",
   "url",
   "uri",
@@ -55,7 +55,7 @@ export const FUNCTIONAL_FORMAT_CHECKS = new Set([
 ]);
 
 /** Mutations inside `.check()` that do not change the wire shape. */
-export const FUNCTIONAL_NOOP_CHECKS = new Set([
+export const FUNCTIONAL_NOOP_CHECKS: ReadonlySet<string> = new Set([
   "trim",
   "toLowerCase",
   "toUpperCase",
@@ -64,7 +64,7 @@ export const FUNCTIONAL_NOOP_CHECKS = new Set([
 ]);
 
 /** Functional wrapper helpers at the top level (`z.readonly(inner)`, etc.). */
-export const FUNCTIONAL_WRAPPER_HELPERS = new Set([
+export const FUNCTIONAL_WRAPPER_HELPERS: ReadonlySet<string> = new Set([
   "extend",
   "readonly",
   "default",

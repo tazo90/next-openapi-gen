@@ -1,6 +1,14 @@
 import type { DataTypes } from "../shared/types.js";
 
-export const HTTP_METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"];
+export const HTTP_METHODS: readonly string[] = [
+  "GET",
+  "POST",
+  "PUT",
+  "PATCH",
+  "DELETE",
+  "HEAD",
+  "OPTIONS",
+];
 
 export interface RouterStrategy {
   /** Cheap precheck before full parsing and analysis */

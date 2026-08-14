@@ -2,6 +2,7 @@
   "extends": "../typescript-config/base.json",
   "compilerOptions": {
     "incremental": false,
+    "isolatedDeclarations": true,
     "lib": ["ES2024"],
     "outDir": "./dist",
     "rootDir": "./src",
@@ -9,5 +10,13 @@
     "types": ["node"]
   },
   "include": ["src"],
-  "exclude": ["dist", "build", "node_modules", "tests", "**/*.test.ts", "**/*.spec.ts"]
+  "exclude": ["dist", "build", "node_modules", "tests", "**/*.test.ts", "**/*.spec.ts"],
+  "references": [
+    { "path": "../openapi-core" },
+    { "path": "../openapi-cli" },
+    { "path": "../openapi-init" },
+    { "path": "../openapi-framework-next" },
+    { "path": "../openapi-framework-tanstack" },
+    { "path": "../openapi-framework-react-router" }
+  ]
 }

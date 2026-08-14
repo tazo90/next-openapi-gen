@@ -2961,7 +2961,7 @@ export class ZodSchemaConverter {
   /**
    * Check if a Zod schema is optional
    */
-  isOptional(node: t.CallExpression) {
+  isOptional(node: t.CallExpression): boolean {
     return isOptionalCall(node, this.getCurrentZodLocalName());
   }
 

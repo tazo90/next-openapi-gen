@@ -4,6 +4,7 @@ import type * as ts from "typescript";
 
 import { logger } from "./logger.js";
 import { createNativeTypeScriptAdapter } from "./native-typescript-adapter.js";
+import { findTypeScriptConfigFile } from "./tsconfig-file.js";
 import type { Diagnostic } from "./types.js";
 import type { TypeScriptCompilerAdapter } from "./typescript-adapter.js";
 import {
@@ -61,11 +62,7 @@ export function getTypeScriptProject(filePath: string): TypeScriptProject {
     throw new TypeScriptUnavailableError(runtime);
   }
 
-  const configPath = ts.findConfigFile(
-    path.dirname(absoluteFilePath),
-    ts.sys.fileExists,
-    "tsconfig.json",
-  );
+  const configPath = findTypeScriptConfigFile(absoluteFilePath);
   const cacheKey = `${runtime.packagePath}:${configPath || absoluteFilePath}`;
   const cachedProject = projectCache.get(cacheKey);
   if (cachedProject) {
@@ -167,18 +164,12 @@ function createClassicTypeScriptAdapter(
 function invalidateClassicTypeScriptProject(filePath: string): void {
   const absoluteFilePath = path.resolve(filePath);
   const runtime = resolveTypeScriptRuntime(absoluteFilePath);
-  const ts = runtime.ts;
-  if (!ts) {
+  if (!runtime.ts) {
     throw new TypeScriptUnavailableError(runtime);
   }
 
-  const configPath = ts.findConfigFile(
-    path.dirname(absoluteFilePath),
-    ts.sys.fileExists,
-    "tsconfig.json",
-  );
-  const cacheKey = `${runtime.packagePath}:${configPath || absoluteFilePath}`;
-  projectCache.delete(cacheKey);
+  const configPath = findTypeScriptConfigFile(absoluteFilePath);
+  projectCache.delete(`${runtime.packagePath}:${configPath || absoluteFilePath}`);
 }
 
 function resolveClassicTypeScriptModule(importPath: string, fromFilePath: string): string | null {

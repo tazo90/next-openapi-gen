@@ -57,6 +57,9 @@ jobs:
       - name: Typecheck tooling
         run: pnpm typecheck:root
 
+      - name: Typecheck packages
+        run: pnpm typecheck:packages
+
       - name: Run Knip
         run: pnpm exec turbo run knip:ci
 

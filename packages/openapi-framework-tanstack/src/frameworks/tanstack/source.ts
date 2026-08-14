@@ -5,6 +5,6 @@ import type { ResolvedOpenApiConfig } from "@workspace/openapi-core/shared/types
 export function createTanStackFrameworkSource(
   config: ResolvedOpenApiConfig,
   performanceProfile?: GenerationPerformanceProfile,
-) {
+): GenericRouteSource {
   return new GenericRouteSource(config, {}, performanceProfile);
 }

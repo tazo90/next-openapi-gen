@@ -3,6 +3,7 @@ import { createRequire } from "module";
 import os from "os";
 import path from "path";
 
+import { findTypeScriptConfigFile } from "./tsconfig-file.js";
 import type { Diagnostic, InferredResponseDefinition, OpenAPIDefinition } from "./types.js";
 import { isDateType } from "./typescript-adapter.js";
 import type {
@@ -307,7 +308,7 @@ class NativeTypeScriptAdapter implements TypeScriptCompilerAdapter {
 
   private getProject(filePath: string): NativeProject {
     const absoluteFilePath = path.resolve(filePath);
-    const configPath = findConfigFile(absoluteFilePath);
+    const configPath = findTypeScriptConfigFile(absoluteFilePath);
     const cacheKey = `${this.packagePath}:${configPath ?? absoluteFilePath}`;
     const cachedProject = this.projectCache.get(cacheKey);
     if (cachedProject) {
@@ -1144,22 +1145,6 @@ class NativeTypeScriptAdapter implements TypeScriptCompilerAdapter {
   }
 }
 
-function findConfigFile(filePath: string): string | null {
-  let directory = path.dirname(path.resolve(filePath));
-  while (true) {
-    const configPath = path.join(directory, "tsconfig.json");
-    if (fs.existsSync(configPath)) {
-      return configPath;
-    }
-
-    const parent = path.dirname(directory);
-    if (parent === directory) {
-      return null;
-    }
-    directory = parent;
-  }
-}
-
 function createSyntheticSingleFileProject(filePath: string): string {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-ts7-single-"));
   fs.writeFileSync(
@@ -1228,10 +1213,10 @@ function resolvePathMappedModule(
   const baseUrl =
     typeof compilerOptions.baseUrl === "string"
       ? path.resolve(
-          path.dirname(findConfigFile(fromFilePath) ?? fromFilePath),
+          path.dirname(findTypeScriptConfigFile(fromFilePath) ?? fromFilePath),
           compilerOptions.baseUrl,
         )
-      : path.dirname(findConfigFile(fromFilePath) ?? fromFilePath);
+      : path.dirname(findTypeScriptConfigFile(fromFilePath) ?? fromFilePath);
 
   for (const [pattern, replacements] of Object.entries(paths)) {
     if (!Array.isArray(replacements)) {

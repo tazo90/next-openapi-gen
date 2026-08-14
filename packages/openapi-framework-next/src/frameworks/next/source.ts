@@ -2,8 +2,12 @@ import fs from "node:fs";
 import path from "node:path";
 
 import type { GenerationPerformanceProfile } from "@workspace/openapi-core/core/performance.js";
-import type { FrameworkSource } from "@workspace/openapi-core/frameworks/types.js";
-import { FrameworkKind, type ResolvedOpenApiConfig } from "@workspace/openapi-core/shared/types.js";
+import type { DiscoveredRoute, FrameworkSource } from "@workspace/openapi-core/frameworks/types.js";
+import {
+  FrameworkKind,
+  type DataTypes,
+  type ResolvedOpenApiConfig,
+} from "@workspace/openapi-core/shared/types.js";
 
 import { AppRouterStrategy } from "../../routes/app-router-strategy.js";
 import { PagesRouterStrategy } from "../../routes/pages-router-strategy.js";
@@ -56,17 +60,23 @@ class NextFrameworkSource implements FrameworkSource {
     return this.strategy.precheckFile(filePath);
   }
 
-  public processFile(filePath: string, routePath = this.strategy.getRoutePath(filePath)) {
-    const routes: ReturnType<FrameworkSource["processFile"]> = [];
+  public processFile(
+    filePath: string,
+    routePath: string = this.strategy.getRoutePath(filePath),
+  ): DiscoveredRoute[] {
+    const routes: DiscoveredRoute[] = [];
 
-    this.strategy.processFile(filePath, (method, processedFilePath, dataTypes) => {
-      routes.push({
-        method,
-        filePath: processedFilePath,
-        routePath,
-        dataTypes,
-      });
-    });
+    this.strategy.processFile(
+      filePath,
+      (method: string, processedFilePath: string, dataTypes: DataTypes) => {
+        routes.push({
+          method,
+          filePath: processedFilePath,
+          routePath,
+          dataTypes,
+        });
+      },
+    );
 
     return routes;
   }
@@ -75,6 +85,6 @@ class NextFrameworkSource implements FrameworkSource {
 export function createNextFrameworkSource(
   config: ResolvedOpenApiConfig,
   performanceProfile?: GenerationPerformanceProfile,
-): NextFrameworkSource {
+): FrameworkSource {
   return new NextFrameworkSource(config, performanceProfile);
 }

@@ -74,7 +74,8 @@
     "test:integration": "vitest run --config vitest.config.ts tests/integration",
     "test:unit": "vitest run --config vitest.config.ts tests/unit",
     "test:watch": "vitest --config vitest.config.ts",
-    "typecheck": "pnpm typecheck:root && turbo run typecheck --concurrency=100%",
+    "typecheck": "pnpm typecheck:root && pnpm typecheck:packages && turbo run typecheck --concurrency=100%",
+    "typecheck:packages": "tsc -b --pretty false",
     "typecheck:root": "tsc -p tsconfig.tooling.json",
     "verify": "pnpm check && pnpm peers:check && pnpm exec turbo run knip:ci && pnpm exec turbo run test:unit && pnpm exec turbo run test:integration && pnpm build",
     "version": "pnpm --filter next-openapi-gen version"

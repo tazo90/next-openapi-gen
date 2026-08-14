@@ -1,5 +1,5 @@
 {
-  "extends": "../typescript-config/base.json",
+  "extends": "../typescript-config/library.json",
   "compilerOptions": {
     "lib": ["ES2024"],
     "outDir": "./dist",

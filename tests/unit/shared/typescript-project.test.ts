@@ -68,6 +68,23 @@ describe("TypeScript project adapter", () => {
     );
   });
 
+  it("creates a single-file program when only a solution-style tsconfig.json is present", () => {
+    const root = createTempRoot("nxog-ts-project-solution-");
+    fs.writeFileSync(
+      path.join(root, "tsconfig.json"),
+      JSON.stringify({
+        files: [],
+        references: [{ path: "./pkg" }],
+      }),
+    );
+    const sourceFile = path.join(root, "src", "route.ts");
+    fs.writeFileSync(sourceFile, "export type User = { id: number };\n");
+
+    const project = getTypeScriptProject(sourceFile);
+
+    expect(project.program.getSourceFile(sourceFile)).toBeDefined();
+  });
+
   function createTempRoot(prefix: string) {
     const root = fs.mkdtempSync(path.join(os.tmpdir(), prefix));
     roots.push(root);

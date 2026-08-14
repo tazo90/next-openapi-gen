@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 
+import type { NodePath } from "@babel/traverse";
 import type * as t from "@babel/types";
 
 import { measurePerformance, type GenerationPerformanceProfile } from "../../core/performance.js";
@@ -12,7 +13,7 @@ import {
   extractPathParameters,
   parseTypeScriptFile,
 } from "../../shared/utils.js";
-import type { FrameworkSource } from "../types.js";
+import type { DiscoveredRoute, FrameworkSource } from "../types.js";
 import { applyHandlerInsightsToDataTypes } from "./handler-insights.js";
 
 const GENERIC_HTTP_EXPORTS = ["GET", "POST", "PUT", "PATCH", "DELETE", "loader", "action"] as const;
@@ -91,14 +92,17 @@ export class GenericRouteSource implements FrameworkSource {
     );
   }
 
-  public processFile(filePath: string, routePath = this.getRoutePath(filePath)) {
+  public processFile(
+    filePath: string,
+    routePath: string = this.getRoutePath(filePath),
+  ): DiscoveredRoute[] {
     const ast = this.parseFile(filePath);
-    const routes: ReturnType<FrameworkSource["processFile"]> = [];
+    const routes: DiscoveredRoute[] = [];
     const hasPathParams = extractPathParameters(routePath).length > 0;
 
     measurePerformance(this.performanceProfile, "analyzeRouteFilesMs", () => {
       traverse(ast, {
-        ExportNamedDeclaration: (nodePath) => {
+        ExportNamedDeclaration: (nodePath: NodePath<t.ExportNamedDeclaration>) => {
           const declaration = nodePath.node.declaration;
           if (!declaration) {
             return;

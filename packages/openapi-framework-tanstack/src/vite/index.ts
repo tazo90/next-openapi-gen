@@ -15,18 +15,23 @@ export function createTanStackGenerationAdapters(): GenerationAdapters {
   };
 }
 
-export function createViteOpenApiPlugin(options: ViteOpenApiPluginOptions = {}) {
+export function createViteOpenApiPlugin(options: ViteOpenApiPluginOptions = {}): {
+  name: string;
+  buildStart(): Promise<void>;
+  configureServer(): Promise<void>;
+  closeBundle(): void;
+} {
   let stopWatching: (() => void) | undefined;
 
   return {
     name: "next-openapi-gen",
-    async buildStart() {
+    async buildStart(): Promise<void> {
       await generateProject({
         adapters: createTanStackGenerationAdapters(),
         configPath: options.configPath,
       });
     },
-    async configureServer() {
+    async configureServer(): Promise<void> {
       if (options.watch === false) {
         return;
       }
@@ -36,7 +41,7 @@ export function createViteOpenApiPlugin(options: ViteOpenApiPluginOptions = {}) 
         configPath: options.configPath,
       });
     },
-    closeBundle() {
+    closeBundle(): void {
       stopWatching?.();
     },
   };

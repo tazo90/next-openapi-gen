@@ -45,7 +45,7 @@ export class DrizzleZodProcessor {
   /**
    * Known drizzle-zod helper function names
    */
-  static readonly DRIZZLE_ZOD_HELPERS = [
+  static readonly DRIZZLE_ZOD_HELPERS: readonly string[] = [
     "createInsertSchema",
     "createSelectSchema",
     "createUpdateSchema",
