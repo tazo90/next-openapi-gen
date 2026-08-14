@@ -1,7 +1,6 @@
 import { defineConfig, type OxfmtConfig } from "oxfmt";
 
 const oxfmtConfig = defineConfig({
-  printWidth: 100,
   sortImports: {
     ignoreCase: true,
     internalPattern: ["@workspace/", "@next-openapi-gen"],
@@ -11,6 +10,7 @@ const oxfmtConfig = defineConfig({
   sortPackageJson: {
     sortScripts: true,
   },
+  sortTailwindcss: {},
   overrides: [
     {
       files: ["**/*.md"],

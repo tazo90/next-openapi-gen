@@ -28,7 +28,7 @@ export default function HomePage() {
             <Link
               href="/api-docs"
               data-testid="api-docs-link"
-              className="inline-block bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg transition-colors"
+              className="inline-block rounded-lg bg-blue-500 px-6 py-3 text-white transition-colors hover:bg-blue-600"
             >
               Open API Docs →
             </Link>

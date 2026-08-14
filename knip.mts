@@ -1,5 +1,22 @@
 import type { KnipConfig } from "knip";
 
+const nextApp = {
+  project: ["**/*.{ts,tsx,js,jsx,mjs,mts,cjs,cts}"],
+  next: true,
+  typescript: true,
+} as const;
+
+const nextAppWithPostcss = {
+  ...nextApp,
+  postcss: true,
+} as const;
+
+const viteApp = {
+  project: ["**/*.{ts,tsx,js,jsx,mjs,mts,cjs,cts}"],
+  typescript: true,
+  vite: true,
+} as const;
+
 const config = {
   ignoreDependencies: [
     "@commitlint/config-conventional",
@@ -18,23 +35,11 @@ const config = {
     "packages/next-openapi-gen/templates/**",
     "packages/openapi-init/templates/**",
     "tests/fixtures/**",
+    "apps/**/src/app/api/generated/**",
+    "apps/**/src/schemas/generated/**",
+    "apps/**/src/types/generated/**",
   ],
-  ignoreIssues: {
-    "apps/next-app-mixed-schemas/package.json": ["devDependencies"],
-    "apps/next-app-sandbox/package.json": ["devDependencies"],
-    "apps/next-app-scalar/package.json": ["devDependencies"],
-    "apps/next-app-swagger/package.json": ["devDependencies"],
-    "apps/next-app-typescript/package.json": ["devDependencies"],
-    "apps/next-app-zod/package.json": ["devDependencies"],
-    "apps/next-app-adapter/package.json": ["devDependencies"],
-    "apps/next-app-next-config/package.json": ["devDependencies"],
-    "apps/next-app-ts-config/package.json": ["devDependencies"],
-    "apps/next-pages-router/package.json": ["devDependencies"],
-    "apps/react-router-app/package.json": ["devDependencies"],
-    "apps/tanstack-app/package.json": ["devDependencies"],
-    "packages/next-openapi-gen/package.json": ["dependencies"],
-  },
-  ignoreUnresolved: ["next", "./routeTree.gen"],
+  ignoreUnresolved: ["./routeTree.gen"],
   workspaces: {
     ".": {
       entry: ["*.{json,ts,mts,cts}", ".github/workflows/*.{yml,yaml}"],
@@ -50,23 +55,93 @@ const config = {
       typescript: true,
       vitest: true,
     },
-    "apps/*": {
+    "apps/next-app-adapter": {
+      ...nextApp,
       entry: [
         "openapi-gen.config.ts",
         "next.openapi.json",
         "next-openapi.adapter.mjs",
-        "next-openapi.config.ts",
-        "schemas/**/*.{ts,tsx}",
+        "src/schemas/**/*.{ts,tsx}",
+      ],
+      ignoreDependencies: ["ajv", "autoprefixer", "postcss"],
+    },
+    "apps/next-app-drizzle-zod": {
+      ...nextAppWithPostcss,
+      entry: [
+        "openapi-gen.config.ts",
+        "next.openapi.json",
         "src/db/**/*.{ts,tsx}",
-        "src/router.tsx",
-        "src/routes/**/*.{ts,tsx}",
+        "src/schemas/**/*.{ts,tsx}",
+      ],
+    },
+    "apps/next-app-mixed-schemas": {
+      ...nextApp,
+      entry: [
+        "openapi-gen.config.ts",
+        "next.openapi.json",
         "src/schemas/**/*.{ts,tsx}",
         "src/types/**/*.{ts,tsx}",
       ],
-      project: ["**/*.{ts,tsx,js,jsx,mjs,mts,cjs,cts}"],
-      next: true,
-      postcss: true,
-      typescript: true,
+    },
+    "apps/next-app-next-config": {
+      ...nextApp,
+      entry: ["openapi-gen.config.ts", "next-openapi.config.ts", "src/schemas/**/*.{ts,tsx}"],
+      ignoreDependencies: ["ajv", "autoprefixer", "postcss"],
+    },
+    "apps/next-app-sandbox": {
+      ...nextAppWithPostcss,
+      entry: ["openapi-gen.config.ts", "next.openapi.json"],
+      ignoreDependencies: ["ajv"],
+    },
+    "apps/next-app-scalar": {
+      ...nextAppWithPostcss,
+      entry: ["openapi-gen.config.ts", "next.openapi.json"],
+      ignoreDependencies: ["ajv", "zod"],
+    },
+    "apps/next-app-swagger": {
+      ...nextApp,
+      entry: ["openapi-gen.config.ts", "next.openapi.json"],
+      ignoreDependencies: ["zod"],
+    },
+    "apps/next-app-ts-config": {
+      ...nextApp,
+      entry: ["openapi-gen.config.ts", "next-openapi.config.ts", "src/schemas/**/*.{ts,tsx}"],
+      ignoreDependencies: ["ajv", "autoprefixer", "postcss"],
+    },
+    "apps/next-app-typescript": {
+      ...nextAppWithPostcss,
+      entry: ["openapi-gen.config.ts", "next.openapi.json", "src/types/**/*.{ts,tsx}"],
+      ignoreDependencies: ["ajv"],
+    },
+    "apps/next-app-zod": {
+      ...nextAppWithPostcss,
+      entry: ["openapi-gen.config.ts", "next.openapi.json", "src/schemas/**/*.{ts,tsx}"],
+      ignoreDependencies: ["ajv"],
+    },
+    "apps/next-pages-router": {
+      ...nextApp,
+      entry: ["openapi-gen.config.ts", "next.openapi.json", "schemas/**/*.{ts,tsx}"],
+    },
+    "apps/react-router-app": {
+      ...viteApp,
+      entry: [
+        "openapi-gen.config.ts",
+        "next.openapi.json",
+        "src/routes/**/*.{ts,tsx}",
+        "src/schemas/**/*.{ts,tsx}",
+      ],
+      ignoreDependencies: ["ajv"],
+    },
+    "apps/tanstack-app": {
+      ...viteApp,
+      entry: [
+        "openapi-gen.config.ts",
+        "next.openapi.json",
+        "src/router.tsx",
+        "src/routes/**/*.{ts,tsx}",
+        "src/schemas/**/*.{ts,tsx}",
+      ],
+      ignoreDependencies: ["ajv"],
     },
     "packages/*": {
       project: ["**/*.{ts,tsx,js,jsx,mjs,mts,cjs,cts,json}"],
@@ -76,6 +151,18 @@ const config = {
     },
     "packages/next-openapi-gen": {
       entry: ["src/index.ts"],
+      ignoreDependencies: [
+        "@babel/parser",
+        "@babel/traverse",
+        "@babel/types",
+        "commander",
+        "fs-extra",
+        "js-yaml",
+        "ora",
+      ],
+    },
+    "packages/typescript-config": {
+      ignoreUnresolved: ["next"],
     },
     tests: {
       entry: ["bench/**/*.ts", "**/*.{test,spec}.ts", "**/*.{test,spec}.tsx"],

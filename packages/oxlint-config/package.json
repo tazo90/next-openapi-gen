@@ -9,6 +9,7 @@
     "./core": "./core.ts",
     "./ignores": "./ignores.ts",
     "./next": "./next.ts",
+    "./react": "./react.ts",
     "./vitest": "./vitest.ts"
   },
   "scripts": {

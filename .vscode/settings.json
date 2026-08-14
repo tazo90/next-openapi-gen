@@ -4,7 +4,7 @@
   "editor.formatOnSaveMode": "file",
   "editor.codeActionsOnSave": {
     "source.fixAll.oxc": "explicit",
-    "source.organizeImports": "explicit"
+    "source.organizeImports": "never"
   },
   "typescript.tsdk": "node_modules/@typescript/native/lib",
   "typescript.enablePromptUseWorkspaceTsdk": true,
