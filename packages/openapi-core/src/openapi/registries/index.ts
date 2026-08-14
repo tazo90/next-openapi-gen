@@ -5,7 +5,7 @@ import mediaTypeRegistry from "./media-type.json" with { type: "json" };
 import namespaceRegistry from "./namespace.json" with { type: "json" };
 import tagKindRegistry from "./tag-kind.json" with { type: "json" };
 
-export const OAI_REGISTRY_SNAPSHOT_DATE = formatRegistry.snapshotDate;
+export const OAI_REGISTRY_SNAPSHOT_DATE: string = formatRegistry.snapshotDate;
 
 export type MediaTypeGroup =
   | "json"

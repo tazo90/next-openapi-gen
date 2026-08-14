@@ -7,6 +7,6 @@
     "newLine": "lf",
     "types": ["node"]
   },
-  "include": ["src"],
+  "include": ["src", "src/**/*.json"],
   "exclude": ["dist", "build", "node_modules", "tests", "**/*.test.ts", "**/*.spec.ts"]
 }

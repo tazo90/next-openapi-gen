@@ -17,6 +17,8 @@
     { "path": "../openapi-init" },
     { "path": "../openapi-framework-next" },
     { "path": "../openapi-framework-tanstack" },
-    { "path": "../openapi-framework-react-router" }
+    { "path": "../openapi-framework-react-router" },
+    { "path": "../openapi-arazzo" },
+    { "path": "../openapi-overlay" }
   ]
 }
