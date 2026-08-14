@@ -9,7 +9,7 @@ description: |
   monorepo, shares code between apps, runs changed/affected packages, debugs cache,
   or has apps/packages directories.
 metadata:
-  version: 2.8.21-canary.11
+  version: 2.10.10-canary.1
 ---
 
 # Turborepo Skill
@@ -18,15 +18,15 @@ Build system for JavaScript/TypeScript monorepos. Turborepo caches task outputs 
 
 ## IMPORTANT: Package Tasks, Not Root Tasks
 
-**DO NOT create Root Tasks. ALWAYS create package tasks.**
+**Prefer package tasks over Root Tasks.**
 
-When creating tasks/scripts/pipelines, you MUST:
+When creating tasks/scripts/pipelines, you MUST default to package tasks:
 
 1. Add the script to each relevant package's `package.json`
 2. Register the task in root `turbo.json`
 3. Root `package.json` only delegates via `turbo run <task>`
 
-**DO NOT** put task logic in root `package.json`. This defeats Turborepo's parallelization.
+**DO NOT** put task logic in root `package.json` when it can live in packages. This defeats Turborepo's parallelization.
 
 ```json
 // DO THIS: Scripts in each package
@@ -74,7 +74,7 @@ When creating tasks/scripts/pipelines, you MUST:
 }
 ```
 
-Root Tasks (`//#taskname`) are ONLY for tasks that truly cannot exist in packages (rare).
+Root Tasks (`//#taskname`) are ONLY for tasks that truly cannot exist in packages, such as Vitest Projects' `//#test`, repo-wide release scripts, or tooling that does not invoke `turbo` itself.
 
 ## Secondary Rule: `turbo run` vs `turbo`
 
@@ -128,12 +128,12 @@ Cache problems?
 ```
 Run only what changed?
 ├─ Changed packages + dependents (RECOMMENDED) → turbo run build --affected
-├─ Custom base branch → --affected --affected-base=origin/develop
+├─ Custom base branch → TURBO_SCM_BASE=origin/develop turbo run build --affected
 ├─ Manual git comparison → --filter=...[origin/main]
 └─ See all filter options → references/filtering/RULE.md
 ```
 
-**`--affected` is the primary way to run only changed packages.** It automatically compares against the default branch and includes dependents.
+**`--affected` is the primary way to run only changed packages.** It compares against `main` (falling back to `master`) — not the repo's configured default branch — and includes dependents. Set `TURBO_SCM_BASE` for any other base branch.
 
 ### "I want to filter packages"
 
@@ -427,7 +427,7 @@ A large `env` array (even 50+ variables) is **not** a problem. It usually means 
 
 ### Using `--parallel` Flag
 
-The `--parallel` flag bypasses Turborepo's dependency graph. If tasks need parallel execution, configure `dependsOn` correctly instead.
+The `--parallel` flag bypasses Turborepo's dependency graph. It is deprecated and will be removed in a future major version—use task configuration (`persistent`, `with`) instead.
 
 ```bash
 # WRONG - bypasses dependency graph
@@ -549,7 +549,7 @@ Don't use relative paths like `../` to reference files outside the package. Use 
 
 Common outputs by framework:
 
-- Next.js: `[".next/**", "!.next/cache/**"]`
+- Next.js: `[".next/**", "!.next/cache/**", "!.next/dev/**"]`
 - Vite/Rollup: `["dist/**"]`
 - tsc: `["dist/**"]` or custom `outDir`
 
@@ -740,11 +740,11 @@ import { Button } from "@repo/ui/button";
 
 ```json
 {
-  "$schema": "https://v2-8-21-canary-11.turborepo.dev/schema.json",
+  "$schema": "https://v2-10-10-canary-1.turborepo.dev/schema.json",
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "outputs": ["dist/**", ".next/**", "!.next/cache/**"]
+      "outputs": ["dist/**", ".next/**", "!.next/cache/**", "!.next/dev/**"]
     },
     "dev": {
       "cache": false,
