@@ -1,21 +1,21 @@
-import type { KnipConfig } from "knip";
+import type { KnipConfig, WorkspaceProjectConfig } from "knip";
 
-const nextApp = {
+const nextApp: WorkspaceProjectConfig = {
   project: ["**/*.{ts,tsx,js,jsx,mjs,mts,cjs,cts}"],
   next: true,
   typescript: true,
-} as const;
+};
 
-const nextAppWithPostcss = {
+const nextAppWithPostcss: WorkspaceProjectConfig = {
   ...nextApp,
   postcss: true,
-} as const;
+};
 
-const viteApp = {
+const viteApp: WorkspaceProjectConfig = {
   project: ["**/*.{ts,tsx,js,jsx,mjs,mts,cjs,cts}"],
   typescript: true,
   vite: true,
-} as const;
+};
 
 const config = {
   ignoreDependencies: [
