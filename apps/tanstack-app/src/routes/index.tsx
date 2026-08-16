@@ -1,14 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
 
+import { Home } from "../home";
+
 export const Route = createFileRoute("/")({
   component: HomePage,
 });
 
 function HomePage() {
   return (
-    <main>
-      <h1>TanStack Router API</h1>
-      <p>Open the generated API documentation at /api-docs.</p>
-    </main>
+    <Home.Frame>
+      <Home.Header>TanStack Router API</Home.Header>
+      <Home.Lead>Open the generated API documentation at /api-docs.</Home.Lead>
+    </Home.Frame>
   );
 }

@@ -1,51 +1,29 @@
-import Link from "next/link";
+import { Home } from "../components/home";
 
-export default function Home() {
+export default function HomePage() {
   return (
-    <main style={{ padding: "2rem", fontFamily: "system-ui, sans-serif" }}>
-      <h1>Next.js Pages Router + next-openapi-gen</h1>
-      <p>
+    <Home.Frame>
+      <Home.Header>Next.js Pages Router + next-openapi-gen</Home.Header>
+      <Home.Intro>
         This is an example demonstrating how to use <code>next-openapi-gen</code> with the Pages
         Router.
-      </p>
-      <p>
-        <Link href="/api-docs" style={{ color: "#0070f3" }}>
-          View API Documentation
-        </Link>
-      </p>
-      <h2>Available Endpoints</h2>
-      <ul>
-        <li>
-          <code>GET /api/users</code> - List all users
-        </li>
-        <li>
-          <code>POST /api/users</code> - Create a new user
-        </li>
-        <li>
-          <code>GET /api/users/[id]</code> - Get user by ID
-        </li>
-        <li>
-          <code>PUT /api/users/[id]</code> - Update user
-        </li>
-        <li>
-          <code>DELETE /api/users/[id]</code> - Delete user
-        </li>
-        <li>
-          <code>GET /api/products</code> - List all products
-        </li>
-        <li>
-          <code>POST /api/products</code> - Create a new product
-        </li>
-        <li>
-          <code>GET /api/products/[id]</code> - Get product by ID
-        </li>
-        <li>
-          <code>PUT /api/products/[id]</code> - Update product
-        </li>
-        <li>
-          <code>DELETE /api/products/[id]</code> - Delete product
-        </li>
-      </ul>
-    </main>
+      </Home.Intro>
+      <Home.Intro>
+        <Home.DocsLink>View API Documentation</Home.DocsLink>
+      </Home.Intro>
+      <Home.Heading>Available Endpoints</Home.Heading>
+      <Home.List>
+        <Home.EndpointItem path="GET /api/users">List all users</Home.EndpointItem>
+        <Home.EndpointItem path="POST /api/users">Create a new user</Home.EndpointItem>
+        <Home.EndpointItem path="GET /api/users/[id]">Get user by ID</Home.EndpointItem>
+        <Home.EndpointItem path="PUT /api/users/[id]">Update user</Home.EndpointItem>
+        <Home.EndpointItem path="DELETE /api/users/[id]">Delete user</Home.EndpointItem>
+        <Home.EndpointItem path="GET /api/products">List all products</Home.EndpointItem>
+        <Home.EndpointItem path="POST /api/products">Create a new product</Home.EndpointItem>
+        <Home.EndpointItem path="GET /api/products/[id]">Get product by ID</Home.EndpointItem>
+        <Home.EndpointItem path="PUT /api/products/[id]">Update product</Home.EndpointItem>
+        <Home.EndpointItem path="DELETE /api/products/[id]">Delete product</Home.EndpointItem>
+      </Home.List>
+    </Home.Frame>
   );
 }
