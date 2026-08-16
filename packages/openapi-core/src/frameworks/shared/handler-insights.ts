@@ -163,10 +163,9 @@ function buildHandlerDiagnostics(
       code: "stream-response-hint",
       severity: "info",
       message:
-        "Handler appears to return a streaming body. Consider @responseContentType text/event-stream (or another sequential media type) with @responseItem for accurate OpenAPI output.",
+        "Handler appears to return a streaming body. Consider @responseContentType text/event-stream (or another sequential media type) with @itemSchema for accurate OpenAPI output.",
       metadata: {
-        suggestedFix:
-          "Add @responseContentType, @responseItem, and optional @responseItemEncoding tags.",
+        suggestedFix: "Add @responseContentType, @itemSchema, and optional @itemEncoding tags.",
       },
     });
   }

@@ -75,7 +75,7 @@ export async function GET() {
       expect(spec.paths?.["/stream"]?.get?.responses?.["200"]).toMatchObject({
         content: {
           "text/event-stream": {
-            schema: {
+            itemSchema: {
               type: "string",
             },
           },

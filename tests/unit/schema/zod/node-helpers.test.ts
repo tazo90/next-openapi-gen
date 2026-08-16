@@ -279,7 +279,7 @@ describe("Zod node helpers", () => {
       processZodPrimitiveNode(getFirstInitializer("z.custom<File>()") as t.CallExpression, context),
     ).toEqual({
       type: "string",
-      format: "binary",
+      contentMediaType: "application/octet-stream",
     });
     expect(
       processZodPrimitiveNode(getFirstInitializer("z.enum({})") as t.CallExpression, context),

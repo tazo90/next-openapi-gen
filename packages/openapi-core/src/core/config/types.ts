@@ -1,13 +1,13 @@
 import type {
   Diagnostic,
   OpenApiDocument,
-  OpenApiTagDefinition,
+  OpenApiTag,
   OpenApiTemplate,
   ResolvedOpenApiConfig,
 } from "../../shared/types.js";
 
 export type GeneratedArtifact = {
-  kind: "spec" | "docs" | "sdk";
+  kind: "spec" | "docs" | "sdk" | "arazzo" | "overlay";
   path: string;
 };
 
@@ -37,7 +37,7 @@ export type GeneratorHooks = {
     | ((context: {
         config: ResolvedOpenApiConfig;
         paths: Record<string, unknown>;
-        tags: OpenApiTagDefinition[];
+        tags: OpenApiTag[];
         diagnostics: Diagnostic[];
       }) => void)
     | undefined;

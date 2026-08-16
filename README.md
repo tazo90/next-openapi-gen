@@ -114,7 +114,7 @@ export const ProductResponse = z.object({
 /**
  * Get product information
  * @description Fetch a product by ID
- * @pathParams ProductParams
+ * @path ProductParams
  * @response ProductResponse
  * @openapi
  */
@@ -207,7 +207,7 @@ export interface AudioInterface { ... }
 // → components.schemas.Audio (not: AudioInterface)
 ```
 
-Existing `@body audioSchema` or `@response audioSchema` references in route handlers continue to work — the generator resolves them transparently to the override name. See [docs/jsdoc-reference.md#component-naming](./docs/jsdoc-reference.md#component-naming) for details.
+Existing `@requestBody audioSchema` or `@response audioSchema` references in route handlers continue to work — the generator resolves them transparently to the override name. See [docs/jsdoc-reference.md#component-naming](./docs/jsdoc-reference.md#component-naming) for details.
 
 ### Generate docs from Drizzle schemas
 
@@ -286,7 +286,7 @@ Version guidance:
 
 | Option                                | Purpose                                                                                 |
 | ------------------------------------- | --------------------------------------------------------------------------------------- |
-| `openapi`                             | Target `3.0.0`, `3.1.0`, or `3.2.0` output                                              |
+| `openapi`                             | Target `3.0.0`, `3.1.0`, `3.2.0`, or experimental `3.3-preview` output                  |
 | `apiDir`                              | Route directory to scan                                                                 |
 | `routerType`                          | `"app"` or `"pages"`                                                                    |
 | `schemaDir`                           | Directory or directories to search for schemas/types                                    |
@@ -307,34 +307,34 @@ patterns, see [docs/getting-started.md](./docs/getting-started.md).
 
 ## JSDoc tags you will use most
 
-| Tag                        | Purpose                                                                                                 |
-| -------------------------- | ------------------------------------------------------------------------------------------------------- |
-| `@pathParams`              | Path parameter schema or type                                                                           |
-| `@params` / `@queryParams` | Query parameter schema or type                                                                          |
-| `@header` / `@cookie`      | Header / cookie parameter schema or type                                                                |
-| `@body`                    | Request body schema or type                                                                             |
-| `@response`                | Response schema, code, and optional description                                                         |
-| `@responseDescription`     | Response description without redefining the schema                                                      |
-| `@responseHeader`          | Add a response header to a given status code                                                            |
-| `@link`                    | Add an OpenAPI link to a response                                                                       |
-| `@auth` / `@security`      | Security requirement(s); built-in presets: `bearer`, `basic`, `apikey` — configurable via `authPresets` |
-| `@servers`                 | Operation-level servers                                                                                 |
-| `@externalDocs`            | Operation-level external documentation                                                                  |
-| `@callback`                | OpenAPI operation callback                                                                              |
-| `@webhook`                 | Mark the handler as a webhook (`3.1`+ `webhooks` section)                                               |
-| `@contentType`             | Request content type such as `multipart/form-data`                                                      |
-| `@examples`                | Request, response, and querystring examples                                                             |
-| `@openapi`                 | Explicit inclusion marker when `includeOpenApiRoutes` is enabled                                        |
-| `@openapi-override`        | Deep-merge extra OpenAPI fields onto the operation                                                      |
-| `@ignore`                  | Exclude a route from generation                                                                         |
-| `@internal`                | Exclude a schema/type declaration from `components/schemas`                                             |
-| `@method`                  | Override or declare the HTTP method; `QUERY` emits OpenAPI 3.2 `additionalOperations`                   |
+| Tag                                    | Purpose                                                                                                 |
+| -------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `@path` / `@pathParams`                | Path parameter schema or type                                                                           |
+| `@query` / `@params` / `@queryParams`  | Query parameter schema or type                                                                          |
+| `@header` / `@cookie`                  | Header / cookie parameter schema or type                                                                |
+| `@requestBody` / `@body`               | Request body schema or type; append `required` to set `requestBody.required`                            |
+| `@response`                            | Response schema, code, and optional description                                                         |
+| `@responseDescription`                 | Response description without redefining the schema                                                      |
+| `@responseHeader`                      | Add a response header to a given status code                                                            |
+| `@link`                                | Add an OpenAPI link to a response                                                                       |
+| `@auth` / `@security`                  | Security requirement(s); built-in presets: `bearer`, `basic`, `apikey` — configurable via `authPresets` |
+| `@servers`                             | Operation-level servers                                                                                 |
+| `@externalDocs`                        | Operation-level external documentation                                                                  |
+| `@callback`                            | OpenAPI operation callback                                                                              |
+| `@webhook`                             | Mark the handler as a webhook (`3.1`+ `webhooks` section)                                               |
+| `@requestContentType` / `@contentType` | Request content type such as `multipart/form-data`                                                      |
+| `@examples`                            | Request, response, querystring, query, header, and cookie examples                                      |
+| `@openapi`                             | Explicit inclusion marker when `includeOpenApiRoutes` is enabled                                        |
+| `@openapi-override`                    | Deep-merge extra OpenAPI fields onto the operation                                                      |
+| `@ignore`                              | Exclude a route from generation                                                                         |
+| `@internal`                            | Exclude a schema/type declaration from `components/schemas`                                             |
+| `@method`                              | Override or declare the HTTP method; `QUERY` emits the OpenAPI 3.2 Path Item `query` field              |
 
 For the complete tag guide and usage recipes, see
 [docs/jsdoc-reference.md](./docs/jsdoc-reference.md).
 
 OpenAPI `3.2`-specific tags such as `@querystring`, `@tagSummary`, `@tagKind`,
-and sequential media annotations are documented in the same guide and shown in
+`@itemSchema`, and sequential media annotations are documented in the same guide and shown in
 [apps/next-app-zod](./apps/next-app-zod).
 
 ## Compatibility
@@ -343,7 +343,7 @@ and sequential media annotations are documented in the same guide and shown in
 | --------------- | ------------------------------------------------------------ |
 | Frameworks      | Next.js, TanStack Router, React Router                       |
 | Next.js routers | App Router and Pages Router                                  |
-| OpenAPI targets | `3.0`, `3.1`, `3.2`                                          |
+| OpenAPI targets | `3.0`, `3.1`, `3.2`, experimental `3.3-preview`              |
 | Schema sources  | `zod`, `typescript`, drizzle-zod output, YAML/JSON fragments |
 | Docs UIs        | Scalar, Swagger, Redoc, Stoplight Elements, RapiDoc          |
 

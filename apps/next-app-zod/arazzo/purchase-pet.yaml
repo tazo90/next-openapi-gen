@@ -1,0 +1,18 @@
+arazzo: 1.1.0
+info:
+  title: Purchase a pet
+  version: 1.0.0
+  description: Checkout workflow over the generated OpenAPI document.
+sourceDescriptions: []
+workflows:
+  - workflowId: purchasePet
+    summary: List orders then create a new order
+    steps:
+      - stepId: listOrders
+        operationId: getOrdersList
+        description: Load the current order list before checkout.
+      - stepId: createOrder
+        operationId: createOrder
+        description: Create an order from the cart.
+        successCriteria:
+          - condition: $statusCode == 200

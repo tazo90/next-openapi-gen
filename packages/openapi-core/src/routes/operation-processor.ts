@@ -5,11 +5,12 @@ import { createMultipartEncoding } from "../schema/typescript/helpers.js";
 import type { SchemaProcessor } from "../schema/typescript/schema-processor.js";
 import type {
   DataTypes,
+  OpenApiOperation,
+  OpenApiParameter,
   OpenApiRequestBody,
-  ParamSchema,
-  RouteDefinition,
 } from "../shared/types.js";
 import {
+  applyParameterExamples,
   capitalize,
   deepMerge,
   DEFAULT_AUTH_PRESET_REPLACEMENTS,
@@ -17,6 +18,7 @@ import {
   performAuthPresetReplacements,
   resolveAnnotationTypeName,
 } from "../shared/utils.js";
+import { createCookieParameters } from "./cookie-parameters.js";
 import type { ResponseProcessor } from "./response-processor.js";
 
 const DEFAULT_MULTIPART_REQUEST_BODY_DESCRIPTION = "Multipart form data containing a file upload.";
@@ -50,7 +52,7 @@ export class OperationProcessor {
     dataTypes: DataTypes,
     pathParamNames: string[] = [],
     filePath?: string,
-  ): { routePath: string; method: string; definition: RouteDefinition } {
+  ): { routePath: string; method: string; definition: OpenApiOperation } {
     const method = (dataTypes.method || varName).toLowerCase();
     const rootSegment = routePath.split("/")[1] || "";
     const rootPath = capitalize(rootSegment);
@@ -106,7 +108,7 @@ export class OperationProcessor {
       deprecationReason,
     );
 
-    const definition: RouteDefinition = {
+    const definition: OpenApiOperation = {
       operationId,
       summary,
       description: finalDescription,
@@ -154,27 +156,28 @@ export class OperationProcessor {
       );
     }
 
+    const parameters = definition.parameters ?? [];
+    definition.parameters = parameters;
+
     if (dataTypes.inferredQueryParamNames?.length) {
       if (!paramsType) {
         this.diagnostics?.add({
           code: "missing-query-params-type",
           severity: "warning",
           message:
-            "Query parameters were inferred from searchParams usage, but no @queryParams type is defined.",
+            "Query parameters were inferred from searchParams usage, but no @query type is defined.",
           filePath,
           routePath,
           metadata: {
             names: dataTypes.inferredQueryParamNames,
             suggestedFix:
-              "Add @queryParams <SchemaName> or validate URL search parameters with a Zod schema in the handler.",
+              "Add @query <SchemaName> or validate URL search parameters with a Zod schema in the handler.",
           },
         });
       }
 
       const knownQueryParameterNames = new Set(
-        definition.parameters
-          .filter((parameter) => parameter.in === "query")
-          .map((parameter) => parameter.name),
+        parameters.filter(isNamedQueryParameter).map((parameter) => parameter.name),
       );
 
       dataTypes.inferredQueryParamNames.forEach((name) => {
@@ -182,7 +185,7 @@ export class OperationProcessor {
           return;
         }
 
-        definition.parameters.push({
+        parameters.push({
           in: "query",
           name,
           required: false,
@@ -208,7 +211,7 @@ export class OperationProcessor {
             "createRequestParamsMs",
             () => this.schemaProcessor.createRequestParamsSchema(candidatePathParams, true),
           );
-          definition.parameters.push(...candidateParams);
+          parameters.push(...candidateParams);
         } else {
           this.addPathParamCandidateDiagnostics(pathParamNames, routePath, filePath);
           const defaultPathParams = measurePerformance(
@@ -216,7 +219,7 @@ export class OperationProcessor {
             "createRequestParamsMs",
             () => this.schemaProcessor.createDefaultPathParamsSchema(pathParamNames),
           );
-          definition.parameters.push(...defaultPathParams);
+          parameters.push(...defaultPathParams);
         }
       } else {
         const moreParams = measurePerformance(
@@ -224,13 +227,13 @@ export class OperationProcessor {
           "createRequestParamsMs",
           () => this.schemaProcessor.createRequestParamsSchema(resolvedPathParams, true),
         );
-        definition.parameters.push(...moreParams);
+        parameters.push(...moreParams);
       }
     } else if (pathParams) {
       const moreParams = measurePerformance(this.performanceProfile, "createRequestParamsMs", () =>
         this.schemaProcessor.createRequestParamsSchema(pathParams, true),
       );
-      definition.parameters.push(...moreParams);
+      parameters.push(...moreParams);
     }
 
     if (dataTypes.querystringType) {
@@ -241,7 +244,7 @@ export class OperationProcessor {
 
     const querystringParameter = this.createQuerystringParameter(dataTypes);
     if (querystringParameter) {
-      definition.parameters.push(querystringParameter);
+      parameters.push(querystringParameter);
     }
 
     if (dataTypes.headerType) {
@@ -255,22 +258,22 @@ export class OperationProcessor {
         "createRequestParamsMs",
         () => this.schemaProcessor.createRequestParamsSchema(headerContent.params, false, "header"),
       );
-      definition.parameters.push(...headerParams);
+      parameters.push(...headerParams);
     }
 
     if (dataTypes.cookieType) {
-      const cookieContent = measurePerformance(this.performanceProfile, "getSchemaContentMs", () =>
-        this.schemaProcessor.getSchemaContent({
-          paramsType: dataTypes.cookieType,
+      parameters.push(
+        ...createCookieParameters({
+          dataTypes,
+          schemaProcessor: this.schemaProcessor,
+          performanceProfile: this.performanceProfile,
         }),
       );
-      const cookieParams = measurePerformance(
-        this.performanceProfile,
-        "createRequestParamsMs",
-        () => this.schemaProcessor.createRequestParamsSchema(cookieContent.params, false, "cookie"),
-      );
-      definition.parameters.push(...cookieParams);
     }
+
+    applyParameterExamples(parameters, dataTypes.queryExamples, "query");
+    applyParameterExamples(parameters, dataTypes.headerExamples, "header");
+    applyParameterExamples(parameters, dataTypes.cookieExamples, "cookie");
 
     if (this.responseProcessor.supportsRequestBody(method)) {
       const requestBody = this.createRequestBody({ ...dataTypes, bodyType }, routePath);
@@ -398,13 +401,13 @@ export class OperationProcessor {
       this.diagnostics?.add({
         code: "path-param-schema-conflict",
         severity: "info",
-        message: `Path parameter "${name}" is using fallback schema inference even though "${schemaName}" exists. Add @pathParams or validate context.params with that schema to preserve constraints.`,
+        message: `Path parameter "${name}" is using fallback schema inference even though "${schemaName}" exists. Add @path or validate context.params with that schema to preserve constraints.`,
         filePath,
         routePath,
         metadata: {
           parameterName: name,
           schemaName,
-          suggestedFix: `Add @pathParams ${schemaName}Params or validate context.params with a schema that includes "${name}".`,
+          suggestedFix: `Add @path ${schemaName}Params or validate context.params with a schema that includes "${name}".`,
         },
       });
     });
@@ -443,8 +446,10 @@ export class OperationProcessor {
     return `${description}\n\n${suffix}`;
   }
 
-  private buildCallbacks(callbacks: NonNullable<DataTypes["callbacks"]>): Record<string, unknown> {
-    const output: Record<string, unknown> = {};
+  private buildCallbacks(
+    callbacks: NonNullable<DataTypes["callbacks"]>,
+  ): NonNullable<OpenApiOperation["callbacks"]> {
+    const output: NonNullable<OpenApiOperation["callbacks"]> = {};
     for (const callback of callbacks) {
       if (callback.reference) {
         output[callback.name] = {
@@ -462,7 +467,7 @@ export class OperationProcessor {
   }
 
   private applyResponseHeaders(
-    definition: RouteDefinition,
+    definition: OpenApiOperation,
     responseHeaders?: DataTypes["responseHeaders"],
   ): void {
     if (!responseHeaders || responseHeaders.length === 0 || !definition.responses) {
@@ -487,7 +492,7 @@ export class OperationProcessor {
   }
 
   private applyResponseLinks(
-    definition: RouteDefinition,
+    definition: OpenApiOperation,
     responseLinks?: DataTypes["responseLinks"],
   ): void {
     if (!responseLinks || responseLinks.length === 0 || !definition.responses) {
@@ -578,7 +583,7 @@ export class OperationProcessor {
         code: "multipart-missing-body-schema",
         severity: "warning",
         message:
-          "Route declares @contentType multipart/form-data without @body; using the default file-only multipart request body.",
+          "Route declares @requestContentType multipart/form-data without @requestBody; using the default file-only multipart request body.",
         routePath,
       });
       return this.createDefaultMultipartRequestBody(dataTypes.bodyDescription);
@@ -607,6 +612,12 @@ export class OperationProcessor {
       });
     }
 
+    if (dataTypes.requestItemType && dataTypes.requestItemType !== bodyType) {
+      measurePerformance(this.performanceProfile, "getSchemaContentMs", () => {
+        this.schemaProcessor.ensureSchemaResolved(dataTypes.requestItemType!, "body");
+      });
+    }
+
     const requestBody: OpenApiRequestBody = {
       content: {
         [contentType]: {
@@ -620,12 +631,32 @@ export class OperationProcessor {
             ? { examples: structuredClone(dataTypes.requestExamples) }
             : {}),
           ...(multipartEncoding ? { encoding: multipartEncoding } : {}),
+          ...(dataTypes.requestItemType
+            ? {
+                itemSchema: {
+                  $ref: `#/components/schemas/${this.schemaProcessor.getSchemaReferenceName(
+                    dataTypes.requestItemType,
+                    "body",
+                  )}`,
+                },
+              }
+            : {}),
+          ...(dataTypes.requestItemEncoding
+            ? { itemEncoding: structuredClone(dataTypes.requestItemEncoding) }
+            : {}),
+          ...(dataTypes.requestPrefixEncoding
+            ? { prefixEncoding: structuredClone(dataTypes.requestPrefixEncoding) }
+            : {}),
         },
       },
     };
 
     if (dataTypes.bodyDescription) {
       requestBody.description = dataTypes.bodyDescription;
+    }
+
+    if (dataTypes.requestBodyRequired) {
+      requestBody.required = true;
     }
 
     return requestBody;
@@ -640,8 +671,8 @@ export class OperationProcessor {
           schema: {
             properties: {
               file: {
-                format: "binary",
                 type: "string",
+                contentMediaType: "application/octet-stream",
               },
             },
             required: ["file"],
@@ -654,7 +685,7 @@ export class OperationProcessor {
     };
   }
 
-  private createQuerystringParameter(dataTypes: DataTypes): ParamSchema | undefined {
+  private createQuerystringParameter(dataTypes: DataTypes): OpenApiParameter | undefined {
     if (!dataTypes.querystringType) {
       return undefined;
     }
@@ -678,4 +709,10 @@ export class OperationProcessor {
       },
     };
   }
+}
+
+function isNamedQueryParameter(
+  parameter: NonNullable<OpenApiOperation["parameters"]>[number],
+): parameter is OpenApiParameter {
+  return "in" in parameter && parameter.in === "query" && typeof parameter.name === "string";
 }

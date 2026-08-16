@@ -1,13 +1,69 @@
-export type ResponseSetDefinition = string[]; // ["400:BadRequest", "401:Unauthorized"]
+import type {
+  OpenApiDocument,
+  OpenApiEncoding,
+  OpenApiExample,
+  OpenApiExampleMap,
+  OpenApiExternalDocumentation,
+  OpenApiMediaType,
+  OpenApiOperation,
+  OpenApiParameter,
+  OpenApiPathItem,
+  OpenApiResponse,
+  OpenApiResponseOrReference,
+  OpenApiSchema,
+  OpenApiSchemaLike,
+  OpenApiSecurityRequirement,
+  OpenApiServer,
+  OpenApiTag,
+} from "../openapi/document-types.js";
+import type { JsonValue } from "./json.js";
+
+export type { JsonPrimitive, JsonValue } from "./json.js";
+export type {
+  OpenApiCallback,
+  OpenApiComponents,
+  OpenApiContact,
+  OpenApiDiscriminator,
+  OpenApiDocument,
+  OpenApiEncoding,
+  OpenApiExample,
+  OpenApiExampleMap,
+  OpenApiExternalDocumentation,
+  OpenApiHeader,
+  OpenApiHttpMethod,
+  OpenApiInfo,
+  OpenApiLicense,
+  OpenApiLink,
+  OpenApiMediaType,
+  OpenApiOAuthFlow,
+  OpenApiOAuthFlows,
+  OpenApiOperation,
+  OpenApiParameter,
+  OpenApiPathItem,
+  OpenApiPaths,
+  OpenApiReference,
+  OpenApiRequestBody,
+  OpenApiResponse,
+  OpenApiResponseOrReference,
+  OpenApiSchema,
+  OpenApiSchemaLike,
+  OpenApiSecurityRequirement,
+  OpenApiSecurityScheme,
+  OpenApiServer,
+  OpenApiServerVariable,
+  OpenApiTag,
+  OpenApiXml,
+} from "../openapi/document-types.js";
+export { OPENAPI_HTTP_METHODS } from "../openapi/document-types.js";
+
+export type ResponseSetDefinition = string[];
 export type ResponseSets = Record<string, ResponseSetDefinition>;
 
 export type SchemaType = "typescript" | "zod";
 export type RouterType = "app" | "pages";
-export type OpenApiVersion = "3.0" | "3.1" | "3.2" | "4.0";
+export type OpenApiVersion = "3.0" | "3.1" | "3.2" | "3.3-preview";
 export type DiagnosticSeverity = "info" | "warning" | "error";
 export type DiagnosticFailOn = "error" | "warning" | "never";
-export type JsonPrimitive = string | number | boolean | null;
-export type JsonValue = JsonPrimitive | JsonValue[] | { [key: string]: JsonValue | undefined };
 
 export enum FrameworkKind {
   Nextjs = "nextjs",
@@ -55,6 +111,25 @@ export type Diagnostic = {
   metadata?: Record<string, unknown> | undefined;
 };
 
+export type ArazzoGeneratorConfig = {
+  version?: "1.0.0" | "1.1.0" | (string & {}) | undefined;
+  files?: string[] | undefined;
+  outputFile?: string | undefined;
+  outputDir?: string | undefined;
+};
+
+export type OverlayGenerateConfig = {
+  files?: string[] | undefined;
+  outputFile?: string | undefined;
+  outputDir?: string | undefined;
+};
+
+export type OverlayGeneratorConfig = {
+  version?: "1.0.0" | "1.1.0" | (string & {}) | undefined;
+  apply?: string[] | undefined;
+  generate?: OverlayGenerateConfig | undefined;
+};
+
 export type OpenApiConfig = {
   apiDir: string;
   routerType?: RouterType | undefined;
@@ -66,8 +141,8 @@ export type OpenApiConfig = {
   includeOpenApiRoutes: boolean;
   ignoreRoutes?: string[] | undefined;
   excludeSchemas?: string[] | undefined;
-  schemaType: SchemaType | SchemaType[]; // Support both single type and array of types
-  schemaFiles?: string[] | undefined; // Array of custom OpenAPI schema files (YAML/JSON)
+  schemaType: SchemaType | SchemaType[];
+  schemaFiles?: string[] | undefined;
   defaultResponseSet?: string | undefined;
   responseSets?: ResponseSets | undefined;
   errorConfig?: ErrorTemplateConfig | undefined;
@@ -77,18 +152,15 @@ export type OpenApiConfig = {
     adapterPath?: string | undefined;
   };
   diagnostics?: DiagnosticsConfig | undefined;
-  /** Reuse process-local and disk-backed caches when inputs are unchanged. */
   cache?: boolean | undefined;
   experimental?: GeneratorExperimentalConfig | undefined;
-  /** Override or extend the default JSDoc @auth → security-scheme-name mapping.
-   *  Defaults: { bearer: "BearerAuth", basic: "BasicAuth", apikey: "ApiKeyAuth" }.
-   *  User keys win on conflict; lookup is case-insensitive. */
   authPresets?: Record<string, string> | undefined;
+  arazzo?: ArazzoGeneratorConfig | undefined;
+  overlay?: OverlayGeneratorConfig | undefined;
   debug: boolean;
 };
 
 export type GeneratorExperimentalConfig = {
-  /** Prototype flag reserved for benchmark-only route parsing experiments. */
   parallelRoutes?: boolean | undefined;
 };
 
@@ -108,73 +180,7 @@ export type ResolvedOpenApiConfig = Omit<
   authPresets: Record<string, string>;
 };
 
-export type OpenApiInfo = {
-  title: string;
-  version: string;
-  description?: string | undefined;
-  [key: string]: unknown;
-};
-
-export type OpenApiServer = {
-  url: string;
-  description?: string | undefined;
-  name?: string | undefined;
-  variables?: Record<string, JsonValue> | undefined;
-  [key: string]: unknown;
-};
-
-export type OpenApiTagDefinition = {
-  name: string;
-  description?: string | undefined;
-  summary?: string | undefined;
-  kind?: string | undefined;
-  parent?: string | undefined;
-  [key: string]: unknown;
-};
-
-export type OpenApiExampleObject = {
-  summary?: string | undefined;
-  description?: string | undefined;
-  value?: JsonValue | undefined;
-  externalValue?: string | undefined;
-  dataValue?: JsonValue | undefined;
-  serializedValue?: string | undefined;
-  [key: string]: unknown;
-};
-
-export type OpenApiExampleMap = Record<string, OpenApiExampleObject>;
-
-export type OpenApiComponents = {
-  securitySchemes?: Record<string, unknown> | undefined;
-  schemas?: Record<string, OpenAPIDefinition> | undefined;
-  responses?: Record<string, OpenApiResponseDefinition> | undefined;
-  parameters?: Record<string, unknown> | undefined;
-  requestBodies?: Record<string, unknown> | undefined;
-  headers?: Record<string, unknown> | undefined;
-  examples?: Record<string, unknown> | undefined;
-  links?: Record<string, unknown> | undefined;
-  callbacks?: Record<string, unknown> | undefined;
-  pathItems?: Record<string, unknown> | undefined;
-  [key: string]: unknown;
-};
-
-export type OpenApiDocument = {
-  openapi: string;
-  info: OpenApiInfo;
-  servers?: OpenApiServer[] | undefined;
-  basePath?: string | undefined;
-  components?: OpenApiComponents | undefined;
-  paths?: Record<string, OpenApiPathDefinition> | undefined;
-  webhooks?: Record<string, unknown> | undefined;
-  tags?: OpenApiTagDefinition[] | undefined;
-  security?: OpenApiSecurityRequirement[] | undefined;
-  externalDocs?: Record<string, unknown> | undefined;
-  jsonSchemaDialect?: string | undefined;
-  $self?: string | undefined;
-  [key: string]: unknown;
-};
-
-export type OpenApiTemplate = OpenApiDocument & {
+export type OpenApiGeneratorConfigFields = {
   apiDir?: string | undefined;
   routerType?: RouterType | undefined;
   schemaDir?: string | string[] | undefined;
@@ -199,89 +205,31 @@ export type OpenApiTemplate = OpenApiDocument & {
   cache?: boolean | undefined;
   experimental?: GeneratorExperimentalConfig | undefined;
   authPresets?: Record<string, string> | undefined;
+  arazzo?: ArazzoGeneratorConfig | undefined;
+  overlay?: OverlayGeneratorConfig | undefined;
   debug?: boolean | undefined;
 };
 
-export type RouteDefinition = {
-  operationId: string;
-  summary?: string | undefined;
-  description?: string | undefined;
-  tags: string[];
-  security?: OpenApiSecurityRequirement[];
-  parameters: ParamSchema[];
-  requestBody?: OpenApiRequestBody | OpenApiReference | undefined;
-  responses?: Record<string, OpenApiResponseDefinition> | undefined;
-  callbacks?: Record<string, unknown> | undefined;
-  servers?: OpenApiServer[] | undefined;
-  externalDocs?: Record<string, unknown> | undefined;
-  deprecated?: boolean;
-  [key: string]: unknown;
-};
+export type OpenApiTemplate = OpenApiDocument & OpenApiGeneratorConfigFields;
 
-export type OpenApiSchema = {
-  type?: string | string[] | undefined;
-  properties?: Record<string, OpenApiSchema> | undefined;
-  required?: string[] | undefined;
-  items?: OpenApiSchemaLike | boolean | undefined;
-  prefixItems?: OpenApiSchemaLike[] | undefined;
-  nullable?: boolean | undefined;
-  description?: string | undefined;
-  deprecated?: boolean | undefined;
-  format?: string | undefined;
-  minLength?: number | undefined;
-  maxLength?: number | undefined;
-  minimum?: number | undefined;
-  maximum?: number | undefined;
-  exclusiveMinimum?: number | boolean | undefined;
-  exclusiveMaximum?: number | boolean | undefined;
-  pattern?: string | undefined;
-  minItems?: number | undefined;
-  maxItems?: number | undefined;
-  uniqueItems?: boolean | undefined;
-  enum?: Array<string | number | boolean | null> | undefined;
-  default?: JsonValue | undefined;
-  example?: JsonValue | undefined;
-  examples?: JsonValue[] | Record<string, JsonValue> | undefined;
-  oneOf?: OpenApiSchemaLike[] | undefined;
-  anyOf?: OpenApiSchemaLike[] | undefined;
-  allOf?: OpenApiSchemaLike[] | undefined;
-  additionalProperties?: OpenApiSchemaLike | boolean | undefined;
-  unevaluatedProperties?: OpenApiSchemaLike | boolean | undefined;
-  patternProperties?: Record<string, OpenApiSchemaLike> | undefined;
-  propertyNames?: OpenApiSchemaLike | undefined;
-  dependentRequired?: Record<string, string[]> | undefined;
-  dependentSchemas?: Record<string, OpenApiSchemaLike> | undefined;
-  not?: OpenApiSchemaLike | undefined;
-  readOnly?: boolean | undefined;
-  writeOnly?: boolean | undefined;
-  xml?:
-    | {
-        name?: string | undefined;
-        namespace?: string | undefined;
-        prefix?: string | undefined;
-        attribute?: boolean | undefined;
-        wrapped?: boolean | undefined;
-      }
-    | undefined;
-  const?: JsonValue | undefined;
-  contentEncoding?: string | undefined;
-  contentMediaType?: string | undefined;
-  contentSchema?: OpenApiSchemaLike | undefined;
-  $defs?: Record<string, OpenApiSchemaLike> | undefined;
-  if?: OpenApiSchemaLike | undefined;
-  then?: OpenApiSchemaLike | undefined;
-  else?: OpenApiSchemaLike | undefined;
-  $schema?: string | undefined;
-  discriminator?:
-    | {
-        propertyName: string;
-        mapping?: Record<string, string> | undefined;
-        defaultMapping?: string | undefined;
-      }
-    | undefined;
-  $ref?: string | undefined;
-  [key: string]: unknown;
-};
+/** @deprecated Use OpenApiOperation */
+export type RouteDefinition = OpenApiOperation;
+/** @deprecated Use OpenApiParameter */
+export type ParamSchema = OpenApiParameter;
+/** @deprecated Use OpenApiSchema */
+export type OpenAPIDefinition = OpenApiSchema;
+/** @deprecated Use OpenApiMediaType */
+export type OpenApiMediaTypeDefinition = OpenApiMediaType;
+/** @deprecated Use OpenApiResponse */
+export type OpenApiResponseObject = OpenApiResponse;
+/** @deprecated Use OpenApiResponseOrReference */
+export type OpenApiResponseDefinition = OpenApiResponseOrReference;
+/** @deprecated Use OpenApiPathItem */
+export type OpenApiPathDefinition = OpenApiPathItem;
+/** @deprecated Use OpenApiTag */
+export type OpenApiTagDefinition = OpenApiTag;
+/** @deprecated Use OpenApiExample */
+export type OpenApiExampleObject = OpenApiExample;
 
 export type ContentType = "params" | "pathParams" | "body" | "response" | "";
 
@@ -293,52 +241,13 @@ export type PropertyOptions = {
   format?: string;
 };
 
-export type ParamSchema = {
-  in: string;
-  name: string;
-  schema?: OpenApiSchemaLike;
-  content?: Record<string, OpenApiMediaTypeDefinition>;
-  required?: boolean;
-  example?: JsonValue;
-  examples?: OpenApiExampleMap | undefined;
-  description?: string;
-  style?: string | undefined;
-  explode?: boolean | undefined;
-  allowReserved?: boolean | undefined;
-  [key: string]: unknown;
-};
-
-export type OpenAPIDefinition = OpenApiSchema;
-export type OpenApiReference = OpenApiSchema;
-export type OpenApiSchemaLike = OpenApiSchema;
-export type OpenApiMediaTypeDefinition = {
-  schema?: OpenApiSchemaLike | undefined;
-  example?: JsonValue | undefined;
-  examples?: OpenApiExampleMap | undefined;
-  encoding?: Record<string, JsonValue> | undefined;
-  itemSchema?: OpenApiSchemaLike | undefined;
-  itemEncoding?: JsonValue | undefined;
-  prefixEncoding?: JsonValue[] | undefined;
-  [key: string]: unknown;
-};
-export type OpenApiRequestBody = {
-  content: Record<string, OpenApiMediaTypeDefinition>;
-  description?: string | undefined;
-  required?: boolean | undefined;
-  [key: string]: unknown;
-};
-export type OpenApiResponseObject = {
-  description: string;
-  content?: Record<string, OpenApiMediaTypeDefinition> | undefined;
-  headers?: Record<string, JsonValue> | undefined;
-  links?: Record<string, JsonValue> | undefined;
-  [key: string]: unknown;
-};
-export type OpenApiResponseDefinition = OpenApiReference | OpenApiResponseObject;
-export type OpenApiSecurityRequirement = Record<string, string[]>;
-export type OpenApiPathDefinition = Record<string, RouteDefinition>;
-
-export type JSDocExampleTarget = "request" | "response" | "querystring";
+export type JSDocExampleTarget =
+  | "request"
+  | "response"
+  | "querystring"
+  | "query"
+  | "header"
+  | "cookie";
 
 export type JSDocExampleDefinition = {
   target: JSDocExampleTarget;
@@ -379,10 +288,7 @@ export type JSDocResponseLink = {
   server?: OpenApiServer | undefined;
 };
 
-export type JSDocExternalDocs = {
-  url: string;
-  description?: string | undefined;
-};
+export type JSDocExternalDocs = OpenApiExternalDocumentation;
 
 export type JSDocCallback = {
   name: string;
@@ -393,6 +299,7 @@ export type JSDocCallback = {
 export type DataTypes = {
   tag?: string | undefined;
   tagSummary?: string | undefined;
+  tagDescription?: string | undefined;
   tagKind?: string | undefined;
   tagParent?: string | undefined;
   tags?: string[] | undefined;
@@ -401,16 +308,23 @@ export type DataTypes = {
   querystringType?: string | undefined;
   querystringName?: string | undefined;
   bodyType?: string | undefined;
+  requestBodyRequired?: boolean | undefined;
   headerType?: string | undefined;
   cookieType?: string | undefined;
   responseType?: string | undefined;
   responseContentType?: string | undefined;
   responseItemType?: string | undefined;
-  responseItemEncoding?: JsonValue | undefined;
-  responsePrefixEncoding?: JsonValue[] | undefined;
+  responseItemEncoding?: OpenApiEncoding | undefined;
+  responsePrefixEncoding?: OpenApiEncoding[] | undefined;
+  requestItemType?: string | undefined;
+  requestItemEncoding?: OpenApiEncoding | undefined;
+  requestPrefixEncoding?: OpenApiEncoding[] | undefined;
   requestExamples?: OpenApiExampleMap | undefined;
   responseExamples?: OpenApiExampleMap | undefined;
   querystringExamples?: OpenApiExampleMap | undefined;
+  queryExamples?: OpenApiExampleMap | undefined;
+  headerExamples?: OpenApiExampleMap | undefined;
+  cookieExamples?: OpenApiExampleMap | undefined;
   inferredPathParamsType?: string | undefined;
   inferredQueryParamsType?: string | undefined;
   inferredBodyType?: string | undefined;
@@ -434,28 +348,36 @@ export type DataTypes = {
   deprecationReason?: string | undefined;
   bodyDescription?: string | undefined;
   responseDescription?: string | undefined;
+  responseSummary?: string | undefined;
+  responseSummaries?: Record<string, string> | undefined;
   contentType?: string | undefined;
-  responseSet?: string | undefined; // e.g. "authErrors" or "publicErrors,crudErrors"
-  addResponses?: string | undefined; // e.g. "409:ConflictResponse,429:RateLimitResponse"
-  successCode?: string | undefined; // e.g "201" for POST
-  operationId?: string | undefined; // Custom operation ID (overrides auto-generated)
-  method?: string | undefined; // HTTP method for Pages Router (e.g. "GET", "POST")
+  responseSet?: string | undefined;
+  addResponses?: string | undefined;
+  successCode?: string | undefined;
+  operationId?: string | undefined;
+  method?: string | undefined;
   diagnostics?: Diagnostic[] | undefined;
 };
 
 export interface ErrorTemplateConfig {
   template: JsonValue;
   codes: Record<string, ErrorCodeConfig>;
-  variables?: Record<string, string>; // Global variables
+  variables?: Record<string, string>;
 }
 
 export interface ErrorCodeConfig {
   description: string;
   httpStatus?: number;
-  variables?: Record<string, string>; // Per-code variables
+  variables?: Record<string, string>;
 }
 
 export interface ErrorDefinition {
   description: string;
   schema: OpenApiSchema;
 }
+
+export type {
+  OpenApiComponents as OpenApiComponentsObject,
+  OpenApiInfo as OpenApiInfoObject,
+  OpenApiServer as OpenApiServerObject,
+} from "../openapi/document-types.js";

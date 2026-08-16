@@ -134,7 +134,7 @@ describe("SchemaProcessor", () => {
             properties: {
               avatarFile: {
                 type: "string",
-                format: "binary",
+                contentMediaType: "application/octet-stream",
                 description: "Profile file",
               },
               caption: {

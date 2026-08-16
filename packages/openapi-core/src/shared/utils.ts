@@ -3,14 +3,17 @@ import { parse } from "@babel/parser";
 import type { NodePath } from "@babel/traverse";
 import type * as t from "@babel/types";
 
+import { getPathItemOperations } from "../openapi/path-item.js";
 import type {
   DataTypes,
   Diagnostic,
   JSDocExampleDefinition,
   JsonValue,
   OpenApiDocument,
+  OpenApiEncoding,
   OpenApiExampleMap,
-  ParamSchema,
+  OpenApiParameter,
+  OpenApiReference,
 } from "./types.js";
 import { resolveTypeScriptValueReference } from "./typescript-project.js";
 
@@ -26,6 +29,58 @@ export function resolveAnnotationTypeName(primary?: string, fallback?: string): 
 
   const normalizedFallback = fallback?.trim();
   return normalizedFallback || undefined;
+}
+
+export function applyParameterExamples(
+  parameters: Array<OpenApiParameter | OpenApiReference>,
+  examples: OpenApiExampleMap | undefined,
+  location: "query" | "header" | "cookie",
+): void {
+  if (!examples) {
+    return;
+  }
+
+  const paramsByName = new Map(
+    parameters.flatMap((parameter) => {
+      if (!("in" in parameter) || !("name" in parameter) || parameter.in !== location) {
+        return [];
+      }
+      return [[parameter.name, parameter] as const];
+    }),
+  );
+
+  for (const [name, example] of Object.entries(examples)) {
+    const direct = paramsByName.get(name);
+    if (direct) {
+      direct.examples = { ...direct.examples, [name]: structuredClone(example) };
+      continue;
+    }
+
+    if (
+      !example ||
+      typeof example !== "object" ||
+      Array.isArray(example) ||
+      !("value" in example)
+    ) {
+      continue;
+    }
+
+    const value = example.value;
+    if (!value || typeof value !== "object" || Array.isArray(value)) {
+      continue;
+    }
+
+    for (const [key, nested] of Object.entries(value)) {
+      const parameter = paramsByName.get(key);
+      if (!parameter) {
+        continue;
+      }
+      parameter.examples = {
+        ...parameter.examples,
+        [name]: { ...structuredClone(example), value: nested as JsonValue },
+      };
+    }
+  }
 }
 
 /**
@@ -94,23 +149,48 @@ export function parseJSDocBlock(commentValue: string, filePath?: string): DataTy
 
   result.description = extractLineValue(normalizedComment, "@description");
   result.tagSummary = extractLineValue(normalizedComment, "@tagSummary");
+  result.tagDescription = extractLineValue(normalizedComment, "@tagDescription");
   result.tagKind = extractLineValue(normalizedComment, "@tagKind");
   result.tagParent = extractLineValue(normalizedComment, "@tagParent");
-  result.bodyDescription = extractLineValue(normalizedComment, "@bodyDescription");
-  result.contentType = extractLineValue(normalizedComment, "@contentType");
+  result.bodyDescription = extractFirstBoundedLine(normalizedComment, [
+    "@requestBodyDescription",
+    "@bodyDescription",
+  ]);
+  result.contentType = extractFirstBoundedLine(normalizedComment, [
+    "@requestContentType",
+    "@contentType",
+  ]);
   result.responseContentType = extractLineValue(normalizedComment, "@responseContentType");
   result.responseDescription = extractLineValue(normalizedComment, "@responseDescription");
   result.responseSet = extractLineValue(normalizedComment, "@responseSet");
   result.operationId = extractTokenValue(normalizedComment, "@operationId");
   result.method = extractTokenValue(normalizedComment, "@method").toUpperCase();
-  result.responseItemType = extractTypeFromComment(normalizedComment, "@responseItem");
-  result.paramsType =
-    extractTypeFromComment(normalizedComment, "@queryParams") ||
-    extractTypeFromComment(normalizedComment, "@params");
-  result.pathParamsType = extractTypeFromComment(normalizedComment, "@pathParams");
-  result.bodyType = extractTypeFromComment(normalizedComment, "@body");
+  result.paramsType = extractFirstType(normalizedComment, ["@query", "@queryParams", "@params"]);
+  result.pathParamsType = extractFirstType(normalizedComment, ["@path", "@pathParams"]);
   result.headerType = extractTypeFromComment(normalizedComment, "@header");
   result.cookieType = extractTypeFromComment(normalizedComment, "@cookie");
+
+  const requestBody = parseRequestBodyTag(normalizedComment);
+  result.bodyType = requestBody.typeName;
+  if (requestBody.required) {
+    result.requestBodyRequired = true;
+  }
+
+  const itemSchemas = parseTargetedTypeTag(normalizedComment, ["@itemSchema", "@responseItem"]);
+  if (itemSchemas.response) {
+    result.responseItemType = itemSchemas.response;
+  }
+  if (itemSchemas.request) {
+    result.requestItemType = itemSchemas.request;
+  }
+
+  const responseSummaries = parseResponseSummaryTags(normalizedComment);
+  if (responseSummaries.primary) {
+    result.responseSummary = responseSummaries.primary;
+  }
+  if (Object.keys(responseSummaries.byStatus).length > 0) {
+    result.responseSummaries = responseSummaries.byStatus;
+  }
 
   const authValue = extractLineValue(normalizedComment, "@auth");
   if (authValue) {
@@ -123,14 +203,26 @@ export function parseJSDocBlock(commentValue: string, filePath?: string): DataTy
     result.querystringName = querystring.name;
   }
 
-  const responseItemEncoding = extractJsonLineValue(normalizedComment, "@responseItemEncoding");
-  if (typeof responseItemEncoding !== "undefined") {
-    result.responseItemEncoding = responseItemEncoding;
+  const itemEncodings = parseTargetedJsonTag(normalizedComment, [
+    "@itemEncoding",
+    "@responseItemEncoding",
+  ]);
+  if (isEncodingObject(itemEncodings.response)) {
+    result.responseItemEncoding = itemEncodings.response;
+  }
+  if (isEncodingObject(itemEncodings.request)) {
+    result.requestItemEncoding = itemEncodings.request;
   }
 
-  const responsePrefixEncoding = extractJsonLineValue(normalizedComment, "@responsePrefixEncoding");
-  if (Array.isArray(responsePrefixEncoding)) {
-    result.responsePrefixEncoding = responsePrefixEncoding;
+  const prefixEncodings = parseTargetedJsonTag(normalizedComment, [
+    "@prefixEncoding",
+    "@responsePrefixEncoding",
+  ]);
+  if (Array.isArray(prefixEncodings.response) && prefixEncodings.response.every(isEncodingObject)) {
+    result.responsePrefixEncoding = prefixEncodings.response as OpenApiEncoding[];
+  }
+  if (Array.isArray(prefixEncodings.request) && prefixEncodings.request.every(isEncodingObject)) {
+    result.requestPrefixEncoding = prefixEncodings.request as OpenApiEncoding[];
   }
 
   const responseMatches = [...normalizedComment.matchAll(/@response\s+([^\n\r@]+)/g)];
@@ -170,6 +262,9 @@ export function parseJSDocBlock(commentValue: string, filePath?: string): DataTy
   result.requestExamples = buildExampleMap(examples.definitions, "request");
   result.responseExamples = buildExampleMap(examples.definitions, "response");
   result.querystringExamples = buildExampleMap(examples.definitions, "querystring");
+  result.queryExamples = buildExampleMap(examples.definitions, "query");
+  result.headerExamples = buildExampleMap(examples.definitions, "header");
+  result.cookieExamples = buildExampleMap(examples.definitions, "cookie");
   if (examples.diagnostics.length > 0) {
     result.diagnostics = examples.diagnostics;
   }
@@ -241,6 +336,149 @@ function extractListValue(commentValue: string, tag: string): string[] {
     .split(",")
     .map((entry) => entry.trim())
     .filter(Boolean);
+}
+
+function boundedTagRegex(tag: string, flags = "gm"): RegExp {
+  return new RegExp(`^\\s*\\*?\\s*${escapeRegExp(tag)}(?![A-Za-z0-9_-])\\s*([^\\n\\r]*)`, flags);
+}
+
+function extractBoundedLine(commentValue: string, tag: string): string {
+  return commentValue.match(boundedTagRegex(tag, "m"))?.[1]?.trim() || "";
+}
+
+function extractFirstBoundedLine(commentValue: string, tags: string[]): string {
+  for (const tag of tags) {
+    const value = extractBoundedLine(commentValue, tag);
+    if (value) {
+      return value;
+    }
+  }
+  return "";
+}
+
+function extractFirstType(commentValue: string, tags: string[]): string {
+  for (const tag of tags) {
+    const value = extractTypeFromComment(commentValue, tag);
+    if (value) {
+      return value;
+    }
+  }
+  return "";
+}
+
+function consumeRequiredFlag(raw: string): { rest: string; required?: boolean } {
+  const trimmed = raw.trim();
+  if (!trimmed) {
+    return { rest: "" };
+  }
+  if (/^required(?:\s*=\s*true)?$/i.test(trimmed)) {
+    return { rest: "", required: true };
+  }
+  if (/^required\s*=\s*false$/i.test(trimmed) || /^optional$/i.test(trimmed)) {
+    return { rest: "", required: false };
+  }
+  if (/\s+required(?:\s*=\s*true)?$/i.test(trimmed)) {
+    return {
+      rest: trimmed.replace(/\s+required(?:\s*=\s*true)?$/i, "").trim(),
+      required: true,
+    };
+  }
+  if (/\s+(?:optional|required\s*=\s*false)$/i.test(trimmed)) {
+    return {
+      rest: trimmed.replace(/\s+(?:optional|required\s*=\s*false)$/i, "").trim(),
+      required: false,
+    };
+  }
+  return { rest: trimmed };
+}
+
+function parseRequestBodyTag(commentValue: string): { typeName: string; required: boolean } {
+  let typeName = "";
+  let required = false;
+
+  for (const tag of ["@requestBody", "@body"] as const) {
+    for (const match of commentValue.matchAll(boundedTagRegex(tag))) {
+      const parsed = consumeRequiredFlag(match[1]?.trim() || "");
+      if (parsed.required === true) {
+        required = true;
+      }
+      if (parsed.rest && (tag === "@requestBody" || !typeName)) {
+        typeName = parsed.rest;
+      }
+    }
+  }
+
+  return { typeName, required };
+}
+
+function splitMediaTarget(raw: string): { target: "request" | "response"; value: string } {
+  const match = raw.match(/^(request|response)\s*:\s*([\s\S]+)$/);
+  if (match?.[1] === "request" || match?.[1] === "response") {
+    return { target: match[1], value: (match[2] ?? raw).trim() };
+  }
+  return { target: "response", value: raw };
+}
+
+function parseTargetedTypeTag(
+  commentValue: string,
+  tags: string[],
+): { request?: string; response?: string } {
+  const result: { request?: string; response?: string } = {};
+  for (const tag of tags) {
+    for (const match of commentValue.matchAll(boundedTagRegex(tag))) {
+      const raw = match[1]?.trim();
+      if (!raw) {
+        continue;
+      }
+      const { target, value } = splitMediaTarget(raw);
+      const typeName = value.split(/\s+/)[0];
+      if (typeName) {
+        result[target] = typeName;
+      }
+    }
+  }
+  return result;
+}
+
+function parseTargetedJsonTag(
+  commentValue: string,
+  tags: string[],
+): { request?: JsonValue; response?: JsonValue } {
+  const result: { request?: JsonValue; response?: JsonValue } = {};
+  for (const tag of tags) {
+    for (const match of commentValue.matchAll(boundedTagRegex(tag))) {
+      const raw = match[1]?.trim();
+      if (!raw) {
+        continue;
+      }
+      const { target, value } = splitMediaTarget(raw);
+      result[target] = parseJsonValue(value);
+    }
+  }
+  return result;
+}
+
+function parseResponseSummaryTags(commentValue: string): {
+  primary?: string | undefined;
+  byStatus: Record<string, string>;
+} {
+  const byStatus: Record<string, string> = {};
+  let primary: string | undefined;
+
+  for (const match of commentValue.matchAll(boundedTagRegex("@responseSummary"))) {
+    const raw = match[1]?.trim();
+    if (!raw) {
+      continue;
+    }
+    const statusMatch = raw.match(/^(\S+)\s+([\s\S]+)$/);
+    if (statusMatch?.[1] && statusMatch[2] && isStatusCodeToken(statusMatch[1])) {
+      byStatus[statusMatch[1]] = statusMatch[2].trim();
+      continue;
+    }
+    primary = raw;
+  }
+
+  return { primary, byStatus };
 }
 
 function parseServersTag(commentValue: string): import("./types.js").OpenApiServer[] {
@@ -533,6 +771,7 @@ function createEmptyDataTypes(): DataTypes {
   return {
     tag: "",
     tagSummary: "",
+    tagDescription: "",
     tagKind: "",
     tagParent: "",
     auth: "",
@@ -556,7 +795,9 @@ function createEmptyDataTypes(): DataTypes {
     responseType: "",
     responseContentType: "",
     responseItemType: "",
+    requestItemType: "",
     responseDescription: "",
+    responseSummary: "",
     responseSet: "",
     addResponses: "",
     successCode: "",
@@ -639,15 +880,6 @@ function extractLineValue(commentValue: string, tag: string): string {
 
 function extractTokenValue(commentValue: string, tag: string): string {
   return commentValue.match(new RegExp(`${escapeRegExp(tag)}\\s+(\\S+)`, "m"))?.[1]?.trim() || "";
-}
-
-function extractJsonLineValue(commentValue: string, tag: string): JsonValue | undefined {
-  const rawValue = extractLineValue(commentValue, tag);
-  if (!rawValue) {
-    return undefined;
-  }
-
-  return parseJsonValue(rawValue);
 }
 
 function parseQuerystringTag(commentValue: string): { typeName: string; name: string } | null {
@@ -781,7 +1013,14 @@ function toCamelCase(value: string): string {
 }
 
 function isExampleTarget(value: string): value is JSDocExampleDefinition["target"] {
-  return value === "request" || value === "response" || value === "querystring";
+  return (
+    value === "request" ||
+    value === "response" ||
+    value === "querystring" ||
+    value === "query" ||
+    value === "header" ||
+    value === "cookie"
+  );
 }
 
 function normalizeExampleTarget(value: string): string {
@@ -1018,29 +1257,25 @@ export function cleanSpec(spec: OpenApiDocument): OpenApiDocument {
 
       // Check if path contains parameters
       if (path.includes("{") && path.includes("}")) {
-        // For each HTTP method in this path
-        Object.keys(pathDefinition).forEach((method) => {
-          const operation = pathDefinition[method];
-          if (!operation) {
-            return;
+        for (const [, operation] of getPathItemOperations(pathDefinition)) {
+          if (!operation.parameters) {
+            continue;
           }
 
-          // Set example properties for each path parameter
-          if (operation.parameters) {
-            operation.parameters.forEach((param: ParamSchema) => {
-              if (param.in === "path" && !param.example) {
-                // Generate an example based on parameter name
-                if (param.name === "id" || param.name.endsWith("Id")) {
-                  param.example = 123;
-                } else if (param.name === "slug") {
-                  param.example = "example-slug";
-                } else {
-                  param.example = "example";
-                }
-              }
-            });
-          }
-        });
+          operation.parameters.forEach((param) => {
+            if (!isParameterObject(param) || param.in !== "path" || param.example) {
+              return;
+            }
+
+            if (param.name === "id" || param.name.endsWith("Id")) {
+              param.example = 123;
+            } else if (param.name === "slug") {
+              param.example = "example-slug";
+            } else {
+              param.example = "example";
+            }
+          });
+        }
       }
     });
   }
@@ -1072,7 +1307,25 @@ const INTERNAL_OPENAPI_CONFIG_KEYS = [
   "debug",
   "authPresets",
   "excludeSchemas",
+  "cache",
+  "experimental",
+  "arazzo",
+  "overlay",
+  "generatedDir",
+  "watch",
+  "clientSdk",
+  "docs",
+  "hooks",
+  "basePath",
 ] as const;
+
+function isParameterObject(value: OpenApiParameter | { $ref: string }): value is OpenApiParameter {
+  return typeof value === "object" && value !== null && "in" in value && "name" in value;
+}
+
+function isEncodingObject(value: unknown): value is OpenApiEncoding {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
 
 export const DEFAULT_AUTH_PRESET_REPLACEMENTS: Record<string, string> = {
   bearer: "BearerAuth",

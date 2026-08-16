@@ -2,13 +2,7 @@ import path from "node:path";
 
 import type * as t from "@babel/types";
 
-import type {
-  Diagnostic,
-  OpenAPIDefinition,
-  OpenApiPathDefinition,
-  OpenApiSchema,
-  OpenApiTagDefinition,
-} from "../shared/types.js";
+import type { Diagnostic, OpenApiPathItem, OpenApiSchema, OpenApiTag } from "../shared/types.js";
 import { invalidateTypeScriptProject } from "../shared/typescript-project.js";
 
 export type CachedFileContent = {
@@ -20,13 +14,13 @@ export type CachedFileContent = {
 export type CachedRouteFragment = {
   cacheKey: string;
   diagnostics: Diagnostic[];
-  internalSchemas: Record<string, OpenAPIDefinition>;
+  internalSchemas: Record<string, OpenApiSchema>;
   mtimeMs: number;
-  paths: Record<string, OpenApiPathDefinition>;
-  schemas: Record<string, OpenAPIDefinition>;
+  paths: Record<string, OpenApiPathItem>;
+  schemas: Record<string, OpenApiSchema>;
   size: number;
-  tags: Record<string, OpenApiTagDefinition>;
-  webhooks: Record<string, OpenApiPathDefinition>;
+  tags: Record<string, OpenApiTag>;
+  webhooks: Record<string, OpenApiPathItem>;
 };
 
 export type SharedZodGenerationRuntime = {

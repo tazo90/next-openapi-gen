@@ -6,15 +6,17 @@ import { measurePerformance, type GenerationPerformanceProfile } from "../core/p
 import type { CachedRouteFragment, SharedGenerationRuntime } from "../core/runtime.js";
 import type { DiagnosticsCollector } from "../diagnostics/collector.js";
 import type { FrameworkSource } from "../frameworks/types.js";
+import { setPathItemOperation } from "../openapi/path-item.js";
+import { isRegisteredTagKind } from "../openapi/registries/index.js";
 import { SchemaProcessor } from "../schema/typescript/schema-processor.js";
 import { logger } from "../shared/logger.js";
 import type {
   DataTypes,
   OpenApiConfig,
-  OpenApiPathDefinition,
-  OpenApiTagDefinition,
+  OpenApiOperation,
+  OpenApiPathItem,
+  OpenApiTag,
   ResolvedOpenApiConfig,
-  RouteDefinition,
 } from "../shared/types.js";
 import { capitalize, extractPathParameters, resolveAnnotationTypeName } from "../shared/utils.js";
 import { OperationProcessor } from "./operation-processor.js";
@@ -29,9 +31,9 @@ export type RouteScanPerformanceProfile = {
 };
 
 export class RouteProcessor {
-  private pathDefinitions: Record<string, OpenApiPathDefinition> = {};
-  private webhookDefinitions: Record<string, OpenApiPathDefinition> = {};
-  private tagDefinitions: Record<string, OpenApiTagDefinition> = {};
+  private pathDefinitions: Record<string, OpenApiPathItem> = {};
+  private webhookDefinitions: Record<string, OpenApiPathItem> = {};
+  private tagDefinitions: Record<string, OpenApiTag> = {};
   private cachedSchemaDefinitions: Record<string, any> = {};
   private cachedInternalSchemaDefinitions: Record<string, any> = {};
   private schemaProcessor: SchemaProcessor;
@@ -92,7 +94,7 @@ export class RouteProcessor {
   private processResponsesFromConfig(
     dataTypes: DataTypes,
     method: string,
-  ): RouteDefinition["responses"] {
+  ): OpenApiOperation["responses"] {
     return this.responseProcessor.processResponses(dataTypes, method);
   }
 
@@ -163,7 +165,7 @@ export class RouteProcessor {
     }
 
     const pathParams = extractPathParameters(routePath);
-    this.registerTagMetadata(routePath, dataTypes);
+    this.registerTagMetadata(filePath, routePath, dataTypes);
     this.registerRouteFeatureDiagnostics(filePath, routePath, dataTypes);
     if (
       pathParams.length > 0 &&
@@ -174,19 +176,19 @@ export class RouteProcessor {
       this.diagnostics?.add({
         code: "missing-path-params-type",
         severity: "warning",
-        message: `Route ${routePath} contains path parameters ${pathParams.join(", ")} but no @pathParams type is defined.`,
+        message: `Route ${routePath} contains path parameters ${pathParams.join(", ")} but no @path type is defined.`,
         filePath,
         routePath,
         metadata: {
           pathParams,
           suggestedFix:
-            "Add @pathParams <SchemaName>, validate context.params in the handler, or export matching <paramName>Schema helpers.",
+            "Add @path <SchemaName>, validate context.params in the handler, or export matching <paramName>Schema helpers.",
         },
       });
       logger.debug(
         `Route ${routePath} contains path parameters ${pathParams.join(
           ", ",
-        )} but no @pathParams type is defined.`,
+        )} but no @path type is defined.`,
       );
     }
 
@@ -341,7 +343,7 @@ export class RouteProcessor {
       if (!this.webhookDefinitions[webhookKey]) {
         this.webhookDefinitions[webhookKey] = {};
       }
-      this.webhookDefinitions[webhookKey][method] = definition;
+      setPathItemOperation(this.webhookDefinitions[webhookKey], method, definition);
       return;
     }
 
@@ -349,19 +351,10 @@ export class RouteProcessor {
       this.pathDefinitions[routePath] = {};
     }
 
-    if (method === "query") {
-      const pathItem = this.pathDefinitions[routePath] as OpenApiPathDefinition & {
-        additionalOperations?: Record<string, RouteDefinition>;
-      };
-      pathItem.additionalOperations ??= {};
-      pathItem.additionalOperations.query = definition;
-      return;
-    }
-
-    this.pathDefinitions[routePath][method] = definition;
+    setPathItemOperation(this.pathDefinitions[routePath], method, definition);
   }
 
-  public getWebhooks(): Record<string, OpenApiPathDefinition> {
+  public getWebhooks(): Record<string, OpenApiPathItem> {
     return sortPathDefinitions(this.webhookDefinitions);
   }
 
@@ -401,10 +394,10 @@ export class RouteProcessor {
     previous: {
       diagnosticsBefore: number;
       internalSchemasBefore: Record<string, any>;
-      pathsBefore: Record<string, OpenApiPathDefinition>;
+      pathsBefore: Record<string, OpenApiPathItem>;
       schemasBefore: Record<string, any>;
-      tagsBefore: Record<string, OpenApiTagDefinition>;
-      webhooksBefore: Record<string, OpenApiPathDefinition>;
+      tagsBefore: Record<string, OpenApiTag>;
+      webhooksBefore: Record<string, OpenApiPathItem>;
     },
   ): void {
     if (!this.runtime) {
@@ -447,18 +440,14 @@ export class RouteProcessor {
     });
   }
 
-  public getPaths(): Record<string, OpenApiPathDefinition> {
+  public getPaths(): Record<string, OpenApiPathItem> {
     return sortPathDefinitions(this.pathDefinitions);
   }
 
-  public getTags(): OpenApiTagDefinition[] {
+  public getTags(): OpenApiTag[] {
     return Object.values(this.tagDefinitions).toSorted((a, b) =>
       a.name.localeCompare(b.name, "en", { sensitivity: "base" }),
     );
-  }
-
-  public getSwaggerPaths(): Record<string, OpenApiPathDefinition> {
-    return this.getPaths();
   }
 
   public getCachedSchemas(): Record<string, any> {
@@ -506,16 +495,28 @@ export class RouteProcessor {
     }
   }
 
-  private registerTagMetadata(routePath: string, dataTypes: DataTypes): void {
+  private registerTagMetadata(filePath: string, routePath: string, dataTypes: DataTypes): void {
     const routeTag = dataTypes.tag || capitalize(routePath.split("/")[1] || "");
     if (!routeTag) {
       return;
+    }
+
+    if (dataTypes.tagKind && !isRegisteredTagKind(dataTypes.tagKind)) {
+      this.diagnostics?.add({
+        code: "unregistered-tag-kind",
+        severity: "info",
+        message: `Tag kind "${dataTypes.tagKind}" is not in the OAI Tag Kind registry.`,
+        filePath,
+        routePath,
+        metadata: { kind: dataTypes.tagKind },
+      });
     }
 
     const existingTag = this.tagDefinitions[routeTag] || { name: routeTag };
     this.tagDefinitions[routeTag] = {
       ...existingTag,
       ...(dataTypes.tagSummary ? { summary: dataTypes.tagSummary } : {}),
+      ...(dataTypes.tagDescription ? { description: dataTypes.tagDescription } : {}),
       ...(dataTypes.tagKind ? { kind: dataTypes.tagKind } : {}),
       ...(dataTypes.tagParent ? { parent: dataTypes.tagParent } : {}),
     };

@@ -39,7 +39,7 @@ describe("normalizeOpenApiConfig", () => {
 
   it("preserves explicit framework configs and ignores legacy openapiVersion overrides", () => {
     const config = normalizeOpenApiConfig({
-      openapi: "4.1.0",
+      openapi: "3.3-preview",
       openapiVersion: "3.1",
       info: {
         title: "Fixture",
@@ -52,7 +52,7 @@ describe("normalizeOpenApiConfig", () => {
       schemaType: "typescript",
     } as never);
 
-    expect(config.openapiVersion).toBe("4.0");
+    expect(config.openapiVersion).toBe("3.3-preview");
     expect(config.framework).toEqual({
       kind: FrameworkKind.Tanstack,
     });
@@ -131,10 +131,26 @@ describe("normalizeOpenApiConfig", () => {
 
     expect(
       normalizeOpenApiConfig({
+        openapi: "3.3-preview",
+        info: { title: "Fixture", version: "1.0.0", description: "Fixture" },
+      } as never).openapiVersion,
+    ).toBe("3.3-preview");
+
+    expect(
+      normalizeOpenApiConfig({
+        openapi: "3.3.0-preview",
+        info: { title: "Fixture", version: "1.0.0", description: "Fixture" },
+      } as never).openapiVersion,
+    ).toBe("3.3-preview");
+  });
+
+  it("does not treat OpenAPI 4.0 as a supported version", () => {
+    expect(
+      normalizeOpenApiConfig({
         openapi: "4.0.0",
         info: { title: "Fixture", version: "1.0.0", description: "Fixture" },
       } as never).openapiVersion,
-    ).toBe("4.0");
+    ).toBe("3.2");
   });
 
   it("defaults config-style inputs without an explicit openapi version", () => {
@@ -162,5 +178,21 @@ describe("normalizeOpenApiConfig", () => {
         cache: false,
       } as never).cache,
     ).toBe(false);
+  });
+
+  it("keeps optional arazzo and overlay config and does not treat 3.3 as a version", () => {
+    const config = normalizeOpenApiConfig({
+      openapi: "3.3.0",
+      info: { title: "Fixture", version: "1.0.0" },
+      arazzo: { version: "1.1.0", files: ["./arazzo/**/*.yaml"] },
+      overlay: { version: "1.1.0", apply: ["./overlays/public.overlay.yaml"] },
+    } as never);
+
+    expect(config.openapiVersion).toBe("3.2");
+    expect(config.arazzo).toEqual({ version: "1.1.0", files: ["./arazzo/**/*.yaml"] });
+    expect(config.overlay).toEqual({
+      version: "1.1.0",
+      apply: ["./overlays/public.overlay.yaml"],
+    });
   });
 });

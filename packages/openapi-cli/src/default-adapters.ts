@@ -1,8 +1,10 @@
-import type { GenerationAdapters } from "@workspace/openapi-core/core/adapters.js";
+import { createArazzoEmitter } from "@workspace/openapi-arazzo";
+import type { GenerationAdapters, SpecEmitter } from "@workspace/openapi-core/core/adapters.js";
 import { FrameworkKind } from "@workspace/openapi-core/shared/types.js";
 import { createNextFrameworkSource, emitNextDocsArtifact } from "@workspace/openapi-framework-next";
 import { createReactRouterFrameworkSource } from "@workspace/openapi-framework-react-router";
 import { createTanStackFrameworkSource } from "@workspace/openapi-framework-tanstack";
+import { createOverlayEmitter } from "@workspace/openapi-overlay";
 
 export function createDefaultGenerationAdapters(): GenerationAdapters {
   return {
@@ -17,5 +19,15 @@ export function createDefaultGenerationAdapters(): GenerationAdapters {
       }
     },
     emitDocsArtifact: emitNextDocsArtifact,
+    createSpecEmitters(config) {
+      const emitters: SpecEmitter[] = [];
+      if (config.overlay) {
+        emitters.push(createOverlayEmitter());
+      }
+      if (config.arazzo) {
+        emitters.push(createArazzoEmitter());
+      }
+      return emitters;
+    },
   };
 }

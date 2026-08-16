@@ -48,8 +48,17 @@ function normalizeOpenApiVersion(template: Pick<OpenApiTemplate, "openapi">): Op
     return "3.1";
   }
 
-  if (template.openapi.startsWith("4.")) {
-    return "4.0";
+  if (template.openapi.startsWith("3.0")) {
+    return "3.0";
+  }
+
+  if (/^3\.3(\.0)?-preview/.test(template.openapi)) {
+    return "3.3-preview";
+  }
+
+  // Unreleased 3.3.0 and unsupported 4.x fall back to the latest released target.
+  if (template.openapi.startsWith("3.3") || template.openapi.startsWith("4.")) {
+    return "3.2";
   }
 
   return DEFAULT_OPENAPI_VERSION;
@@ -160,6 +169,8 @@ export function normalizeOpenApiConfig(
     cache: resolveCacheSetting(template),
     experimental: template.experimental,
     authPresets: { ...DEFAULT_AUTH_PRESET_REPLACEMENTS, ...template.authPresets },
+    arazzo: template.arazzo,
+    overlay: template.overlay,
     debug: template.debug ?? DEFAULT_DEBUG,
   };
 }

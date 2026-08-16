@@ -33,6 +33,23 @@ describe("OpenAPI version processor", () => {
     expect(finalized).toHaveProperty("paths");
   });
 
+  it("emits 3.3-preview as an experimental 3.2-compatible document version", () => {
+    const finalized = getOpenApiVersionProcessor("3.3-preview").finalize(
+      createDocumentFromTemplate({
+        openapi: "3.2.0",
+        $self: "https://example.com/openapi.json",
+        info: {
+          title: "Fixture",
+          version: "1.0.0",
+        },
+        paths: {},
+      }),
+    );
+
+    expect(finalized.openapi).toBe("3.3-preview");
+    expect(finalized.$self).toBe("https://example.com/openapi.json");
+  });
+
   it("upgrades shared schema shapes to OpenAPI 3.1 semantics", () => {
     const finalized = getOpenApiVersionProcessor("3.1").finalize(
       createDocumentFromTemplate({
@@ -100,6 +117,7 @@ describe("OpenAPI version processor", () => {
       minimum: 7,
       exclusiveMinimum: true,
       format: "base64",
+      "x-jsonschema-contentEncoding": "base64",
     });
   });
 
@@ -129,6 +147,11 @@ describe("OpenAPI version processor", () => {
     expect(finalized.components?.schemas?.TypedMap).toEqual({
       type: "object",
       additionalProperties: { type: "number" },
+      "x-jsonschema-propertyNames": { type: "string", pattern: "^[a-z]+$" },
+      "x-jsonschema-patternProperties": { "^x-": { type: "string" } },
+      "x-jsonschema-dependentSchemas": { a: { required: ["b"] } },
+      "x-jsonschema-unevaluatedProperties": false,
+      "x-jsonschema-contentSchema": { type: "object" },
     });
   });
 
@@ -302,7 +325,9 @@ describe("OpenAPI version processor", () => {
 
     const finalized31 = getOpenApiVersionProcessor("3.1").finalize(document);
     expect(finalized31).not.toHaveProperty("$self");
+    expect(finalized31["x-oai-$self"]).toBe("https://example.com/openapi.json");
     expect(finalized31.servers?.[0]).not.toHaveProperty("name");
+    expect(finalized31.servers?.[0]).toMatchObject({ "x-oai-name": "production" });
     expect(finalized31.tags?.[0]).not.toHaveProperty("summary");
     expect(finalized31.paths?.["/search"]?.get?.parameters?.[0]).toMatchObject({
       in: "query",
@@ -312,7 +337,14 @@ describe("OpenAPI version processor", () => {
         "content" in finalized31.paths["/search"].get.responses["200"]
         ? finalized31.paths["/search"].get.responses["200"].content?.["text/event-stream"]
         : undefined,
-    ).not.toHaveProperty("itemSchema");
+    ).toMatchObject({
+      "x-oai-itemSchema": {
+        type: "object",
+        properties: {
+          id: { type: "string" },
+        },
+      },
+    });
     expect(
       finalized31.paths?.["/search"]?.get?.responses?.["200"] &&
         "content" in finalized31.paths["/search"].get.responses["200"]
@@ -323,8 +355,13 @@ describe("OpenAPI version processor", () => {
         value: {
           id: "evt_1",
         },
+        "x-oai-dataValue": {
+          id: "evt_1",
+        },
       },
-      wire: {},
+      wire: {
+        "x-oai-serializedValue": 'data: {"id":"evt_1"}\n\n',
+      },
     });
     expect(finalized31.components?.securitySchemes?.DeviceOAuth).not.toHaveProperty(
       "oauth2MetadataUrl",

@@ -1,0 +1,14 @@
+{
+  "snapshotDate": "2026-08-13",
+  "source": "https://spec.openapis.org/registry/namespace/",
+  "namespaces": [
+    { "id": "fdx", "prefix": "x-fdx-" },
+    { "id": "jsonschema", "prefix": "x-jsonschema-" },
+    { "id": "ms", "prefix": "x-ms-" },
+    { "id": "oai", "prefix": "x-oai-" },
+    { "id": "oas-draft", "prefix": "x-oas-draft-" },
+    { "id": "oas", "prefix": "x-oas-" },
+    { "id": "sap", "prefix": "x-sap-" },
+    { "id": "scalar", "prefix": "x-scalar-" }
+  ]
+}

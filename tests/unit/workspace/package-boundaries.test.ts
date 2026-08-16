@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 
 const workspaceRoot = path.resolve(import.meta.dirname, "..", "..", "..");
 const packageRoots = {
+  "@workspace/openapi-arazzo": path.join(workspaceRoot, "packages", "openapi-arazzo", "src"),
   "@workspace/openapi-cli": path.join(workspaceRoot, "packages", "openapi-cli", "src"),
   "@workspace/openapi-core": path.join(workspaceRoot, "packages", "openapi-core", "src"),
   "@workspace/openapi-framework-next": path.join(
@@ -26,28 +27,35 @@ const packageRoots = {
     "src",
   ),
   "@workspace/openapi-init": path.join(workspaceRoot, "packages", "openapi-init", "src"),
+  "@workspace/openapi-overlay": path.join(workspaceRoot, "packages", "openapi-overlay", "src"),
   "next-openapi-gen": path.join(workspaceRoot, "packages", "next-openapi-gen", "src"),
 } as const;
 
 const allowedWorkspaceImports: Record<keyof typeof packageRoots, readonly string[]> = {
+  "@workspace/openapi-arazzo": ["@workspace/openapi-core"],
   "@workspace/openapi-cli": [
+    "@workspace/openapi-arazzo",
     "@workspace/openapi-core",
     "@workspace/openapi-framework-next",
     "@workspace/openapi-framework-react-router",
     "@workspace/openapi-framework-tanstack",
     "@workspace/openapi-init",
+    "@workspace/openapi-overlay",
   ],
   "@workspace/openapi-core": [],
   "@workspace/openapi-framework-next": ["@workspace/openapi-core", "@workspace/openapi-init"],
   "@workspace/openapi-framework-react-router": ["@workspace/openapi-core"],
   "@workspace/openapi-framework-tanstack": ["@workspace/openapi-core"],
   "@workspace/openapi-init": ["@workspace/openapi-core"],
+  "@workspace/openapi-overlay": ["@workspace/openapi-core"],
   "next-openapi-gen": [
+    "@workspace/openapi-arazzo",
     "@workspace/openapi-cli",
     "@workspace/openapi-core",
     "@workspace/openapi-framework-next",
     "@workspace/openapi-framework-react-router",
     "@workspace/openapi-framework-tanstack",
+    "@workspace/openapi-overlay",
   ],
 };
 

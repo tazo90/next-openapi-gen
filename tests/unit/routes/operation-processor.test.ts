@@ -155,8 +155,8 @@ describe("OperationProcessor", () => {
           schema: {
             properties: {
               file: {
-                format: "binary",
                 type: "string",
+                contentMediaType: "application/octet-stream",
               },
             },
             required: ["file"],
@@ -789,5 +789,68 @@ describe("OperationProcessor", () => {
       security: [{ bearer: ["read"] }],
     });
     expect(withSecurity.definition.security).toEqual([{ JwtAuth: ["read"] }]);
+  });
+
+  it("emits requestBody.required, request itemSchema, and query parameter examples", () => {
+    const createRequestParamsSchema = vi
+      .fn<MockFn>()
+      .mockReturnValue([
+        { in: "query", name: "limit", required: false, schema: { type: "integer" } },
+      ]);
+    const schemaProcessor = {
+      getSchemaContent: vi.fn<MockFn>(() => ({
+        params: { properties: { limit: { type: "integer" } } },
+        querystring: {},
+        pathParams: undefined,
+        body: { type: "object" },
+        responses: {},
+      })),
+      createRequestParamsSchema,
+      createDefaultPathParamsSchema: vi.fn<MockFn>(),
+      detectContentType: vi.fn<MockFn>(() => "application/jsonl"),
+      createRequestBodySchema: vi.fn<MockFn>(),
+      createResponseSchema: vi.fn<MockFn>(),
+      ensureSchemaResolved: vi.fn<MockFn>(),
+      getSchemaReferenceName: vi.fn<MockFn>((typeName) => typeName),
+    };
+    const responseProcessor = {
+      supportsRequestBody: vi.fn<MockFn>(() => true),
+      processResponses: vi.fn<MockFn>(() => ({
+        201: { description: "Created" },
+      })),
+    };
+
+    const processor = new OperationProcessor(schemaProcessor as never, responseProcessor as never);
+    const result = processor.processOperation("POST", "/events", {
+      tag: "Events",
+      paramsType: "EventQuery",
+      bodyType: "EventSearchRequest",
+      requestBodyRequired: true,
+      requestItemType: "EventChunk",
+      queryExamples: {
+        limit: { value: 10 },
+      },
+    });
+
+    expect(result.definition.parameters).toEqual([
+      {
+        in: "query",
+        name: "limit",
+        required: false,
+        schema: { type: "integer" },
+        examples: {
+          limit: { value: 10 },
+        },
+      },
+    ]);
+    expect(result.definition.requestBody).toEqual({
+      required: true,
+      content: {
+        "application/jsonl": {
+          schema: { $ref: "#/components/schemas/EventSearchRequest" },
+          itemSchema: { $ref: "#/components/schemas/EventChunk" },
+        },
+      },
+    });
   });
 });

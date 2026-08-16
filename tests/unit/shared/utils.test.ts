@@ -72,6 +72,7 @@ describe("shared utils", () => {
     expect(data).toEqual({
       tag: "Users",
       tagSummary: "",
+      tagDescription: "",
       tagKind: "",
       tagParent: "",
       auth: "basic",
@@ -95,7 +96,9 @@ describe("shared utils", () => {
       responseType: "",
       responseContentType: "",
       responseItemType: "",
+      requestItemType: "",
       responseDescription: "Created without body",
+      responseSummary: "",
       responseSet: "common",
       addResponses: "401:ErrorResponse,429",
       successCode: "204",
@@ -110,6 +113,7 @@ describe("shared utils", () => {
     expect(data).toEqual({
       tag: "",
       tagSummary: "",
+      tagDescription: "",
       tagKind: "",
       tagParent: "",
       auth: "",
@@ -133,7 +137,9 @@ describe("shared utils", () => {
       responseType: "",
       responseContentType: "",
       responseItemType: "",
+      requestItemType: "",
       responseDescription: "",
+      responseSummary: "",
       responseSet: "",
       addResponses: "",
       successCode: "",
@@ -251,6 +257,85 @@ describe("shared utils", () => {
         },
         wire: {
           serializedValue: 'data: {"id":"evt_1"}\\n\\n',
+        },
+      },
+    });
+  });
+
+  it("parses OAS-aligned JSDoc aliases and high-value missing tags", () => {
+    const data = getExportCommentData(`
+      /**
+       * Search users
+       * @tag Users
+       * @tagDescription User administration
+       * @query UserQuery
+       * @path UserPath
+       * @header RequestHeaders
+       * @cookie SessionCookies
+       * @requestBody CreateUserBody required
+       * @requestBodyDescription JSON payload
+       * @requestContentType application/jsonl
+       * @itemSchema request:UploadChunk
+       * @itemSchema EventChunk
+       * @itemEncoding request:{"headers":{"content-type":"application/json"}}
+       * @itemEncoding {"headers":{"content-type":"text/plain"}}
+       * @prefixEncoding [{"type":"text"}]
+       * @response 201:UserResponse
+       * @responseSummary 201 Created
+       * @responseSummary User created
+       * @examples query:limit:10
+       * @examples header:{"X-Request-Id":"req_1"}
+       * @examples cookie:session:"sess_1"
+       * @openapi
+       */
+      export async function POST() {}
+    `);
+
+    expect(data).toMatchObject({
+      tag: "Users",
+      tagDescription: "User administration",
+      paramsType: "UserQuery",
+      pathParamsType: "UserPath",
+      headerType: "RequestHeaders",
+      cookieType: "SessionCookies",
+      bodyType: "CreateUserBody",
+      requestBodyRequired: true,
+      bodyDescription: "JSON payload",
+      contentType: "application/jsonl",
+      requestItemType: "UploadChunk",
+      responseItemType: "EventChunk",
+      requestItemEncoding: {
+        headers: {
+          "content-type": "application/json",
+        },
+      },
+      responseItemEncoding: {
+        headers: {
+          "content-type": "text/plain",
+        },
+      },
+      responsePrefixEncoding: [{ type: "text" }],
+      responseType: "UserResponse",
+      successCode: "201",
+      responseSummary: "User created",
+      responseSummaries: {
+        "201": "Created",
+      },
+      queryExamples: {
+        limit: {
+          value: 10,
+        },
+      },
+      headerExamples: {
+        example: {
+          value: {
+            "X-Request-Id": "req_1",
+          },
+        },
+      },
+      cookieExamples: {
+        session: {
+          value: "sess_1",
         },
       },
     });

@@ -7,6 +7,8 @@
     { "path": "packages/openapi-framework-next" },
     { "path": "packages/openapi-framework-tanstack" },
     { "path": "packages/openapi-framework-react-router" },
+    { "path": "packages/openapi-arazzo" },
+    { "path": "packages/openapi-overlay" },
     { "path": "packages/openapi-cli" }
   ]
 }

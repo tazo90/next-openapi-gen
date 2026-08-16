@@ -1,0 +1,9 @@
+overlay: 1.1.0
+info:
+  title: Public API overlay
+  version: 1.0.0
+  description: Hide internal webhook paths from the published OpenAPI document.
+actions:
+  - description: Remove the payment webhook from the public specification
+    target: "$.paths['/webhooks/payment']"
+    remove: true

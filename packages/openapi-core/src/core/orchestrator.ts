@@ -3,14 +3,14 @@ import {
   createErrorResponseComponent,
   generateErrorResponsesFromConfig,
 } from "../generator/error-responses.js";
-import { createDocumentFromTemplate } from "../openapi/document.js";
+import { createDocumentFromTemplate, getTemplateServerUrl } from "../openapi/document.js";
 import { getOpenApiVersionProcessor } from "../openapi/version-processor.js";
 import { sortPathDefinitions } from "../routes/path-sort.js";
 import { RouteProcessor } from "../routes/route-processor.js";
 import { loadCustomOpenApiFragments } from "../schema/core/custom-schema-file-processor.js";
 import type {
   OpenApiDocument,
-  OpenApiTagDefinition,
+  OpenApiTag,
   OpenApiTemplate,
   ResolvedOpenApiConfig,
 } from "../shared/types.js";
@@ -107,7 +107,7 @@ export function runGenerationOrchestrator({
   if (!document.servers || document.servers.length === 0) {
     document.servers = [
       {
-        url: document.basePath || getDefaultServerUrl(config),
+        url: getTemplateServerUrl(template) || getDefaultServerUrl(config),
         description: "API server",
       },
     ];
@@ -255,14 +255,14 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 function mergeTagDefinitions(
-  existingTags: OpenApiTagDefinition[] | undefined,
-  generatedTags: OpenApiTagDefinition[],
-): OpenApiTagDefinition[] | undefined {
+  existingTags: OpenApiTag[] | undefined,
+  generatedTags: OpenApiTag[],
+): OpenApiTag[] | undefined {
   if ((!existingTags || existingTags.length === 0) && generatedTags.length === 0) {
     return existingTags;
   }
 
-  const mergedTags = new Map<string, OpenApiTagDefinition>();
+  const mergedTags = new Map<string, OpenApiTag>();
   existingTags?.forEach((tag) => {
     mergedTags.set(tag.name, structuredClone(tag));
   });

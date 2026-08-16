@@ -2,6 +2,7 @@ import * as t from "@babel/types";
 
 import type { OpenApiSchema } from "../../shared/types.js";
 import { applyNullableWrapper } from "./nullability.js";
+import { applyZodStringFormat } from "./string-formats.js";
 
 // Broader detection for binary payloads passed to `z.custom<T>()`: matches common runtime
 // types people annotate uploaded bytes with. We treat them all as `string` + `format: binary`
@@ -585,100 +586,41 @@ export function processZodPrimitiveNode(
       schema = { type: "integer", format: "int64" };
       break;
     case "email":
-      schema = { type: "string", format: "email" };
-      break;
     case "url":
     case "uri":
-      schema = { type: "string", format: "uri" };
-      break;
     case "uuid":
     case "uuidv4":
     case "uuidv6":
     case "uuidv7":
     case "guid":
-      schema = { type: "string", format: "uuid" };
-      break;
     case "cuid":
-      schema = { type: "string", format: "cuid" };
-      break;
     case "cuid2":
-      schema = { type: "string", format: "cuid2" };
-      break;
     case "ulid":
-      schema = { type: "string", format: "ulid" };
-      break;
     case "nanoid":
-      schema = { type: "string", format: "nanoid" };
-      break;
     case "xid":
-      schema = { type: "string", format: "xid" };
-      break;
     case "ksuid":
-      schema = { type: "string", format: "ksuid" };
-      break;
     case "jwt":
-      schema = { type: "string", format: "jwt" };
-      break;
     case "hostname":
-      schema = { type: "string", format: "hostname" };
-      break;
     case "httpUrl":
-      schema = { type: "string", format: "uri" };
-      break;
     case "hex":
-      schema = { type: "string", format: "hex" };
-      break;
     case "hash":
-      schema = { type: "string", format: "hash" };
-      break;
     case "base64":
-      schema = { type: "string", format: "byte" };
-      break;
     case "base64url":
-      schema = { type: "string", format: "base64url" };
-      break;
     case "emoji":
-      // Matches Zod's `RegExp` for an emoji grapheme cluster.
-      schema = { type: "string", format: "emoji" };
-      break;
     case "ip":
-      schema = { type: "string", format: "ip" };
-      break;
     case "cidr":
-      schema = { type: "string", format: "cidr" };
-      break;
     case "cidrv4":
-      schema = { type: "string", format: "cidrv4" };
-      break;
     case "cidrv6":
-      schema = { type: "string", format: "cidrv6" };
-      break;
     case "e164":
-      schema = { type: "string", format: "e164" };
-      break;
     case "datetime":
-      schema = { type: "string", format: "date-time" };
-      break;
     case "time":
-      schema = { type: "string", format: "time" };
-      break;
     case "iso.datetime":
-      schema = { type: "string", format: "date-time" };
-      break;
     case "iso.date":
-      schema = { type: "string", format: "date" };
-      break;
     case "iso.time":
-      schema = { type: "string", format: "time" };
-      break;
     case "iso.duration":
-      schema = { type: "string", format: "duration" };
-      break;
     case "ipv4":
-      schema = { type: "string", format: "ipv4" };
-      break;
     case "ipv6":
-      schema = { type: "string", format: "ipv6" };
+      schema = applyZodStringFormat({ type: "string" }, zodType);
       break;
     case "any":
     case "unknown":
@@ -707,7 +649,7 @@ export function processZodPrimitiveNode(
       schema = { type: "number" };
       break;
     case "file":
-      schema = { type: "string", format: "binary" };
+      schema = applyZodStringFormat({ type: "string" }, "binary");
       break;
     case "instanceof": {
       // Map known host objects to their canonical wire representation.
@@ -719,7 +661,7 @@ export function processZodPrimitiveNode(
         switch (firstArg.name) {
           case "File":
           case "Blob":
-            schema = { type: "string", format: "binary" };
+            schema = applyZodStringFormat({ type: "string" }, "binary");
             break;
           case "Date":
             schema = { type: "string", format: "date-time" };
@@ -931,7 +873,7 @@ export function processZodPrimitiveNode(
           t.isIdentifier(typeParam.typeName) &&
           BINARY_CUSTOM_TYPES.has(typeParam.typeName.name)
         ) {
-          schema = { type: "string", format: "binary" };
+          schema = applyZodStringFormat({ type: "string" }, "binary");
         } else {
           schema = { type: "string" };
         }

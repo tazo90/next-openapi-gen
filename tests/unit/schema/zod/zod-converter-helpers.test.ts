@@ -366,7 +366,7 @@ describe("ZodSchemaConverter helper seams", () => {
       ),
     ).toEqual({
       type: "string",
-      format: "binary",
+      contentMediaType: "application/octet-stream",
     });
     expect(
       converter.processZodNode(

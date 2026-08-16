@@ -227,7 +227,7 @@ describe("TypeScript schema content helpers", () => {
             properties: {
               avatarFile: {
                 type: "string",
-                format: "binary",
+                contentMediaType: "application/octet-stream",
                 description: "Avatar file",
               },
             },

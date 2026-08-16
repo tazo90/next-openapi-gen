@@ -92,5 +92,14 @@
   "outputFile": "openapi.json",
   "outputDir": "./public",
   "includeOpenApiRoutes": false,
-  "debug": true
+  "debug": true,
+  "arazzo": {
+    "version": "1.1.0",
+    "files": ["./arazzo/**/*.yaml"],
+    "outputFile": "arazzo.yaml"
+  },
+  "overlay": {
+    "version": "1.1.0",
+    "apply": ["./overlays/public.overlay.yaml"]
+  }
 }

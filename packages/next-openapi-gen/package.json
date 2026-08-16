@@ -84,11 +84,13 @@
   },
   "devDependencies": {
     "@types/node": "catalog:",
+    "@workspace/openapi-arazzo": "workspace:*",
     "@workspace/openapi-cli": "workspace:*",
     "@workspace/openapi-core": "workspace:*",
     "@workspace/openapi-framework-next": "workspace:*",
     "@workspace/openapi-framework-react-router": "workspace:*",
     "@workspace/openapi-framework-tanstack": "workspace:*",
+    "@workspace/openapi-overlay": "workspace:*",
     "conventional-changelog-cli": "catalog:",
     "np": "catalog:",
     "oxfmt": "catalog:",
