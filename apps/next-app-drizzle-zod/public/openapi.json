@@ -71,7 +71,7 @@
               "description": "Sort mode"
             },
             "description": "Sort mode",
-            "example": "example"
+            "example": "name"
           }
         ],
         "responses": {
@@ -326,7 +326,7 @@
               "description": "Filter by publication status"
             },
             "description": "Filter by publication status",
-            "example": "example"
+            "example": "true"
           },
           {
             "in": "query",

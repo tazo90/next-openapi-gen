@@ -24,6 +24,16 @@
       }
     },
     "schemas": {
+      "ApiKeyIdParams": {},
+      "ApiKeyListQuerySchema": {
+        "type": "object"
+      },
+      "ApiKeyListResponse": {
+        "type": "object"
+      },
+      "ApiKeySchema": {
+        "type": "object"
+      },
       "Attachment": {
         "type": "object",
         "properties": {
@@ -65,6 +75,36 @@
           "url",
           "uploadedAt"
         ]
+      },
+      "AttachmentIdParams": {},
+      "AttachmentListQuerySchema": {
+        "type": "object"
+      },
+      "AttachmentListResponse": {
+        "type": "object"
+      },
+      "AttachmentSchema": {
+        "type": "object"
+      },
+      "AuditLogIdParams": {},
+      "AuditLogListQuerySchema": {
+        "type": "object"
+      },
+      "AuditLogListResponse": {
+        "type": "object"
+      },
+      "AuditLogSchema": {
+        "type": "object"
+      },
+      "CatalogItemIdParams": {},
+      "CatalogItemListQuerySchema": {
+        "type": "object"
+      },
+      "CatalogItemListResponse": {
+        "type": "object"
+      },
+      "CatalogItemSchema": {
+        "type": "object"
       },
       "Comment": {
         "type": "object",
@@ -413,6 +453,13 @@
           "createdAt"
         ]
       },
+      "CommentIdParams": {},
+      "CommentListQuerySchema": {
+        "type": "object"
+      },
+      "CommentListResponse": {
+        "type": "object"
+      },
       "CommentPathParams": {
         "type": "object",
         "properties": {
@@ -434,6 +481,9 @@
           "projectId",
           "taskId"
         ]
+      },
+      "CommentSchema": {
+        "type": "object"
       },
       "CommentsQueryParams": {
         "type": "object",
@@ -767,6 +817,18 @@
           "permissions"
         ]
       },
+      "CreateApiKeySchema": {
+        "type": "object"
+      },
+      "CreateAttachmentSchema": {
+        "type": "object"
+      },
+      "CreateAuditLogSchema": {
+        "type": "object"
+      },
+      "CreateCatalogItemSchema": {
+        "type": "object"
+      },
       "CreateCommentBody": {
         "type": "object",
         "properties": {
@@ -994,6 +1056,119 @@
           "success"
         ]
       },
+      "CreateCommentSchema": {
+        "type": "object"
+      },
+      "CreateCustomerSchema": {
+        "type": "object"
+      },
+      "CreateDepartmentSchema": {
+        "type": "object"
+      },
+      "CreateDocumentSchema": {
+        "type": "object"
+      },
+      "CreateExportSchema": {
+        "type": "object"
+      },
+      "CreateInvoiceSchema": {
+        "type": "object"
+      },
+      "CreateMemberSchema": {
+        "type": "object"
+      },
+      "CreateNotificationSchema": {
+        "type": "object"
+      },
+      "CreateOrderSchema": {
+        "type": "object"
+      },
+      "CreateOrganizationSchema": {
+        "type": "object"
+      },
+      "CreatePaymentSchema": {
+        "type": "object"
+      },
+      "CreateProductSchema": {
+        "type": "object"
+      },
+      "CreateProjectSchema": {
+        "type": "object"
+      },
+      "CreateRefundSchema": {
+        "type": "object"
+      },
+      "CreateReportSchema": {
+        "type": "object"
+      },
+      "CreateSessionSchema": {
+        "type": "object"
+      },
+      "CreateSubscriptionSchema": {
+        "type": "object"
+      },
+      "CreateTaskSchema": {
+        "type": "object"
+      },
+      "CreateTeamSchema": {
+        "type": "object"
+      },
+      "CreateWebhookSchema": {
+        "type": "object"
+      },
+      "CreateWorkspaceSchema": {
+        "type": "object"
+      },
+      "CustomerIdParams": {},
+      "CustomerListQuerySchema": {
+        "type": "object"
+      },
+      "CustomerListResponse": {
+        "type": "object"
+      },
+      "CustomerSchema": {
+        "type": "object"
+      },
+      "DepartmentIdParams": {},
+      "DepartmentListQuerySchema": {
+        "type": "object"
+      },
+      "DepartmentListResponse": {
+        "type": "object"
+      },
+      "DepartmentSchema": {
+        "type": "object"
+      },
+      "DocumentIdParams": {},
+      "DocumentListQuerySchema": {
+        "type": "object"
+      },
+      "DocumentListResponse": {
+        "type": "object"
+      },
+      "DocumentSchema": {
+        "type": "object"
+      },
+      "ExportIdParams": {},
+      "ExportListQuerySchema": {
+        "type": "object"
+      },
+      "ExportListResponse": {
+        "type": "object"
+      },
+      "ExportSchema": {
+        "type": "object"
+      },
+      "InvoiceIdParams": {},
+      "InvoiceListQuerySchema": {
+        "type": "object"
+      },
+      "InvoiceListResponse": {
+        "type": "object"
+      },
+      "InvoiceSchema": {
+        "type": "object"
+      },
       "LoginBody": {
         "type": "object",
         "properties": {
@@ -1030,6 +1205,87 @@
           "refresh_token"
         ]
       },
+      "MemberIdParams": {},
+      "MemberListQuerySchema": {
+        "type": "object"
+      },
+      "MemberListResponse": {
+        "type": "object"
+      },
+      "MemberSchema": {
+        "type": "object"
+      },
+      "NotificationIdParams": {},
+      "NotificationListQuerySchema": {
+        "type": "object"
+      },
+      "NotificationListResponse": {
+        "type": "object"
+      },
+      "NotificationSchema": {
+        "type": "object"
+      },
+      "OrderIdParams": {},
+      "OrderListQuerySchema": {
+        "type": "object"
+      },
+      "OrderListResponse": {
+        "type": "object"
+      },
+      "OrderSchema": {
+        "type": "object"
+      },
+      "OrganizationIdParams": {},
+      "OrganizationListQuerySchema": {
+        "type": "object"
+      },
+      "OrganizationListResponse": {
+        "type": "object"
+      },
+      "OrganizationSchema": {
+        "type": "object"
+      },
+      "PaymentIdParams": {},
+      "PaymentListQuerySchema": {
+        "type": "object"
+      },
+      "PaymentListResponse": {
+        "type": "object"
+      },
+      "PaymentSchema": {
+        "type": "object"
+      },
+      "ProductIdParams": {},
+      "ProductListQuerySchema": {
+        "type": "object"
+      },
+      "ProductListResponse": {
+        "type": "object"
+      },
+      "ProductSchema": {
+        "type": "object"
+      },
+      "ProjectCollectionPathParams": {},
+      "ProjectIdParams": {},
+      "ProjectListQuerySchema": {
+        "type": "object"
+      },
+      "ProjectListResponse": {
+        "type": "object"
+      },
+      "ProjectSchema": {
+        "type": "object"
+      },
+      "RefundIdParams": {},
+      "RefundListQuerySchema": {
+        "type": "object"
+      },
+      "RefundListResponse": {
+        "type": "object"
+      },
+      "RefundSchema": {
+        "type": "object"
+      },
       "ReportExportBody": {
         "type": "string"
       },
@@ -1044,6 +1300,69 @@
             ]
           }
         }
+      },
+      "ReportIdParams": {},
+      "ReportListQuerySchema": {
+        "type": "object"
+      },
+      "ReportListResponse": {
+        "type": "object"
+      },
+      "ReportSchema": {
+        "type": "object"
+      },
+      "SessionIdParams": {},
+      "SessionListQuerySchema": {
+        "type": "object"
+      },
+      "SessionListResponse": {
+        "type": "object"
+      },
+      "SessionSchema": {
+        "type": "object"
+      },
+      "SubscriptionIdParams": {},
+      "SubscriptionListQuerySchema": {
+        "type": "object"
+      },
+      "SubscriptionListResponse": {
+        "type": "object"
+      },
+      "SubscriptionSchema": {
+        "type": "object"
+      },
+      "TaskCollectionPathParams": {},
+      "TaskIdParams": {},
+      "TaskListQuerySchema": {
+        "type": "object"
+      },
+      "TaskListResponse": {
+        "type": "object"
+      },
+      "TaskSchema": {
+        "type": "object"
+      },
+      "TeamIdParams": {},
+      "TeamListQuerySchema": {
+        "type": "object"
+      },
+      "TeamListResponse": {
+        "type": "object"
+      },
+      "TeamSchema": {
+        "type": "object"
+      },
+      "UpdateApiKeySchema": {
+        "type": "object"
+      },
+      "UpdateAttachmentSchema": {
+        "type": "object"
+      },
+      "UpdateAuditLogSchema": {
+        "type": "object"
+      },
+      "UpdateCatalogItemSchema": {
+        "type": "object"
       },
       "UpdateCommentBody": {
         "type": "object",
@@ -1280,6 +1599,69 @@
           "success"
         ]
       },
+      "UpdateCommentSchema": {
+        "type": "object"
+      },
+      "UpdateCustomerSchema": {
+        "type": "object"
+      },
+      "UpdateDepartmentSchema": {
+        "type": "object"
+      },
+      "UpdateDocumentSchema": {
+        "type": "object"
+      },
+      "UpdateExportSchema": {
+        "type": "object"
+      },
+      "UpdateInvoiceSchema": {
+        "type": "object"
+      },
+      "UpdateMemberSchema": {
+        "type": "object"
+      },
+      "UpdateNotificationSchema": {
+        "type": "object"
+      },
+      "UpdateOrderSchema": {
+        "type": "object"
+      },
+      "UpdateOrganizationSchema": {
+        "type": "object"
+      },
+      "UpdatePaymentSchema": {
+        "type": "object"
+      },
+      "UpdateProductSchema": {
+        "type": "object"
+      },
+      "UpdateProjectSchema": {
+        "type": "object"
+      },
+      "UpdateRefundSchema": {
+        "type": "object"
+      },
+      "UpdateReportSchema": {
+        "type": "object"
+      },
+      "UpdateSessionSchema": {
+        "type": "object"
+      },
+      "UpdateSubscriptionSchema": {
+        "type": "object"
+      },
+      "UpdateTaskSchema": {
+        "type": "object"
+      },
+      "UpdateTeamSchema": {
+        "type": "object"
+      },
+      "UpdateWebhookSchema": {
+        "type": "object"
+      },
+      "UpdateWorkspaceSchema": {
+        "type": "object"
+      },
       "User": {
         "type": "object",
         "properties": {
@@ -1396,6 +1778,26 @@
           "role",
           "address"
         ]
+      },
+      "WebhookIdParams": {},
+      "WebhookListQuerySchema": {
+        "type": "object"
+      },
+      "WebhookListResponse": {
+        "type": "object"
+      },
+      "WebhookSchema": {
+        "type": "object"
+      },
+      "WorkspaceIdParams": {},
+      "WorkspaceListQuerySchema": {
+        "type": "object"
+      },
+      "WorkspaceListResponse": {
+        "type": "object"
+      },
+      "WorkspaceSchema": {
+        "type": "object"
       }
     },
     "responses": {
@@ -1462,6 +1864,561 @@
     }
   },
   "paths": {
+    "/generated/api-keys": {
+      "get": {
+        "operationId": "swaggerAppScaleListApiKey",
+        "summary": "List api-keys",
+        "description": "Returns a paginated list of api-keys",
+        "tags": [
+          "ApiKeys"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiKeyListResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "swaggerAppScaleCreateApiKey",
+        "summary": "Create apikey",
+        "description": "Creates a new apikey",
+        "tags": [
+          "ApiKeys"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateApiKeySchema"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiKeySchema"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/generated/api-keys/{id}": {
+      "get": {
+        "operationId": "swaggerAppScaleGetApiKey",
+        "summary": "Get apikey by ID",
+        "description": "Returns a single apikey by identifier",
+        "tags": [
+          "ApiKeys"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123",
+            "description": "Path parameter: id"
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiKeySchema"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      },
+      "patch": {
+        "operationId": "swaggerAppScaleUpdateApiKey",
+        "summary": "Update apikey",
+        "description": "Updates an existing apikey",
+        "tags": [
+          "ApiKeys"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123",
+            "description": "Path parameter: id"
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateApiKeySchema"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiKeySchema"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "swaggerAppScaleDeleteApiKey",
+        "summary": "Delete apikey",
+        "description": "Deletes a apikey by identifier",
+        "tags": [
+          "ApiKeys"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123",
+            "description": "Path parameter: id"
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Resource deleted successfully"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          }
+        }
+      }
+    },
+    "/generated/attachments": {
+      "get": {
+        "operationId": "swaggerAppScaleListAttachment",
+        "summary": "List attachments",
+        "description": "Returns a paginated list of attachments",
+        "tags": [
+          "Attachments"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttachmentListResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "swaggerAppScaleCreateAttachment",
+        "summary": "Create attachment",
+        "description": "Creates a new attachment",
+        "tags": [
+          "Attachments"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateAttachmentSchema"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttachmentSchema"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/generated/attachments/{id}": {
+      "get": {
+        "operationId": "swaggerAppScaleGetAttachment",
+        "summary": "Get attachment by ID",
+        "description": "Returns a single attachment by identifier",
+        "tags": [
+          "Attachments"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123",
+            "description": "Path parameter: id"
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttachmentSchema"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      },
+      "patch": {
+        "operationId": "swaggerAppScaleUpdateAttachment",
+        "summary": "Update attachment",
+        "description": "Updates an existing attachment",
+        "tags": [
+          "Attachments"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123",
+            "description": "Path parameter: id"
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateAttachmentSchema"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttachmentSchema"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "swaggerAppScaleDeleteAttachment",
+        "summary": "Delete attachment",
+        "description": "Deletes a attachment by identifier",
+        "tags": [
+          "Attachments"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123",
+            "description": "Path parameter: id"
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Resource deleted successfully"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          }
+        }
+      }
+    },
+    "/generated/audit-logs": {
+      "get": {
+        "operationId": "swaggerAppScaleListAuditLog",
+        "summary": "List audit-logs",
+        "description": "Returns a paginated list of audit-logs",
+        "tags": [
+          "AuditLogs"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuditLogListResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "swaggerAppScaleCreateAuditLog",
+        "summary": "Create auditlog",
+        "description": "Creates a new auditlog",
+        "tags": [
+          "AuditLogs"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateAuditLogSchema"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuditLogSchema"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/generated/audit-logs/{id}": {
+      "get": {
+        "operationId": "swaggerAppScaleGetAuditLog",
+        "summary": "Get auditlog by ID",
+        "description": "Returns a single auditlog by identifier",
+        "tags": [
+          "AuditLogs"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123",
+            "description": "Path parameter: id"
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuditLogSchema"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      },
+      "patch": {
+        "operationId": "swaggerAppScaleUpdateAuditLog",
+        "summary": "Update auditlog",
+        "description": "Updates an existing auditlog",
+        "tags": [
+          "AuditLogs"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123",
+            "description": "Path parameter: id"
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateAuditLogSchema"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuditLogSchema"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "swaggerAppScaleDeleteAuditLog",
+        "summary": "Delete auditlog",
+        "description": "Deletes a auditlog by identifier",
+        "tags": [
+          "AuditLogs"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123",
+            "description": "Path parameter: id"
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Resource deleted successfully"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          }
+        }
+      }
+    },
     "/auth/login": {
       "post": {
         "operationId": "swaggerLogin",
@@ -1519,6 +2476,2041 @@
         }
       }
     },
+    "/generated/catalog-items": {
+      "get": {
+        "operationId": "swaggerAppScaleListCatalogItem",
+        "summary": "List catalog-items",
+        "description": "Returns a paginated list of catalog-items",
+        "tags": [
+          "Catalog"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CatalogItemListResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "swaggerAppScaleCreateCatalogItem",
+        "summary": "Create catalogitem",
+        "description": "Creates a new catalogitem",
+        "tags": [
+          "Catalog"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCatalogItemSchema"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CatalogItemSchema"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/generated/catalog-items/{id}": {
+      "get": {
+        "operationId": "swaggerAppScaleGetCatalogItem",
+        "summary": "Get catalogitem by ID",
+        "description": "Returns a single catalogitem by identifier",
+        "tags": [
+          "Catalog"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123",
+            "description": "Path parameter: id"
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CatalogItemSchema"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      },
+      "patch": {
+        "operationId": "swaggerAppScaleUpdateCatalogItem",
+        "summary": "Update catalogitem",
+        "description": "Updates an existing catalogitem",
+        "tags": [
+          "Catalog"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123",
+            "description": "Path parameter: id"
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCatalogItemSchema"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CatalogItemSchema"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "swaggerAppScaleDeleteCatalogItem",
+        "summary": "Delete catalogitem",
+        "description": "Deletes a catalogitem by identifier",
+        "tags": [
+          "Catalog"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123",
+            "description": "Path parameter: id"
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Resource deleted successfully"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          }
+        }
+      }
+    },
+    "/generated/comments": {
+      "get": {
+        "operationId": "swaggerAppScaleListComment",
+        "summary": "List comments",
+        "description": "Returns a paginated list of comments",
+        "tags": [
+          "Comments"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommentListResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "swaggerAppScaleCreateComment",
+        "summary": "Create comment",
+        "description": "Creates a new comment",
+        "tags": [
+          "Comments"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCommentSchema"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommentSchema"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/generated/comments/{id}": {
+      "get": {
+        "operationId": "swaggerAppScaleGetComment",
+        "summary": "Get comment by ID",
+        "description": "Returns a single comment by identifier",
+        "tags": [
+          "Comments"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123",
+            "description": "Path parameter: id"
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommentSchema"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      },
+      "patch": {
+        "operationId": "swaggerAppScaleUpdateComment",
+        "summary": "Update comment",
+        "description": "Updates an existing comment",
+        "tags": [
+          "Comments"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123",
+            "description": "Path parameter: id"
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCommentSchema"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommentSchema"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "swaggerAppScaleDeleteComment",
+        "summary": "Delete comment",
+        "description": "Deletes a comment by identifier",
+        "tags": [
+          "Comments"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123",
+            "description": "Path parameter: id"
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Resource deleted successfully"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          }
+        }
+      }
+    },
+    "/generated/customers": {
+      "get": {
+        "operationId": "swaggerAppScaleListCustomer",
+        "summary": "List customers",
+        "description": "Returns a paginated list of customers",
+        "tags": [
+          "Customers"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerListResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "swaggerAppScaleCreateCustomer",
+        "summary": "Create customer",
+        "description": "Creates a new customer",
+        "tags": [
+          "Customers"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCustomerSchema"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerSchema"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/generated/customers/{id}": {
+      "get": {
+        "operationId": "swaggerAppScaleGetCustomer",
+        "summary": "Get customer by ID",
+        "description": "Returns a single customer by identifier",
+        "tags": [
+          "Customers"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123",
+            "description": "Path parameter: id"
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerSchema"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      },
+      "patch": {
+        "operationId": "swaggerAppScaleUpdateCustomer",
+        "summary": "Update customer",
+        "description": "Updates an existing customer",
+        "tags": [
+          "Customers"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123",
+            "description": "Path parameter: id"
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCustomerSchema"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerSchema"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "swaggerAppScaleDeleteCustomer",
+        "summary": "Delete customer",
+        "description": "Deletes a customer by identifier",
+        "tags": [
+          "Customers"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123",
+            "description": "Path parameter: id"
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Resource deleted successfully"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          }
+        }
+      }
+    },
+    "/generated/departments": {
+      "get": {
+        "operationId": "swaggerAppScaleListDepartment",
+        "summary": "List departments",
+        "description": "Returns a paginated list of departments",
+        "tags": [
+          "Departments"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DepartmentListResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "swaggerAppScaleCreateDepartment",
+        "summary": "Create department",
+        "description": "Creates a new department",
+        "tags": [
+          "Departments"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateDepartmentSchema"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DepartmentSchema"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/generated/departments/{id}": {
+      "get": {
+        "operationId": "swaggerAppScaleGetDepartment",
+        "summary": "Get department by ID",
+        "description": "Returns a single department by identifier",
+        "tags": [
+          "Departments"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123",
+            "description": "Path parameter: id"
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DepartmentSchema"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      },
+      "patch": {
+        "operationId": "swaggerAppScaleUpdateDepartment",
+        "summary": "Update department",
+        "description": "Updates an existing department",
+        "tags": [
+          "Departments"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123",
+            "description": "Path parameter: id"
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateDepartmentSchema"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DepartmentSchema"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "swaggerAppScaleDeleteDepartment",
+        "summary": "Delete department",
+        "description": "Deletes a department by identifier",
+        "tags": [
+          "Departments"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123",
+            "description": "Path parameter: id"
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Resource deleted successfully"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          }
+        }
+      }
+    },
+    "/generated/documents": {
+      "get": {
+        "operationId": "swaggerAppScaleListDocument",
+        "summary": "List documents",
+        "description": "Returns a paginated list of documents",
+        "tags": [
+          "Documents"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentListResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "swaggerAppScaleCreateDocument",
+        "summary": "Create document",
+        "description": "Creates a new document",
+        "tags": [
+          "Documents"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateDocumentSchema"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentSchema"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/generated/documents/{id}": {
+      "get": {
+        "operationId": "swaggerAppScaleGetDocument",
+        "summary": "Get document by ID",
+        "description": "Returns a single document by identifier",
+        "tags": [
+          "Documents"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123",
+            "description": "Path parameter: id"
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentSchema"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      },
+      "patch": {
+        "operationId": "swaggerAppScaleUpdateDocument",
+        "summary": "Update document",
+        "description": "Updates an existing document",
+        "tags": [
+          "Documents"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123",
+            "description": "Path parameter: id"
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateDocumentSchema"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentSchema"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "swaggerAppScaleDeleteDocument",
+        "summary": "Delete document",
+        "description": "Deletes a document by identifier",
+        "tags": [
+          "Documents"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123",
+            "description": "Path parameter: id"
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Resource deleted successfully"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          }
+        }
+      }
+    },
+    "/generated/exports": {
+      "get": {
+        "operationId": "swaggerAppScaleListExport",
+        "summary": "List exports",
+        "description": "Returns a paginated list of exports",
+        "tags": [
+          "Exports"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExportListResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "swaggerAppScaleCreateExport",
+        "summary": "Create export",
+        "description": "Creates a new export",
+        "tags": [
+          "Exports"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateExportSchema"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExportSchema"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/generated/exports/{id}": {
+      "get": {
+        "operationId": "swaggerAppScaleGetExport",
+        "summary": "Get export by ID",
+        "description": "Returns a single export by identifier",
+        "tags": [
+          "Exports"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123",
+            "description": "Path parameter: id"
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExportSchema"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      },
+      "patch": {
+        "operationId": "swaggerAppScaleUpdateExport",
+        "summary": "Update export",
+        "description": "Updates an existing export",
+        "tags": [
+          "Exports"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123",
+            "description": "Path parameter: id"
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateExportSchema"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExportSchema"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "swaggerAppScaleDeleteExport",
+        "summary": "Delete export",
+        "description": "Deletes a export by identifier",
+        "tags": [
+          "Exports"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123",
+            "description": "Path parameter: id"
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Resource deleted successfully"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          }
+        }
+      }
+    },
+    "/generated/invoices": {
+      "get": {
+        "operationId": "swaggerAppScaleListInvoice",
+        "summary": "List invoices",
+        "description": "Returns a paginated list of invoices",
+        "tags": [
+          "Invoices"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvoiceListResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "swaggerAppScaleCreateInvoice",
+        "summary": "Create invoice",
+        "description": "Creates a new invoice",
+        "tags": [
+          "Invoices"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateInvoiceSchema"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvoiceSchema"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/generated/invoices/{id}": {
+      "get": {
+        "operationId": "swaggerAppScaleGetInvoice",
+        "summary": "Get invoice by ID",
+        "description": "Returns a single invoice by identifier",
+        "tags": [
+          "Invoices"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123",
+            "description": "Path parameter: id"
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvoiceSchema"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      },
+      "patch": {
+        "operationId": "swaggerAppScaleUpdateInvoice",
+        "summary": "Update invoice",
+        "description": "Updates an existing invoice",
+        "tags": [
+          "Invoices"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123",
+            "description": "Path parameter: id"
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateInvoiceSchema"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvoiceSchema"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "swaggerAppScaleDeleteInvoice",
+        "summary": "Delete invoice",
+        "description": "Deletes a invoice by identifier",
+        "tags": [
+          "Invoices"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123",
+            "description": "Path parameter: id"
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Resource deleted successfully"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          }
+        }
+      }
+    },
+    "/generated/members": {
+      "get": {
+        "operationId": "swaggerAppScaleListMember",
+        "summary": "List members",
+        "description": "Returns a paginated list of members",
+        "tags": [
+          "Members"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberListResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "swaggerAppScaleCreateMember",
+        "summary": "Create member",
+        "description": "Creates a new member",
+        "tags": [
+          "Members"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateMemberSchema"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberSchema"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/generated/members/{id}": {
+      "get": {
+        "operationId": "swaggerAppScaleGetMember",
+        "summary": "Get member by ID",
+        "description": "Returns a single member by identifier",
+        "tags": [
+          "Members"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123",
+            "description": "Path parameter: id"
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberSchema"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      },
+      "patch": {
+        "operationId": "swaggerAppScaleUpdateMember",
+        "summary": "Update member",
+        "description": "Updates an existing member",
+        "tags": [
+          "Members"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123",
+            "description": "Path parameter: id"
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateMemberSchema"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberSchema"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "swaggerAppScaleDeleteMember",
+        "summary": "Delete member",
+        "description": "Deletes a member by identifier",
+        "tags": [
+          "Members"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123",
+            "description": "Path parameter: id"
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Resource deleted successfully"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          }
+        }
+      }
+    },
+    "/generated/notifications": {
+      "get": {
+        "operationId": "swaggerAppScaleListNotification",
+        "summary": "List notifications",
+        "description": "Returns a paginated list of notifications",
+        "tags": [
+          "Notifications"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationListResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "swaggerAppScaleCreateNotification",
+        "summary": "Create notification",
+        "description": "Creates a new notification",
+        "tags": [
+          "Notifications"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateNotificationSchema"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationSchema"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/generated/notifications/{id}": {
+      "get": {
+        "operationId": "swaggerAppScaleGetNotification",
+        "summary": "Get notification by ID",
+        "description": "Returns a single notification by identifier",
+        "tags": [
+          "Notifications"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123",
+            "description": "Path parameter: id"
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationSchema"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      },
+      "patch": {
+        "operationId": "swaggerAppScaleUpdateNotification",
+        "summary": "Update notification",
+        "description": "Updates an existing notification",
+        "tags": [
+          "Notifications"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123",
+            "description": "Path parameter: id"
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateNotificationSchema"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationSchema"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "swaggerAppScaleDeleteNotification",
+        "summary": "Delete notification",
+        "description": "Deletes a notification by identifier",
+        "tags": [
+          "Notifications"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123",
+            "description": "Path parameter: id"
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Resource deleted successfully"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          }
+        }
+      }
+    },
+    "/generated/orders": {
+      "get": {
+        "operationId": "swaggerAppScaleListOrder",
+        "summary": "List orders",
+        "description": "Returns a paginated list of orders",
+        "tags": [
+          "Orders"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderListResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "swaggerAppScaleCreateOrder",
+        "summary": "Create order",
+        "description": "Creates a new order",
+        "tags": [
+          "Orders"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateOrderSchema"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderSchema"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/generated/orders/{id}": {
+      "get": {
+        "operationId": "swaggerAppScaleGetOrder",
+        "summary": "Get order by ID",
+        "description": "Returns a single order by identifier",
+        "tags": [
+          "Orders"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123",
+            "description": "Path parameter: id"
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderSchema"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      },
+      "patch": {
+        "operationId": "swaggerAppScaleUpdateOrder",
+        "summary": "Update order",
+        "description": "Updates an existing order",
+        "tags": [
+          "Orders"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123",
+            "description": "Path parameter: id"
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateOrderSchema"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderSchema"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "swaggerAppScaleDeleteOrder",
+        "summary": "Delete order",
+        "description": "Deletes a order by identifier",
+        "tags": [
+          "Orders"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123",
+            "description": "Path parameter: id"
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Resource deleted successfully"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          }
+        }
+      }
+    },
+    "/generated/organizations": {
+      "get": {
+        "operationId": "swaggerAppScaleListOrganization",
+        "summary": "List organizations",
+        "description": "Returns a paginated list of organizations",
+        "tags": [
+          "Organizations"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizationListResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "swaggerAppScaleCreateOrganization",
+        "summary": "Create organization",
+        "description": "Creates a new organization",
+        "tags": [
+          "Organizations"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateOrganizationSchema"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizationSchema"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/generated/organizations/{organizationId}": {
+      "get": {
+        "operationId": "swaggerAppScaleGetOrganization",
+        "summary": "Get organization by ID",
+        "description": "Returns a single organization by identifier",
+        "tags": [
+          "Organizations"
+        ],
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123",
+            "description": "Path parameter: organizationId"
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizationSchema"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      },
+      "patch": {
+        "operationId": "swaggerAppScaleUpdateOrganization",
+        "summary": "Update organization",
+        "description": "Updates an existing organization",
+        "tags": [
+          "Organizations"
+        ],
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123",
+            "description": "Path parameter: organizationId"
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateOrganizationSchema"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizationSchema"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "swaggerAppScaleDeleteOrganization",
+        "summary": "Delete organization",
+        "description": "Deletes a organization by identifier",
+        "tags": [
+          "Organizations"
+        ],
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123",
+            "description": "Path parameter: organizationId"
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Resource deleted successfully"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          }
+        }
+      }
+    },
     "/organizations/{orgId}/projects/{projectId}/tasks/{taskId}/comments": {
       "get": {
         "operationId": "get-organizations-{orgId}-projects-{projectId}-tasks-{taskId}-comments",
@@ -1536,7 +4528,8 @@
               "type": "number",
               "description": "Page number for pagination"
             },
-            "description": "Page number for pagination"
+            "description": "Page number for pagination",
+            "example": 1
           },
           {
             "in": "query",
@@ -1546,7 +4539,8 @@
               "type": "number",
               "description": "Number of comments per page"
             },
-            "description": "Number of comments per page"
+            "description": "Number of comments per page",
+            "example": 1
           },
           {
             "in": "query",
@@ -1561,7 +4555,8 @@
               ],
               "description": "Sort order"
             },
-            "description": "Sort order"
+            "description": "Sort order",
+            "example": "newest"
           },
           {
             "in": "query",
@@ -1571,7 +4566,8 @@
               "type": "boolean",
               "description": "Whether to include soft-deleted comments"
             },
-            "description": "Whether to include soft-deleted comments"
+            "description": "Whether to include soft-deleted comments",
+            "example": true
           },
           {
             "in": "query",
@@ -1581,7 +4577,8 @@
               "type": "boolean",
               "description": "Whether to include replies"
             },
-            "description": "Whether to include replies"
+            "description": "Whether to include replies",
+            "example": true
           },
           {
             "in": "query",
@@ -1591,7 +4588,8 @@
               "type": "string",
               "description": "Filter by user ID"
             },
-            "description": "Filter by user ID"
+            "description": "Filter by user ID",
+            "example": "example"
           },
           {
             "in": "path",
@@ -1897,6 +4895,856 @@
         }
       }
     },
+    "/generated/payments": {
+      "get": {
+        "operationId": "swaggerAppScaleListPayment",
+        "summary": "List payments",
+        "description": "Returns a paginated list of payments",
+        "tags": [
+          "Payments"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentListResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "swaggerAppScaleCreatePayment",
+        "summary": "Create payment",
+        "description": "Creates a new payment",
+        "tags": [
+          "Payments"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePaymentSchema"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentSchema"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/generated/payments/{id}": {
+      "get": {
+        "operationId": "swaggerAppScaleGetPayment",
+        "summary": "Get payment by ID",
+        "description": "Returns a single payment by identifier",
+        "tags": [
+          "Payments"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123",
+            "description": "Path parameter: id"
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentSchema"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      },
+      "patch": {
+        "operationId": "swaggerAppScaleUpdatePayment",
+        "summary": "Update payment",
+        "description": "Updates an existing payment",
+        "tags": [
+          "Payments"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123",
+            "description": "Path parameter: id"
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePaymentSchema"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentSchema"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "swaggerAppScaleDeletePayment",
+        "summary": "Delete payment",
+        "description": "Deletes a payment by identifier",
+        "tags": [
+          "Payments"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123",
+            "description": "Path parameter: id"
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Resource deleted successfully"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          }
+        }
+      }
+    },
+    "/generated/products": {
+      "get": {
+        "operationId": "swaggerAppScaleListProduct",
+        "summary": "List products",
+        "description": "Returns a paginated list of products",
+        "tags": [
+          "Products"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductListResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "swaggerAppScaleCreateProduct",
+        "summary": "Create product",
+        "description": "Creates a new product",
+        "tags": [
+          "Products"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateProductSchema"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductSchema"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/generated/products/{id}": {
+      "get": {
+        "operationId": "swaggerAppScaleGetProduct",
+        "summary": "Get product by ID",
+        "description": "Returns a single product by identifier",
+        "tags": [
+          "Products"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123",
+            "description": "Path parameter: id"
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductSchema"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      },
+      "patch": {
+        "operationId": "swaggerAppScaleUpdateProduct",
+        "summary": "Update product",
+        "description": "Updates an existing product",
+        "tags": [
+          "Products"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123",
+            "description": "Path parameter: id"
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateProductSchema"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductSchema"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "swaggerAppScaleDeleteProduct",
+        "summary": "Delete product",
+        "description": "Deletes a product by identifier",
+        "tags": [
+          "Products"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123",
+            "description": "Path parameter: id"
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Resource deleted successfully"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          }
+        }
+      }
+    },
+    "/generated/organizations/{organizationId}/projects": {
+      "get": {
+        "operationId": "swaggerAppScaleListProject",
+        "summary": "List projects",
+        "description": "Returns a paginated list of projects",
+        "tags": [
+          "Projects"
+        ],
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123",
+            "description": "Path parameter: organizationId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectListResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "swaggerAppScaleCreateProject",
+        "summary": "Create project",
+        "description": "Creates a new project",
+        "tags": [
+          "Projects"
+        ],
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123",
+            "description": "Path parameter: organizationId"
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateProjectSchema"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectSchema"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/generated/organizations/{organizationId}/projects/{projectId}": {
+      "get": {
+        "operationId": "swaggerAppScaleGetProject",
+        "summary": "Get project by ID",
+        "description": "Returns a single project by identifier",
+        "tags": [
+          "Projects"
+        ],
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123",
+            "description": "Path parameter: organizationId"
+          },
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123",
+            "description": "Path parameter: projectId"
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectSchema"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      },
+      "patch": {
+        "operationId": "swaggerAppScaleUpdateProject",
+        "summary": "Update project",
+        "description": "Updates an existing project",
+        "tags": [
+          "Projects"
+        ],
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123",
+            "description": "Path parameter: organizationId"
+          },
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123",
+            "description": "Path parameter: projectId"
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateProjectSchema"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectSchema"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "swaggerAppScaleDeleteProject",
+        "summary": "Delete project",
+        "description": "Deletes a project by identifier",
+        "tags": [
+          "Projects"
+        ],
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123",
+            "description": "Path parameter: organizationId"
+          },
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123",
+            "description": "Path parameter: projectId"
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Resource deleted successfully"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          }
+        }
+      }
+    },
+    "/generated/refunds": {
+      "get": {
+        "operationId": "swaggerAppScaleListRefund",
+        "summary": "List refunds",
+        "description": "Returns a paginated list of refunds",
+        "tags": [
+          "Refunds"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RefundListResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "swaggerAppScaleCreateRefund",
+        "summary": "Create refund",
+        "description": "Creates a new refund",
+        "tags": [
+          "Refunds"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateRefundSchema"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RefundSchema"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/generated/refunds/{id}": {
+      "get": {
+        "operationId": "swaggerAppScaleGetRefund",
+        "summary": "Get refund by ID",
+        "description": "Returns a single refund by identifier",
+        "tags": [
+          "Refunds"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123",
+            "description": "Path parameter: id"
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RefundSchema"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      },
+      "patch": {
+        "operationId": "swaggerAppScaleUpdateRefund",
+        "summary": "Update refund",
+        "description": "Updates an existing refund",
+        "tags": [
+          "Refunds"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123",
+            "description": "Path parameter: id"
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateRefundSchema"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RefundSchema"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "swaggerAppScaleDeleteRefund",
+        "summary": "Delete refund",
+        "description": "Deletes a refund by identifier",
+        "tags": [
+          "Refunds"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123",
+            "description": "Path parameter: id"
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Resource deleted successfully"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          }
+        }
+      }
+    },
+    "/generated/reports": {
+      "get": {
+        "operationId": "swaggerAppScaleListReport",
+        "summary": "List reports",
+        "description": "Returns a paginated list of reports",
+        "tags": [
+          "Reports"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportListResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "swaggerAppScaleCreateReport",
+        "summary": "Create report",
+        "description": "Creates a new report",
+        "tags": [
+          "Reports"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateReportSchema"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportSchema"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/reports/export": {
       "get": {
         "operationId": "get-reports-export",
@@ -1917,7 +5765,8 @@
                 "csv",
                 "ndjson"
               ]
-            }
+            },
+            "example": "csv"
           }
         ],
         "servers": [
@@ -1954,6 +5803,925 @@
           },
           "500": {
             "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    },
+    "/generated/reports/{id}": {
+      "get": {
+        "operationId": "swaggerAppScaleGetReport",
+        "summary": "Get report by ID",
+        "description": "Returns a single report by identifier",
+        "tags": [
+          "Reports"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123",
+            "description": "Path parameter: id"
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportSchema"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      },
+      "patch": {
+        "operationId": "swaggerAppScaleUpdateReport",
+        "summary": "Update report",
+        "description": "Updates an existing report",
+        "tags": [
+          "Reports"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123",
+            "description": "Path parameter: id"
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateReportSchema"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportSchema"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "swaggerAppScaleDeleteReport",
+        "summary": "Delete report",
+        "description": "Deletes a report by identifier",
+        "tags": [
+          "Reports"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123",
+            "description": "Path parameter: id"
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Resource deleted successfully"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          }
+        }
+      }
+    },
+    "/generated/sessions": {
+      "get": {
+        "operationId": "swaggerAppScaleListSession",
+        "summary": "List sessions",
+        "description": "Returns a paginated list of sessions",
+        "tags": [
+          "Sessions"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionListResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "swaggerAppScaleCreateSession",
+        "summary": "Create session",
+        "description": "Creates a new session",
+        "tags": [
+          "Sessions"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateSessionSchema"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionSchema"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/generated/sessions/{id}": {
+      "get": {
+        "operationId": "swaggerAppScaleGetSession",
+        "summary": "Get session by ID",
+        "description": "Returns a single session by identifier",
+        "tags": [
+          "Sessions"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123",
+            "description": "Path parameter: id"
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionSchema"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      },
+      "patch": {
+        "operationId": "swaggerAppScaleUpdateSession",
+        "summary": "Update session",
+        "description": "Updates an existing session",
+        "tags": [
+          "Sessions"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123",
+            "description": "Path parameter: id"
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateSessionSchema"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionSchema"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "swaggerAppScaleDeleteSession",
+        "summary": "Delete session",
+        "description": "Deletes a session by identifier",
+        "tags": [
+          "Sessions"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123",
+            "description": "Path parameter: id"
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Resource deleted successfully"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          }
+        }
+      }
+    },
+    "/generated/subscriptions": {
+      "get": {
+        "operationId": "swaggerAppScaleListSubscription",
+        "summary": "List subscriptions",
+        "description": "Returns a paginated list of subscriptions",
+        "tags": [
+          "Subscriptions"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubscriptionListResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "swaggerAppScaleCreateSubscription",
+        "summary": "Create subscription",
+        "description": "Creates a new subscription",
+        "tags": [
+          "Subscriptions"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateSubscriptionSchema"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubscriptionSchema"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/generated/subscriptions/{id}": {
+      "get": {
+        "operationId": "swaggerAppScaleGetSubscription",
+        "summary": "Get subscription by ID",
+        "description": "Returns a single subscription by identifier",
+        "tags": [
+          "Subscriptions"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123",
+            "description": "Path parameter: id"
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubscriptionSchema"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      },
+      "patch": {
+        "operationId": "swaggerAppScaleUpdateSubscription",
+        "summary": "Update subscription",
+        "description": "Updates an existing subscription",
+        "tags": [
+          "Subscriptions"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123",
+            "description": "Path parameter: id"
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateSubscriptionSchema"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubscriptionSchema"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "swaggerAppScaleDeleteSubscription",
+        "summary": "Delete subscription",
+        "description": "Deletes a subscription by identifier",
+        "tags": [
+          "Subscriptions"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123",
+            "description": "Path parameter: id"
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Resource deleted successfully"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          }
+        }
+      }
+    },
+    "/generated/projects/{projectId}/tasks": {
+      "get": {
+        "operationId": "swaggerAppScaleListTask",
+        "summary": "List tasks",
+        "description": "Returns a paginated list of tasks",
+        "tags": [
+          "Tasks"
+        ],
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123",
+            "description": "Path parameter: projectId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskListResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "swaggerAppScaleCreateTask",
+        "summary": "Create task",
+        "description": "Creates a new task",
+        "tags": [
+          "Tasks"
+        ],
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123",
+            "description": "Path parameter: projectId"
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTaskSchema"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskSchema"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/generated/projects/{projectId}/tasks/{id}": {
+      "get": {
+        "operationId": "swaggerAppScaleGetTask",
+        "summary": "Get task by ID",
+        "description": "Returns a single task by identifier",
+        "tags": [
+          "Tasks"
+        ],
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123",
+            "description": "Path parameter: projectId"
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123",
+            "description": "Path parameter: id"
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskSchema"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      },
+      "patch": {
+        "operationId": "swaggerAppScaleUpdateTask",
+        "summary": "Update task",
+        "description": "Updates an existing task",
+        "tags": [
+          "Tasks"
+        ],
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123",
+            "description": "Path parameter: projectId"
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123",
+            "description": "Path parameter: id"
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTaskSchema"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskSchema"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "swaggerAppScaleDeleteTask",
+        "summary": "Delete task",
+        "description": "Deletes a task by identifier",
+        "tags": [
+          "Tasks"
+        ],
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123",
+            "description": "Path parameter: projectId"
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123",
+            "description": "Path parameter: id"
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Resource deleted successfully"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          }
+        }
+      }
+    },
+    "/generated/teams": {
+      "get": {
+        "operationId": "swaggerAppScaleListTeam",
+        "summary": "List teams",
+        "description": "Returns a paginated list of teams",
+        "tags": [
+          "Teams"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TeamListResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "swaggerAppScaleCreateTeam",
+        "summary": "Create team",
+        "description": "Creates a new team",
+        "tags": [
+          "Teams"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTeamSchema"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TeamSchema"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/generated/teams/{id}": {
+      "get": {
+        "operationId": "swaggerAppScaleGetTeam",
+        "summary": "Get team by ID",
+        "description": "Returns a single team by identifier",
+        "tags": [
+          "Teams"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123",
+            "description": "Path parameter: id"
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TeamSchema"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      },
+      "patch": {
+        "operationId": "swaggerAppScaleUpdateTeam",
+        "summary": "Update team",
+        "description": "Updates an existing team",
+        "tags": [
+          "Teams"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123",
+            "description": "Path parameter: id"
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTeamSchema"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TeamSchema"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "swaggerAppScaleDeleteTeam",
+        "summary": "Delete team",
+        "description": "Deletes a team by identifier",
+        "tags": [
+          "Teams"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123",
+            "description": "Path parameter: id"
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Resource deleted successfully"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
           }
         }
       }
@@ -1998,20 +6766,459 @@
           }
         }
       }
+    },
+    "/generated/webhooks": {
+      "get": {
+        "operationId": "swaggerAppScaleListWebhook",
+        "summary": "List webhooks",
+        "description": "Returns a paginated list of webhooks",
+        "tags": [
+          "Webhooks"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookListResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "swaggerAppScaleCreateWebhook",
+        "summary": "Create webhook",
+        "description": "Creates a new webhook",
+        "tags": [
+          "Webhooks"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateWebhookSchema"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookSchema"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/generated/webhooks/{id}": {
+      "get": {
+        "operationId": "swaggerAppScaleGetWebhook",
+        "summary": "Get webhook by ID",
+        "description": "Returns a single webhook by identifier",
+        "tags": [
+          "Webhooks"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123",
+            "description": "Path parameter: id"
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookSchema"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      },
+      "patch": {
+        "operationId": "swaggerAppScaleUpdateWebhook",
+        "summary": "Update webhook",
+        "description": "Updates an existing webhook",
+        "tags": [
+          "Webhooks"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123",
+            "description": "Path parameter: id"
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateWebhookSchema"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookSchema"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "swaggerAppScaleDeleteWebhook",
+        "summary": "Delete webhook",
+        "description": "Deletes a webhook by identifier",
+        "tags": [
+          "Webhooks"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123",
+            "description": "Path parameter: id"
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Resource deleted successfully"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          }
+        }
+      }
+    },
+    "/generated/workspaces": {
+      "get": {
+        "operationId": "swaggerAppScaleListWorkspace",
+        "summary": "List workspaces",
+        "description": "Returns a paginated list of workspaces",
+        "tags": [
+          "Workspaces"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkspaceListResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "swaggerAppScaleCreateWorkspace",
+        "summary": "Create workspace",
+        "description": "Creates a new workspace",
+        "tags": [
+          "Workspaces"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateWorkspaceSchema"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkspaceSchema"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/generated/workspaces/{id}": {
+      "get": {
+        "operationId": "swaggerAppScaleGetWorkspace",
+        "summary": "Get workspace by ID",
+        "description": "Returns a single workspace by identifier",
+        "tags": [
+          "Workspaces"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123",
+            "description": "Path parameter: id"
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkspaceSchema"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      },
+      "patch": {
+        "operationId": "swaggerAppScaleUpdateWorkspace",
+        "summary": "Update workspace",
+        "description": "Updates an existing workspace",
+        "tags": [
+          "Workspaces"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123",
+            "description": "Path parameter: id"
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateWorkspaceSchema"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkspaceSchema"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "swaggerAppScaleDeleteWorkspace",
+        "summary": "Delete workspace",
+        "description": "Deletes a workspace by identifier",
+        "tags": [
+          "Workspaces"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123",
+            "description": "Path parameter: id"
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Resource deleted successfully"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          }
+        }
+      }
     }
   },
   "tags": [
     {
+      "name": "ApiKeys"
+    },
+    {
+      "name": "Attachments"
+    },
+    {
+      "name": "AuditLogs"
+    },
+    {
       "name": "Auth"
+    },
+    {
+      "name": "Catalog"
+    },
+    {
+      "name": "Comments"
+    },
+    {
+      "name": "Customers"
+    },
+    {
+      "name": "Departments"
+    },
+    {
+      "name": "Documents"
+    },
+    {
+      "name": "Exports"
+    },
+    {
+      "name": "Invoices"
+    },
+    {
+      "name": "Members"
+    },
+    {
+      "name": "Notifications"
+    },
+    {
+      "name": "Orders"
     },
     {
       "name": "Organizations"
     },
     {
+      "name": "Payments"
+    },
+    {
+      "name": "Products"
+    },
+    {
+      "name": "Projects"
+    },
+    {
+      "name": "Refunds"
+    },
+    {
       "name": "Reports"
     },
     {
+      "name": "Sessions"
+    },
+    {
+      "name": "Subscriptions"
+    },
+    {
+      "name": "Tasks"
+    },
+    {
+      "name": "Teams"
+    },
+    {
       "name": "Users"
+    },
+    {
+      "name": "Webhooks"
+    },
+    {
+      "name": "Workspaces"
     }
   ]
 }

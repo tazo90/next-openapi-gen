@@ -1,0 +1,23 @@
+arazzo: 1.1.0
+info:
+  title: Purchase a pet
+  version: 1.0.0
+  description: Checkout workflow over the generated OpenAPI document.
+sourceDescriptions:
+  - name: openapi
+    type: openapi
+    url: ./openapi.json
+workflows:
+  - workflowId: purchasePet
+    summary: List orders then create a new order
+    steps:
+      - stepId: listOrders
+        operationId: getOrdersList
+        description: Load the current order list before checkout.
+      - stepId: createOrder
+        operationId: createOrder
+        description: Create an order from the cart.
+        successCriteria:
+          - condition: $statusCode == 200
+components: {}
+$self: file:///E:/dev/projects/libs/next-openapi-gen/apps/next-app-zod/public/arazzo.yaml

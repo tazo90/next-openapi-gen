@@ -240,8 +240,8 @@ next-openapi-gen/
 # Build the workspace with Turborepo
 pnpm build
 
-# Build just the published CLI package
-pnpm --filter next-openapi-gen build
+# Build just the published CLI package (with its workspace dependencies)
+pnpm exec turbo run build --filter=next-openapi-gen...
 
 # Rebuild the CLI package in watch mode
 pnpm --filter next-openapi-gen exec tsc --watch

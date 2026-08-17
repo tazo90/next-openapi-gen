@@ -1206,7 +1206,7 @@
           },
           "deviceId": {
             "type": "string",
-            "format": "nanoid",
+            "pattern": "^[A-Za-z0-9_-]{21}$",
             "description": "Trusted device identifier (nanoid)"
           },
           "totp": {
@@ -2112,7 +2112,7 @@
       },
       "IdempotencyKey": {
         "type": "string",
-        "format": "nanoid"
+        "pattern": "^[A-Za-z0-9_-]{21}$"
       },
       "InvoiceIdParams": {},
       "InvoiceIdParamsSchema": {
@@ -2219,7 +2219,7 @@
         "description": "Legacy CSV export payload"
       },
       "LoadingStateSchema": {
-        "oneOf": [
+        "anyOf": [
           {
             "type": "string",
             "enum": [
@@ -2422,7 +2422,7 @@
             "type": "array",
             "items": {
               "type": "string",
-              "format": "ulid"
+              "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$"
             },
             "uniqueItems": true,
             "description": "Deduplicated set of sample ids contributing to the result"
@@ -2475,10 +2475,57 @@
           }
         }
       },
+      "MiniUserBaseSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          }
+        },
+        "required": [
+          "id",
+          "email"
+        ]
+      },
+      "MiniUserSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "displayName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "bio": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 280
+          }
+        },
+        "required": [
+          "id",
+          "email",
+          "bio"
+        ]
+      },
       "MixedArraySchema": {
         "type": "array",
         "items": {
-          "oneOf": [
+          "anyOf": [
             {
               "type": "string"
             },
@@ -3044,7 +3091,7 @@
         "properties": {
           "paymentId": {
             "type": "string",
-            "format": "ulid",
+            "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
             "description": "Payment identifier"
           },
           "userId": {
@@ -3098,7 +3145,7 @@
         "properties": {
           "id": {
             "type": "string",
-            "format": "ulid",
+            "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
             "readOnly": true,
             "description": "Unique event identifier"
           },
@@ -3251,7 +3298,7 @@
         "properties": {
           "id": {
             "type": "string",
-            "format": "ulid",
+            "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
             "readOnly": true,
             "description": "Unique event identifier"
           },
@@ -3345,7 +3392,7 @@
         "properties": {
           "id": {
             "type": "string",
-            "format": "ulid",
+            "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
             "readOnly": true,
             "description": "Unique event identifier"
           },
@@ -4217,7 +4264,7 @@
           },
           "Authorization": {
             "type": "string",
-            "format": "jwt",
+            "pattern": "^[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+$",
             "description": "Bearer JWT granting access to the session"
           }
         },
@@ -4231,17 +4278,17 @@
         "properties": {
           "id": {
             "type": "string",
-            "format": "ulid",
+            "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
             "description": "Session identifier (ULID)"
           },
           "token": {
             "type": "string",
-            "format": "jwt",
+            "pattern": "^[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+$",
             "description": "Signed session JWT"
           },
           "refreshToken": {
             "type": "string",
-            "format": "byte",
+            "contentEncoding": "base64",
             "description": "Opaque refresh token (base64 encoded)"
           },
           "user": {
@@ -4254,12 +4301,11 @@
               },
               "phone": {
                 "type": "string",
-                "format": "e164",
+                "pattern": "^\\+[1-9]\\d{1,14}$",
                 "description": "Contact phone number in E.164 format"
               },
               "avatar": {
                 "type": "string",
-                "format": "emoji",
                 "description": "User-chosen emoji avatar"
               }
             },
@@ -4274,7 +4320,7 @@
           },
           "network": {
             "type": "string",
-            "format": "cidrv4",
+            "format": "ipv4-cidr",
             "description": "CIDR range the client is part of"
           },
           "createdAt": {
@@ -4359,7 +4405,7 @@
         ]
       },
       "StringOrNumberSchema": {
-        "oneOf": [
+        "anyOf": [
           {
             "type": "string"
           },
@@ -4439,7 +4485,7 @@
         "properties": {
           "id": {
             "type": "string",
-            "format": "ulid",
+            "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
             "description": "Subscription identifier"
           },
           "callbackUrl": {
@@ -5274,8 +5320,8 @@
         "properties": {
           "file": {
             "type": "string",
-            "description": "Image file (PNG/JPG, max 5MB)",
-            "contentMediaType": "application/octet-stream"
+            "contentMediaType": "application/octet-stream",
+            "description": "Image file (PNG/JPG, max 5MB)"
           },
           "description": {
             "type": "string",
@@ -5596,7 +5642,7 @@
         "properties": {
           "id": {
             "type": "string",
-            "format": "ulid",
+            "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
             "readOnly": true,
             "description": "Unique event identifier"
           },
@@ -6099,7 +6145,7 @@
                 "false"
               ]
             },
-            "example": "example"
+            "example": "true"
           }
         ],
         "responses": {
@@ -6328,7 +6374,7 @@
                 "false"
               ]
             },
-            "example": "example"
+            "example": "true"
           }
         ],
         "responses": {
@@ -6557,7 +6603,7 @@
                 "false"
               ]
             },
-            "example": "example"
+            "example": "true"
           }
         ],
         "responses": {
@@ -6786,7 +6832,7 @@
                 "false"
               ]
             },
-            "example": "example"
+            "example": "true"
           }
         ],
         "responses": {
@@ -7015,7 +7061,7 @@
                 "false"
               ]
             },
-            "example": "example"
+            "example": "true"
           }
         ],
         "responses": {
@@ -7244,7 +7290,7 @@
                 "false"
               ]
             },
-            "example": "example"
+            "example": "true"
           }
         ],
         "responses": {
@@ -7473,7 +7519,7 @@
                 "false"
               ]
             },
-            "example": "example"
+            "example": "true"
           }
         ],
         "responses": {
@@ -7702,7 +7748,7 @@
                 "false"
               ]
             },
-            "example": "example"
+            "example": "true"
           }
         ],
         "responses": {
@@ -7930,7 +7976,7 @@
               "description": "Product event source"
             },
             "description": "Product event source",
-            "example": "example"
+            "example": "catalog"
           },
           {
             "in": "query",
@@ -7945,7 +7991,7 @@
               "description": "Filter by stream status"
             },
             "description": "Filter by stream status",
-            "example": "example"
+            "example": "active"
           },
           {
             "in": "querystring",
@@ -8030,6 +8076,7 @@
                 }
               }
             },
+            "summary": "Event stream",
             "headers": {
               "X-Stream-Id": {
                 "description": "Opaque stream identifier for reconnects",
@@ -8074,7 +8121,8 @@
                 }
               }
             }
-          }
+          },
+          "required": true
         },
         "responses": {
           "200": {
@@ -8257,7 +8305,7 @@
                 "false"
               ]
             },
-            "example": "example"
+            "example": "true"
           }
         ],
         "responses": {
@@ -8664,7 +8712,7 @@
                 "false"
               ]
             },
-            "example": "example"
+            "example": "true"
           }
         ],
         "responses": {
@@ -8893,7 +8941,7 @@
                 "false"
               ]
             },
-            "example": "example"
+            "example": "true"
           }
         ],
         "responses": {
@@ -9204,7 +9252,7 @@
                 "false"
               ]
             },
-            "example": "example"
+            "example": "true"
           }
         ],
         "responses": {
@@ -9475,7 +9523,7 @@
               "description": "Sort results"
             },
             "description": "Sort results",
-            "example": "example"
+            "example": "date_asc"
           }
         ],
         "security": [
@@ -9639,7 +9687,7 @@
                 "false"
               ]
             },
-            "example": "example"
+            "example": "true"
           }
         ],
         "responses": {
@@ -10020,7 +10068,7 @@
                 "false"
               ]
             },
-            "example": "example"
+            "example": "true"
           }
         ],
         "responses": {
@@ -10289,7 +10337,7 @@
                 "false"
               ]
             },
-            "example": "example"
+            "example": "true"
           }
         ],
         "responses": {
@@ -10547,7 +10595,7 @@
                 "false"
               ]
             },
-            "example": "example"
+            "example": "true"
           }
         ],
         "responses": {
@@ -10634,7 +10682,7 @@
               "description": "Currency for prices"
             },
             "description": "Currency for prices",
-            "example": "example"
+            "example": "USD"
           },
           {
             "in": "path",
@@ -10957,7 +11005,7 @@
                 "false"
               ]
             },
-            "example": "example"
+            "example": "true"
           },
           {
             "name": "organizationId",
@@ -11237,7 +11285,7 @@
                 "false"
               ]
             },
-            "example": "example"
+            "example": "true"
           }
         ],
         "responses": {
@@ -11466,7 +11514,7 @@
                 "false"
               ]
             },
-            "example": "example"
+            "example": "true"
           }
         ],
         "responses": {
@@ -11678,7 +11726,12 @@
               "description": "Client-supplied request id for tracing"
             },
             "description": "Client-supplied request id for tracing",
-            "example": "123e4567-e89b-12d3-a456-426614174000"
+            "example": "123e4567-e89b-12d3-a456-426614174000",
+            "examples": {
+              "example": {
+                "value": "req_123"
+              }
+            }
           },
           {
             "in": "header",
@@ -11686,7 +11739,7 @@
             "required": true,
             "schema": {
               "type": "string",
-              "format": "jwt",
+              "pattern": "^[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+$",
               "description": "Bearer JWT granting access to the session"
             },
             "description": "Bearer JWT granting access to the session",
@@ -11702,7 +11755,12 @@
               "description": "Opaque server-side session identifier"
             },
             "description": "Opaque server-side session identifier",
-            "example": "example"
+            "example": "example",
+            "examples": {
+              "session": {
+                "value": "sess_abc"
+              }
+            }
           },
           {
             "in": "cookie",
@@ -11718,7 +11776,7 @@
               "description": "User's preferred locale"
             },
             "description": "User's preferred locale",
-            "example": "example"
+            "example": "en"
           }
         ],
         "security": [
@@ -11790,7 +11848,8 @@
               }
             }
           },
-          "description": "Credentials plus optional second factor"
+          "description": "Credentials plus optional second factor",
+          "required": true
         },
         "responses": {
           "201": {
@@ -11895,7 +11954,7 @@
                 "false"
               ]
             },
-            "example": "example"
+            "example": "true"
           }
         ],
         "responses": {
@@ -12124,7 +12183,7 @@
                 "false"
               ]
             },
-            "example": "example"
+            "example": "true"
           }
         ],
         "responses": {
@@ -12353,7 +12412,7 @@
                 "false"
               ]
             },
-            "example": "example"
+            "example": "true"
           },
           {
             "name": "projectId",
@@ -12633,7 +12692,7 @@
                 "false"
               ]
             },
-            "example": "example"
+            "example": "true"
           }
         ],
         "responses": {
@@ -13083,6 +13142,35 @@
         }
       }
     },
+    "/users/mini": {
+      "get": {
+        "operationId": "get-users-mini",
+        "summary": "Get a sample user defined with Zod Mini functional APIs",
+        "description": "Demonstrates zod/mini extend, optional, nullable, and .check() refinements",
+        "tags": [
+          "Users"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MiniUserSchema"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    },
     "/users-paginated": {
       "get": {
         "operationId": "get-users-paginated",
@@ -13212,7 +13300,7 @@
                 "false"
               ]
             },
-            "example": "example"
+            "example": "true"
           }
         ],
         "responses": {
@@ -13441,7 +13529,7 @@
                 "false"
               ]
             },
-            "example": "example"
+            "example": "true"
           }
         ],
         "responses": {
@@ -13711,6 +13799,7 @@
     {
       "name": "Events",
       "summary": "Event navigation",
+      "description": "Platform event navigation",
       "kind": "nav",
       "parent": "Platform"
     },
