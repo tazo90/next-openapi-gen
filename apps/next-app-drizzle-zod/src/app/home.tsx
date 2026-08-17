@@ -2,16 +2,16 @@ import type { ReactNode } from "react";
 
 function Frame({ children }: { children: ReactNode }) {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 py-12 px-4">
-      <div className="max-w-4xl mx-auto">{children}</div>
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 px-4 py-12">
+      <div className="mx-auto max-w-4xl">{children}</div>
     </div>
   );
 }
 
 function Header({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <header className="text-center mb-12">
-      <h1 data-testid="home-shell-marker" className="text-4xl font-bold text-gray-900 mb-4">
+    <header className="mb-12 text-center">
+      <h1 data-testid="home-shell-marker" className="mb-4 text-4xl font-bold text-gray-900">
         {title}
       </h1>
       <p className="text-xl text-gray-600">{children}</p>
@@ -21,8 +21,8 @@ function Header({ title, children }: { title: string; children: ReactNode }) {
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <section className="bg-white rounded-lg shadow-lg p-8 mb-8 last:mb-0">
-      <h2 className="text-2xl font-semibold mb-4">{title}</h2>
+    <section className="mb-8 rounded-lg bg-white p-8 shadow-lg last:mb-0">
+      <h2 className="mb-4 text-2xl font-semibold">{title}</h2>
       {children}
     </section>
   );
@@ -35,7 +35,7 @@ function FeatureList({ children }: { children: ReactNode }) {
 function Feature({ name, children }: { name: string; children: ReactNode }) {
   return (
     <li className="flex items-start">
-      <span className="text-green-500 mr-2">✓</span>
+      <span className="mr-2 text-green-500">✓</span>
       <span>
         <strong>{name}</strong> - {children}
       </span>
@@ -46,14 +46,14 @@ function Feature({ name, children }: { name: string; children: ReactNode }) {
 function Step({ title, children }: { title: string; children: ReactNode }) {
   return (
     <div>
-      <h3 className="font-semibold text-gray-800 mb-2">{title}</h3>
+      <h3 className="mb-2 font-semibold text-gray-800">{title}</h3>
       {children}
     </div>
   );
 }
 
 function CodeSample({ children }: { children: ReactNode }) {
-  return <code className="block bg-gray-100 p-4 rounded text-sm overflow-x-auto">{children}</code>;
+  return <code className="block overflow-x-auto rounded bg-gray-100 p-4 text-sm">{children}</code>;
 }
 
 function EndpointList({ children }: { children: ReactNode }) {

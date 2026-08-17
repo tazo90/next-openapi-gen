@@ -1,7 +1,6 @@
 import { defineConfig, type OxlintConfig } from "oxlint";
 
 const nextConfig = defineConfig({
-  plugins: ["nextjs"],
   settings: {
     next: {
       rootDir: [
@@ -22,8 +21,15 @@ const nextConfig = defineConfig({
   overrides: [
     {
       files: [
-        "**/src/app/**/*.{js,jsx,ts,tsx,mjs,cjs,mts,cts}",
-        "**/pages/**/*.{js,jsx,ts,tsx,mjs,cjs,mts,cts}",
+        "apps/next-app-*/**/*.{js,jsx,ts,tsx,mjs,cjs,mts,cts}",
+        "apps/next-pages-router/**/*.{js,jsx,ts,tsx,mjs,cjs,mts,cts}",
+      ],
+      plugins: ["nextjs"],
+    },
+    {
+      files: [
+        "**/src/app/**/route.{js,jsx,ts,tsx,mjs,cjs,mts,cts}",
+        "**/pages/api/**/*.{js,jsx,ts,tsx,mjs,cjs,mts,cts}",
         "**/src/schemas/**/*.{js,jsx,ts,tsx,mjs,cjs,mts,cts}",
         "**/src/types/**/*.{js,jsx,ts,tsx,mjs,cjs,mts,cts}",
       ],

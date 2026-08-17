@@ -1,19 +1,8 @@
 import { defineConfig, type OxlintConfig } from "oxlint";
 
 const coreConfig = defineConfig({
-  plugins: [
-    "eslint",
-    "typescript",
-    "unicorn",
-    "oxc",
-    "import",
-    "node",
-    "promise",
-    "react",
-    "react-perf",
-  ],
+  plugins: ["eslint", "typescript", "unicorn", "oxc", "import", "node", "promise"],
   env: {
-    browser: true,
     node: true,
   },
   categories: {
@@ -43,15 +32,6 @@ const coreConfig = defineConfig({
     "no-shadow": "off",
     "import/no-unassigned-import": "off",
     "promise/prefer-await-to-then": "off",
-    "react/react-in-jsx-scope": "off",
-    "react/jsx-filename-extension": "off",
-    "react/jsx-props-no-spreading": "off",
-    "react/no-unknown-property": "off",
-    "react/only-export-components": "off",
-    "react-perf/jsx-no-jsx-as-prop": "off",
-    "react-perf/jsx-no-new-array-as-prop": "off",
-    "react-perf/jsx-no-new-function-as-prop": "off",
-    "react-perf/jsx-no-new-object-as-prop": "off",
     "unicorn/consistent-function-scoping": "off",
     "typescript/await-thenable": "error",
     "typescript/consistent-type-imports": "off",

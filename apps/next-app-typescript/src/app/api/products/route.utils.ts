@@ -69,7 +69,7 @@ export function createProduct(
  */
 export async function updateStock(
   id: string,
-  inStock: boolean,
+  _inStock: boolean,
 ): Promise<{ updated: boolean; productId: string; timestamp: string }> {
   // Simulate database update
   await new Promise((resolve) => setTimeout(resolve, 10));
