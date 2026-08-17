@@ -37,7 +37,7 @@ describe("type-node-schema helpers", () => {
       enumerateTemplateLiteralType({
         type: "TSLiteralType",
         literal: { type: "NullLiteral" },
-      } as t.TSLiteralType),
+      }),
     ).toBeNull();
     expect(
       enumerateTemplateLiteralType(
@@ -280,7 +280,7 @@ describe("type-node-schema helpers", () => {
     ).toEqual({ type: "string" });
     expect(
       resolveTypeNodeSchema(
-        { ...host, areTypesStaticallyCompatible: () => false } as never,
+        { ...host, areTypesStaticallyCompatible: () => false },
         parseAnnotation("true extends false ? string : number"),
       ),
     ).toEqual({ type: "number" });
@@ -289,7 +289,7 @@ describe("type-node-schema helpers", () => {
     ).toEqual({ type: "object", properties: {} });
     expect(
       resolveTypeNodeSchema(
-        { ...host, extractKeysFromTypeNode: () => ["id"] } as never,
+        { ...host, extractKeysFromTypeNode: () => ["id"] },
         parseAnnotation("{ [K in 'id']: string }"),
       ),
     ).toMatchObject({
@@ -321,7 +321,7 @@ describe("type-node-schema helpers", () => {
               properties: { id: { type: "string" } },
             }),
           },
-        } as never,
+        },
         parseAnnotation("z.infer<typeof UserSchema>"),
       ),
     ).toEqual({ type: "object", properties: { id: { type: "string" } } });
@@ -333,7 +333,7 @@ describe("type-node-schema helpers", () => {
           zodSchemaConverter: {
             convertZodSchemaToOpenApi: () => null,
           },
-        } as never,
+        },
         parseAnnotation("z.infer<typeof MissingSchema>"),
       ),
     ).toEqual({ type: "object" });
@@ -343,7 +343,7 @@ describe("type-node-schema helpers", () => {
           ...host,
           resolveImportPath: () => "/virtual/imported.ts",
           processSchemaFile: () => ({ type: "string" }),
-        } as never,
+        },
         parseAnnotation("import('mod').User"),
       ),
     ).toBeDefined();
@@ -372,7 +372,7 @@ describe("type-node-schema helpers", () => {
         {
           ...host,
           unwrapSchemaProperties: () => ({ id: { type: "string" }, name: { type: "string" } }),
-        } as never,
+        },
         parseAnnotation("keyof { id: string; name: string }"),
       ),
     ).toEqual({ type: "string", enum: ["id", "name"] });
@@ -392,7 +392,7 @@ describe("type-node-schema helpers", () => {
               properties: { id: { type: "string" } },
             }),
           },
-        } as never,
+        },
         parseAnnotation("z.infer<typeof UserSchema>"),
       ),
     ).toEqual({ type: "object", properties: { id: { type: "string" } } });
@@ -450,7 +450,7 @@ describe("type-node-schema helpers", () => {
           ...host,
           schemaIdAliases: { User: "UserModel" },
           openapiDefinitions: { UserModel: { type: "object" } },
-        } as never,
+        },
         parseAnnotation("User"),
       ),
     ).toEqual({ $ref: "#/components/schemas/UserModel" });
@@ -463,7 +463,7 @@ describe("type-node-schema helpers", () => {
         {
           ...host,
           extractKeysFromTypeNode: () => ["id"],
-        } as never,
+        },
         t.tsMappedType(t.tsTypeParameter(t.tsLiteralType(t.stringLiteral("id")), undefined, "K")),
       ),
     ).toMatchObject({
@@ -477,7 +477,7 @@ describe("type-node-schema helpers", () => {
           resolveImportPath: () => "/virtual/imported.ts",
           typeDefinitions: { User: { type: "object" } },
           resolveType: () => ({ type: "string" }),
-        } as never,
+        },
         parseAnnotation("import('mod').User"),
       ),
     ).toEqual({ type: "string" });

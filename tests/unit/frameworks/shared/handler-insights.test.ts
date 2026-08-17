@@ -391,7 +391,7 @@ describe("applyHandlerInsightsToDataTypes", () => {
         operationId: "",
         method: "POST",
         diagnostics: [{ code: "existing", severity: "info", message: "kept" }],
-      } as never,
+      },
       getExportedHandler(`
         export async function POST(request: Request) {
           const body = UserSchema.parse(await request.json());

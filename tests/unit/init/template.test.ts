@@ -16,7 +16,7 @@ describe("init template helpers", () => {
       schemaType: "zod",
     };
 
-    extendOpenApiTemplate(template as never, {
+    extendOpenApiTemplate(template, {
       ui: "swagger",
       docsUrl: "docs",
       schema: ["zod", "typescript"],
@@ -36,7 +36,7 @@ describe("init template helpers", () => {
       schemaType: "zod",
     };
 
-    extendOpenApiTemplate(template as never, {});
+    extendOpenApiTemplate(template, {});
 
     expect(template).toEqual({
       ui: "scalar",

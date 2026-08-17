@@ -200,6 +200,6 @@ describe("loadConfig", () => {
   });
 
   it("treats object templates as extended config files", () => {
-    expect(isExtendedConfigFile({ openapi: "3.2.0" } as never)).toBe(true);
+    expect(isExtendedConfigFile({ openapi: "3.2.0" })).toBe(true);
   });
 });

@@ -656,7 +656,7 @@ describe("OpenAPI version processor", () => {
       },
     };
 
-    const for30 = getOpenApiVersionProcessor("3.0").finalize(document as never);
+    const for30 = getOpenApiVersionProcessor("3.0").finalize(document);
     expect(for30.paths?.["/invalid"]).toEqual({});
     expect(for30.paths?.["/ops"]).toMatchObject({
       "x-oai-additionalOperations": expect.objectContaining({
@@ -667,7 +667,7 @@ describe("OpenAPI version processor", () => {
     expect(for30.paths?.["/ops"]).not.toHaveProperty("query");
     expect(for30.paths?.["/ops"]).not.toHaveProperty("additionalOperations");
 
-    const for32 = getOpenApiVersionProcessor("3.2").finalize(document as never);
+    const for32 = getOpenApiVersionProcessor("3.2").finalize(document);
     expect(for32.paths?.["/promote"]).toMatchObject({
       query: expect.objectContaining({
         responses: { "200": { description: "promoted-query" } },
@@ -717,7 +717,7 @@ describe("OpenAPI version processor", () => {
           },
         },
       },
-    } as never);
+    });
     expect(for32Merge.paths?.["/merge"]).toMatchObject({
       query: { responses: { "200": { description: "existing-query" } } },
       additionalOperations: expect.objectContaining({
@@ -794,7 +794,7 @@ describe("OpenAPI version processor", () => {
       },
     };
 
-    const for30 = getOpenApiVersionProcessor("3.0").finalize(document as never);
+    const for30 = getOpenApiVersionProcessor("3.0").finalize(document);
     expect(for30.paths?.["/ops"]?.get?.parameters?.[0]).toBe("not-a-parameter");
     expect(for30.paths?.["/ops"]?.get?.parameters?.[1]).toMatchObject({ in: "query" });
     expect(for30.paths?.["/ops"]?.get?.requestBody).toEqual({

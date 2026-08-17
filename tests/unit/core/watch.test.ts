@@ -80,7 +80,7 @@ describe("watchProject", () => {
         schemaFiles: ["./src/extra.ts"],
       },
       configPath: "/app/openapi-gen.config.ts",
-    } as never);
+    });
 
     expect([...roots]).toEqual(
       expect.arrayContaining([
@@ -96,7 +96,7 @@ describe("watchProject", () => {
       config: {
         schemaDir: undefined,
       },
-    } as never);
+    });
     expect([...fallbackRoots]).toEqual(expect.arrayContaining([path.resolve("./src/app/api")]));
   });
 

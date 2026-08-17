@@ -8,7 +8,7 @@ describe("logger", () => {
   afterEach(() => {
     globalThis.Error = OriginalError;
     vi.restoreAllMocks();
-    logger.init({ debug: false } as never);
+    logger.init({ debug: false });
   });
 
   it("falls back to Unknown when stack information is unavailable", () => {
@@ -92,11 +92,11 @@ describe("logger", () => {
     vi.spyOn(logger as any, "getCallerInfo").mockReturnValue("Tester");
     const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
 
-    logger.init({ debug: false } as never);
+    logger.init({ debug: false });
     logger.debug("hidden");
     expect(logSpy).not.toHaveBeenCalled();
 
-    logger.init({ debug: true } as never);
+    logger.init({ debug: true });
     logger.debug("visible", 42);
     expect(logSpy).toHaveBeenCalledWith("[Tester] visible", 42);
   });

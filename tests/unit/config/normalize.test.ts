@@ -50,7 +50,7 @@ describe("normalizeOpenApiConfig", () => {
         kind: FrameworkKind.Tanstack,
       },
       schemaType: "typescript",
-    } as never);
+    });
 
     expect(config.openapiVersion).toBe("3.3-preview");
     expect(config.framework).toEqual({
@@ -73,7 +73,7 @@ describe("normalizeOpenApiConfig", () => {
       next: {
         adapterPath: "./custom-adapter.ts",
       },
-    } as never);
+    });
 
     expect(config.framework).toEqual({
       kind: FrameworkKind.Nextjs,
@@ -95,7 +95,7 @@ describe("normalizeOpenApiConfig", () => {
         kind: FrameworkKind.ReactRouter,
         adapterPath: "./framework-source.ts",
       },
-    } as never);
+    });
 
     expect(config.framework).toEqual({
       kind: FrameworkKind.ReactRouter,
@@ -113,7 +113,7 @@ describe("normalizeOpenApiConfig", () => {
       framework: {
         kind: "react-router",
       },
-    } as never);
+    });
 
     expect(config.framework).toEqual({
       kind: FrameworkKind.ReactRouter,
@@ -160,7 +160,7 @@ describe("normalizeOpenApiConfig", () => {
         version: "1.0.0",
         description: "Fixture",
       },
-    } as never);
+    });
 
     expect(config.openapiVersion).toBe("3.0");
   });
@@ -169,14 +169,14 @@ describe("normalizeOpenApiConfig", () => {
     expect(
       normalizeOpenApiConfig({
         info: { title: "Fixture", version: "1.0.0" },
-      } as never).cache,
+      }).cache,
     ).toBe(true);
 
     expect(
       normalizeOpenApiConfig({
         info: { title: "Fixture", version: "1.0.0" },
         cache: false,
-      } as never).cache,
+      }).cache,
     ).toBe(false);
   });
 

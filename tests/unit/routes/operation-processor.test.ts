@@ -63,7 +63,7 @@ describe("OperationProcessor", () => {
       })),
     };
 
-    const processor = new OperationProcessor(schemaProcessor as never, responseProcessor as never);
+    const processor = new OperationProcessor(schemaProcessor, responseProcessor);
 
     const result = processor.processOperation(
       "POST",
@@ -142,7 +142,7 @@ describe("OperationProcessor", () => {
       })),
     };
 
-    const processor = new OperationProcessor(schemaProcessor as never, responseProcessor as never);
+    const processor = new OperationProcessor(schemaProcessor, responseProcessor);
     const result = processor.processOperation("POST", "/uploads/logo", {
       bodyDescription: "Organization logo file",
       contentType: "multipart/form-data",
@@ -191,7 +191,7 @@ describe("OperationProcessor", () => {
       })),
     };
 
-    const processor = new OperationProcessor(schemaProcessor as never, responseProcessor as never);
+    const processor = new OperationProcessor(schemaProcessor, responseProcessor);
     const result = processor.processOperation("GET", "/uploads/logo", {
       contentType: "multipart/form-data",
       tag: "Uploads",
@@ -240,7 +240,7 @@ describe("OperationProcessor", () => {
       processResponses: vi.fn<MockFn>(() => ({})),
     };
 
-    const processor = new OperationProcessor(schemaProcessor as never, responseProcessor as never);
+    const processor = new OperationProcessor(schemaProcessor, responseProcessor);
 
     const result = processor.processOperation("GET", "/", {
       tag: "",
@@ -298,7 +298,7 @@ describe("OperationProcessor", () => {
       })),
     };
 
-    const processor = new OperationProcessor(schemaProcessor as never, responseProcessor as never);
+    const processor = new OperationProcessor(schemaProcessor, responseProcessor);
     const result = processor.processOperation("PATCH", "/comments", {
       inferredQueryParamNames: ["commentId"],
     });
@@ -348,7 +348,7 @@ describe("OperationProcessor", () => {
       })),
     };
 
-    const processor = new OperationProcessor(schemaProcessor as never, responseProcessor as never);
+    const processor = new OperationProcessor(schemaProcessor, responseProcessor);
 
     const result = processor.processOperation(
       "POST",
@@ -432,7 +432,7 @@ describe("OperationProcessor", () => {
       processResponses: vi.fn<MockFn>(() => ({})),
     };
 
-    const processor = new OperationProcessor(schemaProcessor as never, responseProcessor as never);
+    const processor = new OperationProcessor(schemaProcessor, responseProcessor);
 
     const result = processor.processOperation("PUT", "/reports", {
       pathParamsType: "ReportPathParams",
@@ -494,7 +494,7 @@ describe("OperationProcessor", () => {
       })),
     };
 
-    const processor = new OperationProcessor(schemaProcessor as never, responseProcessor as never);
+    const processor = new OperationProcessor(schemaProcessor, responseProcessor);
     const result = processor.processOperation("POST", "/events/search", {
       bodyDescription: "Search request",
       querystringType: "SearchFilter",
@@ -555,7 +555,7 @@ describe("OperationProcessor", () => {
       processResponses: vi.fn<MockFn>(() => ({ 200: { description: "OK" } })),
     };
 
-    const processor = new OperationProcessor(schemaProcessor as never, responseProcessor as never);
+    const processor = new OperationProcessor(schemaProcessor, responseProcessor);
     const result = processor.processOperation("GET", "/events", {
       tag: "Events",
       tags: ["Platform", "Streaming"],
@@ -647,7 +647,7 @@ describe("OperationProcessor", () => {
       processResponses: vi.fn<MockFn>(() => ({ 200: { description: "OK" } })),
     };
 
-    const processor = new OperationProcessor(schemaProcessor as never, responseProcessor as never);
+    const processor = new OperationProcessor(schemaProcessor, responseProcessor);
     const result = processor.processOperation("GET", "/secure", {
       headerType: "RequestHeaders",
       cookieType: "SessionCookies",
@@ -689,7 +689,7 @@ describe("OperationProcessor", () => {
       processResponses: vi.fn<MockFn>(() => ({ 200: { description: "OK" } })),
     };
 
-    const processor = new OperationProcessor(schemaProcessor as never, responseProcessor as never);
+    const processor = new OperationProcessor(schemaProcessor, responseProcessor);
     const result = processor.processOperation("GET", "/custom", {
       tag: "Custom",
       openapiOverride: {
@@ -724,7 +724,7 @@ describe("OperationProcessor", () => {
       processResponses: vi.fn<MockFn>(() => ({ 201: { description: "Created" } })),
     };
 
-    const processor = new OperationProcessor(schemaProcessor as never, responseProcessor as never);
+    const processor = new OperationProcessor(schemaProcessor, responseProcessor);
     const result = processor.processOperation("POST", "/items", {
       tag: "Items",
       bodyType: "CreateItemBody",
@@ -765,7 +765,7 @@ describe("OperationProcessor", () => {
       processResponses: vi.fn<MockFn>(() => ({})),
     };
 
-    const processor = new OperationProcessor(schemaProcessor as never, responseProcessor as never, {
+    const processor = new OperationProcessor(schemaProcessor, responseProcessor, {
       authPresets: { bearer: "JwtAuth", oauth2: "OAuth2Flow" },
     });
 
@@ -820,7 +820,7 @@ describe("OperationProcessor", () => {
       })),
     };
 
-    const processor = new OperationProcessor(schemaProcessor as never, responseProcessor as never);
+    const processor = new OperationProcessor(schemaProcessor, responseProcessor);
     const result = processor.processOperation("POST", "/events", {
       tag: "Events",
       paramsType: "EventQuery",
@@ -876,7 +876,7 @@ describe("OperationProcessor", () => {
         201: { $ref: "#/components/responses/Created" },
       })),
     };
-    const processor = new OperationProcessor(schemaProcessor as never, responseProcessor as never);
+    const processor = new OperationProcessor(schemaProcessor, responseProcessor);
     const result = processor.processOperation("GET", "/docs", {
       tag: "Docs",
       externalDocs: { url: "https://docs.example.com" },
@@ -907,13 +907,10 @@ describe("OperationProcessor", () => {
       },
     });
 
-    const multipartProcessor = new OperationProcessor(
-      schemaProcessor as never,
-      {
-        supportsRequestBody: () => true,
-        processResponses: () => ({ 200: { description: "ok" } }),
-      } as never,
-    );
+    const multipartProcessor = new OperationProcessor(schemaProcessor, {
+      supportsRequestBody: () => true,
+      processResponses: () => ({ 200: { description: "ok" } }),
+    });
     const multipart = multipartProcessor.processOperation("POST", "/upload", {
       contentType: "multipart/form-data",
       querystringType: "Filter",

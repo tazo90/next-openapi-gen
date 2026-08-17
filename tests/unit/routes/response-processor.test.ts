@@ -12,8 +12,8 @@ describe("ResponseProcessor", () => {
     const processor = new ResponseProcessor(
       {
         diagnostics: { enabled: true },
-      } as never,
-      schemaProcessor as never,
+      },
+      schemaProcessor,
     );
 
     expect(processor.processResponses({}, "DELETE")).toEqual({
@@ -45,8 +45,8 @@ describe("ResponseProcessor", () => {
     const processor = new ResponseProcessor(
       {
         diagnostics: { enabled: true },
-      } as never,
-      schemaProcessor as never,
+      },
+      schemaProcessor,
     );
 
     const responses = processor.processResponses(
@@ -86,8 +86,8 @@ describe("ResponseProcessor", () => {
           errors: ["401", "404"],
         },
         diagnostics: { enabled: true },
-      } as never,
-      schemaProcessor as never,
+      },
+      schemaProcessor,
     );
 
     const responses = processor.processResponses(
@@ -123,8 +123,8 @@ describe("ResponseProcessor", () => {
           shared: ["401"],
         },
         diagnostics: { enabled: true },
-      } as never,
-      schemaProcessor as never,
+      },
+      schemaProcessor,
     );
 
     const responses = processor.processResponses(
@@ -161,8 +161,8 @@ describe("ResponseProcessor", () => {
     const processor = new ResponseProcessor(
       {
         diagnostics: { enabled: true },
-      } as never,
-      schemaProcessor as never,
+      },
+      schemaProcessor,
     );
 
     const responses = processor.processResponses(
@@ -198,8 +198,8 @@ describe("ResponseProcessor", () => {
     const processor = new ResponseProcessor(
       {
         diagnostics: { enabled: true },
-      } as never,
-      schemaProcessor as never,
+      },
+      schemaProcessor,
     );
 
     const responses = processor.processResponses(
@@ -222,10 +222,7 @@ describe("ResponseProcessor", () => {
   });
 
   it("only supports request bodies for mutation methods", () => {
-    const processor = new ResponseProcessor(
-      { diagnostics: { enabled: true } } as never,
-      {} as never,
-    );
+    const processor = new ResponseProcessor({ diagnostics: { enabled: true } }, {});
 
     expect(processor.supportsRequestBody("GET")).toBe(false);
     expect(processor.supportsRequestBody("PATCH")).toBe(true);
@@ -241,8 +238,8 @@ describe("ResponseProcessor", () => {
     const processor = new ResponseProcessor(
       {
         diagnostics: { enabled: true },
-      } as never,
-      schemaProcessor as never,
+      },
+      schemaProcessor,
     );
 
     const responses = processor.processResponses(
@@ -278,8 +275,8 @@ describe("ResponseProcessor", () => {
     const processor = new ResponseProcessor(
       {
         diagnostics: { enabled: true },
-      } as never,
-      schemaProcessor as never,
+      },
+      schemaProcessor,
     );
 
     const responses = processor.processResponses(
@@ -323,8 +320,8 @@ describe("ResponseProcessor", () => {
     const processor = new ResponseProcessor(
       {
         diagnostics: { enabled: true },
-      } as never,
-      schemaProcessor as never,
+      },
+      schemaProcessor,
     );
 
     const responses = processor.processResponses(
@@ -362,8 +359,8 @@ describe("ResponseProcessor", () => {
     const processor = new ResponseProcessor(
       {
         diagnostics: { enabled: true },
-      } as never,
-      schemaProcessor as never,
+      },
+      schemaProcessor,
     );
 
     const responses = processor.processResponses(

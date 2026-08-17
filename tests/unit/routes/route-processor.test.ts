@@ -189,7 +189,7 @@ describe("RouteProcessor", () => {
     };
     routeProcessor = new RouteProcessor(
       baseConfig,
-      diagnostics as never,
+      diagnostics,
       undefined,
       adapters.createFrameworkSource,
     );

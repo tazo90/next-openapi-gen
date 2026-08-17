@@ -82,7 +82,7 @@ describe("next-openapi-gen default adapters", () => {
           ...baseConfig,
           overlay: { apply: ["./overlays/public.overlay.yaml"] },
           arazzo: { files: ["./arazzo/**/*.yaml"] },
-        } as never)
+        })
         ?.map((emitter) => emitter.kind),
     ).toEqual(["overlay", "arazzo"]);
   });

@@ -141,7 +141,7 @@ export async function GET() {}
               diagnostics: {},
               clientSdk: [{ command: "echo", args: ["--flag"], enabled: true }],
             },
-          } as never,
+          },
           undefined,
           {
             createFrameworkSource: () => ({
@@ -188,7 +188,7 @@ export async function GET() {}
               diagnostics: {},
               clientSdk: [{ command: "true", enabled: true }],
             },
-          } as never,
+          },
           undefined,
           {
             createFrameworkSource: () => ({
@@ -492,7 +492,7 @@ export async function GET() {}
           outputFile: "openapi.json",
         },
         configPath: undefined,
-      } as never),
+      }),
     ).rejects.toThrow("Generation adapters are required");
   });
 
@@ -554,7 +554,7 @@ export async function GET() {}
                 framework: { kind: FrameworkKind.Nextjs },
                 diagnostics: { failOn: "never" },
               },
-            } as never,
+            },
             undefined,
             {
               createFrameworkSource: () => ({

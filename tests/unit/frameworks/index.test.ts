@@ -52,7 +52,7 @@ describe("createDefaultGenerationAdapters", () => {
         routerType: "app",
         openapiVersion: "3.0",
         debug: false,
-      } as never),
+      }),
     ).toBeTruthy();
 
     expect(
@@ -76,7 +76,7 @@ describe("createDefaultGenerationAdapters", () => {
         routerType: "app",
         openapiVersion: "3.0",
         debug: false,
-      } as never),
+      }),
     ).toBeTruthy();
   });
 
@@ -88,7 +88,7 @@ describe("createDefaultGenerationAdapters", () => {
         .createSpecEmitters?.({
           overlay: { apply: ["./overlays/*.yaml"] },
           arazzo: { files: ["./arazzo/*.yaml"] },
-        } as never)
+        })
         ?.map((emitter) => emitter.kind),
     ).toEqual(["overlay", "arazzo"]);
   });

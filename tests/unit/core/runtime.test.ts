@@ -15,7 +15,7 @@ describe("shared generation runtime", () => {
 
     runtime.routeScan.statCache[absoluteFile] = {} as import("node:fs").Stats;
     runtime.schema.statCache[absoluteFile] = {} as import("node:fs").Stats;
-    runtime.schema.fileASTCache.set(absoluteFile, {} as import("@babel/types").File);
+    runtime.schema.fileASTCache.set(absoluteFile, {});
     runtime.schema.schemaFiles = ["x"];
     runtime.schema.schemaDefinitionIndex["k"] = ["v"];
 

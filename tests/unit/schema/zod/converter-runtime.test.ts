@@ -58,7 +58,7 @@ describe("Zod converter runtime helpers", () => {
     expect(
       parseFileWithCache(
         filePath,
-        { existsSync: () => true, readFileSync } as never,
+        { existsSync: () => true, readFileSync },
         fileASTCache,
         fileImportsCache,
         drizzleZodImports,
@@ -67,7 +67,7 @@ describe("Zod converter runtime helpers", () => {
     expect(
       parseFileWithCache(
         filePath,
-        { existsSync: () => true, readFileSync } as never,
+        { existsSync: () => true, readFileSync },
         fileASTCache,
         fileImportsCache,
         drizzleZodImports,
@@ -83,7 +83,7 @@ describe("Zod converter runtime helpers", () => {
     expect(
       parseFileWithCache(
         "/virtual/broken.ts",
-        { existsSync: () => false, readFileSync } as never,
+        { existsSync: () => false, readFileSync },
         new Map(),
         new Map(),
         new Set(),

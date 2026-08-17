@@ -73,9 +73,7 @@ describe("TypeScript runtime adapter", () => {
     expect(getTypeScriptVersionSupport("7.0.0-dev.20260626")).toBe("supported");
     expect(getTypeScriptVersionSupport("8.0.0")).toBe("too-new");
     expect(getTypeScriptVersionSupport("not-a-version")).toBe("too-new");
-    expect(
-      getBestEffortScriptTarget({ ScriptTarget: { LatestStandard: 99, ES2022: 9 } } as never),
-    ).toBe(99);
+    expect(getBestEffortScriptTarget({ ScriptTarget: { LatestStandard: 99, ES2022: 9 } })).toBe(99);
     expect(
       new TypeScriptUnavailableError({
         packagePath: "/virtual/typescript",
