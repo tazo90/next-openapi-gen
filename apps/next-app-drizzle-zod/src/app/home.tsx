@@ -10,7 +10,6 @@ function Frame({ children }: { children: ReactNode }) {
 
 function Header({ title, children }: { title: string; children: ReactNode }) {
   return (
-<<<<<<< HEAD
     <header className="mb-12 text-center">
       <h1 data-testid="home-shell-marker" className="mb-4 text-4xl font-bold text-gray-900">
         {title}
