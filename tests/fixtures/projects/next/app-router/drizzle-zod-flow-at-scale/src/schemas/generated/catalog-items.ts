@@ -14,7 +14,7 @@ export const UpdateCatalogItemSchema = CreateCatalogItemSchema.partial();
 export const CatalogItemSchema = createSelectSchema(catalogItems);
 
 export const CatalogItemListResponse = z.object({
-  items: z.array(CatalogItemSchema as unknown as z.ZodTypeAny),
+  items: z.array(CatalogItemSchema),
   total: z.number().int().nonnegative(),
 });
 

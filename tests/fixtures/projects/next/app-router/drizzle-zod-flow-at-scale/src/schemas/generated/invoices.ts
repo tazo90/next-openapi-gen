@@ -14,7 +14,7 @@ export const UpdateInvoiceSchema = CreateInvoiceSchema.partial();
 export const InvoiceSchema = createSelectSchema(invoices);
 
 export const InvoiceListResponse = z.object({
-  items: z.array(InvoiceSchema as unknown as z.ZodTypeAny),
+  items: z.array(InvoiceSchema),
   total: z.number().int().nonnegative(),
 });
 

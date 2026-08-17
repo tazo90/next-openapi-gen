@@ -14,7 +14,7 @@ export const UpdateExportSchema = CreateExportSchema.partial();
 export const ExportSchema = createSelectSchema(exports);
 
 export const ExportListResponse = z.object({
-  items: z.array(ExportSchema as unknown as z.ZodTypeAny),
+  items: z.array(ExportSchema),
   total: z.number().int().nonnegative(),
 });
 

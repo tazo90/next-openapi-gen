@@ -14,7 +14,7 @@ export const UpdateRefundSchema = CreateRefundSchema.partial();
 export const RefundSchema = createSelectSchema(refunds);
 
 export const RefundListResponse = z.object({
-  items: z.array(RefundSchema as unknown as z.ZodTypeAny),
+  items: z.array(RefundSchema),
   total: z.number().int().nonnegative(),
 });
 

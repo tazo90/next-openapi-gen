@@ -14,7 +14,7 @@ export const UpdateNotificationSchema = CreateNotificationSchema.partial();
 export const NotificationSchema = createSelectSchema(notifications);
 
 export const NotificationListResponse = z.object({
-  items: z.array(NotificationSchema as unknown as z.ZodTypeAny),
+  items: z.array(NotificationSchema),
   total: z.number().int().nonnegative(),
 });
 

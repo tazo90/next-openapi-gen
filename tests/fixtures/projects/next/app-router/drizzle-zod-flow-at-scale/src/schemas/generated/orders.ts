@@ -14,7 +14,7 @@ export const UpdateOrderSchema = CreateOrderSchema.partial();
 export const OrderSchema = createSelectSchema(orders);
 
 export const OrderListResponse = z.object({
-  items: z.array(OrderSchema as unknown as z.ZodTypeAny),
+  items: z.array(OrderSchema),
   total: z.number().int().nonnegative(),
 });
 

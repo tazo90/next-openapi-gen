@@ -14,7 +14,7 @@ export const UpdateSubscriptionSchema = CreateSubscriptionSchema.partial();
 export const SubscriptionSchema = createSelectSchema(subscriptions);
 
 export const SubscriptionListResponse = z.object({
-  items: z.array(SubscriptionSchema as unknown as z.ZodTypeAny),
+  items: z.array(SubscriptionSchema),
   total: z.number().int().nonnegative(),
 });
 

@@ -14,7 +14,7 @@ export const UpdatePaymentSchema = CreatePaymentSchema.partial();
 export const PaymentSchema = createSelectSchema(payments);
 
 export const PaymentListResponse = z.object({
-  items: z.array(PaymentSchema as unknown as z.ZodTypeAny),
+  items: z.array(PaymentSchema),
   total: z.number().int().nonnegative(),
 });
 

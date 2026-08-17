@@ -14,7 +14,7 @@ export const UpdateCommentSchema = CreateCommentSchema.partial();
 export const CommentSchema = createSelectSchema(comments);
 
 export const CommentListResponse = z.object({
-  items: z.array(CommentSchema as unknown as z.ZodTypeAny),
+  items: z.array(CommentSchema),
   total: z.number().int().nonnegative(),
 });
 

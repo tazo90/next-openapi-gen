@@ -11,8 +11,7 @@ import {
   type ResourceDefinition,
   type RouteOperation,
 } from "./domain.mts";
-import { getGeneratedSchemaModulePaths, type SchemaFlavor } from "./schemas.mts";
-import type { SchemaLayout } from "./targets.mts";
+import type { SchemaFlavor } from "./schemas.mts";
 import { writeTextFile } from "./utils.mts";
 
 export type FrameworkKind = "next-app-router" | "next-pages-router" | "tanstack" | "react-router";
@@ -21,7 +20,6 @@ export type RouteEmitOptions = {
   outputDir: string;
   framework: FrameworkKind;
   flavor: SchemaFlavor;
-  schemaLayout: SchemaLayout;
   dryRun: boolean;
   operationIdPrefix: string;
   mixedUsesZod?: (resource: ResourceDefinition, index: number) => boolean;
@@ -76,45 +74,6 @@ function buildAnnotations(
   return lines.join("\n");
 }
 
-function toPosixPath(filePath: string): string {
-  return filePath.split(path.sep).join("/");
-}
-
-function relativeModuleSpecifier(fromFile: string, toModule: string): string {
-  const fromDir = path.posix.dirname(toPosixPath(fromFile));
-  const relativePath = path.posix.relative(fromDir, toPosixPath(toModule));
-  return relativePath.startsWith(".") ? relativePath : `./${relativePath}`;
-}
-
-function usesZodSchema(
-  options: RouteEmitOptions,
-  resource: ResourceDefinition,
-  index: number,
-): boolean {
-  return (
-    options.flavor === "zod" ||
-    options.flavor === "drizzle-zod" ||
-    (options.flavor === "mixed" && (options.mixedUsesZod?.(resource, index) ?? index % 2 === 1))
-  );
-}
-
-function renderSchemaImports(
-  routeFileFromOutput: string,
-  resource: ResourceDefinition,
-  options: RouteEmitOptions,
-  index: number,
-): string {
-  const modules = getGeneratedSchemaModulePaths(
-    resource,
-    options.schemaLayout,
-    options.flavor,
-    usesZodSchema(options, resource, index),
-  );
-  return `${modules
-    .map((modulePath) => `import "${relativeModuleSpecifier(routeFileFromOutput, modulePath)}";`)
-    .join("\n")}\n\n`;
-}
-
 export function emitRoutes(options: RouteEmitOptions): string[] {
   switch (options.framework) {
     case "next-app-router":
@@ -155,18 +114,7 @@ function emitNextAppRouterRoutes(options: RouteEmitOptions): string[] {
 
   for (const [key, entries] of grouped.entries()) {
     const segments = key.split("/");
-    const firstEntry = entries[0];
-    if (!firstEntry) {
-      continue;
-    }
-    const relativeRoutePath = `${segments.join("/")}/route.ts`;
     const filePath = path.join(options.outputDir, ...segments, "route.ts");
-    const imports = renderSchemaImports(
-      relativeRoutePath,
-      firstEntry.resource,
-      options,
-      firstEntry.index,
-    );
     const blocks = entries.map(({ resource, operation, index }) => {
       const annotations = buildAnnotations(resource, operation, options, index);
       return `/**
@@ -176,11 +124,7 @@ export async function ${operation.method}() {
   return Response.json({});
 }`;
     });
-    writeTextFile(
-      filePath,
-      `${GENERATED_HEADER}${imports}${blocks.join("\n\n")}\n`,
-      options.dryRun,
-    );
+    writeTextFile(filePath, `${GENERATED_HEADER}${blocks.join("\n\n")}\n`, options.dryRun);
     written.push(filePath);
   }
 
@@ -220,12 +164,7 @@ function emitNextPagesRouterRoutes(options: RouteEmitOptions): string[] {
       }
       writeTextFile(
         filePath,
-        `${GENERATED_HEADER}${renderSchemaImports(
-          `pages/api/generated/${resource.slug}/index.ts`,
-          resource,
-          options,
-          index,
-        )}${blocks.join("\n")}\nexport default function handler() {}\n`,
+        `${GENERATED_HEADER}${blocks.join("\n")}\nexport default function handler() {}\n`,
         options.dryRun,
       );
       written.push(filePath);
@@ -244,12 +183,7 @@ function emitNextPagesRouterRoutes(options: RouteEmitOptions): string[] {
     );
     writeTextFile(
       detailPath,
-      `${GENERATED_HEADER}${renderSchemaImports(
-        `pages/api/generated/${resource.slug}/[id].ts`,
-        resource,
-        options,
-        index,
-      )}${detailBlocks.join("\n")}\nexport default function handler() {}\n`,
+      `${GENERATED_HEADER}${detailBlocks.join("\n")}\nexport default function handler() {}\n`,
       options.dryRun,
     );
     written.push(detailPath);
@@ -287,24 +221,10 @@ function emitTanstackRoutes(options: RouteEmitOptions): string[] {
   }
 
   for (const [fileName, entries] of grouped.entries()) {
-    const firstEntry = entries[0];
-    if (!firstEntry) {
-      continue;
-    }
-    const relativeRoutePath = `src/routes/api/generated/${fileName}`;
     const filePath = path.join(options.outputDir, "src", "routes", "api", "generated", fileName);
     const uniqueFnBlocks = mergeTanstackFunctions(entries, options);
 
-    writeTextFile(
-      filePath,
-      `${GENERATED_HEADER}${renderSchemaImports(
-        relativeRoutePath,
-        firstEntry.resource,
-        options,
-        firstEntry.index,
-      )}${uniqueFnBlocks.join("\n\n")}\n`,
-      options.dryRun,
-    );
+    writeTextFile(filePath, `${GENERATED_HEADER}${uniqueFnBlocks.join("\n\n")}\n`, options.dryRun);
     written.push(filePath);
   }
 
@@ -348,14 +268,5 @@ ${annotations}
 }
 
 function emitReactRouterRoutes(options: RouteEmitOptions): string[] {
-  const written = emitTanstackRoutes(options);
-  const indexPath = path.join(options.outputDir, "src", "routes", "api", "generated", "index.ts");
-  const specifiers = written
-    .map((filePath) => path.posix.basename(toPosixPath(filePath), ".ts"))
-    .toSorted((left, right) => left.localeCompare(right))
-    .map((fileName) => `import "./${fileName}";`)
-    .join("\n");
-  writeTextFile(indexPath, `${GENERATED_HEADER}${specifiers}\n`, options.dryRun);
-  written.push(indexPath);
-  return written;
+  return emitTanstackRoutes(options);
 }

@@ -14,7 +14,7 @@ export const UpdateTaskSchema = CreateTaskSchema.partial();
 export const TaskSchema = createSelectSchema(tasks);
 
 export const TaskListResponse = z.object({
-  items: z.array(TaskSchema as unknown as z.ZodTypeAny),
+  items: z.array(TaskSchema),
   total: z.number().int().nonnegative(),
 });
 

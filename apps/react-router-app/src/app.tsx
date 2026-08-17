@@ -8,7 +8,6 @@ import {
 
 import HomePage from "./routes/_index";
 import ApiDocsPage from "./routes/api-docs";
-import "./routes/api/generated";
 import "./routes/api/projects.$projectId";
 import "./routes/api/settings.profile";
 import "./routes/api/uploads";

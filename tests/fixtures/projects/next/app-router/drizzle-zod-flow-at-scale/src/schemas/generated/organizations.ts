@@ -14,7 +14,7 @@ export const UpdateOrganizationSchema = CreateOrganizationSchema.partial();
 export const OrganizationSchema = createSelectSchema(organizations);
 
 export const OrganizationListResponse = z.object({
-  items: z.array(OrganizationSchema as unknown as z.ZodTypeAny),
+  items: z.array(OrganizationSchema),
   total: z.number().int().nonnegative(),
 });
 

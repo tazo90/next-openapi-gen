@@ -64,31 +64,14 @@ export function emitSchemas(options: {
   return written;
 }
 
-export function getGeneratedSchemaRelativeDir(schemaLayout: SchemaLayout, useZod: boolean): string {
+function resolveSchemaRoot(outputDir: string, schemaLayout: SchemaLayout, useZod: boolean): string {
   if (schemaLayout === "schemas-root") {
-    return "schemas/generated";
+    return path.join(outputDir, "schemas", "generated");
   }
   if (useZod || schemaLayout === "src-schemas") {
-    return "src/schemas/generated";
+    return path.join(outputDir, "src", "schemas", "generated");
   }
-  return "src/types/generated";
-}
-
-export function getGeneratedSchemaModulePaths(
-  resource: ResourceDefinition,
-  schemaLayout: SchemaLayout,
-  flavor: SchemaFlavor,
-  useZod: boolean,
-): string[] {
-  if (flavor === "drizzle-zod") {
-    return [`src/schemas/generated/${resource.slug}`];
-  }
-  const root = getGeneratedSchemaRelativeDir(schemaLayout, useZod);
-  return [`${root}/${resource.slug}-entity`, `${root}/${resource.slug}-input`];
-}
-
-function resolveSchemaRoot(outputDir: string, schemaLayout: SchemaLayout, useZod: boolean): string {
-  return path.join(outputDir, ...getGeneratedSchemaRelativeDir(schemaLayout, useZod).split("/"));
+  return path.join(outputDir, "src", "types", "generated");
 }
 
 function emitTypeScriptEntitySchemaFile(resource: ResourceDefinition, index: number): string {
@@ -234,7 +217,6 @@ ${tables}
 `;
 }
 
-// drizzle-zod 0.8 infers Zod 4 objects; cast through unknown so Zod 3's z.array() typechecks.
 function emitDrizzleSchemaFile(resource: ResourceDefinition): string {
   const names = getSchemaNames(resource);
   const routeIdParam = getRouteIdParam(resource);
@@ -255,7 +237,7 @@ export const ${names.zodUpdate} = ${names.zodCreate}.partial();
 export const ${names.zodEntity} = createSelectSchema(${tableVar});
 
 export const ${names.listResponse} = z.object({
-  items: z.array(${names.zodEntity} as unknown as z.ZodTypeAny),
+  items: z.array(${names.zodEntity}),
   total: z.number().int().nonnegative(),
 });
 

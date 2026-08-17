@@ -14,7 +14,7 @@ export const UpdateWorkspaceSchema = CreateWorkspaceSchema.partial();
 export const WorkspaceSchema = createSelectSchema(workspaces);
 
 export const WorkspaceListResponse = z.object({
-  items: z.array(WorkspaceSchema as unknown as z.ZodTypeAny),
+  items: z.array(WorkspaceSchema),
   total: z.number().int().nonnegative(),
 });
 

@@ -14,7 +14,7 @@ export const UpdateDocumentSchema = CreateDocumentSchema.partial();
 export const DocumentSchema = createSelectSchema(documents);
 
 export const DocumentListResponse = z.object({
-  items: z.array(DocumentSchema as unknown as z.ZodTypeAny),
+  items: z.array(DocumentSchema),
   total: z.number().int().nonnegative(),
 });
 

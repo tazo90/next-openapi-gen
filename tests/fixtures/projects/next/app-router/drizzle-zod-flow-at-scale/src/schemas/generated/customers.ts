@@ -14,7 +14,7 @@ export const UpdateCustomerSchema = CreateCustomerSchema.partial();
 export const CustomerSchema = createSelectSchema(customers);
 
 export const CustomerListResponse = z.object({
-  items: z.array(CustomerSchema as unknown as z.ZodTypeAny),
+  items: z.array(CustomerSchema),
   total: z.number().int().nonnegative(),
 });
 
