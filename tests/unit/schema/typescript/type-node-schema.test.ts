@@ -397,22 +397,16 @@ describe("type-node-schema helpers", () => {
       ),
     ).toEqual({ type: "object", properties: { id: { type: "string" } } });
     expect(
-      resolveTypeNodeSchema(
-        host as never,
-        {
-          type: "TSExpressionWithTypeArguments",
-          expression: t.identifier("Date"),
-        },
-      ),
+      resolveTypeNodeSchema(host as never, {
+        type: "TSExpressionWithTypeArguments",
+        expression: t.identifier("Date"),
+      }),
     ).toEqual({ type: "string", format: "date-time" });
     expect(
-      resolveTypeNodeSchema(
-        host as never,
-        {
-          type: "TSExpressionWithTypeArguments",
-          expression: t.numericLiteral(1),
-        },
-      ),
+      resolveTypeNodeSchema(host as never, {
+        type: "TSExpressionWithTypeArguments",
+        expression: t.numericLiteral(1),
+      }),
     ).toEqual({ type: "object" });
     expect(
       resolveTypeNodeSchema(

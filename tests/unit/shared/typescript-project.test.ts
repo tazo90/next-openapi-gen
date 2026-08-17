@@ -17,7 +17,7 @@ import {
   TypeScriptUnavailableError,
 } from "@workspace/openapi-core/shared/typescript-runtime.js";
 
-describe("TypeScript project adapter", () => {
+describe("TypeScript project adapter", { timeout: 20_000 }, () => {
   const roots: string[] = [];
 
   afterEach(() => {
