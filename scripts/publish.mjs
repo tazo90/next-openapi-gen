@@ -15,10 +15,21 @@ const pkgPath = join(pkgDir, "package.json");
 const readmeSrc = join(rootDir, "README.md");
 const readmeDst = join(pkgDir, "README.md");
 
+// Rebuild from source so we never pack a stale dist/. The `...` suffix pulls the
+// workspace dependencies into the turbo scope so their dist/ exists before tsup
+// bundles them; without it turbo builds this package alone and esbuild fails to
+// resolve @workspace/* imports.
+execSync("pnpm exec turbo run build --filter=next-openapi-gen... --force", {
+  cwd: rootDir,
+  stdio: "inherit",
+});
+
 const original = readFileSync(pkgPath, "utf8");
 const pkg = JSON.parse(original);
 
-// Strip workspace-only devDependencies before packing the public package.
+// Strip workspace-only devDependencies before packing the public package. This
+// runs after the build: while the manifest is stripped, any `pnpm install` would
+// prune the @workspace/* links from node_modules and break the build.
 for (const [key, value] of Object.entries(pkg.devDependencies ?? {})) {
   if (String(value).startsWith("workspace:")) {
     delete pkg.devDependencies[key];
@@ -31,13 +42,6 @@ writeFileSync(pkgPath, JSON.stringify(pkg, null, "\t") + "\n");
 copyFileSync(readmeSrc, readmeDst);
 
 try {
-  // Rebuild from source so we never pack a stale dist/ (turbo builds workspace
-  // deps first via ^build, then tsup bundles them into dist).
-  execSync("pnpm exec turbo run build --filter=next-openapi-gen --force", {
-    cwd: rootDir,
-    stdio: "inherit",
-  });
-
   // pnpm pack resolves catalog: → real versions
   execSync("pnpm pack", { cwd: pkgDir, stdio: "inherit" });
 
