@@ -2333,12 +2333,12 @@
       "OrganizationIdParams": {
         "type": "object",
         "properties": {
-          "id": {
+          "organizationId": {
             "type": "string"
           }
         },
         "required": [
-          "id"
+          "organizationId"
         ]
       },
       "OrganizationListQuery": {
@@ -2687,6 +2687,17 @@
           }
         }
       },
+      "ProjectCollectionPathParams": {
+        "type": "object",
+        "properties": {
+          "organizationId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "organizationId"
+        ]
+      },
       "ProjectEntity": {
         "type": "object",
         "properties": {
@@ -2712,12 +2723,16 @@
       "ProjectIdParams": {
         "type": "object",
         "properties": {
-          "id": {
+          "organizationId": {
+            "type": "string"
+          },
+          "projectId": {
             "type": "string"
           }
         },
         "required": [
-          "id"
+          "organizationId",
+          "projectId"
         ]
       },
       "ProjectListQuery": {
@@ -3283,6 +3298,17 @@
           "limit"
         ]
       },
+      "TaskCollectionPathParams": {
+        "type": "object",
+        "properties": {
+          "projectId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "projectId"
+        ]
+      },
       "TaskEntity": {
         "type": "object",
         "properties": {
@@ -3316,11 +3342,15 @@
       "TaskIdParams": {
         "type": "object",
         "properties": {
+          "projectId": {
+            "type": "string"
+          },
           "id": {
             "type": "string"
           }
         },
         "required": [
+          "projectId",
           "id"
         ]
       },
@@ -3515,7 +3545,7 @@
       },
       "TraceId": {
         "type": "string",
-        "format": "nanoid"
+        "pattern": "^[A-Za-z0-9_-]{21}$"
       },
       "UpdateApiKeyInput": {
         "type": "object",
@@ -4402,7 +4432,7 @@
               "description": "Filter by status"
             },
             "description": "Filter by status",
-            "example": "example"
+            "example": "active"
           }
         ],
         "security": [
@@ -4477,7 +4507,7 @@
                 "false"
               ]
             },
-            "example": "example"
+            "example": "true"
           }
         ],
         "responses": {
@@ -4700,7 +4730,7 @@
                 "false"
               ]
             },
-            "example": "example"
+            "example": "true"
           }
         ],
         "responses": {
@@ -4923,7 +4953,7 @@
                 "false"
               ]
             },
-            "example": "example"
+            "example": "true"
           }
         ],
         "responses": {
@@ -5187,7 +5217,7 @@
                 "false"
               ]
             },
-            "example": "example"
+            "example": "true"
           }
         ],
         "responses": {
@@ -5410,7 +5440,7 @@
                 "false"
               ]
             },
-            "example": "example"
+            "example": "true"
           }
         ],
         "responses": {
@@ -5633,7 +5663,7 @@
                 "false"
               ]
             },
-            "example": "example"
+            "example": "true"
           }
         ],
         "responses": {
@@ -5931,7 +5961,7 @@
                 "false"
               ]
             },
-            "example": "example"
+            "example": "true"
           }
         ],
         "responses": {
@@ -6154,7 +6184,7 @@
                 "false"
               ]
             },
-            "example": "example"
+            "example": "true"
           }
         ],
         "responses": {
@@ -6448,7 +6478,7 @@
                 "false"
               ]
             },
-            "example": "example"
+            "example": "true"
           }
         ],
         "responses": {
@@ -6671,7 +6701,7 @@
                 "false"
               ]
             },
-            "example": "example"
+            "example": "true"
           }
         ],
         "responses": {
@@ -6894,7 +6924,7 @@
                 "false"
               ]
             },
-            "example": "example"
+            "example": "true"
           }
         ],
         "responses": {
@@ -7117,7 +7147,7 @@
                 "false"
               ]
             },
-            "example": "example"
+            "example": "true"
           }
         ],
         "responses": {
@@ -7340,7 +7370,7 @@
                 "false"
               ]
             },
-            "example": "example"
+            "example": "true"
           }
         ],
         "responses": {
@@ -7563,7 +7593,7 @@
                 "false"
               ]
             },
-            "example": "example"
+            "example": "true"
           }
         ],
         "responses": {
@@ -7615,7 +7645,7 @@
         }
       }
     },
-    "/generated/organizations/{id}": {
+    "/generated/organizations/{organizationId}": {
       "get": {
         "operationId": "sandboxAppScaleGetOrganization",
         "summary": "Get organization by ID",
@@ -7626,7 +7656,7 @@
         "parameters": [
           {
             "in": "path",
-            "name": "id",
+            "name": "organizationId",
             "required": true,
             "schema": {
               "type": "string"
@@ -7668,7 +7698,7 @@
         "parameters": [
           {
             "in": "path",
-            "name": "id",
+            "name": "organizationId",
             "required": true,
             "schema": {
               "type": "string"
@@ -7716,7 +7746,7 @@
         "parameters": [
           {
             "in": "path",
-            "name": "id",
+            "name": "organizationId",
             "required": true,
             "schema": {
               "type": "string"
@@ -7786,7 +7816,7 @@
                 "false"
               ]
             },
-            "example": "example"
+            "example": "true"
           }
         ],
         "responses": {
@@ -8009,7 +8039,7 @@
                 "false"
               ]
             },
-            "example": "example"
+            "example": "true"
           }
         ],
         "responses": {
@@ -8346,17 +8376,16 @@
                 "false"
               ]
             },
-            "example": "example"
+            "example": "true"
           },
           {
-            "name": "organizationId",
             "in": "path",
+            "name": "organizationId",
             "required": true,
             "schema": {
               "type": "string"
             },
-            "example": "123",
-            "description": "Path parameter: organizationId"
+            "example": "123"
           }
         ],
         "responses": {
@@ -8381,14 +8410,13 @@
         ],
         "parameters": [
           {
-            "name": "organizationId",
             "in": "path",
+            "name": "organizationId",
             "required": true,
             "schema": {
               "type": "string"
             },
-            "example": "123",
-            "description": "Path parameter: organizationId"
+            "example": "123"
           }
         ],
         "security": [
@@ -8419,7 +8447,7 @@
         }
       }
     },
-    "/generated/organizations/{organizationId}/projects/{id}": {
+    "/generated/organizations/{organizationId}/projects/{projectId}": {
       "get": {
         "operationId": "sandboxAppScaleGetProject",
         "summary": "Get project by ID",
@@ -8430,7 +8458,16 @@
         "parameters": [
           {
             "in": "path",
-            "name": "id",
+            "name": "organizationId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123"
+          },
+          {
+            "in": "path",
+            "name": "projectId",
             "required": true,
             "schema": {
               "type": "string"
@@ -8472,7 +8509,16 @@
         "parameters": [
           {
             "in": "path",
-            "name": "id",
+            "name": "organizationId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123"
+          },
+          {
+            "in": "path",
+            "name": "projectId",
             "required": true,
             "schema": {
               "type": "string"
@@ -8520,7 +8566,16 @@
         "parameters": [
           {
             "in": "path",
-            "name": "id",
+            "name": "organizationId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123"
+          },
+          {
+            "in": "path",
+            "name": "projectId",
             "required": true,
             "schema": {
               "type": "string"
@@ -8590,7 +8645,7 @@
                 "false"
               ]
             },
-            "example": "example"
+            "example": "true"
           }
         ],
         "responses": {
@@ -8813,7 +8868,7 @@
                 "false"
               ]
             },
-            "example": "example"
+            "example": "true"
           }
         ],
         "responses": {
@@ -9036,7 +9091,7 @@
                 "false"
               ]
             },
-            "example": "example"
+            "example": "true"
           }
         ],
         "responses": {
@@ -9334,7 +9389,7 @@
                 "false"
               ]
             },
-            "example": "example"
+            "example": "true"
           }
         ],
         "responses": {
@@ -9557,17 +9612,16 @@
                 "false"
               ]
             },
-            "example": "example"
+            "example": "true"
           },
           {
-            "name": "projectId",
             "in": "path",
+            "name": "projectId",
             "required": true,
             "schema": {
               "type": "string"
             },
-            "example": "123",
-            "description": "Path parameter: projectId"
+            "example": "123"
           }
         ],
         "responses": {
@@ -9592,14 +9646,13 @@
         ],
         "parameters": [
           {
-            "name": "projectId",
             "in": "path",
+            "name": "projectId",
             "required": true,
             "schema": {
               "type": "string"
             },
-            "example": "123",
-            "description": "Path parameter: projectId"
+            "example": "123"
           }
         ],
         "security": [
@@ -9639,6 +9692,15 @@
           "Tasks"
         ],
         "parameters": [
+          {
+            "in": "path",
+            "name": "projectId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123"
+          },
           {
             "in": "path",
             "name": "id",
@@ -9681,6 +9743,15 @@
           "Tasks"
         ],
         "parameters": [
+          {
+            "in": "path",
+            "name": "projectId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123"
+          },
           {
             "in": "path",
             "name": "id",
@@ -9729,6 +9800,15 @@
           "Tasks"
         ],
         "parameters": [
+          {
+            "in": "path",
+            "name": "projectId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123"
+          },
           {
             "in": "path",
             "name": "id",
@@ -9801,7 +9881,7 @@
                 "false"
               ]
             },
-            "example": "example"
+            "example": "true"
           }
         ],
         "responses": {
@@ -10061,7 +10141,7 @@
               "description": "Sort order"
             },
             "description": "Sort order",
-            "example": "example"
+            "example": "asc"
           }
         ],
         "responses": {
@@ -10215,7 +10295,7 @@
                 "false"
               ]
             },
-            "example": "example"
+            "example": "true"
           }
         ],
         "responses": {
@@ -10438,7 +10518,7 @@
                 "false"
               ]
             },
-            "example": "example"
+            "example": "true"
           }
         ],
         "responses": {
