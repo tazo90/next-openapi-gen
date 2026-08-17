@@ -53,6 +53,7 @@ catalogMode: strict
 
 catalogs:
   nextjs:
+    "@next/playwright": 16.3.0
     "@types/react": ^19.2.17
     "@types/react-dom": ^19.2.3
     next: 16.3.0

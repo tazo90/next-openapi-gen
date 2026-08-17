@@ -61,5 +61,8 @@ export default defineConfig({
     url: readyURL,
     reuseExistingServer: false,
     timeout: 180_000,
+    env: {
+      EXPOSE_TESTING_API: "1",
+    },
   },
 });

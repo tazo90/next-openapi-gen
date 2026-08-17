@@ -139,6 +139,9 @@ catalogs:
       specifier: ^4.4.3
       version: 4.4.3
   nextjs:
+    '@next/playwright':
+      specifier: 16.3.0
+      version: 16.3.0
     '@types/react':
       specifier: ^19.2.17
       version: 19.2.17
@@ -235,6 +238,9 @@ importers:
       '@commitlint/types':
         specifier: 'catalog:'
         version: 21.1.0
+      '@next/playwright':
+        specifier: catalog:nextjs
+        version: 16.3.0(@playwright/test@1.61.1)
       '@playwright/test':
         specifier: 'catalog:'
         version: 1.61.1
@@ -315,7 +321,7 @@ importers:
     dependencies:
       '@scalar/api-reference-react':
         specifier: 'catalog:'
-        version: 0.9.48(@typescript/typescript6@6.0.2)(axios@1.18.1)(react@19.2.7)(tailwindcss@4.3.1)
+        version: 0.9.48(@typescript/typescript6@6.0.2)(axios@1.18.1)(react@19.2.7)(tailwindcss@4.3.1)(zod@4.4.3)
       next:
         specifier: catalog:nextjs
         version: 16.3.0(@opentelemetry/api@1.9.0)(@playwright/test@1.61.1)(@types/node@26.0.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
@@ -465,7 +471,7 @@ importers:
     dependencies:
       '@scalar/api-reference-react':
         specifier: 'catalog:'
-        version: 0.9.48(@typescript/typescript6@6.0.2)(axios@1.18.1)(react@19.2.7)(tailwindcss@4.3.1)
+        version: 0.9.48(@typescript/typescript6@6.0.2)(axios@1.18.1)(react@19.2.7)(tailwindcss@4.3.1)(zod@4.4.3)
       next:
         specifier: catalog:nextjs
         version: 16.3.0(@opentelemetry/api@1.9.0)(@playwright/test@1.61.1)(@types/node@26.0.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
@@ -652,7 +658,7 @@ importers:
     dependencies:
       '@scalar/api-reference-react':
         specifier: 'catalog:'
-        version: 0.9.48(@typescript/typescript6@6.0.2)(axios@1.18.1)(react@19.2.7)(tailwindcss@4.3.1)
+        version: 0.9.48(@typescript/typescript6@6.0.2)(axios@1.18.1)(react@19.2.7)(tailwindcss@4.3.1)(zod@4.4.3)
       next:
         specifier: catalog:nextjs
         version: 16.3.0(@opentelemetry/api@1.9.0)(@playwright/test@1.61.1)(@types/node@26.0.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
@@ -698,7 +704,7 @@ importers:
     dependencies:
       '@scalar/api-reference-react':
         specifier: 'catalog:'
-        version: 0.9.48(@typescript/typescript6@6.0.2)(axios@1.18.1)(react@19.2.7)(tailwindcss@4.3.1)
+        version: 0.9.48(@typescript/typescript6@6.0.2)(axios@1.18.1)(react@19.2.7)(tailwindcss@4.3.1)(zod@4.4.3)
       next:
         specifier: catalog:nextjs
         version: 16.3.0(@opentelemetry/api@1.9.0)(@playwright/test@1.61.1)(@types/node@26.0.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
@@ -833,7 +839,7 @@ importers:
     dependencies:
       '@scalar/api-reference-react':
         specifier: 'catalog:'
-        version: 0.9.48(@typescript/typescript6@6.0.2)(axios@1.18.1)(react@19.2.7)(tailwindcss@4.3.1)
+        version: 0.9.48(@typescript/typescript6@6.0.2)(axios@1.18.1)(react@19.2.7)(tailwindcss@4.3.1)(zod@4.4.3)
       react:
         specifier: catalog:react-router
         version: 19.2.7
@@ -873,7 +879,7 @@ importers:
     dependencies:
       '@scalar/api-reference-react':
         specifier: 'catalog:'
-        version: 0.9.48(@typescript/typescript6@6.0.2)(axios@1.18.1)(react@19.2.7)(tailwindcss@4.3.1)
+        version: 0.9.48(@typescript/typescript6@6.0.2)(axios@1.18.1)(react@19.2.7)(tailwindcss@4.3.1)(zod@4.4.3)
       '@tanstack/react-router':
         specifier: catalog:tanstack
         version: 1.170.16(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
@@ -2115,6 +2121,14 @@ packages:
 
   '@next/env@16.3.0':
     resolution: {integrity: sha512-o9r1S0BNiNreHP9Vs+Qnqd9kviDkJh8xIACY7UFZSmiGbbQRzPBBosvHzAU4TULHOIuOj/18RSsyz2qrREmIFw==}
+
+  '@next/playwright@16.3.0':
+    resolution: {integrity: sha512-lYFQDfksErmwifriLvnuhywiTqKtC7faxbLQSO2cmsrfVJsXA0L3cV1IqsXu7lhA8bFOOAxyvNBTtYyzKdKDew==}
+    peerDependencies:
+      '@playwright/test': '>=1.0.0'
+    peerDependenciesMeta:
+      '@playwright/test':
+        optional: true
 
   '@next/swc-darwin-arm64@16.3.0':
     resolution: {integrity: sha512-55hpqq18bEVAlxedlTt3tFqZmKg2nUXT1kn1G/BGEy0R13h3LwtwHPVzzjG6P4LLeOHE32PFDQUVaJEWvBEZBw==}
@@ -7393,12 +7407,6 @@ packages:
 
 snapshots:
 
-  '@ai-sdk/gateway@3.0.13':
-    dependencies:
-      '@ai-sdk/provider': 3.0.2
-      '@ai-sdk/provider-utils': 4.0.5
-      '@vercel/oidc': 3.1.0
-
   '@ai-sdk/gateway@3.0.13(zod@3.25.76)':
     dependencies:
       '@ai-sdk/provider': 3.0.2
@@ -7412,12 +7420,6 @@ snapshots:
       '@ai-sdk/provider-utils': 4.0.5(zod@4.4.3)
       '@vercel/oidc': 3.1.0
       zod: 4.4.3
-
-  '@ai-sdk/provider-utils@4.0.5':
-    dependencies:
-      '@ai-sdk/provider': 3.0.2
-      '@standard-schema/spec': 1.1.0
-      eventsource-parser: 3.1.0
 
   '@ai-sdk/provider-utils@4.0.5(zod@3.25.76)':
     dependencies:
@@ -7436,15 +7438,6 @@ snapshots:
   '@ai-sdk/provider@3.0.2':
     dependencies:
       json-schema: 0.4.0
-
-  '@ai-sdk/vue@3.0.33(vue@3.5.39(@typescript/typescript6@6.0.2))':
-    dependencies:
-      '@ai-sdk/provider-utils': 4.0.5
-      ai: 6.0.33
-      swrv: 1.2.0(vue@3.5.39(@typescript/typescript6@6.0.2))
-      vue: 3.5.39(@typescript/typescript6@6.0.2)
-    transitivePeerDependencies:
-      - zod
 
   '@ai-sdk/vue@3.0.33(vue@3.5.39(@typescript/typescript6@6.0.2))(zod@3.25.76)':
     dependencies:
@@ -8316,6 +8309,10 @@ snapshots:
 
   '@next/env@16.3.0': {}
 
+  '@next/playwright@16.3.0(@playwright/test@1.61.1)':
+    optionalDependencies:
+      '@playwright/test': 1.61.1
+
   '@next/swc-darwin-arm64@16.3.0':
     optional: true
 
@@ -8791,44 +8788,6 @@ snapshots:
     transitivePeerDependencies:
       - zenObservable
 
-  '@scalar/agent-chat@0.12.12(@typescript/typescript6@6.0.2)(axios@1.18.1)(tailwindcss@4.3.1)':
-    dependencies:
-      '@ai-sdk/vue': 3.0.33(vue@3.5.39(@typescript/typescript6@6.0.2))
-      '@scalar/api-client': 3.11.0(@typescript/typescript6@6.0.2)(axios@1.18.1)(tailwindcss@4.3.1)
-      '@scalar/components': 0.27.3(@typescript/typescript6@6.0.2)(tailwindcss@4.3.1)
-      '@scalar/helpers': 0.8.2
-      '@scalar/icons': 0.7.3(@typescript/typescript6@6.0.2)
-      '@scalar/json-magic': 0.12.16
-      '@scalar/openapi-types': 0.9.1
-      '@scalar/schemas': 0.6.0
-      '@scalar/themes': 0.16.1
-      '@scalar/types': 0.15.0
-      '@scalar/use-toasts': 0.10.2(@typescript/typescript6@6.0.2)
-      '@scalar/validation': 0.6.0
-      '@scalar/workspace-store': 0.54.5(@typescript/typescript6@6.0.2)
-      '@vueuse/core': 13.9.0(vue@3.5.39(@typescript/typescript6@6.0.2))
-      ai: 6.0.33
-      js-base64: 3.7.8
-      neverpanic: 0.0.8
-      truncate-json: 3.0.1
-      vue: 3.5.39(@typescript/typescript6@6.0.2)
-    transitivePeerDependencies:
-      - '@vue/composition-api'
-      - async-validator
-      - axios
-      - change-case
-      - drauu
-      - idb-keyval
-      - jwt-decode
-      - nprogress
-      - qrcode
-      - sortablejs
-      - supports-color
-      - tailwindcss
-      - typescript
-      - universal-cookie
-      - zod
-
   '@scalar/agent-chat@0.12.12(@typescript/typescript6@6.0.2)(axios@1.18.1)(tailwindcss@4.3.1)(zod@3.25.76)':
     dependencies:
       '@ai-sdk/vue': 3.0.33(vue@3.5.39(@typescript/typescript6@6.0.2))(zod@3.25.76)
@@ -8954,28 +8913,6 @@ snapshots:
       - typescript
       - universal-cookie
 
-  '@scalar/api-reference-react@0.9.48(@typescript/typescript6@6.0.2)(axios@1.18.1)(react@19.2.7)(tailwindcss@4.3.1)':
-    dependencies:
-      '@scalar/api-reference': 1.61.0(@typescript/typescript6@6.0.2)(axios@1.18.1)(tailwindcss@4.3.1)
-      '@scalar/types': 0.15.0
-      react: 19.2.7
-    transitivePeerDependencies:
-      - '@vue/composition-api'
-      - async-validator
-      - axios
-      - change-case
-      - drauu
-      - idb-keyval
-      - jwt-decode
-      - nprogress
-      - qrcode
-      - sortablejs
-      - supports-color
-      - tailwindcss
-      - typescript
-      - universal-cookie
-      - zod
-
   '@scalar/api-reference-react@0.9.48(@typescript/typescript6@6.0.2)(axios@1.18.1)(react@19.2.7)(tailwindcss@4.3.1)(zod@3.25.76)':
     dependencies:
       '@scalar/api-reference': 1.61.0(@typescript/typescript6@6.0.2)(axios@1.18.1)(tailwindcss@4.3.1)(zod@3.25.76)
@@ -9003,49 +8940,6 @@ snapshots:
       '@scalar/api-reference': 1.61.0(@typescript/typescript6@6.0.2)(axios@1.18.1)(tailwindcss@4.3.1)(zod@4.4.3)
       '@scalar/types': 0.15.0
       react: 19.2.7
-    transitivePeerDependencies:
-      - '@vue/composition-api'
-      - async-validator
-      - axios
-      - change-case
-      - drauu
-      - idb-keyval
-      - jwt-decode
-      - nprogress
-      - qrcode
-      - sortablejs
-      - supports-color
-      - tailwindcss
-      - typescript
-      - universal-cookie
-      - zod
-
-  '@scalar/api-reference@1.61.0(@typescript/typescript6@6.0.2)(axios@1.18.1)(tailwindcss@4.3.1)':
-    dependencies:
-      '@headlessui/vue': 1.7.23(vue@3.5.39(@typescript/typescript6@6.0.2))
-      '@scalar/agent-chat': 0.12.12(@typescript/typescript6@6.0.2)(axios@1.18.1)(tailwindcss@4.3.1)
-      '@scalar/api-client': 3.11.0(@typescript/typescript6@6.0.2)(axios@1.18.1)(tailwindcss@4.3.1)
-      '@scalar/code-highlight': 0.3.6
-      '@scalar/components': 0.27.3(@typescript/typescript6@6.0.2)(tailwindcss@4.3.1)
-      '@scalar/helpers': 0.8.2
-      '@scalar/icons': 0.7.3(@typescript/typescript6@6.0.2)
-      '@scalar/oas-utils': 0.19.0(@typescript/typescript6@6.0.2)
-      '@scalar/schemas': 0.6.0
-      '@scalar/sidebar': 0.9.24(@typescript/typescript6@6.0.2)(tailwindcss@4.3.1)
-      '@scalar/snippetz': 0.9.18
-      '@scalar/themes': 0.16.1
-      '@scalar/types': 0.15.0
-      '@scalar/use-hooks': 0.4.7(@typescript/typescript6@6.0.2)
-      '@scalar/use-toasts': 0.10.2(@typescript/typescript6@6.0.2)
-      '@scalar/validation': 0.6.0
-      '@scalar/workspace-store': 0.54.5(@typescript/typescript6@6.0.2)
-      '@unhead/vue': 2.1.15(vue@3.5.39(@typescript/typescript6@6.0.2))
-      '@vueuse/core': 13.9.0(vue@3.5.39(@typescript/typescript6@6.0.2))
-      fuse.js: 7.4.2
-      microdiff: 1.5.0
-      nanoid: 5.1.16
-      vue: 3.5.39(@typescript/typescript6@6.0.2)
-      yaml: 2.9.0
     transitivePeerDependencies:
       - '@vue/composition-api'
       - async-validator
@@ -10452,13 +10346,6 @@ snapshots:
       debug: 4.4.3
     transitivePeerDependencies:
       - supports-color
-
-  ai@6.0.33:
-    dependencies:
-      '@ai-sdk/gateway': 3.0.13
-      '@ai-sdk/provider': 3.0.2
-      '@ai-sdk/provider-utils': 4.0.5
-      '@opentelemetry/api': 1.9.0
 
   ai@6.0.33(zod@3.25.76):
     dependencies:

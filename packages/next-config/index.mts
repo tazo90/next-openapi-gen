@@ -18,6 +18,7 @@ const nextConfig = {
     // TypeScript 6 is catalog-aliased as @typescript/typescript6 and ships `tsc6`, not `tsc`.
     useTypeScriptCli: false,
     webVitalsAttribution: ["CLS", "LCP"],
+    exposeTestingApiInProductionBuild: process.env.EXPOSE_TESTING_API === "1",
   },
   compiler: {
     removeConsole: process.env.NODE_ENV === "production",

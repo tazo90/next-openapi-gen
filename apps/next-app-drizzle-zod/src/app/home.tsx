@@ -11,7 +11,9 @@ function Frame({ children }: { children: ReactNode }) {
 function Header({ title, children }: { title: string; children: ReactNode }) {
   return (
     <header className="text-center mb-12">
-      <h1 className="text-4xl font-bold text-gray-900 mb-4">{title}</h1>
+      <h1 data-testid="home-shell-marker" className="text-4xl font-bold text-gray-900 mb-4">
+        {title}
+      </h1>
       <p className="text-xl text-gray-600">{children}</p>
     </header>
   );
