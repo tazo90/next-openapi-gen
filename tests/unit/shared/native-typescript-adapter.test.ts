@@ -1515,6 +1515,54 @@ describe("NativeTypeScriptAdapter", () => {
       addValue("emptyArray", node("ArrayLiteralExpression"));
       addValue("emptyObject", node("ObjectLiteralExpression"));
       addValue("emptyItems", node("ArrayLiteralExpression", { elements: [emptyArraySpread] }));
+      addValue(
+        "wrapped",
+        node("ParenthesizedExpression", {
+          expression: node("AsExpression", {
+            expression: node("SatisfiesExpression", {
+              expression: node("NonNullExpression", { expression: numLit("9") }),
+            }),
+          }),
+        }),
+      );
+      addValue(
+        "minus",
+        node("PrefixUnaryExpression", {
+          operand: numLit("3"),
+          operator: SyntaxKind.MinusToken,
+        }),
+      );
+      const freezeCall = callExpr(id("Object.freeze"), [numLit("7")]);
+      freezeCall.getText = () => "Object.freeze";
+      addValue("frozen", freezeCall);
+      const parseCall = callExpr(propAccess(id("schema"), id("parse")), [strLit("ok")]);
+      addValue("parsed", parseCall);
+      addValue(
+        "spreadOk",
+        objLit([
+          node("SpreadAssignment", {
+            expression: objLit([propAssign(id("id"), strLit("1"))]),
+          }),
+          propAssign(id("name"), strLit("Ada")),
+        ]),
+      );
+      addValue(
+        "arraySpreadOk",
+        node("ArrayLiteralExpression", {
+          elements: [
+            node("SpreadElement", {
+              expression: node("ArrayLiteralExpression", { elements: [numLit("1"), numLit("2")] }),
+            }),
+            numLit("3"),
+          ],
+        }),
+      );
+      const enumBare = asResolvable(node("EnumMember", { name: id("Live") }), routeFile);
+      symbols.Live = {
+        name: "Live",
+        flags: SymbolFlags.Value,
+        valueDeclaration: enumBare,
+      };
       symbols.emptyDecl = {
         name: "emptyDecl",
         flags: SymbolFlags.Variable,
@@ -1599,6 +1647,16 @@ describe("NativeTypeScriptAdapter", () => {
       expect(adapter.resolveValueReference("cycle", routeFile).value).toBeUndefined();
       expect(adapter.resolveValueReference("bound", routeFile).value).toBe(6);
       expect(adapter.resolveValueReference("Draft", routeFile).value).toBe("draft");
+      expect(adapter.resolveValueReference("wrapped", routeFile).value).toBe(9);
+      expect(adapter.resolveValueReference("minus", routeFile).value).toBe(-3);
+      expect(adapter.resolveValueReference("frozen", routeFile).value).toBe(7);
+      expect(adapter.resolveValueReference("parsed", routeFile).value).toBe("ok");
+      expect(adapter.resolveValueReference("spreadOk", routeFile).value).toEqual({
+        id: "1",
+        name: "Ada",
+      });
+      expect(adapter.resolveValueReference("arraySpreadOk", routeFile).value).toEqual([1, 2, 3]);
+      expect(adapter.resolveValueReference("Live", routeFile).value).toBe("Live");
       expect(adapter.inferResponsesForExports(routeFile, ["GET", "value"]).get("GET")).toEqual({
         responses: [],
         diagnostics: [],
@@ -1697,6 +1755,90 @@ describe("NativeTypeScriptAdapter", () => {
         type: "array",
         items: { type: "string" },
       });
+    });
+
+    it("covers leftover named json responses, 204 constructors, and arrow exports", () => {
+      const temp = setupTempProject();
+      const jsonReturn = retStmt(
+        callExpr(propAccess(id("NextResponse"), id("json")), [objLit([])]),
+      );
+      const noContentReturn = retStmt(
+        newExpr(id("Response"), [strLit(""), objLit([propAssign(id("status"), numLit("204"))])]),
+      );
+      const jsonBody = node("Block");
+      withForEachChild(jsonBody, [jsonReturn]);
+      const noContentBody = node("Block");
+      withForEachChild(noContentBody, [noContentReturn]);
+      const getFn = fnDecl("GET", jsonBody);
+      const deleteFn = fnDecl("DELETE", noContentBody);
+      const arrowInit = node("ArrowFunction", { body: jsonBody });
+      const arrowDecl = asResolvable(
+        node("VariableDeclaration", { name: id("POST"), initializer: arrowInit }),
+        temp.routeFile,
+      );
+      const arrowExport = node("VariableStatement", {
+        modifierFlags: ModifierFlags.Export,
+        declarationList: { declarations: [arrowDecl] },
+      });
+      const sourceFile = node("SourceFile");
+      sourceFile.statements = [getFn, deleteFn, arrowExport];
+      sourceFile.getSourceFile = () => ({ fileName: temp.routeFile });
+      temp.fake.setSourceFile(temp.routeFile, sourceFile);
+
+      const userType = makeType({
+        flags: TypeFlags.Object,
+        aliasName: "User",
+        symbolName: "User",
+        label: "User",
+      });
+      const promiseUsers = makeType({
+        flags: TypeFlags.Object,
+        isPromise: true,
+        symbolName: "Promise",
+        typeArguments: [
+          makeType({
+            flags: TypeFlags.Object,
+            isArray: true,
+            typeArguments: [userType],
+          }),
+        ],
+      });
+      temp.fake.setChecker({
+        getTypeAtLocation(candidate: unknown): FakeType {
+          const nodeArg = candidate as FakeNode;
+          if (nodeArg?.kind === SyntaxKind.CallExpression) {
+            return promiseUsers;
+          }
+          if (nodeArg?.kind === SyntaxKind.ObjectLiteralExpression) {
+            return userType;
+          }
+          return makeType({ flags: TypeFlags.Any, label: "unknown" });
+        },
+        getTypeArguments: (type: FakeType) => type.typeArguments ?? [],
+        isArrayType: (type: FakeType) => Boolean(type.isArray),
+        isTupleType: () => false,
+        getSignaturesOfType: () => [],
+        getSignatureFromDeclaration: () => ({
+          getReturnType: () => promiseUsers,
+        }),
+      });
+
+      const adapter = createNativeTypeScriptAdapter({
+        packagePath: temp.root,
+        runtime: temp.fake.runtime,
+        version: "7.0.1-rc",
+      });
+      const inferred = adapter.inferResponsesForExports(temp.routeFile, ["GET", "DELETE", "POST"]);
+      expect(inferred.get("GET")?.responses[0]).toEqual(
+        expect.objectContaining({
+          statusCode: "200",
+          contentType: "application/json",
+        }),
+      );
+      expect(inferred.get("DELETE")?.responses[0]).toEqual(
+        expect.objectContaining({ statusCode: "204" }),
+      );
+      expect(inferred.get("POST")?.responses.length).toBeGreaterThanOrEqual(0);
     });
 
     it("falls back when compiler flag tables and alias helpers are sparse", () => {

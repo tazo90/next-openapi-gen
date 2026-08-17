@@ -110,4 +110,64 @@ describe("overlay apply", () => {
       info: { title: "Public", version: "2.0.0" },
     });
   });
+
+  it("copies values and deletes null merge-patch keys", () => {
+    const document = applyOverlay(
+      {
+        openapi: "3.2.0",
+        info: { title: "Internal", version: "1.0.0", contact: { name: "Old" } },
+        servers: [{ url: "https://internal.example" }],
+      },
+      {
+        overlay: "1.1.0",
+        info: { title: "Public overlay", version: "1.0.0" },
+        actions: [
+          {
+            target: "$.servers[0]",
+            copy: "$.info",
+          },
+          {
+            target: "$.info",
+            update: { contact: null, license: { name: "MIT" } },
+          },
+          {
+            target: "$.missing",
+            copy: "$.info",
+          },
+        ],
+      },
+    );
+
+    expect(document.info).toEqual({
+      title: "Internal",
+      version: "1.0.0",
+      license: { name: "MIT" },
+    });
+    expect(document.servers?.[0]).toEqual({
+      title: "Internal",
+      version: "1.0.0",
+      contact: { name: "Old" },
+    });
+  });
+
+  it("removes array items and object keys by JSONPath", () => {
+    const document = applyOverlay(
+      {
+        openapi: "3.2.0",
+        info: { title: "Internal", version: "1.0.0" },
+        tags: [{ name: "internal" }, { name: "public" }],
+      },
+      {
+        overlay: "1.1.0",
+        info: { title: "Public overlay", version: "1.0.0" },
+        actions: [
+          { target: "$.tags[0]", remove: true },
+          { target: "$.info.title", remove: true },
+        ],
+      },
+    );
+
+    expect(document.tags).toEqual([{ name: "public" }]);
+    expect(document.info).toEqual({ version: "1.0.0" });
+  });
 });

@@ -2,7 +2,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
   clearTypeScriptProjectCache,
@@ -21,6 +21,7 @@ describe("TypeScript project adapter", () => {
   const roots: string[] = [];
 
   afterEach(() => {
+    vi.restoreAllMocks();
     clearTypeScriptProjectCache();
     clearTypeScriptRuntimeCache();
     roots.splice(0).forEach((root) => fs.rmSync(root, { recursive: true, force: true }));
@@ -264,6 +265,31 @@ export const unserializable = helper;
 
     invalidateTypeScriptProject(path.join(root, "src", "missing.ts"));
     adapter.clear();
+  });
+
+  it("covers leftover classic value-evaluation sides and unexpected invalidate errors", () => {
+    const root = createTempRoot("nxog-ts-project-eval-leftover-");
+    fs.writeFileSync(
+      path.join(root, "tsconfig.json"),
+      JSON.stringify({
+        compilerOptions: { strict: true, moduleResolution: "bundler" },
+        include: ["src/**/*.ts"],
+      }),
+    );
+    const sourceFile = path.join(root, "src", "values.ts");
+    fs.writeFileSync(
+      sourceFile,
+      `
+const label = "ok";
+export const shorthand = { label };
+export const badArraySpread = [...1];
+export const computed = { [label + "-x"]: 1 };
+`,
+    );
+
+    expect(resolveTypeScriptValueReference("shorthand", sourceFile).value).toEqual({ label: "ok" });
+    expect(resolveTypeScriptValueReference("badArraySpread", sourceFile).value).toBeUndefined();
+    expect(resolveTypeScriptValueReference("computed", sourceFile).value).toBeUndefined();
   });
 
   function createTempRoot(prefix: string) {

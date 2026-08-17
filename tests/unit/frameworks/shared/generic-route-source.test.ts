@@ -62,4 +62,100 @@ export const action = async () => {};`,
       }),
     ]);
   });
+
+  it("throws when the file is outside apiDir and skips unmarked OpenAPI routes", () => {
+    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-generic-source-edges-"));
+    tempDirs.push(tempDir);
+    const apiDir = path.join(tempDir, "api");
+    fs.mkdirSync(path.join(apiDir, "(group)"), { recursive: true });
+    const filePath = path.join(apiDir, "(group)", "health.ts");
+    fs.writeFileSync(
+      filePath,
+      `export const unused = 1;
+export async function GET() {}
+export { GET as copied };
+`,
+    );
+
+    const source = new GenericRouteSource({
+      apiDir,
+      routerType: "app",
+      schemaDir: apiDir,
+      docsUrl: "api-docs",
+      ui: "scalar",
+      outputFile: "openapi.json",
+      outputDir: "./public",
+      includeOpenApiRoutes: true,
+      ignoreRoutes: [],
+      schemaType: "typescript",
+      schemaBackends: ["typescript"],
+      schemaFiles: [],
+      framework: {
+        kind: FrameworkKind.ReactRouter,
+      },
+      next: {},
+      diagnostics: { enabled: true },
+      openapiVersion: "3.1",
+      debug: false,
+    });
+
+    expect(() => source.getRoutePath(path.join(tempDir, "outside.ts"))).toThrow(
+      /Could not find apiDir/,
+    );
+    expect(source.precheckFile(filePath)).toBe(false);
+    expect(source.getRoutePath(filePath)).toBe("/health");
+    expect(source.shouldProcessFile("health.js")).toBe(false);
+
+    const grouped = new GenericRouteSource({
+      apiDir,
+      routerType: "app",
+      schemaDir: apiDir,
+      docsUrl: "api-docs",
+      ui: "scalar",
+      outputFile: "openapi.json",
+      outputDir: "./public",
+      includeOpenApiRoutes: false,
+      ignoreRoutes: [],
+      schemaType: "typescript",
+      schemaBackends: ["typescript"],
+      schemaFiles: [],
+      framework: {
+        kind: FrameworkKind.ReactRouter,
+      },
+      next: {},
+      diagnostics: { enabled: true },
+      openapiVersion: "3.1",
+      debug: false,
+    });
+    expect(grouped.getRoutePath(filePath)).toBe("/health");
+
+    const noGroups = new GenericRouteSource(
+      {
+        apiDir,
+        routerType: "app",
+        schemaDir: apiDir,
+        docsUrl: "api-docs",
+        ui: "scalar",
+        outputFile: "openapi.json",
+        outputDir: "./public",
+        includeOpenApiRoutes: false,
+        ignoreRoutes: [],
+        schemaType: "typescript",
+        schemaBackends: ["typescript"],
+        schemaFiles: [],
+        framework: {
+          kind: FrameworkKind.ReactRouter,
+        },
+        next: {},
+        diagnostics: { enabled: true },
+        openapiVersion: "3.1",
+        debug: false,
+      },
+      { routeGroups: false, fileExtensions: [".ts", ".js"] },
+    );
+    expect(noGroups.getRoutePath(filePath)).toBe("/(group)/health");
+    expect(noGroups.shouldProcessFile("health.js")).toBe(true);
+    expect(noGroups.processFile(filePath).map((route) => route.method)).toEqual(["GET"]);
+    expect(noGroups.processFile(filePath).map((route) => route.method)).toEqual(["GET"]);
+  });
 });

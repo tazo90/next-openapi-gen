@@ -11,6 +11,27 @@ import {
 import { createTempProject, withProjectCwd } from "../../helpers/test-project.js";
 
 describe("createDocsPage", () => {
+  it("defaults to Next and writes app/page.tsx when src is missing", async () => {
+    const project = createTempProject("nxog-docs-no-src-");
+
+    try {
+      fs.rmSync(path.join(project.root, "src"), { recursive: true, force: true });
+      const pagePath = await withProjectCwd(project.root, () =>
+        createDocsPage({
+          docsUrl: "api-docs",
+          ui: "scalar",
+          outputFile: "openapi.json",
+        }),
+      );
+      const componentPath = path.join(project.root, "app", "api-docs", "page.tsx");
+
+      expect(pagePath).toBe(path.join("app", "api-docs", "page.tsx"));
+      expect(fs.existsSync(componentPath)).toBe(true);
+    } finally {
+      project.cleanup();
+    }
+  });
+
   it("returns null when ui is none", async () => {
     const project = createTempProject("nxog-docs-none-");
 
@@ -104,6 +125,42 @@ describe("createDocsPage", () => {
       expect(docsPage).toContain("export default function ApiDocsPage()");
       expect(docsPage).toContain('<RedocStandalone specUrl="/openapi.json" />');
       expect(docsPage).not.toContain("OpenApiDocsContent");
+    } finally {
+      project.cleanup();
+    }
+  });
+
+  it("writes Stoplight and RapiDoc Next docs pages", async () => {
+    const project = createTempProject("nxog-docs-extra-ui-");
+
+    try {
+      await withProjectCwd(project.root, () =>
+        createDocsPage({
+          framework: "next",
+          docsUrl: "stoplight-docs",
+          ui: "stoplight",
+          outputFile: "openapi.json",
+        }),
+      );
+      const stoplightPage = fs.readFileSync(
+        path.join(project.root, "src", "app", "stoplight-docs", "page.tsx"),
+        "utf8",
+      );
+      expect(stoplightPage).toContain("openapi.json");
+
+      await withProjectCwd(project.root, () =>
+        createDocsPage({
+          framework: "next",
+          docsUrl: "rapidoc-docs",
+          ui: "rapidoc",
+          outputFile: "openapi.json",
+        }),
+      );
+      const rapidocPage = fs.readFileSync(
+        path.join(project.root, "src", "app", "rapidoc-docs", "page.tsx"),
+        "utf8",
+      );
+      expect(rapidocPage.toLowerCase()).toContain("rapi-doc");
     } finally {
       project.cleanup();
     }

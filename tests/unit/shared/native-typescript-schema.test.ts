@@ -563,5 +563,77 @@ describe("native TypeScript schema mapping", () => {
         host,
       ),
     ).toEqual({ type: "boolean", enum: [true, false] });
+
+    expect(resolveNodeHandle(undefined, project)).toBeUndefined();
+    expect(
+      resolveNodeHandle(
+        {
+          resolve: () => createNode("resolved"),
+        },
+        project,
+      )?.text,
+    ).toBe("resolved");
+    expect(
+      getNativeTypeArguments(createType({ flags: 0 }), {
+        ...createChecker(),
+        getTypeArguments: () => {
+          throw new Error("no args");
+        },
+      }),
+    ).toEqual([]);
+    expect(
+      isNativeTupleType(
+        createType({ flags: 0 }),
+        createChecker({
+          isTupleType: undefined,
+          typeToString: () => "[string, number]",
+        }),
+        host.objectFlags,
+      ),
+    ).toBe(true);
+    expect(
+      isNativeArrayType(
+        createType({ flags: 0 }),
+        createChecker({
+          isArrayType: undefined,
+          isArrayLikeType: () => true,
+          isTupleType: () => false,
+          typeToString: () => "string[]",
+        }),
+        host.objectFlags,
+      ),
+    ).toBe(true);
+    expect(
+      isNativeStringLiteralType(createType({ flags: typeFlags.StringLiteral }), typeFlags),
+    ).toBe(true);
+    expect(
+      isNativeNumberLiteralType(createType({ flags: typeFlags.NumberLiteral }), typeFlags),
+    ).toBe(true);
+
+    const apparent = createType({ flags: 0 });
+    const apparentChecker = createChecker({
+      getApparentType: () => apparent,
+      getPropertiesOfType: (type) =>
+        type === apparent
+          ? [
+              {
+                flags: 0,
+                name: "id",
+                valueDeclaration: createNode("id"),
+              },
+            ]
+          : [],
+      getTypeOfSymbolAtLocation: () => createType({ flags: typeFlags.StringLike }),
+      typeToString: () => "Apparent",
+    });
+    expect(
+      typeToOpenApiSchema(
+        createType({ flags: 0 }),
+        apparentChecker,
+        createProject(apparentChecker),
+        new Set(),
+        host,
+      ),
+    ).toMatchObject({ type: "object" });
   });
 });

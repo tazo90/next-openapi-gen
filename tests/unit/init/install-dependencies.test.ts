@@ -164,6 +164,54 @@ describe("installDependencies", () => {
     expect(execMock).toHaveBeenNthCalledWith(3, "npm install zod", expect.any(Function));
   });
 
+  it("installs TypeScript with npm --save-dev", async () => {
+    const spinner: SpinnerMock = {
+      succeed: vi.fn<(message: string) => void>(),
+    };
+    const execMock = vi.fn<ExecMock>((command: string, callback: ExecCallback) => {
+      callback(null, "", "");
+      return {};
+    });
+    const hasDependencyMock = vi.fn<HasDependencyMock>(async (_pkg: string) => false);
+
+    const { installDependencies } = await loadInstallDependenciesModule(
+      execMock,
+      "npm",
+      hasDependencyMock,
+    );
+
+    await installDependencies("none", "typescript", spinner);
+
+    expect(execMock).toHaveBeenCalledWith(
+      "npm install --save-dev typescript",
+      expect.any(Function),
+    );
+  });
+
+  it("uses yarn add flags and reports install failures", async () => {
+    const spinner: SpinnerMock = {
+      succeed: vi.fn<(message: string) => void>(),
+    };
+    const execMock = vi.fn<ExecMock>((command: string, callback: ExecCallback) => {
+      if (command.includes("typescript")) {
+        callback(new Error("yarn failed"), "", "missing");
+        return {};
+      }
+      callback(null, "", "");
+      return {};
+    });
+    const hasDependencyMock = vi.fn<HasDependencyMock>(async (_pkg: string) => false);
+
+    const { installDependencies } = await loadInstallDependenciesModule(
+      execMock,
+      "yarn",
+      hasDependencyMock,
+    );
+
+    await expect(installDependencies("none", "typescript", spinner)).rejects.toThrow("yarn failed");
+    expect(execMock).toHaveBeenCalledWith("yarn add -D typescript", expect.any(Function));
+  });
+
   it("skips all install work when ui is none and schema dependencies already exist", async () => {
     const spinner: SpinnerMock = {
       succeed: vi.fn<(message: string) => void>(),

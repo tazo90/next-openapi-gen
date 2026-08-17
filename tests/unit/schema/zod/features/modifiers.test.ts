@@ -280,6 +280,14 @@ describe("Zod features › modifiers", () => {
       type: "number",
       description: "count",
     });
+    expect(convert('z.describe(z.string(), "@deprecated leftover")', roots)).toMatchObject({
+      deprecated: true,
+      description: "leftover",
+    });
+    expect(convert('z.prefault(z.string(), "ready")', roots)).toMatchObject({
+      default: "ready",
+    });
+    expect(convert("z.extend()", roots)).toMatchObject({ type: "object" });
     expect(convert('z.catch(z.string(), "fallback")', roots)).toMatchObject({
       type: "string",
       default: "fallback",

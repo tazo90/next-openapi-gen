@@ -44,6 +44,13 @@ describe("openapi-cli root entrypoints", () => {
     expect(getCliVersion()).toBe("0.0.0");
   });
 
+  it("falls back to 0.0.0 when package.json has no version field", () => {
+    vi.spyOn(fs, "existsSync").mockReturnValue(true);
+    vi.spyOn(fs, "readFileSync").mockReturnValue("{}");
+
+    expect(getCliVersion()).toBe("0.0.0");
+  });
+
   it("delegates runCli through the built program", () => {
     const argv = ["node", "openapi-gen", "generate"];
 

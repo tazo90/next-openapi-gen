@@ -106,4 +106,67 @@ export async function GET() {}
       project.cleanup();
     }
   });
+
+  it("merges nested custom OpenAPI fragments into existing path items", () => {
+    const project = createTempProject("nxog-orchestrator-fragment-");
+
+    try {
+      const fragmentPath = `${project.root}/custom-fragment.json`;
+      fs.writeFileSync(
+        fragmentPath,
+        JSON.stringify({
+          paths: {
+            "/health": {
+              parameters: [{ name: "region", in: "header", schema: { type: "string" } }],
+              get: { summary: "Health from fragment" },
+            },
+          },
+        }),
+      );
+      const templatePath = writeOpenApiTemplate(project.root, {
+        schemaFiles: [fragmentPath],
+        paths: {
+          "/health": {
+            parameters: [{ name: "trace", in: "query", schema: { type: "string" } }],
+            get: {
+              responses: { "200": { description: "ok" } },
+            },
+          },
+        },
+      });
+      writeAppRoute(
+        project.root,
+        ["users"],
+        `/**
+ * @openapi
+ */
+export async function GET() {}
+`,
+      );
+
+      const result = withProjectCwd(project.root, () => {
+        const template = JSON.parse(fs.readFileSync(templatePath, "utf8"));
+        const config = normalizeOpenApiConfig(template);
+        const adapters = createDefaultGenerationAdapters();
+        return runGenerationOrchestrator({
+          config,
+          createFrameworkSource: adapters.createFrameworkSource,
+          template,
+        });
+      });
+
+      expect(result.document.paths?.["/health"]?.parameters).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ name: "trace" }),
+          expect.objectContaining({ name: "region" }),
+        ]),
+      );
+      expect(result.document.paths?.["/health"]?.get).toMatchObject({
+        summary: "Health from fragment",
+        responses: { "200": { description: "ok" } },
+      });
+    } finally {
+      project.cleanup();
+    }
+  });
 });

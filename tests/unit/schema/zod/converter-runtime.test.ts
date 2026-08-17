@@ -269,5 +269,44 @@ describe("Zod converter runtime helpers", () => {
       ]),
     );
     expect(t.isCallExpression(computed)).toBe(true);
+
+    expect(
+      extractReturnNode(
+        parseTypeScriptFile(`
+          function emptyIf(flag: boolean) {
+            if (flag) {
+              const skip = true;
+            }
+          }
+        `).program.body[0] as t.Node,
+      ),
+    ).toBeNull();
+
+    const destructureFactory = parseTypeScriptFile(`
+      function makeUser({ id, "full-name": name }: { id: string; "full-name": string }) {
+        return z.object({ id: z.string(), name: z.string() });
+      }
+    `).program.body[0];
+    expect(
+      expandFactoryCall(
+        destructureFactory as t.Node,
+        getFirstInitializer(
+          'makeUser({ id: z.string(), "full-name": z.string(), ...rest })',
+        ) as t.CallExpression,
+        (node: t.Node) =>
+          t.isCallExpression(node) ? { type: "object" as const } : ({ type: "string" } as const),
+      ),
+    ).toEqual({ type: "object" });
+
+    const spreadCall = substituteParameters(
+      getFirstInitializer("factory(...items)"),
+      new Map<string, t.Node>([["items", t.identifier("collection")]]),
+    );
+    expect(t.isCallExpression(spreadCall)).toBe(true);
+    const holeArray = substituteParameters(
+      getFirstInitializer("factory([, value])"),
+      new Map<string, t.Node>([["value", t.identifier("UserSchema")]]),
+    );
+    expect(t.isCallExpression(holeArray)).toBe(true);
   });
 });

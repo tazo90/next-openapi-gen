@@ -733,6 +733,34 @@ describe("extractInternalFlagFromComments", () => {
       @examples cookie:name
     `).headerExamples,
     ).toBeUndefined();
+
+    expect(parseJSDocBlock("@openapi\n@bodyType \t").bodyType).toBeFalsy();
+    expect(parseJSDocBlock("@openapi\n@example \t").requestExamples).toBeUndefined();
+    expect(parseJSDocBlock("@openapi\n@responseSummary \t").responseSummaries).toBeUndefined();
+    expect(parseJSDocBlock("@openapi\n@response 200:{id:string}").responseType).toBe("{id:string}");
+    expect(
+      parseJSDocBlock(`
+      @openapi
+      @examples request:named:{"ok":true}
+      @examples request:named:{"also":true}
+    `).requestExamples,
+    ).toBeDefined();
+    expect(
+      parseJSDocBlock(`
+      @openapi
+      @examples response:named:{"summary":"ok","description":"done","dataValue":1,"serializedValue":"1","externalValue":"https://ex"}
+    `).responseExamples,
+    ).toBeDefined();
+    expect(
+      parseJSDocBlock(`
+      @openapi
+      @examples request:[{"ok":true},{"ok":false}]
+    `).requestExamples,
+    ).toBeDefined();
+    expect(parseResponseTag("")).toBeNull();
+    expect(parseResponseTag("@response 200")).toEqual(
+      expect.objectContaining({ successCode: "200" }),
+    );
   });
 });
 

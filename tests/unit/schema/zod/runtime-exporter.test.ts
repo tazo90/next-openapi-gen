@@ -1245,6 +1245,159 @@ describe("ZodRuntimeExporter", () => {
         ],
       );
       expect(exporter.exportSchema(objectMethod, { contentType: "response" })).toBeNull();
+      expect(
+        exporter.exportSchema(parseInitializer("z.strictObject({ id: z.string() })"), {
+          contentType: "response",
+        }),
+      ).toMatchObject({ type: "object" });
+      expect(
+        exporter.exportSchema(parseInitializer("z.enum({})"), { contentType: "response" }),
+      ).toEqual({ type: "string", enum: [] });
+      expect(
+        exporter.exportSchema(parseInitializer("z.union([])"), { contentType: "response" }),
+      ).toBeNull();
+      expect(
+        exporter.exportSchema(parseInitializer("z.record()"), { contentType: "response" }),
+      ).toMatchObject({ type: "object" });
+      expect(
+        exporter.exportSchema(parseInitializer("z.intersection()"), { contentType: "response" }),
+      ).toBeNull();
+      expect(
+        exporter.exportSchema(parseInitializer("z.templateLiteral()"), { contentType: "response" }),
+      ).toBeNull();
+      expect(
+        exporter.exportSchema(parseInitializer('z.templateLiteral(["user-", z.string()])'), {
+          contentType: "response",
+        }),
+      ).toBeDefined();
+      expect(
+        exporter.exportSchema(
+          parseInitializer('z.discriminatedUnion("type", [z.object({ type: z.literal("a") })])'),
+          { contentType: "response" },
+        ),
+      ).toBeNull();
+      expect(
+        exporter.exportSchema(parseInitializer("z.nullish(z.string())"), {
+          contentType: "response",
+        }),
+      ).toBeDefined();
+      expect(
+        exporter.exportSchema(parseInitializer("z.string().pipe()"), { contentType: "response" }),
+      ).toBeDefined();
+      expect(
+        exporter.exportSchema(parseInitializer("z.string().meta()"), { contentType: "response" }),
+      ).toBeDefined();
+      expect(
+        exporter.exportSchema(parseInitializer("z.object({ id: z.string() }).pick()"), {
+          contentType: "response",
+        }),
+      ).toBeNull();
+      expect(
+        exporter.exportSchema(parseInitializer("z.string().partial()"), {
+          contentType: "response",
+        }),
+      ).toBeNull();
+      expect(
+        exporter.exportSchema(parseInitializer("z.array(z.notAHelper())"), {
+          contentType: "response",
+        }),
+      ).toBeNull();
+      expect(
+        exporter.exportSchema(parseInitializer("z.optional(z.notAHelper())"), {
+          contentType: "response",
+        }),
+      ).toBeNull();
+      expect(
+        exporter.exportSchema(parseInitializer("z.object({ id: z.notAHelper() })"), {
+          contentType: "response",
+        }),
+      ).toBeNull();
+      expect(
+        exporter.exportSchema(parseInitializer("z.enum({ skip() {} })"), {
+          contentType: "response",
+        }),
+      ).toBeNull();
+      expect(
+        exporter.exportSchema(parseInitializer("z.enum({ id: 1 })"), { contentType: "response" }),
+      ).toBeNull();
+      expect(
+        exporter.exportSchema(parseInitializer("z.record(z.notAHelper())"), {
+          contentType: "response",
+        }),
+      ).toBeNull();
+      expect(
+        exporter.exportSchema(parseInitializer("z.union([z.notAHelper()])"), {
+          contentType: "response",
+        }),
+      ).toBeNull();
+      expect(
+        exporter.exportSchema(parseInitializer("z.templateLiteral([z.notAHelper()])"), {
+          contentType: "response",
+        }),
+      ).toBeNull();
+      expect(
+        exporter.exportSchema(parseInitializer("z.templateLiteral([, 'x'])"), {
+          contentType: "response",
+        }),
+      ).toBeNull();
+      expect(
+        exporter.exportSchema(parseInitializer('z.string().meta({ id: "only" })'), {
+          contentType: "response",
+        }),
+      ).toBeDefined();
+      expect(
+        exporter.exportSchema(parseInitializer("z.string().meta('nope')"), {
+          contentType: "response",
+        }),
+      ).toBeDefined();
+      expect(
+        exporter.exportSchema(
+          parseInitializer("z.object({ id: z.string() }).extend({ extra: z.notAHelper() })"),
+          { contentType: "response" },
+        ),
+      ).toBeNull();
+      expect(
+        exporter.exportSchema(parseInitializer("z.string().unknownMethod()"), {
+          contentType: "response",
+        }),
+      ).toBeNull();
+      expect(
+        exporter.exportSchema(parseInitializer("z.string().min()"), { contentType: "response" }),
+      ).toBeDefined();
+      expect(
+        exporter.exportSchema(parseInitializer("z.string().meta({ ...rest })"), {
+          contentType: "response",
+        }),
+      ).toBeDefined();
+      expect(
+        exporter.exportSchema(
+          parseInitializer("z.object({ id: z.string() }).pick({ skip() {} })"),
+          { contentType: "response" },
+        ),
+      ).toBeNull();
+      expect(
+        exporter.exportSchema(parseInitializer("z.string().default([z.notAHelper()])"), {
+          contentType: "response",
+        }),
+      ).toBeDefined();
+      expect(
+        exporter.exportSchema(parseInitializer("z.string().default({ skip() {} })"), {
+          contentType: "response",
+        }),
+      ).toBeDefined();
+      expect(
+        exporter.exportSchema(parseInitializer("z.string().default({ id: z.notAHelper() })"), {
+          contentType: "response",
+        }),
+      ).toBeDefined();
+      expect(
+        exporter.exportSchema(
+          parseInitializer("z.object({ id: z.string() }).pick({ id: false })"),
+          {
+            contentType: "response",
+          },
+        ),
+      ).toBeNull();
     });
   });
 });

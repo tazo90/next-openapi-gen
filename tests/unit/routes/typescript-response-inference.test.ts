@@ -438,6 +438,97 @@ function hidden() {
     expect(inferResponsesForExport(routeFile, "hidden").responses).toEqual([]);
     expect(inferResponsesForExports(routeFile, ["missing"]).size).toBe(0);
   });
+
+  it("infers leftover named arrays, empty json, 204, and optional-only objects", () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-response-named-"));
+    roots.push(root);
+    const routeFile = path.join(root, "route.ts");
+    fs.writeFileSync(
+      routeFile,
+      `
+type User = { id: string };
+type OptionalUser = { nick?: string };
+type Dictionary = { [key: string]: number };
+const NextResponse = { json: Response.json.bind(Response) };
+
+export function GET() {
+  return Response.json();
+}
+
+export function POST() {
+  return NextResponse.json({ id: "1" } as User);
+}
+
+export function PUT() {
+  return new Response("", { status: 204 });
+}
+
+export function PATCH() {
+  return Response.json({ nick: "ada" } as OptionalUser);
+}
+
+export function DELETE() {
+  return Response.json({ count: 1 } as Dictionary);
+}
+
+export async function HEAD(): Promise<User[]> {
+  return [{ id: "1" }];
+}
+
+export function OPTIONS() {
+  return Response.json({ id: "1" } as User);
+}
+`,
+    );
+
+    expect(inferResponsesForExport(routeFile, "GET").responses[0]).toMatchObject({
+      statusCode: "200",
+    });
+    expect(inferResponsesForExport(routeFile, "POST").responses[0]).toBeDefined();
+    expect(inferResponsesForExport(routeFile, "PUT").responses[0]).toMatchObject({
+      statusCode: "204",
+    });
+    expect(inferResponsesForExport(routeFile, "PATCH").responses[0]).toBeDefined();
+    expect(inferResponsesForExport(routeFile, "DELETE").responses[0]).toBeDefined();
+    expect(inferResponsesForExport(routeFile, "HEAD").responses[0]).toBeDefined();
+    expect(inferResponsesForExport(routeFile, "OPTIONS").responses[0]).toBeDefined();
+  });
+
+  it("infers leftover literal, tuple, array, and nullable union responses", () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-response-literals-"));
+    roots.push(root);
+    const routeFile = path.join(root, "route.ts");
+    fs.writeFileSync(
+      routeFile,
+      `
+export function GET() {
+  return Response.json({
+    label: "ok" as const,
+    count: 2 as const,
+    enabled: true as const,
+    note: \`user-\${"id"}\`,
+    tags: ["a", "b"] as [string, string],
+    scores: [1, 2],
+    empty: null,
+    maybe: null as string | null,
+  });
+}
+`,
+    );
+
+    const schema = inferResponsesForExport(routeFile, "GET").responses[0]?.schema;
+    expect(schema).toMatchObject({
+      type: "object",
+      properties: {
+        label: { type: "string", enum: ["ok"] },
+        count: { type: "number", enum: [2] },
+        enabled: { type: "boolean" },
+        note: { type: "string" },
+        tags: { type: "array" },
+        scores: { type: "array" },
+      },
+    });
+  });
 });
 
 function writeMockTypeScriptNativePackage(root: string) {

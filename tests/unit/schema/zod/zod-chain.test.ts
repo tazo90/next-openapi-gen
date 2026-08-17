@@ -70,6 +70,14 @@ describe("applyZodChainMethod leftover branches", () => {
     };
 
     expect(
+      applyZodChainMethod(
+        converter,
+        { type: "object", properties: { id: { type: "string" } }, required: ["name"] },
+        "pick",
+        call("pick"),
+      ),
+    ).toMatchObject({ required: [] });
+    expect(
       applyZodChainMethod(converter, { ...objectSchema }, "passthrough", call("passthrough")),
     ).toMatchObject({ additionalProperties: true });
 
@@ -489,5 +497,289 @@ describe("applyZodChainMethod leftover branches", () => {
       },
       required: ["email"],
     });
+  });
+
+  it("covers leftover optional, omit, partial, pipe, and unknown-method conversions", () => {
+    const converter = {
+      ...host(),
+      extractMaskKeysFromNode() {
+        return ["name"];
+      },
+      extractStaticJsonValue() {
+        return "fallback";
+      },
+      processZodNode() {
+        return { type: "number" as const };
+      },
+    };
+    const objectSchema = (): OpenApiSchema => ({
+      type: "object",
+      properties: { id: { type: "string" }, name: { type: "string" } },
+      required: ["id", "name"],
+    });
+
+    expect(
+      applyZodChainMethod(converter, { type: "string" }, "optional", call("optional")),
+    ).toEqual({
+      type: "string",
+    });
+    expect(
+      applyZodChainMethod(converter, { type: "string" }, "nullable", call("nullable")),
+    ).toMatchObject({
+      type: "string",
+      nullable: true,
+    });
+    expect(
+      applyZodChainMethod(converter, { type: "string" }, "nullish", call("nullish")),
+    ).toMatchObject({
+      type: "string",
+      nullable: true,
+    });
+    expect(applyZodChainMethod(converter, objectSchema(), "omit", call("omit"))).toMatchObject({
+      properties: { id: { type: "string" } },
+      required: ["id"],
+    });
+    expect(
+      applyZodChainMethod(converter, objectSchema(), "partial", call("partial")),
+    ).toMatchObject({
+      required: ["id"],
+    });
+    expect(
+      applyZodChainMethod(
+        { ...converter, extractMaskKeysFromNode: () => [] },
+        objectSchema(),
+        "partial",
+        call("partial"),
+      ),
+    ).toEqual({
+      type: "object",
+      properties: { id: { type: "string" }, name: { type: "string" } },
+    });
+    expect(
+      applyZodChainMethod(converter, objectSchema(), "required", call("required")),
+    ).toMatchObject({
+      required: ["id", "name"],
+    });
+    expect(applyZodChainMethod(converter, objectSchema(), "keyof", call("keyof"))).toEqual({
+      type: "string",
+      enum: ["id", "name"],
+    });
+    expect(
+      applyZodChainMethod(converter, { type: "string" }, "pipe", call("pipe", [t.identifier("z")])),
+    ).toMatchObject({ type: "number" });
+    expect(
+      applyZodChainMethod(converter, { type: "string" }, "or", call("or", [t.identifier("z")])),
+    ).toEqual({
+      anyOf: [{ type: "string" }, { type: "number" }],
+    });
+    expect(
+      applyZodChainMethod(converter, { type: "string" }, "and", call("and", [t.identifier("z")])),
+    ).toEqual({
+      allOf: [{ type: "string" }, { type: "number" }],
+    });
+    expect(
+      applyZodChainMethod(converter, { type: "object" }, "strict", call("strict")),
+    ).toMatchObject({
+      additionalProperties: false,
+    });
+    expect(applyZodChainMethod(converter, { type: "object" }, "strip", call("strip"))).toEqual({
+      type: "object",
+    });
+    expect(applyZodChainMethod(converter, { type: "string" }, "brand", call("brand"))).toEqual({
+      type: "string",
+    });
+    expect(
+      applyZodChainMethod(converter, { type: "string" }, "transform", call("transform")),
+    ).toEqual({
+      type: "string",
+    });
+    expect(
+      applyZodChainMethod(converter, { type: "string" }, "overwrite", call("overwrite")),
+    ).toEqual({
+      type: "string",
+    });
+    expect(
+      applyZodChainMethod(converter, { type: "string" }, "nonoptional", call("nonoptional")),
+    ).toEqual({ type: "string" });
+    expect(applyZodChainMethod(converter, { type: "string" }, "refine", call("refine"))).toEqual({
+      type: "string",
+    });
+    expect(
+      applyZodChainMethod(converter, { type: "string" }, "superRefine", call("superRefine")),
+    ).toEqual({ type: "string" });
+    expect(applyZodChainMethod(converter, { type: "string" }, "trim", call("trim"))).toEqual({
+      type: "string",
+    });
+    expect(
+      applyZodChainMethod(converter, { type: "string" }, "toLowerCase", call("toLowerCase")),
+    ).toEqual({ type: "string" });
+    expect(
+      applyZodChainMethod(converter, { type: "string" }, "toUpperCase", call("toUpperCase")),
+    ).toEqual({ type: "string" });
+    expect(applyZodChainMethod(converter, { type: "number" }, "finite", call("finite"))).toEqual({
+      type: "number",
+    });
+    expect(
+      applyZodChainMethod(converter, { type: "number" }, "nonnegative", call("nonnegative")),
+    ).toMatchObject({ minimum: 0 });
+    expect(
+      applyZodChainMethod(converter, { type: "number" }, "negative", call("negative")),
+    ).toMatchObject({ exclusiveMaximum: 0 });
+    expect(
+      applyZodChainMethod(converter, { type: "number" }, "nonpositive", call("nonpositive")),
+    ).toMatchObject({ maximum: 0 });
+    expect(applyZodChainMethod(converter, { type: "number" }, "step", call("step"))).toEqual({
+      type: "number",
+    });
+    expect(
+      applyZodChainMethod(
+        converter,
+        { type: "string" },
+        "prefault",
+        call("prefault", [t.stringLiteral("x")]),
+      ),
+    ).toMatchObject({ default: "fallback" });
+    expect(
+      applyZodChainMethod(
+        { ...converter, extractMaskKeysFromNode: () => [] },
+        objectSchema(),
+        "pick",
+        call("pick"),
+      ),
+    ).toMatchObject({
+      properties: { id: { type: "string" }, name: { type: "string" } },
+    });
+    expect(
+      applyZodChainMethod(converter, { type: "string" }, "unknownMethod", call("unknownMethod")),
+    ).toEqual({ type: "string" });
+    expect(
+      applyZodChainMethod(
+        {
+          ...converter,
+          applyDeepPartial: (schema: OpenApiSchema) => {
+            schema.description = "partial";
+          },
+        },
+        { type: "object" },
+        "deepPartial",
+        call("deepPartial"),
+      ),
+    ).toMatchObject({ description: "partial" });
+    expect(
+      applyZodChainMethod(
+        converter,
+        { type: "string" },
+        "extend",
+        call("extend", [
+          t.objectExpression([
+            t.objectProperty(
+              t.identifier("id"),
+              t.callExpression(t.memberExpression(t.identifier("z"), t.identifier("string")), []),
+            ),
+          ]),
+        ]),
+      ),
+    ).toEqual({ type: "number" });
+  });
+
+  it("covers leftover undefined-arg and non-object chain sides", () => {
+    const converter = host();
+    const restPlaceholder = call("rest");
+    restPlaceholder.arguments = [t.argumentPlaceholder()];
+
+    expect(applyZodChainMethod(converter, { type: "string" }, "min", call("min"))).toEqual({
+      type: "string",
+    });
+    expect(applyZodChainMethod(converter, { type: "number" }, "max", call("max"))).toEqual({
+      type: "number",
+    });
+    expect(applyZodChainMethod(converter, { type: "array" }, "length", call("length"))).toEqual({
+      type: "array",
+    });
+    expect(applyZodChainMethod(converter, { type: "string" }, "regex", call("regex"))).toEqual({
+      type: "string",
+    });
+    expect(
+      applyZodChainMethod(converter, { type: "string" }, "startsWith", call("startsWith")),
+    ).toEqual({ type: "string" });
+    expect(
+      applyZodChainMethod(converter, { type: "string" }, "endsWith", call("endsWith")),
+    ).toEqual({
+      type: "string",
+    });
+    expect(
+      applyZodChainMethod(converter, { type: "string" }, "includes", call("includes")),
+    ).toEqual({
+      type: "string",
+    });
+    expect(applyZodChainMethod(converter, { type: "number" }, "step", call("step"))).toEqual({
+      type: "number",
+    });
+    expect(applyZodChainMethod(converter, { type: "string" }, "minSize", call("minSize"))).toEqual({
+      type: "string",
+    });
+    expect(applyZodChainMethod(converter, { type: "string" }, "maxSize", call("maxSize"))).toEqual({
+      type: "string",
+    });
+    expect(applyZodChainMethod(converter, { type: "array" }, "rest", restPlaceholder)).toEqual({
+      type: "array",
+    });
+    expect(
+      applyZodChainMethod(converter, { type: "string" }, "catchall", call("catchall")),
+    ).toEqual({
+      type: "string",
+    });
+    expect(applyZodChainMethod(converter, { type: "string" }, "strict", call("strict"))).toEqual({
+      type: "string",
+    });
+    expect(applyZodChainMethod(converter, { type: "string" }, "keyof", call("keyof"))).toEqual({
+      type: "string",
+    });
+    expect(
+      applyZodChainMethod(converter, { type: "string" }, "required", call("required")),
+    ).toEqual({
+      type: "string",
+    });
+    expect(applyZodChainMethod(converter, { type: "object" }, "merge", call("merge"))).toEqual({
+      type: "object",
+    });
+    expect(applyZodChainMethod(converter, { type: "string" }, "pipe", call("pipe"))).toEqual({
+      type: "string",
+    });
+    expect(
+      applyZodChainMethod(
+        { ...converter, processZodNode: () => ({ type: "string" as const }) },
+        { type: "string" },
+        "or",
+        call("or", [t.identifier("Alt")]),
+      ),
+    ).toEqual({ anyOf: [{ type: "string" }, { type: "string" }] });
+    expect(
+      applyZodChainMethod(
+        { ...converter, processZodNode: () => undefined as never },
+        { type: "string" },
+        "and",
+        call("and", [t.identifier("Alt")]),
+      ),
+    ).toEqual({ type: "string" });
+    expect(
+      applyZodChainMethod(
+        converter,
+        { type: "object", properties: { id: { type: "string" } }, required: ["id"] },
+        "omit",
+        call("omit"),
+      ),
+    ).toMatchObject({ required: [] });
+    expect(
+      applyZodChainMethod(
+        {
+          ...converter,
+          extractMaskKeysFromNode: () => ["missing"],
+        },
+        { type: "object", properties: { id: { type: "string" } }, required: ["id"] },
+        "partial",
+        call("partial"),
+      ),
+    ).toMatchObject({ required: ["id"] });
   });
 });

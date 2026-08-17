@@ -466,6 +466,69 @@ describe("TypeScript utility type helpers", () => {
     });
   });
 
+  it("covers leftover utility types without type arguments", () => {
+    const context = createContext({
+      resolveTSNodeType: (node: any) => {
+        if (t.isTSStringKeyword(node)) {
+          return { type: "string", enum: ["Ada", ""] };
+        }
+        return { type: "object" };
+      },
+    });
+
+    expect(
+      resolveUtilityTypeReference(t.tsTypeReference(t.identifier("InstanceType")), context),
+    ).toEqual({});
+    expect(
+      resolveUtilityTypeReference(t.tsTypeReference(t.identifier("Awaited")), context),
+    ).toEqual({});
+    expect(
+      resolveUtilityTypeReference(t.tsTypeReference(t.identifier("Readonly")), context),
+    ).toEqual({
+      type: "object",
+    });
+    expect(
+      resolveUtilityTypeReference(t.tsTypeReference(t.identifier("Partial")), context),
+    ).toEqual({
+      type: "object",
+    });
+    expect(
+      resolveUtilityTypeReference(t.tsTypeReference(t.identifier("Exclude")), context),
+    ).toEqual({});
+    expect(
+      resolveUtilityTypeReference(t.tsTypeReference(t.identifier("Uppercase")), context),
+    ).toEqual({
+      type: "string",
+    });
+    expect(
+      resolveUtilityTypeReference(
+        t.tsTypeReference(
+          t.identifier("Capitalize"),
+          t.tsTypeParameterInstantiation([t.tsStringKeyword()]),
+        ),
+        context,
+      ),
+    ).toEqual({ type: "string", enum: ["Ada", ""] });
+    expect(
+      resolveUtilityTypeReference(
+        t.tsTypeReference(
+          t.identifier("Uncapitalize"),
+          t.tsTypeParameterInstantiation([t.tsStringKeyword()]),
+        ),
+        context,
+      ),
+    ).toEqual({ type: "string", enum: ["ada", ""] });
+    expect(
+      resolveUtilityTypeReference(
+        t.tsTypeReference(
+          t.identifier("Lowercase"),
+          t.tsTypeParameterInstantiation([t.tsStringKeyword()]),
+        ),
+        context,
+      ),
+    ).toEqual({ type: "string", enum: ["ada", ""] });
+  });
+
   it("covers leftover imported ReturnType resolve misses", () => {
     const sourceFile = path.join("/virtual", "schema.ts");
     const missingImport = createContext({
@@ -528,5 +591,204 @@ describe("TypeScript utility type helpers", () => {
         unreadable,
       ),
     ).toEqual({ type: "object" });
+  });
+
+  it("covers leftover Parameters, Pick/Omit, and generic resolve sides", () => {
+    const context = createContext({
+      typeDefinitions: {
+        noReturn: { params: [] },
+        withParams: {
+          params: [{ typeAnnotation: { typeAnnotation: t.tsNumberKeyword() } }, { name: "bare" }],
+        },
+        Box: {
+          node: t.tsTypeAliasDeclaration(
+            t.identifier("Box"),
+            t.tsTypeParameterDeclaration([t.tsTypeParameter(undefined, undefined, "T")]),
+            t.tsTypeLiteral([]),
+          ),
+        },
+      },
+      extractFunctionReturnType: () => null,
+      extractKeysFromLiteralType: () => ["id", "missing"],
+      resolveTSNodeType: (node: any) => {
+        if (t.isTSTypeLiteral(node) || t.isTSTypeReference(node)) {
+          return {
+            type: "object",
+            properties: { id: { type: "string" }, name: { type: "string" } },
+          };
+        }
+        if (t.isTSStringKeyword(node)) {
+          return { type: "string", nullable: true, enum: ["a", "b"] };
+        }
+        if (t.isTSNumberKeyword(node)) {
+          return { type: "number" };
+        }
+        return { type: "object" };
+      },
+    });
+
+    expect(
+      resolveUtilityTypeReference(t.tsTypeReference(t.identifier("ReturnType")), context),
+    ).toEqual({
+      type: "object",
+    });
+    expect(
+      resolveUtilityTypeReference(
+        t.tsTypeReference(
+          t.identifier("ReturnType"),
+          t.tsTypeParameterInstantiation([t.tsStringKeyword()]),
+        ),
+        context,
+      ),
+    ).toEqual({ type: "string", nullable: true, enum: ["a", "b"] });
+    expect(
+      resolveUtilityTypeReference(
+        t.tsTypeReference(
+          t.identifier("ReturnType"),
+          t.tsTypeParameterInstantiation([
+            t.tsTypeQuery(t.tsQualifiedName(t.identifier("ns"), t.identifier("fn"))),
+          ]),
+        ),
+        context,
+      ),
+    ).toEqual({ type: "object" });
+    expect(
+      resolveUtilityTypeReference(
+        t.tsTypeReference(
+          t.identifier("ReturnType"),
+          t.tsTypeParameterInstantiation([t.tsTypeQuery(t.identifier("noReturn"))]),
+        ),
+        context,
+      ),
+    ).toEqual({ type: "object" });
+
+    expect(
+      resolveUtilityTypeReference(t.tsTypeReference(t.identifier("Parameters")), context),
+    ).toEqual({
+      type: "array",
+      items: { type: "object" },
+    });
+    expect(
+      resolveUtilityTypeReference(
+        t.tsTypeReference(
+          t.identifier("Parameters"),
+          t.tsTypeParameterInstantiation([t.tsTypeQuery(t.identifier("missingFn"))]),
+        ),
+        context,
+      ),
+    ).toEqual({ type: "array", items: { type: "object" } });
+    expect(
+      resolveUtilityTypeReference(
+        t.tsTypeReference(
+          t.identifier("Parameters"),
+          t.tsTypeParameterInstantiation([t.tsTypeQuery(t.identifier("noReturn"))]),
+        ),
+        context,
+      ),
+    ).toEqual({ type: "array", maxItems: 0 });
+    expect(
+      resolveUtilityTypeReference(
+        t.tsTypeReference(
+          t.identifier("Parameters"),
+          t.tsTypeParameterInstantiation([t.tsTypeQuery(t.identifier("withParams"))]),
+        ),
+        context,
+      ),
+    ).toMatchObject({
+      type: "array",
+      prefixItems: [{ type: "number" }, { type: "any" }],
+    });
+
+    expect(
+      resolveUtilityTypeReference(
+        t.tsTypeReference(
+          t.identifier("Pick"),
+          t.tsTypeParameterInstantiation([
+            t.tsTypeLiteral([]),
+            t.tsLiteralType(t.stringLiteral("id")),
+          ]),
+        ),
+        context,
+      ),
+    ).toEqual({
+      type: "object",
+      properties: { id: { type: "string" } },
+    });
+    expect(
+      resolveUtilityTypeReference(
+        t.tsTypeReference(
+          t.identifier("Omit"),
+          t.tsTypeParameterInstantiation([
+            t.tsTypeLiteral([]),
+            t.tsLiteralType(t.stringLiteral("id")),
+          ]),
+        ),
+        context,
+      ),
+    ).toEqual({
+      type: "object",
+      properties: { name: { type: "string" } },
+    });
+    expect(
+      resolveUtilityTypeReference(
+        t.tsTypeReference(
+          t.identifier("Pick"),
+          t.tsTypeParameterInstantiation([t.tsStringKeyword()]),
+        ),
+        context,
+      ),
+    ).toEqual({ type: "string", nullable: true, enum: ["a", "b"] });
+
+    expect(
+      resolveUtilityTypeReference(
+        t.tsTypeReference(
+          t.identifier("Required"),
+          t.tsTypeParameterInstantiation([t.tsTypeLiteral([])]),
+        ),
+        context,
+      ),
+    ).toMatchObject({ required: ["id", "name"] });
+    expect(
+      resolveUtilityTypeReference(
+        t.tsTypeReference(
+          t.identifier("NonNullable"),
+          t.tsTypeParameterInstantiation([t.tsStringKeyword()]),
+        ),
+        context,
+      ),
+    ).toEqual({ type: "string", enum: ["a", "b"] });
+    expect(
+      resolveUtilityTypeReference(
+        t.tsTypeReference(
+          t.identifier("Exclude"),
+          t.tsTypeParameterInstantiation([
+            t.tsNumberKeyword(),
+            t.tsLiteralType(t.stringLiteral("a")),
+          ]),
+        ),
+        context,
+      ),
+    ).toEqual({ type: "number" });
+    expect(
+      resolveUtilityTypeReference(
+        t.tsTypeReference(
+          t.identifier("Box"),
+          t.tsTypeParameterInstantiation([t.tsStringKeyword()]),
+        ),
+        context,
+      ),
+    ).toEqual({ type: "object", properties: { wrapped: { type: "string" } } });
+    expect(
+      resolveUtilityTypeReference(t.tsTypeReference(t.identifier("Loop")), {
+        ...context,
+        processingTypes: new Set(["Loop"]),
+      }),
+    ).toEqual({ $ref: "#/components/schemas/Loop" });
+    expect(
+      resolveUtilityTypeReference(
+        t.tsTypeReference(t.tsQualifiedName(t.identifier("ns"), t.identifier("User"))),
+        context,
+      ),
+    ).toBeNull();
   });
 });

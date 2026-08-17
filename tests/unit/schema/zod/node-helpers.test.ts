@@ -870,4 +870,126 @@ describe("Zod node helpers", () => {
       ),
     ).toBe(true);
   });
+
+  it("covers leftover primitive miss sides and discriminator allOf refs", () => {
+    const context = {
+      processNode: (node: t.Expression | t.SpreadElement) => {
+        if (t.isSpreadElement(node)) {
+          return { type: "object" as const };
+        }
+        if (t.isCallExpression(node) && t.isMemberExpression(node.callee)) {
+          const name = t.isIdentifier(node.callee.property) ? node.callee.property.name : "";
+          if (name === "string") return { type: "string" as const };
+          if (name === "number") return { type: "number" as const };
+          if (name === "object") {
+            return {
+              allOf: [{ $ref: "#/components/schemas/Cat" }],
+              properties: { kind: { type: "string", enum: ["cat"] } },
+            };
+          }
+        }
+        return { type: "object" as const };
+      },
+      processObject: () => ({ type: "object" as const }),
+      ensureSchema: () => {},
+      getReferenceSchema: () => ({}),
+      resolveEnumValues: () => [],
+    };
+
+    expect(
+      processZodPrimitiveNode(
+        getFirstInitializer("z.preprocess((v) => v)") as t.CallExpression,
+        context,
+      ),
+    ).toEqual({});
+    expect(
+      processZodPrimitiveNode(getFirstInitializer("z.pipeline()") as t.CallExpression, context),
+    ).toEqual({});
+    expect(
+      processZodPrimitiveNode(getFirstInitializer("z.pipe()") as t.CallExpression, context),
+    ).toEqual({});
+    expect(
+      processZodPrimitiveNode(getFirstInitializer("z.codec()") as t.CallExpression, context),
+    ).toEqual({});
+    const recordPlaceholders = getFirstInitializer(
+      "z.record(z.string(), z.number())",
+    ) as t.CallExpression;
+    recordPlaceholders.arguments = [t.argumentPlaceholder(), t.argumentPlaceholder()];
+    expect(processZodPrimitiveNode(recordPlaceholders, context)).toEqual({
+      type: "object",
+      additionalProperties: { type: "string" },
+    });
+    const recordSinglePlaceholder = getFirstInitializer("z.record(z.string())") as t.CallExpression;
+    recordSinglePlaceholder.arguments = [t.argumentPlaceholder()];
+    expect(processZodPrimitiveNode(recordSinglePlaceholder, context)).toEqual({
+      type: "object",
+      additionalProperties: { type: "string" },
+    });
+    const mapPlaceholders = getFirstInitializer(
+      "z.map(z.string(), z.number())",
+    ) as t.CallExpression;
+    mapPlaceholders.arguments = [t.argumentPlaceholder(), t.argumentPlaceholder()];
+    expect(processZodPrimitiveNode(mapPlaceholders, context)).toEqual({
+      type: "object",
+      additionalProperties: true,
+    });
+    const mapSinglePlaceholder = getFirstInitializer("z.map(z.string())") as t.CallExpression;
+    mapSinglePlaceholder.arguments = [t.argumentPlaceholder()];
+    expect(processZodPrimitiveNode(mapSinglePlaceholder, context)).toEqual({
+      type: "object",
+      additionalProperties: true,
+    });
+    const setPlaceholder = getFirstInitializer("z.set(z.string())") as t.CallExpression;
+    setPlaceholder.arguments = [t.argumentPlaceholder()];
+    expect(processZodPrimitiveNode(setPlaceholder, context)).toEqual({
+      type: "array",
+      items: { type: "string" },
+      uniqueItems: true,
+    });
+    expect(
+      processZodPrimitiveNode(getFirstInitializer("z.enum([1, 2])") as t.CallExpression, context),
+    ).toEqual({ type: "number", enum: [1, 2] });
+    expect(
+      processZodPrimitiveNode(
+        getFirstInitializer("z.enum({ A: 1, B: 2 })") as t.CallExpression,
+        context,
+      ),
+    ).toEqual({ type: "number", enum: [1, 2] });
+    expect(
+      processZodPrimitiveNode(
+        getFirstInitializer("z.enum(EmptyEnum)") as t.CallExpression,
+        context,
+      ),
+    ).toEqual({ type: "string" });
+    expect(
+      processZodPrimitiveNode(
+        getFirstInitializer("z.templateLiteral([true, null])") as t.CallExpression,
+        context,
+      ),
+    ).toMatchObject({ type: "string" });
+    expect(
+      processZodDiscriminatedUnion(
+        getFirstInitializer("z.discriminatedUnion('kind', [z.object({})])") as t.CallExpression,
+        context.processNode,
+        context,
+      ),
+    ).toMatchObject({
+      discriminator: {
+        mapping: { cat: "#/components/schemas/Cat" },
+      },
+    });
+    expect(
+      processZodUnion(
+        getFirstInitializer("z.union([z.literal(null), z.string()])") as t.CallExpression,
+        (node) => {
+          if (t.isCallExpression(node) && t.isMemberExpression(node.callee)) {
+            const name = t.isIdentifier(node.callee.property) ? node.callee.property.name : "";
+            if (name === "literal") return { type: "null", enum: [null] };
+            if (name === "string") return { type: "string" };
+          }
+          return { type: "object" };
+        },
+      ),
+    ).toMatchObject({ type: "string", nullable: true });
+  });
 });

@@ -666,6 +666,26 @@ describe("SchemaProcessor", () => {
     ).toBe(true);
     expect(processor.shouldUseTypeScriptChecker(t.tsStringKeyword())).toBe(false);
     expect(() => processor.addTypeResolutionFallbackDiagnostic("fallback")).not.toThrow();
+
+    processor.openapiDefinitions = {};
+    processor.typeDefinitions = {
+      OnDemand: { node: t.tsTypeLiteral([]) },
+    };
+    (processor as unknown as { resolveType(name: string): Record<string, unknown> }).resolveType = (
+      name: string,
+    ) =>
+      name === "OnDemand"
+        ? { type: "object", properties: { id: { type: "string" } } }
+        : { type: "object" };
+    expect(processor.unwrapSchemaProperties({ $ref: "#/components/schemas/OnDemand" })).toEqual({
+      id: { type: "string" },
+    });
+    expect(processor.unwrapSchemaProperties({ $ref: "#/components/schemas/Missing" })).toBeNull();
+    expect(
+      processor.unwrapSchemaProperties({
+        allOf: [{ $ref: "#/components/schemas/OnDemand" }, { type: "string" }],
+      }),
+    ).toEqual({ id: { type: "string" } });
   });
 
   it("resolves import types and leftover type-node operators", () => {
@@ -842,6 +862,37 @@ describe("SchemaProcessor", () => {
         ts,
       ),
     ).toEqual({ type: "null" });
+    expect(
+      processor.typeScriptTypeToOpenApiSchema(
+        makeType({
+          getSymbol: () => ({ name: "Date" }),
+          label: "Date",
+        }),
+        checker,
+        new Set(),
+        ts,
+      ),
+    ).toEqual({ type: "string", format: "date-time" });
+    const apparent = makeType({
+      label: "Apparent",
+      getPropertiesOfType: undefined,
+    });
+    const apparentChecker = {
+      ...checker,
+      getApparentType: () => apparent,
+      getPropertiesOfType: (type: { label?: string }) =>
+        type.label === "Apparent"
+          ? [{ name: "id", flags: 0, valueDeclaration: {}, getName: () => "id" }]
+          : [],
+    };
+    expect(
+      processor.typeScriptTypeToOpenApiSchema(
+        makeType({ label: "ClassLike" }),
+        apparentChecker,
+        new Set(),
+        ts,
+      ),
+    ).toMatchObject({ type: "object" });
 
     const stringMember = makeType({
       flags: ts.TypeFlags.StringLike,
@@ -969,6 +1020,151 @@ describe("SchemaProcessor", () => {
     expect(
       processor.typeScriptTypeToOpenApiSchema(makeType({ label: "User" }), checker, seen, ts),
     ).toEqual({ type: "object" });
+
+    expect(
+      processor.typeScriptTypeToOpenApiSchema(
+        makeType({ flags: ts.TypeFlags.BooleanLike, label: "boolean" }),
+        checker,
+        new Set(),
+        ts,
+      ),
+    ).toEqual({ type: "boolean" });
+    expect(
+      processor.typeScriptTypeToOpenApiSchema(
+        makeType({ flags: ts.TypeFlags.BooleanLiteral, label: "false" }),
+        checker,
+        new Set(),
+        ts,
+      ),
+    ).toEqual({ type: "boolean", enum: [false] });
+    expect(
+      processor.typeScriptTypeToOpenApiSchema(
+        makeType({ flags: ts.TypeFlags.StringLike, label: "string" }),
+        checker,
+        new Set(),
+        ts,
+      ),
+    ).toEqual({ type: "string" });
+    expect(
+      processor.typeScriptTypeToOpenApiSchema(
+        makeType({ flags: ts.TypeFlags.NumberLike, label: "number" }),
+        checker,
+        new Set(),
+        ts,
+      ),
+    ).toEqual({ type: "number" });
+    expect(
+      processor.typeScriptTypeToOpenApiSchema(
+        makeType({ flags: ts.TypeFlags.Undefined, label: "undefined" }),
+        checker,
+        new Set(),
+        ts,
+      ),
+    ).toEqual({ type: "object" });
+    expect(
+      processor.typeScriptTypeToOpenApiSchema(
+        makeType({ flags: ts.TypeFlags.Any, label: "any" }),
+        checker,
+        new Set(),
+        ts,
+      ),
+    ).toEqual({ type: "object" });
+    expect(
+      processor.typeScriptTypeToOpenApiSchema(
+        makeType({ flags: ts.TypeFlags.Never, label: "never" }),
+        checker,
+        new Set(),
+        ts,
+      ),
+    ).toEqual({ type: "object" });
+    expect(
+      processor.typeScriptTypeToOpenApiSchema(
+        makeType({ flags: ts.TypeFlags.Unknown, label: "unknown" }),
+        checker,
+        new Set(),
+        ts,
+      ),
+    ).toEqual({ type: "object" });
+    expect(
+      processor.typeScriptTypeToOpenApiSchema(
+        makeType({ flags: ts.TypeFlags.Void, label: "void" }),
+        checker,
+        new Set(),
+        ts,
+      ),
+    ).toEqual({ type: "object" });
+
+    const trueMember = makeType({ flags: ts.TypeFlags.BooleanLiteral, label: "true" });
+    const falseMember = makeType({ flags: ts.TypeFlags.BooleanLiteral, label: "false" });
+    expect(
+      processor.typeScriptTypeToOpenApiSchema(
+        makeType({
+          isUnion: () => true,
+          types: [trueMember, falseMember],
+        }),
+        checker,
+        new Set(),
+        ts,
+      ),
+    ).toMatchObject({ type: "boolean", enum: [true, false] });
+
+    const firstNumber = makeType({
+      flags: ts.TypeFlags.NumberLike,
+      isNumberLiteral: () => true,
+      value: 1,
+    });
+    const secondNumber = makeType({
+      flags: ts.TypeFlags.NumberLike,
+      isNumberLiteral: () => true,
+      value: 2,
+    });
+    expect(
+      processor.typeScriptTypeToOpenApiSchema(
+        makeType({
+          isUnion: () => true,
+          types: [firstNumber, secondNumber],
+        }),
+        checker,
+        new Set(),
+        ts,
+      ),
+    ).toMatchObject({ type: "number", enum: [1, 2] });
+
+    const emptyArrayChecker = {
+      ...checker,
+      isArrayType: () => true,
+      getTypeArguments: () => [],
+    };
+    expect(
+      processor.typeScriptTypeToOpenApiSchema(
+        makeType({ label: "emptyArray" }),
+        emptyArrayChecker,
+        new Set(),
+        ts,
+      ),
+    ).toEqual({ type: "array", items: { type: "object" } });
+
+    const optionalOnlyChecker = {
+      ...checker,
+      getPropertiesOfType: () => [
+        {
+          getName: () => "nick",
+          flags: ts.SymbolFlags.Optional,
+          valueDeclaration: {},
+        },
+      ],
+    };
+    expect(
+      processor.typeScriptTypeToOpenApiSchema(
+        makeType({ label: "OptionalUser" }),
+        optionalOnlyChecker,
+        new Set(),
+        ts,
+      ),
+    ).toEqual({
+      type: "object",
+      properties: { nick: { type: "string" } },
+    });
   });
 
   it("covers leftover schema index, alias, re-export, and resolveType branches", () => {
@@ -1052,5 +1248,75 @@ describe("SchemaProcessor", () => {
     expect(again.hasSchemaCandidate("User")).toBe(true);
     expect(again.findSchemaDefinition("User", "response")).toMatchObject({ type: "object" });
     expect(diagnostics.getAll().some((item) => item.code === "schema-dir-empty")).toBe(true);
+  });
+
+  it("covers leftover internal schema and preprocess miss sides", () => {
+    const processor = new SchemaProcessor(process.cwd(), "typescript") as unknown as {
+      getInternalSchemas(): Record<string, unknown>;
+      preprocessZodSchemas(): void;
+      internalSchemaNames: Set<string>;
+      openapiDefinitions: Record<string, unknown>;
+      zodSchemaConverter?: {
+        internalSchemaNames: Set<string>;
+        zodSchemas: Record<string, unknown>;
+        preprocessSchemaDirectories(): void;
+      };
+      zodSchemaProcessor?: { getDefinedSchemas(): Record<string, unknown> };
+    };
+
+    processor.internalSchemaNames.add("Missing");
+    processor.internalSchemaNames.add("Present");
+    processor.openapiDefinitions.Present = { type: "string" };
+    expect(processor.getInternalSchemas()).toEqual({ Present: { type: "string" } });
+
+    processor.preprocessZodSchemas();
+    processor.zodSchemaConverter = {
+      internalSchemaNames: new Set(["ZodMissing", "ZodPresent"]),
+      zodSchemas: { ZodPresent: { type: "boolean" } },
+      preprocessSchemaDirectories() {},
+    };
+    expect(processor.getInternalSchemas()).toMatchObject({
+      Present: { type: "string" },
+      ZodPresent: { type: "boolean" },
+    });
+
+    processor.zodSchemaProcessor = {
+      getDefinedSchemas: () => ({ Extra: { type: "number" } }),
+    };
+    processor.preprocessZodSchemas();
+    expect(processor.openapiDefinitions.Extra).toEqual({ type: "number" });
+  });
+
+  it("covers leftover schema-dir cache hits and re-export source misses", () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-schema-dir-cache-"));
+    roots.push(root);
+    const schemas = path.join(root, "schemas");
+    fs.mkdirSync(schemas, { recursive: true });
+    fs.writeFileSync(
+      path.join(schemas, "user.ts"),
+      [
+        "/** @id UserModel */",
+        "export interface User { id: string }",
+        "export { User as Reexported } from './user';",
+        "export * from './missing';",
+      ].join("\n"),
+    );
+
+    const processor = new SchemaProcessor(schemas, "typescript") as unknown as {
+      scanSchemaDir(dir: string): void;
+      followSchemaReExports(ast: t.File, filePath: string): void;
+      getParsedSchemaFile(filePath: string): t.File;
+      schemaFiles?: string[];
+      directoryCache: Record<string, string[]>;
+    };
+    processor.schemaFiles = [];
+    processor.scanSchemaDir(schemas);
+    processor.scanSchemaDir(schemas);
+    expect(processor.directoryCache[schemas]?.length).toBeGreaterThan(0);
+
+    const ast = processor.getParsedSchemaFile(path.join(schemas, "user.ts"));
+    processor.followSchemaReExports(ast, path.join(schemas, "user.ts"));
+    processor.followSchemaReExports(ast, path.join(schemas, "user.ts"));
+    expect(processor.getParsedSchemaFile(path.join(schemas, "user.ts"))).toBe(ast);
   });
 });

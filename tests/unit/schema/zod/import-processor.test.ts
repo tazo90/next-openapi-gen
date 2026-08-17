@@ -10,6 +10,7 @@ describe("processImports", () => {
       import foo from "./foo";
       import drizzleDefault from "drizzle-zod";
       import { createInsertSchema, createSelectSchema as makeSelect } from "drizzle-zod";
+      import * as drizzleZod from "drizzle-zod";
       import * as helpers from "./helpers";
     `);
 
@@ -48,5 +49,19 @@ describe("processImports", () => {
       import * as myZ from "zod";
     `);
     expect(processImports(ast).zodLocalName).toBe("myZ");
+  });
+
+  it("captures string-literal z import aliases", () => {
+    const ast = parseTypeScriptFile(`
+      import { "z" as zod } from "zod";
+    `);
+    expect(processImports(ast).zodLocalName).toBe("zod");
+  });
+
+  it("captures default zod import local names", () => {
+    const ast = parseTypeScriptFile(`
+      import z from "zod";
+    `);
+    expect(processImports(ast).zodLocalName).toBe("z");
   });
 });

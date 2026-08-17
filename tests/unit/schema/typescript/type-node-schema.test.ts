@@ -347,5 +347,170 @@ describe("type-node-schema helpers", () => {
         parseAnnotation("import('mod').User"),
       ),
     ).toBeDefined();
+    expect(resolveTypeNodeSchema(host as never, parseAnnotation("Promise<string>"))).toEqual({
+      type: "string",
+    });
+    expect(resolveTypeNodeSchema(host as never, parseAnnotation("Awaited<number>"))).toEqual({
+      type: "number",
+    });
+    expect(resolveTypeNodeSchema(host as never, parseAnnotation("Awaited"))).toEqual({});
+    expect(
+      resolveTypeNodeSchema(host as never, parseAnnotation("Record<string, boolean>")),
+    ).toMatchObject({
+      type: "object",
+    });
+    expect(
+      resolveTypeNodeSchema(host as never, parseAnnotation("[string, ...number[]]")),
+    ).toMatchObject({
+      type: "array",
+    });
+    expect(resolveTypeNodeSchema(host as never, parseAnnotation("[id?: string]"))).toMatchObject({
+      type: "array",
+    });
+    expect(
+      resolveTypeNodeSchema(
+        {
+          ...host,
+          unwrapSchemaProperties: () => ({ id: { type: "string" }, name: { type: "string" } }),
+        } as never,
+        parseAnnotation("keyof { id: string; name: string }"),
+      ),
+    ).toEqual({ type: "string", enum: ["id", "name"] });
+    expect(
+      resolveTypeNodeSchema(host as never, parseAnnotation("`user-${'a' | 'b'}`")),
+    ).toMatchObject({
+      type: "string",
+    });
+    expect(
+      resolveTypeNodeSchema(
+        {
+          ...host,
+          schemaTypes: ["zod"],
+          zodSchemaConverter: {
+            convertZodSchemaToOpenApi: () => ({
+              type: "object",
+              properties: { id: { type: "string" } },
+            }),
+          },
+        } as never,
+        parseAnnotation("z.infer<typeof UserSchema>"),
+      ),
+    ).toEqual({ type: "object", properties: { id: { type: "string" } } });
+    expect(
+      resolveTypeNodeSchema(
+        host as never,
+        {
+          type: "TSExpressionWithTypeArguments",
+          expression: t.identifier("Date"),
+        },
+      ),
+    ).toEqual({ type: "string", format: "date-time" });
+    expect(
+      resolveTypeNodeSchema(
+        host as never,
+        {
+          type: "TSExpressionWithTypeArguments",
+          expression: t.numericLiteral(1),
+        },
+      ),
+    ).toEqual({ type: "object" });
+    expect(
+      resolveTypeNodeSchema(
+        host as never,
+        parseAnnotation("{ readonly id: string; [key: string]: string }"),
+      ),
+    ).toMatchObject({
+      type: "object",
+      properties: { id: expect.objectContaining({ readOnly: true }) },
+      additionalProperties: { type: "string" },
+    });
+    expect(
+      resolveTypeNodeSchema(host as never, parseAnnotation("{ [key: string]: unknown }")),
+    ).toMatchObject({
+      additionalProperties: {},
+    });
+    expect(resolveTypeNodeSchema(host as never, parseAnnotation('"a" | 1 | true'))).toMatchObject({
+      oneOf: expect.any(Array),
+    });
+    expect(resolveTypeNodeSchema(host as never, parseAnnotation("string | undefined"))).toEqual({
+      type: "string",
+    });
+    expect(
+      resolveTypeNodeSchema(host as never, parseAnnotation("string & { __brand: 'UserId' }")),
+    ).toEqual({ type: "string" });
+    expect(
+      resolveTypeNodeSchema(
+        host as never,
+        parseAnnotation("{ optional?: string } & { extra?: number }"),
+      ),
+    ).toMatchObject({
+      type: "object",
+      properties: expect.objectContaining({
+        optional: { type: "string" },
+        extra: { type: "number" },
+      }),
+    });
+    expect(
+      resolveTypeNodeSchema(
+        {
+          ...host,
+          schemaIdAliases: { User: "UserModel" },
+          openapiDefinitions: { UserModel: { type: "object" } },
+        } as never,
+        parseAnnotation("User"),
+      ),
+    ).toEqual({ $ref: "#/components/schemas/UserModel" });
+    expect(resolveTypeNodeSchema(host as never, parseAnnotation("Record<string>"))).toEqual({
+      type: "object",
+      additionalProperties: true,
+    });
+    expect(
+      resolveTypeNodeSchema(
+        {
+          ...host,
+          extractKeysFromTypeNode: () => ["id"],
+        } as never,
+        t.tsMappedType(t.tsTypeParameter(t.tsLiteralType(t.stringLiteral("id")), undefined, "K")),
+      ),
+    ).toMatchObject({
+      type: "object",
+      properties: { id: { type: "object" } },
+    });
+    expect(
+      resolveTypeNodeSchema(
+        {
+          ...host,
+          resolveImportPath: () => "/virtual/imported.ts",
+          typeDefinitions: { User: { type: "object" } },
+          resolveType: () => ({ type: "string" }),
+        } as never,
+        parseAnnotation("import('mod').User"),
+      ),
+    ).toEqual({ type: "string" });
+    expect(
+      resolveTypeNodeSchema(host as never, parseAnnotation("{ [key: string] }")),
+    ).toMatchObject({
+      additionalProperties: true,
+    });
+    expect(
+      resolveTypeNodeSchema(
+        host as never,
+        t.tsTypeLiteral([
+          t.tsPropertySignature(t.numericLiteral(1), t.tsTypeAnnotation(t.tsStringKeyword())),
+        ]),
+      ),
+    ).toEqual({ type: "object", properties: {} });
+    expect(resolveTypeNodeSchema(host as never, parseAnnotation('"a" | null'))).toMatchObject({
+      type: "string",
+      enum: ["a"],
+      nullable: true,
+    });
+    expect(
+      resolveTypeNodeSchema(host as never, parseAnnotation("{ id: string } & { name: string }")),
+    ).toMatchObject({
+      type: "object",
+      required: ["id", "name"],
+    });
+    expect(resolveTypeNodeSchema(host as never, t.tsThisType())).toEqual({ type: "object" });
   });
 });

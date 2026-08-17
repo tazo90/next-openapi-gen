@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createDefaultGenerationAdapters } from "@workspace/openapi-cli";
 import { RouteProcessor } from "@workspace/openapi-core/routes/route-processor.js";
-import type { DataTypes, OpenApiConfig } from "@workspace/openapi-core/shared/types.js";
+import type { DataTypes, Diagnostic, OpenApiConfig } from "@workspace/openapi-core/shared/types.js";
 
 describe("RouteProcessor", () => {
   let routeProcessor: RouteProcessor;
@@ -180,5 +180,37 @@ describe("RouteProcessor", () => {
 
   it("throws when constructed without a framework source factory", () => {
     expect(() => new RouteProcessor(baseConfig)).toThrow(/framework source/i);
+  });
+
+  it("records leftover route-feature diagnostics and skips empty tags", () => {
+    const diagnostics = {
+      add: vi.fn<(diagnostic: Diagnostic) => void>(),
+      getAll: vi.fn<() => Diagnostic[]>(() => []),
+    };
+    routeProcessor = new RouteProcessor(
+      baseConfig,
+      diagnostics as never,
+      undefined,
+      adapters.createFrameworkSource,
+    );
+
+    // @ts-expect-error exercising private diagnostics helper
+    routeProcessor.registerRouteFeatureDiagnostics(
+      "./src/app/api/[[...slug]]/route.ts",
+      "/{slug}",
+      {},
+    );
+    // @ts-expect-error exercising private diagnostics helper
+    routeProcessor.registerRouteFeatureDiagnostics("./src/app/api/@modal/route.ts", "/modal", {});
+    // @ts-expect-error exercising private diagnostics helper
+    routeProcessor.registerRouteFeatureDiagnostics("./src/app/api/(.)photo/route.ts", "/photo", {});
+    // @ts-expect-error exercising private tag helper
+    routeProcessor.registerTagMetadata("./src/app/api/route.ts", "/", {});
+
+    expect(diagnostics.add).toHaveBeenCalledWith(
+      expect.objectContaining({ code: "unsupported-route-feature" }),
+    );
+    expect(diagnostics.add.mock.calls).toHaveLength(3);
+    expect(routeProcessor.getTags()).toEqual([]);
   });
 });

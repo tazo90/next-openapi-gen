@@ -33,6 +33,18 @@ const packageSrcDirs = {
 } as const;
 
 const defaultTestInclude = ["tests/unit/**/*.test.ts", "tests/integration/**/*.test.ts"];
+const satelliteCoverageThresholds = {
+  statements: 99,
+  branches: 95,
+  functions: 99,
+  lines: 99,
+} as const;
+const coreCoverageThresholds = {
+  statements: 95,
+  branches: 92,
+  functions: 95,
+  lines: 95,
+} as const;
 const coverageScopes = {
   "next-openapi-gen": {
     include: ["packages/next-openapi-gen/src/**/*.ts"],
@@ -42,42 +54,22 @@ const coverageScopes = {
       "tests/unit/react-router/**/*.test.ts",
       "tests/unit/vite/**/*.test.ts",
     ],
-    thresholds: {
-      statements: 90,
-      branches: 90,
-      functions: 90,
-      lines: 90,
-    },
+    thresholds: satelliteCoverageThresholds,
   },
   "openapi-arazzo": {
     include: ["packages/openapi-arazzo/src/**/*.ts"],
     testInclude: ["tests/unit/arazzo/**/*.test.ts", "tests/integration/arazzo/**/*.test.ts"],
-    thresholds: {
-      statements: 90,
-      branches: 90,
-      functions: 90,
-      lines: 90,
-    },
+    thresholds: satelliteCoverageThresholds,
   },
   "openapi-cli": {
     include: ["packages/openapi-cli/src/**/*.ts"],
     testInclude: ["tests/unit/cli/**/*.test.ts", "tests/unit/frameworks/index.test.ts"],
-    thresholds: {
-      statements: 90,
-      branches: 90,
-      functions: 90,
-      lines: 90,
-    },
+    thresholds: satelliteCoverageThresholds,
   },
   "openapi-core": {
     include: ["packages/openapi-core/src/**/*.ts"],
     testInclude: defaultTestInclude,
-    thresholds: {
-      statements: 90,
-      branches: 90,
-      functions: 90,
-      lines: 90,
-    },
+    thresholds: coreCoverageThresholds,
   },
   "openapi-framework-next": {
     include: ["packages/openapi-framework-next/src/**/*.ts"],
@@ -88,12 +80,7 @@ const coverageScopes = {
       "tests/unit/routes/app-router-inference.test.ts",
       "tests/unit/routes/pages-router-strategy.test.ts",
     ],
-    thresholds: {
-      statements: 90,
-      branches: 90,
-      functions: 90,
-      lines: 90,
-    },
+    thresholds: satelliteCoverageThresholds,
   },
   "openapi-framework-react-router": {
     include: ["packages/openapi-framework-react-router/src/**/*.ts"],
@@ -101,42 +88,22 @@ const coverageScopes = {
       "tests/unit/frameworks/react-router/**/*.test.ts",
       "tests/unit/react-router/**/*.test.ts",
     ],
-    thresholds: {
-      statements: 90,
-      branches: 90,
-      functions: 90,
-      lines: 90,
-    },
+    thresholds: satelliteCoverageThresholds,
   },
   "openapi-framework-tanstack": {
     include: ["packages/openapi-framework-tanstack/src/**/*.ts"],
     testInclude: ["tests/unit/frameworks/tanstack/**/*.test.ts", "tests/unit/vite/**/*.test.ts"],
-    thresholds: {
-      statements: 90,
-      branches: 90,
-      functions: 90,
-      lines: 90,
-    },
+    thresholds: satelliteCoverageThresholds,
   },
   "openapi-init": {
     include: ["packages/openapi-init/src/**/*.ts"],
     testInclude: ["tests/unit/init/**/*.test.ts"],
-    thresholds: {
-      statements: 90,
-      branches: 90,
-      functions: 90,
-      lines: 90,
-    },
+    thresholds: satelliteCoverageThresholds,
   },
   "openapi-overlay": {
     include: ["packages/openapi-overlay/src/**/*.ts"],
     testInclude: ["tests/unit/overlay/**/*.test.ts", "tests/integration/overlay/**/*.test.ts"],
-    thresholds: {
-      statements: 90,
-      branches: 90,
-      functions: 90,
-      lines: 90,
-    },
+    thresholds: satelliteCoverageThresholds,
   },
 } as const;
 const coverageScope = process.env.COVERAGE_SCOPE as keyof typeof coverageScopes | undefined;
@@ -190,12 +157,7 @@ export default defineConfig({
         "packages/openapi-init/src/index.ts",
         "packages/openapi-overlay/src/index.ts",
       ],
-      thresholds: selectedCoverageScope?.thresholds ?? {
-        statements: 90,
-        branches: 90,
-        functions: 90,
-        lines: 90,
-      },
+      thresholds: selectedCoverageScope?.thresholds ?? coreCoverageThresholds,
     },
   },
 });

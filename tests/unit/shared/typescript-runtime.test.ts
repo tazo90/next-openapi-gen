@@ -8,7 +8,9 @@ import {
   clearTypeScriptRuntimeCache,
   getBestEffortScriptTarget,
   getTypeScriptVersionSupport,
+  isTypeScriptUnavailableError,
   resolveTypeScriptRuntime,
+  TypeScriptUnavailableError,
 } from "@workspace/openapi-core/shared/typescript-runtime.js";
 
 describe("TypeScript runtime adapter", () => {
@@ -71,6 +73,34 @@ describe("TypeScript runtime adapter", () => {
     expect(getTypeScriptVersionSupport("7.0.0-dev.20260626")).toBe("supported");
     expect(getTypeScriptVersionSupport("8.0.0")).toBe("too-new");
     expect(getTypeScriptVersionSupport("not-a-version")).toBe("too-new");
+    expect(
+      getBestEffortScriptTarget({ ScriptTarget: { LatestStandard: 99, ES2022: 9 } } as never),
+    ).toBe(99);
+    expect(
+      new TypeScriptUnavailableError({
+        packagePath: "/virtual/typescript",
+        support: "too-new",
+        version: "8.0.0",
+      }).message,
+    ).toContain("not supported");
+    expect(
+      new TypeScriptUnavailableError({
+        packagePath: "/virtual/typescript",
+        support: "supported",
+        version: "7.0.0",
+        fallbackReason: "native API missing",
+      }).message,
+    ).toContain("native API missing");
+    expect(
+      isTypeScriptUnavailableError(
+        new TypeScriptUnavailableError({
+          packagePath: "/virtual/typescript",
+          support: "too-old",
+          version: "5.8.3",
+        }),
+      ),
+    ).toBe(true);
+    expect(isTypeScriptUnavailableError(new Error("nope"))).toBe(false);
   });
 
   it("marks unsupported project TypeScript packages without loading the compiler", () => {

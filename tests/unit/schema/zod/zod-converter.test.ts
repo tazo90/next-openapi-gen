@@ -1349,6 +1349,355 @@ export const EnvelopeSchema = createEnvelope({
         t.objectExpression([t.objectProperty(t.identifier("id"), t.identifier("MISSING"))]),
       ),
     ).toBeUndefined();
+    expect(converter.extractStaticJsonValue(t.booleanLiteral(true))).toBe(true);
+    expect(converter.extractStaticJsonValue(t.numericLiteral(4))).toBe(4);
+    expect(converter.extractStaticJsonValue(t.arrayExpression([t.stringLiteral("a")]))).toEqual([
+      "a",
+    ]);
+    expect(
+      converter.extractStaticJsonValue(
+        t.objectExpression([t.objectProperty(t.stringLiteral("id"), t.stringLiteral("x"))]),
+      ),
+    ).toEqual({ id: "x" });
+    expect(
+      converter.extractStaticJsonValue(
+        t.objectExpression([t.objectProperty(t.numericLiteral(1), t.stringLiteral("x"))]),
+      ),
+    ).toBeUndefined();
+    expect(
+      converter.extractStaticJsonValue(t.arrayExpression([t.identifier("MISSING")])),
+    ).toBeUndefined();
+    expect(
+      (
+        converter as unknown as { extractMetaIdFromNode(node: t.Node): string | null }
+      ).extractMetaIdFromNode(t.identifier("x")),
+    ).toBeNull();
+    expect(
+      (
+        converter as unknown as { extractMetaIdFromNode(node: t.Node): string | null }
+      ).extractMetaIdFromNode(
+        t.callExpression(
+          t.memberExpression(
+            t.callExpression(t.memberExpression(t.identifier("z"), t.identifier("string")), []),
+            t.identifier("meta"),
+          ),
+          [t.objectExpression([t.objectProperty(t.identifier("id"), t.stringLiteral("User"))])],
+        ),
+      ),
+    ).toBe("User");
+    expect(
+      (
+        converter as unknown as { shouldUseRuntimeExport(node: t.Node): boolean }
+      ).shouldUseRuntimeExport(t.identifier("x")),
+    ).toBe(false);
+    expect(
+      (
+        converter as unknown as { shouldUseRuntimeExport(node: t.Node): boolean }
+      ).shouldUseRuntimeExport(parseInitializer("z.coerce.string()")),
+    ).toBe(true);
+    expect(
+      (
+        converter as unknown as { shouldUseRuntimeExport(node: t.Node): boolean }
+      ).shouldUseRuntimeExport(parseInitializer("z.string().pipe(z.number())")),
+    ).toBe(true);
+    expect(
+      (
+        converter as unknown as { shouldUseRuntimeExport(node: t.Node): boolean }
+      ).shouldUseRuntimeExport(parseInitializer("z.stringbool()")),
+    ).toBe(true);
+    expect(
+      (
+        converter as unknown as { shouldUseRuntimeExport(node: t.Node): boolean }
+      ).shouldUseRuntimeExport(parseInitializer("z.templateLiteral([])")),
+    ).toBe(true);
+    expect(
+      (
+        converter as unknown as { shouldUseRuntimeExport(node: t.Node): boolean }
+      ).shouldUseRuntimeExport(parseInitializer("z.prefault(z.string(), 'x')")),
+    ).toBe(true);
+    expect(
+      (
+        converter as unknown as {
+          processZodFunctionalWrapper(method: string, node: t.CallExpression): unknown;
+        }
+      ).processZodFunctionalWrapper("extend", parseInitializer("z.extend()") as t.CallExpression),
+    ).toEqual({ type: "object" });
+    expect(
+      (
+        converter as unknown as {
+          processZodFunctionalWrapper(method: string, node: t.CallExpression): unknown;
+        }
+      ).processZodFunctionalWrapper(
+        "readonly",
+        parseInitializer("z.readonly(z.string())") as t.CallExpression,
+      ),
+    ).toMatchObject({ readOnly: true });
+    expect(
+      (
+        converter as unknown as {
+          processZodFunctionalWrapper(method: string, node: t.CallExpression): unknown;
+        }
+      ).processZodFunctionalWrapper(
+        "describe",
+        parseInitializer('z.describe(z.string(), "@deprecated old")') as t.CallExpression,
+      ),
+    ).toMatchObject({ deprecated: true, description: "old" });
+    expect(
+      (
+        converter as unknown as {
+          processZodFunctionalWrapper(method: string, node: t.CallExpression): unknown;
+        }
+      ).processZodFunctionalWrapper(
+        "describe",
+        parseInitializer('z.describe(z.string(), "plain")') as t.CallExpression,
+      ),
+    ).toMatchObject({ description: "plain" });
+    expect(
+      (
+        converter as unknown as {
+          processZodFunctionalWrapper(method: string, node: t.CallExpression): unknown;
+        }
+      ).processZodFunctionalWrapper(
+        "describe",
+        parseInitializer("z.describe(z.string())") as t.CallExpression,
+      ),
+    ).toMatchObject({ type: "string" });
+    expect(
+      (
+        converter as unknown as {
+          processZodFunctionalWrapper(method: string, node: t.CallExpression): unknown;
+        }
+      ).processZodFunctionalWrapper(
+        "default",
+        parseInitializer('z.default(z.string(), "ready")') as t.CallExpression,
+      ),
+    ).toMatchObject({ default: "ready" });
+    expect(
+      (
+        converter as unknown as {
+          processZodFunctionalWrapper(method: string, node: t.CallExpression): unknown;
+        }
+      ).processZodFunctionalWrapper(
+        "prefault",
+        parseInitializer('z.prefault(z.string(), "ready")') as t.CallExpression,
+      ),
+    ).toMatchObject({ default: "ready" });
+    expect(
+      (
+        converter as unknown as {
+          processZodFunctionalWrapper(method: string, node: t.CallExpression): unknown;
+        }
+      ).processZodFunctionalWrapper(
+        "catch",
+        parseInitializer('z.catch(z.string(), "ready")') as t.CallExpression,
+      ),
+    ).toMatchObject({ default: "ready" });
+    expect(
+      (
+        converter as unknown as {
+          processZodFunctionalWrapper(method: string, node: t.CallExpression): unknown;
+        }
+      ).processZodFunctionalWrapper(
+        "unknown",
+        parseInitializer("z.readonly(z.string())") as t.CallExpression,
+      ),
+    ).toMatchObject({ type: "string" });
+    expect(
+      (
+        converter as unknown as {
+          processZodFunctionalWrapper(method: string, node: t.CallExpression): unknown;
+        }
+      ).processZodFunctionalWrapper(
+        "readonly",
+        parseInitializer("z.readonly()") as t.CallExpression,
+      ),
+    ).toEqual({ type: "object" });
+    expect(
+      (
+        converter as unknown as {
+          processZodFunctionalWrapper(method: string, node: t.CallExpression): unknown;
+        }
+      ).processZodFunctionalWrapper(
+        "default",
+        parseInitializer("z.default(z.string())") as t.CallExpression,
+      ),
+    ).toMatchObject({ type: "string" });
+    expect(
+      (
+        converter as unknown as {
+          processZodFunctionalWrapper(method: string, node: t.CallExpression): unknown;
+        }
+      ).processZodFunctionalWrapper(
+        "catch",
+        parseInitializer("z.catch(z.string())") as t.CallExpression,
+      ),
+    ).toMatchObject({ type: "string" });
+    expect(
+      (
+        converter as unknown as {
+          applyFunctionalCheckArg(schema: Record<string, unknown>, arg: t.CallExpression): unknown;
+        }
+      ).applyFunctionalCheckArg(
+        { type: "string" },
+        parseInitializer("z.min(1)") as t.CallExpression,
+      ),
+    ).toMatchObject({ type: "string" });
+    expect(
+      (
+        converter as unknown as {
+          applyFunctionalCheckArg(schema: Record<string, unknown>, arg: t.CallExpression): unknown;
+        }
+      ).applyFunctionalCheckArg(
+        { type: "string" },
+        parseInitializer("z.refine(() => true)") as t.CallExpression,
+      ),
+    ).toEqual({ type: "string" });
+    expect(
+      (
+        converter as unknown as {
+          applyFunctionalCheckArg(schema: Record<string, unknown>, arg: t.CallExpression): unknown;
+        }
+      ).applyFunctionalCheckArg(
+        { type: "string" },
+        parseInitializer("z.trim()") as t.CallExpression,
+      ),
+    ).toEqual({ type: "string" });
+    expect(
+      (
+        converter as unknown as {
+          applyFunctionalCheckArg(schema: Record<string, unknown>, arg: t.CallExpression): unknown;
+        }
+      ).applyFunctionalCheckArg(
+        { type: "string" },
+        parseInitializer("z.email()") as t.CallExpression,
+      ),
+    ).toMatchObject({ format: "email" });
+    expect(
+      (
+        converter as unknown as {
+          applyFunctionalCheckArg(schema: Record<string, unknown>, arg: t.CallExpression): unknown;
+        }
+      ).applyFunctionalCheckArg(
+        { type: "string" },
+        parseInitializer("z.minLength(2)") as t.CallExpression,
+      ),
+    ).toMatchObject({ type: "string" });
+    expect(
+      (
+        converter as unknown as {
+          applyFunctionalCheckArg(schema: Record<string, unknown>, arg: t.CallExpression): unknown;
+        }
+      ).applyFunctionalCheckArg(
+        { type: "string" },
+        parseInitializer("z.unknownCheck()") as t.CallExpression,
+      ),
+    ).toEqual({ type: "string" });
+    expect(
+      (
+        converter as unknown as {
+          applyFunctionalCheckArg(schema: Record<string, unknown>, arg: t.CallExpression): unknown;
+        }
+      ).applyFunctionalCheckArg(
+        { type: "string" },
+        parseInitializer("other.min(1)") as t.CallExpression,
+      ),
+    ).toMatchObject({ type: "string" });
+    expect(
+      (
+        converter as unknown as {
+          mergeExtendedObject(base: Record<string, unknown>, shape: t.Node): unknown;
+        }
+      ).mergeExtendedObject({ $ref: "#/components/schemas/MissingBase" }, t.identifier("shape")),
+    ).toEqual({ $ref: "#/components/schemas/MissingBase" });
+    expect(
+      (
+        converter as unknown as {
+          mergeExtendedObject(base: Record<string, unknown>, shape: t.Node): unknown;
+        }
+      ).mergeExtendedObject(
+        { type: "object", properties: { id: { type: "string" } }, required: ["id"] },
+        t.objectExpression([
+          t.objectProperty(
+            t.identifier("name"),
+            t.callExpression(t.memberExpression(t.identifier("z"), t.identifier("string")), []),
+          ),
+        ]),
+      ),
+    ).toMatchObject({
+      properties: expect.objectContaining({
+        id: { type: "string" },
+        name: { type: "string" },
+      }),
+    });
+
+    expect(
+      (
+        converter as unknown as {
+          isPropertyOptional(node: t.Node): boolean;
+        }
+      ).isPropertyOptional(t.identifier("x")),
+    ).toBe(false);
+    expect(
+      (
+        converter as unknown as {
+          isPropertyOptional(node: t.Node): boolean;
+        }
+      ).isPropertyOptional(parseInitializer("z.string().optional()")),
+    ).toBe(true);
+    expect(
+      (
+        converter as unknown as {
+          reconcileNumericBounds(schema: Record<string, unknown>): void;
+        }
+      ).reconcileNumericBounds({ minimum: 1, exclusiveMinimum: 2 }),
+    ).toBeUndefined();
+    expect(
+      (
+        converter as unknown as {
+          reconcileNumericBounds(schema: Record<string, unknown>): void;
+        }
+      ).reconcileNumericBounds({ minimum: 3, exclusiveMinimum: 1 }),
+    ).toBeUndefined();
+    expect(converter.resolveStringArrayArg(t.identifier("LABELS"))).toBeUndefined();
+    converter.currentFilePath = "/virtual.ts";
+    converter.currentAST = parseTypeScriptFile(
+      ['const LABELS = ["a", "b"] as const;', "const KEY = 'nick';"].join("\n"),
+    );
+    expect(
+      (
+        converter as unknown as {
+          resolveStringArrayArg(node: t.Node): string[] | undefined;
+          resolveLiteralValue(name: string): unknown;
+        }
+      ).resolveStringArrayArg(t.identifier("LABELS")),
+    ).toEqual(["a", "b"]);
+    expect(
+      (
+        converter as unknown as {
+          mergeExtendedObject(base: Record<string, unknown>, shape: t.Node): unknown;
+        }
+      ).mergeExtendedObject(
+        {
+          type: "object",
+          description: "User",
+          properties: { id: { type: "string" } },
+          required: ["id"],
+        },
+        t.objectExpression([
+          t.objectProperty(
+            t.identifier("name"),
+            t.callExpression(t.memberExpression(t.identifier("z"), t.identifier("string")), []),
+          ),
+        ]),
+      ),
+    ).toMatchObject({ description: "User" });
+    expect(
+      (
+        converter as unknown as {
+          mergeExtendedObject(base: Record<string, unknown>, shape: t.Node): unknown;
+        }
+      ).mergeExtendedObject({ type: "string" }, t.objectExpression([])),
+    ).toMatchObject({ type: "object" });
 
     converter.zodSchemas.User = { type: "object", properties: { id: { type: "string" } } };
     expect(
@@ -1554,5 +1903,86 @@ export const EnvelopeSchema = createEnvelope({
       properties: { factory: { type: "string" } },
     });
     expect(converter.typeToSchemaMapping.User).toBe("UserSchema");
+  });
+
+  it("covers leftover runtime pre-scan, meta-id exports, and extend-ref helpers", () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-zod-runtime-leftover-"));
+    roots.push(root);
+    const schemaFile = path.join(root, "schemas.ts");
+    fs.writeFileSync(
+      schemaFile,
+      [
+        'import { z } from "zod";',
+        'const KEY = "fullName";',
+        "export const UserSchema = z.object({ [KEY]: z.string(), [Date.now()]: z.number() });",
+        "export const AliasedSchema = UserSchema.meta({ id: 'AliasedUser' });",
+        "export const ExtendedMissing = z.extend({ $ref: true } as never, { extra: z.boolean() });",
+      ].join("\n"),
+    );
+
+    const runtime = createSharedGenerationRuntime();
+    const converter = new ZodSchemaConverter(
+      root,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      runtime.schema.zod,
+    );
+    expect(converter.convertZodSchemaToOpenApi("UserSchema")).toMatchObject({ type: "object" });
+    converter.preprocessSchemaDirectories();
+    converter.preprocessSchemaDirectories();
+    converter.processAllSchemasInFile(schemaFile);
+    expect(converter.convertZodSchemaToOpenApi("AliasedSchema")).toBeDefined();
+
+    const helpers = converter as unknown as {
+      processZodChain(node: t.CallExpression): Record<string, unknown>;
+      mergeExtendedObject(base: Record<string, unknown>, shape: t.Node): Record<string, unknown>;
+      applyDeepPartial(schema: Record<string, unknown>): void;
+      shouldUseRuntimeExport(node: t.Node): boolean;
+      extractMetaIdFromNode(node: t.Node): string | null;
+    };
+
+    expect(helpers.processZodChain(t.callExpression(t.identifier("foo"), []))).toEqual({
+      type: "object",
+    });
+    expect(
+      helpers.mergeExtendedObject(
+        { $ref: "#/components/schemas/MissingBase" },
+        t.objectExpression([
+          t.objectProperty(
+            t.identifier("extra"),
+            t.callExpression(t.memberExpression(t.identifier("z"), t.identifier("boolean")), []),
+          ),
+        ]),
+      ),
+    ).toMatchObject({ type: "object" });
+    expect(helpers.mergeExtendedObject({ type: "string" }, t.identifier("shape"))).toEqual({
+      type: "string",
+    });
+    const sparse = { type: "object", properties: { a: undefined } };
+    helpers.applyDeepPartial(sparse);
+    expect(
+      helpers.shouldUseRuntimeExport(
+        t.callExpression(
+          t.memberExpression(
+            t.memberExpression(t.identifier("z"), t.stringLiteral("coerce"), true),
+            t.identifier("string"),
+          ),
+          [],
+        ),
+      ),
+    ).toBe(false);
+    expect(
+      helpers.extractMetaIdFromNode(
+        t.callExpression(
+          t.memberExpression(
+            t.callExpression(t.memberExpression(t.identifier("z"), t.identifier("string")), []),
+            t.identifier("meta"),
+          ),
+          [t.objectExpression([t.objectProperty(t.identifier("id"), t.stringLiteral("Doc"))])],
+        ),
+      ),
+    ).toBe("Doc");
   });
 });

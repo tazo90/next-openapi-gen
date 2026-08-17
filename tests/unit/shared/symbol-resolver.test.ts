@@ -131,6 +131,7 @@ describe("SymbolResolver", () => {
     expect(resolver.getImports("/app/import.ts")?.get("Totals")?.importedName).toBe("COUNTS");
     expect(resolver.getImports("/app/import.ts")?.get("values")?.isNamespace).toBe(true);
 
+    expect(resolver.resolveImportPath("/lib/values.ts", "./missing")).toBeNull();
     resolver.invalidateFile("/lib/values.ts");
     resolver.clear();
     expect(resolver.getIndex("/missing.ts")).toBeNull();
@@ -351,5 +352,73 @@ describe("SymbolResolver", () => {
     expect(resolver.resolveEnumValues("/app/reexport.ts", "FLAGS")).toEqual([1, "x"]);
     expect(resolver.resolveEnumValues("/missing.ts", "Role")).toBeNull();
     expect(resolver.resolveEnumValues("/app/enums.ts", "EMPTY_ENUM")).toBeNull();
+  });
+
+  it("follows default imports and misses through re-export graphs", () => {
+    const graph = new Map<string, string>([
+      [
+        "/lib/values.ts",
+        `
+          export enum Status { On = "on", Off = "off" }
+          export const FLAGS = { debug: 1, verbose: 2 } as const;
+          export const COUNTS = [1, 2] as const;
+          export const MASK = { id: true, "full-name": true } as const;
+          export type User = { id: string };
+          export default Status;
+        `,
+      ],
+      [
+        "/app/defaults.ts",
+        `
+          import Status from "../lib/values";
+          import FLAGS from "../lib/values";
+          import COUNTS from "../lib/values";
+          import User from "../lib/values";
+          export const copied = Status;
+        `,
+      ],
+      [
+        "/app/star.ts",
+        `
+          export * from "../lib/values";
+          export * from "./missing";
+        `,
+      ],
+      [
+        "/app/named.ts",
+        `
+          export { Missing } from "../lib/values";
+        `,
+      ],
+    ]);
+    const access = {
+      existsSync: (filePath: string) => graph.has(filePath),
+      readFileSync: (filePath: string) => {
+        const content = graph.get(filePath);
+        if (!content) {
+          throw new Error(`Missing ${filePath}`);
+        }
+        return content;
+      },
+    };
+    const resolver = new SymbolResolver(access);
+
+    expect(resolver.resolveEnumValues("/app/defaults.ts", "Status")).toEqual(["on", "off"]);
+    expect(resolver.resolveConstObject("/app/defaults.ts", "FLAGS")).toMatchObject({
+      type: "ObjectExpression",
+    });
+    expect(resolver.resolveConstArrayValues("/app/defaults.ts", "COUNTS")).toEqual([1, 2]);
+    expect(resolver.resolveDeclaration("/app/defaults.ts", "User")?.filePath).toBe(
+      "/lib/values.ts",
+    );
+    expect(resolver.resolveMaskKeys("/lib/values.ts", "MASK")).toEqual(["id", "full-name"]);
+    expect(resolver.resolveEnumValues("/app/star.ts", "Nope")).toBeNull();
+    expect(resolver.resolveConstObject("/app/star.ts", "Nope")).toBeNull();
+    expect(resolver.resolveConstArrayNode("/app/star.ts", "Nope")).toBeNull();
+    expect(resolver.resolveDeclaration("/app/star.ts", "Nope")).toBeNull();
+    expect(resolver.resolveEnumValues("/app/named.ts", "Missing")).toBeNull();
+    expect(resolver.resolveConstObject("/app/named.ts", "Missing")).toBeNull();
+    expect(resolver.resolveConstArrayNode("/app/named.ts", "Missing")).toBeNull();
+    expect(resolver.resolveDeclaration("/app/named.ts", "Missing")).toBeNull();
   });
 });

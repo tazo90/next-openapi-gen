@@ -564,4 +564,116 @@ describe("DrizzleZodProcessor", () => {
       ),
     ).toMatchObject({ type: "object" });
   });
+
+  it("covers leftover drizzle method, static-value, and field-schema sides", () => {
+    const processor = DrizzleZodProcessor as unknown as {
+      applyZodMethod(
+        schema: { type?: string },
+        methodName: string,
+        args: Array<t.Expression | t.SpreadElement | t.ArgumentPlaceholder>,
+      ): { type?: string; [key: string]: unknown };
+      extractStaticValue(node: t.Node): unknown;
+      extractFieldSchema(
+        node: t.Node,
+        fieldKey: string,
+        parameterName: string | null,
+      ): { type?: string } | null;
+      extractPropertyKey(prop: t.ObjectProperty | t.ObjectMethod): string | null;
+    };
+
+    expect(processor.applyZodMethod({ type: "array" }, "min", [t.numericLiteral(2)])).toMatchObject(
+      {
+        minItems: 2,
+      },
+    );
+    expect(
+      processor.applyZodMethod({ type: "number" }, "max", [t.numericLiteral(8)]),
+    ).toMatchObject({
+      maximum: 8,
+    });
+    expect(
+      processor.applyZodMethod({ type: "integer" }, "max", [t.numericLiteral(8)]),
+    ).toMatchObject({
+      maximum: 8,
+    });
+    expect(processor.applyZodMethod({ type: "array" }, "max", [t.numericLiteral(8)])).toMatchObject(
+      {
+        maxItems: 8,
+      },
+    );
+    expect(
+      processor.applyZodMethod({ type: "array" }, "length", [t.numericLiteral(3)]),
+    ).toMatchObject({
+      minItems: 3,
+      maxItems: 3,
+    });
+    expect(processor.applyZodMethod({ type: "string" }, "min", [])).toEqual({ type: "string" });
+    expect(
+      processor.applyZodMethod({ type: "string" }, "regex", [t.identifier("PATTERN")]),
+    ).toEqual({
+      type: "string",
+    });
+    expect(processor.applyZodMethod({ type: "string" }, "positive", [])).toEqual({
+      type: "string",
+    });
+    expect(processor.applyZodMethod({ type: "integer" }, "nonnegative", [])).toMatchObject({
+      minimum: 0,
+    });
+    expect(processor.applyZodMethod({ type: "integer" }, "negative", [])).toMatchObject({
+      maximum: 0,
+    });
+    expect(processor.applyZodMethod({ type: "integer" }, "nonpositive", [])).toMatchObject({
+      maximum: 0,
+    });
+    expect(
+      processor.applyZodMethod({ type: "string" }, "describe", [t.identifier("DESC")]),
+    ).toEqual({
+      type: "string",
+    });
+    expect(
+      processor.applyZodMethod({ type: "string" }, "meta", [t.spreadElement(t.identifier("x"))]),
+    ).toEqual({
+      type: "string",
+    });
+    expect(processor.applyZodMethod({ type: "string" }, "default", [])).toEqual({ type: "string" });
+    expect(
+      processor.applyZodMethod({ type: "boolean" }, "default", [t.booleanLiteral(false)]),
+    ).toMatchObject({ default: false });
+
+    expect(processor.extractStaticValue(t.nullLiteral())).toBeNull();
+    expect(
+      processor.extractStaticValue(t.arrayExpression([t.stringLiteral("a"), t.numericLiteral(1)])),
+    ).toEqual(["a", 1]);
+    expect(
+      processor.extractStaticValue(t.arrayExpression([t.spreadElement(t.identifier("rest"))])),
+    ).toBeUndefined();
+    expect(
+      processor.extractStaticValue(
+        t.objectExpression([t.objectProperty(t.identifier("ok"), t.booleanLiteral(true))]),
+      ),
+    ).toEqual({ ok: true });
+    expect(processor.extractStaticValue(t.identifier("unknown"))).toBeUndefined();
+    expect(
+      processor.extractPropertyKey(
+        t.objectProperty(t.numericLiteral(1), t.stringLiteral("x"), true),
+      ),
+    ).toBeNull();
+    expect(processor.extractFieldSchema(t.identifier("other"), "title", "schema")).toBeNull();
+    expect(
+      processor.extractFieldSchema(
+        t.memberExpression(t.identifier("schema"), t.stringLiteral("title"), true),
+        "title",
+        "schema",
+      ),
+    ).toBeNull();
+    expect(
+      processor.extractFieldSchema(
+        t.callExpression(t.memberExpression(t.identifier("schema"), t.stringLiteral("min"), true), [
+          t.numericLiteral(1),
+        ]),
+        "title",
+        "schema",
+      ),
+    ).toMatchObject({ type: "string" });
+  });
 });
