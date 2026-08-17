@@ -4,7 +4,35 @@ import path from "node:path";
 
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { getWatchRoots, watchProject } from "@workspace/openapi-core/core/watch.js";
+
 type MockFn = (...args: unknown[]) => unknown;
+
+const watchMocks = vi.hoisted(() => ({
+  invalidateRuntimePaths: vi.fn<MockFn>(),
+  generateFromLoadedConfig: vi.fn<MockFn>(),
+  loadConfig: vi.fn<MockFn>(),
+  runtime: {},
+}));
+
+vi.mock("@workspace/openapi-core/core/config/load-config.js", () => ({
+  loadConfig: watchMocks.loadConfig,
+}));
+vi.mock("@workspace/openapi-core/core/generate.js", () => ({
+  generateFromLoadedConfig: watchMocks.generateFromLoadedConfig,
+}));
+vi.mock("@workspace/openapi-core/core/runtime.js", () => ({
+  createSharedGenerationRuntime: () => watchMocks.runtime,
+  invalidateRuntimePaths: watchMocks.invalidateRuntimePaths,
+}));
+
+function createDeferred() {
+  let resolve!: () => void;
+  const promise = new Promise<void>((resolvePromise) => {
+    resolve = resolvePromise;
+  });
+  return { promise, resolve };
+}
 
 describe("watchProject", () => {
   const tempDirs: string[] = [];
@@ -12,7 +40,9 @@ describe("watchProject", () => {
   afterEach(() => {
     tempDirs.splice(0).forEach((tempDir) => fs.rmSync(tempDir, { recursive: true, force: true }));
     vi.restoreAllMocks();
-    vi.resetModules();
+    watchMocks.invalidateRuntimePaths.mockReset();
+    watchMocks.generateFromLoadedConfig.mockReset();
+    watchMocks.loadConfig.mockReset();
     vi.useRealTimers();
   });
 
@@ -35,7 +65,7 @@ describe("watchProject", () => {
         }) as fs.FSWatcher) as typeof fs.watch,
     );
 
-    const loadConfig = vi.fn<MockFn>().mockResolvedValue({
+    watchMocks.loadConfig.mockResolvedValue({
       config: {
         apiDir,
         schemaDir,
@@ -46,23 +76,15 @@ describe("watchProject", () => {
       },
       configPath,
     });
-    const generateFromLoadedConfig = vi.fn<MockFn>().mockResolvedValue(undefined);
-
-    vi.doMock("@workspace/openapi-core/core/config/load-config.js", () => ({
-      loadConfig,
-    }));
-    vi.doMock("@workspace/openapi-core/core/generate.js", () => ({
-      generateFromLoadedConfig,
-    }));
-
-    const { watchProject } = await import("@workspace/openapi-core/core/watch.js");
+    const generateFromLoadedConfig =
+      watchMocks.generateFromLoadedConfig.mockResolvedValue(undefined);
 
     const stopWatching = await watchProject({
       cwd: tempDir,
       configPath,
     });
 
-    expect(loadConfig).toHaveBeenCalledOnce();
+    expect(watchMocks.loadConfig).toHaveBeenCalledOnce();
     expect(generateFromLoadedConfig).toHaveBeenCalledOnce();
     expect(watch).toHaveBeenCalled();
 
@@ -71,8 +93,7 @@ describe("watchProject", () => {
     expect(close).toHaveBeenCalled();
   });
 
-  it("collects watch roots from api, schema, schema files, and config path", async () => {
-    const { getWatchRoots } = await import("@workspace/openapi-core/core/watch.js");
+  it("collects watch roots from api, schema, schema files, and config path", () => {
     const roots = getWatchRoots({
       config: {
         apiDir: "./src/app/api",
@@ -116,21 +137,15 @@ describe("watchProject", () => {
         }) as fs.FSWatcher) as typeof fs.watch,
     );
 
-    vi.doMock("@workspace/openapi-core/core/config/load-config.js", () => ({
-      loadConfig: vi.fn<MockFn>().mockResolvedValue({
-        config: {
-          apiDir,
-          schemaDir: missingSchemaDir,
-          schemaFiles: [],
-        },
-        configPath,
-      }),
-    }));
-    vi.doMock("@workspace/openapi-core/core/generate.js", () => ({
-      generateFromLoadedConfig: vi.fn<MockFn>().mockResolvedValue(undefined),
-    }));
-
-    const { watchProject } = await import("@workspace/openapi-core/core/watch.js");
+    watchMocks.loadConfig.mockResolvedValue({
+      config: {
+        apiDir,
+        schemaDir: missingSchemaDir,
+        schemaFiles: [],
+      },
+      configPath,
+    });
+    watchMocks.generateFromLoadedConfig.mockResolvedValue(undefined);
     const stopWatching = await watchProject({ cwd: tempDir, configPath });
     const watchedPaths = watch.mock.calls.map((call) => call[0]);
 
@@ -157,7 +172,7 @@ describe("watchProject", () => {
       return { close: vi.fn<MockFn>() } as fs.FSWatcher;
     }) as typeof fs.watch);
 
-    const loadConfig = vi.fn<MockFn>().mockResolvedValue({
+    watchMocks.loadConfig.mockResolvedValue({
       config: {
         apiDir,
         schemaDir: path.join(tempDir, "src"),
@@ -166,16 +181,8 @@ describe("watchProject", () => {
       },
       configPath,
     });
-    const generateFromLoadedConfig = vi.fn<MockFn>().mockResolvedValue(undefined);
-
-    vi.doMock("@workspace/openapi-core/core/config/load-config.js", () => ({
-      loadConfig,
-    }));
-    vi.doMock("@workspace/openapi-core/core/generate.js", () => ({
-      generateFromLoadedConfig,
-    }));
-
-    const { watchProject } = await import("@workspace/openapi-core/core/watch.js");
+    const generateFromLoadedConfig =
+      watchMocks.generateFromLoadedConfig.mockResolvedValue(undefined);
     const stopWatching = await watchProject({ cwd: tempDir, configPath });
 
     expect(generateFromLoadedConfig).toHaveBeenCalledOnce();
@@ -210,8 +217,7 @@ describe("watchProject", () => {
       } as fs.FSWatcher;
     }) as typeof fs.watch);
 
-    const loadConfig = vi
-      .fn<MockFn>()
+    watchMocks.loadConfig
       .mockResolvedValueOnce({
         config: {
           apiDir,
@@ -230,22 +236,130 @@ describe("watchProject", () => {
         },
         configPath,
       });
-    const generateFromLoadedConfig = vi.fn<MockFn>().mockResolvedValue(undefined);
-
-    vi.doMock("@workspace/openapi-core/core/config/load-config.js", () => ({
-      loadConfig,
-    }));
-    vi.doMock("@workspace/openapi-core/core/generate.js", () => ({
-      generateFromLoadedConfig,
-    }));
-
-    const { watchProject } = await import("@workspace/openapi-core/core/watch.js");
+    watchMocks.generateFromLoadedConfig.mockResolvedValue(undefined);
     const stopWatching = await watchProject({ cwd: tempDir, configPath });
 
     listeners[0]?.("change", "route.ts");
     await vi.advanceTimersByTimeAsync(5);
 
     expect(extraClose).toHaveBeenCalled();
+    stopWatching();
+  });
+
+  it("rejects an initial generation failure and closes registered watchers", async () => {
+    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-watch-initial-failure-"));
+    tempDirs.push(tempDir);
+    const apiDir = path.join(tempDir, "src", "app", "api");
+    fs.mkdirSync(apiDir, { recursive: true });
+    const close = vi.fn<MockFn>();
+    vi.spyOn(fs, "watch").mockReturnValue({ close } as fs.FSWatcher);
+    watchMocks.loadConfig.mockResolvedValue({
+      config: { apiDir },
+      configPath: undefined,
+    });
+    watchMocks.generateFromLoadedConfig.mockRejectedValue(new Error("initial generation failed"));
+
+    await expect(watchProject({ cwd: tempDir })).rejects.toThrow("initial generation failed");
+
+    expect(close).toHaveBeenCalledOnce();
+  });
+
+  it("recovers from a failed regeneration and keeps watching", async () => {
+    vi.useFakeTimers();
+
+    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-watch-recovery-"));
+    tempDirs.push(tempDir);
+    const apiDir = path.join(tempDir, "src", "app", "api");
+    fs.mkdirSync(apiDir, { recursive: true });
+
+    const listeners: Array<(eventType: string, fileName: string | null) => void> = [];
+    vi.spyOn(fs, "watch").mockImplementation(((_path, _options, listener) => {
+      if (typeof listener === "function") {
+        listeners.push(listener as (eventType: string, fileName: string | null) => void);
+      }
+      return { close: vi.fn<MockFn>() } as fs.FSWatcher;
+    }) as typeof fs.watch);
+
+    watchMocks.loadConfig.mockResolvedValue({
+      config: { apiDir, watch: { debounceMs: 5 } },
+      configPath: undefined,
+    });
+    const generateFromLoadedConfig = watchMocks.generateFromLoadedConfig
+      .mockResolvedValueOnce(undefined)
+      .mockRejectedValueOnce(new Error("broken route"))
+      .mockResolvedValue(undefined);
+
+    const stopWatching = await watchProject({ cwd: tempDir });
+
+    listeners[0]?.("change", "route.ts");
+    await vi.advanceTimersByTimeAsync(5);
+    listeners[0]?.("change", "route.ts");
+    await vi.advanceTimersByTimeAsync(5);
+
+    expect(generateFromLoadedConfig).toHaveBeenCalledTimes(3);
+    stopWatching();
+  });
+
+  it("serializes overlapping regenerations and coalesces queued work", async () => {
+    vi.useFakeTimers();
+
+    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-watch-overlap-"));
+    tempDirs.push(tempDir);
+    const apiDir = path.join(tempDir, "src", "app", "api");
+    fs.mkdirSync(apiDir, { recursive: true });
+
+    const listeners: Array<(eventType: string, fileName: string | null) => void> = [];
+    vi.spyOn(fs, "watch").mockImplementation(((_path, _options, listener) => {
+      if (typeof listener === "function") {
+        listeners.push(listener as (eventType: string, fileName: string | null) => void);
+      }
+      return { close: vi.fn<MockFn>() } as fs.FSWatcher;
+    }) as typeof fs.watch);
+
+    watchMocks.loadConfig.mockResolvedValue({
+      config: { apiDir, watch: { debounceMs: 5 } },
+      configPath: undefined,
+    });
+    const inFlight = createDeferred();
+    let active = 0;
+    let maxActive = 0;
+    let invalidatedWhileActive = false;
+    watchMocks.invalidateRuntimePaths.mockImplementation(() => {
+      invalidatedWhileActive ||= active > 0;
+    });
+    const generateFromLoadedConfig = watchMocks.generateFromLoadedConfig.mockImplementation(
+      async () => {
+        active += 1;
+        maxActive = Math.max(maxActive, active);
+        if (generateFromLoadedConfig.mock.calls.length === 2) {
+          await inFlight.promise;
+        }
+        active -= 1;
+      },
+    );
+    const stopWatching = await watchProject({ cwd: tempDir });
+
+    listeners[0]?.("change", "first.ts");
+    await vi.advanceTimersByTimeAsync(5);
+    expect(generateFromLoadedConfig).toHaveBeenCalledTimes(2);
+
+    listeners[0]?.("change", "second.ts");
+    listeners[0]?.("change", "third.ts");
+    await vi.advanceTimersByTimeAsync(5);
+    expect(generateFromLoadedConfig).toHaveBeenCalledTimes(2);
+
+    inFlight.resolve();
+    await vi.waitFor(() => {
+      expect(generateFromLoadedConfig).toHaveBeenCalledTimes(3);
+    });
+    expect(maxActive).toBe(1);
+    expect(invalidatedWhileActive).toBe(false);
+    expect(watchMocks.invalidateRuntimePaths).toHaveBeenLastCalledWith(
+      watchMocks.runtime,
+      expect.objectContaining({
+        files: [path.join(apiDir, "second.ts"), path.join(apiDir, "third.ts")],
+      }),
+    );
     stopWatching();
   });
 });

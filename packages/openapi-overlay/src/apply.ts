@@ -21,9 +21,12 @@ function applyAction(document: unknown, action: ActionObject): void {
 
   if (typeof action.copy === "string") {
     const sources = queryJsonPath(document, action.copy);
-    const source = sources[0]?.value;
+    const sourceMatch = sources[0];
+    if (!sourceMatch || sourceMatch.value === undefined) {
+      throw new Error(`Overlay copy source "${action.copy}" resolved no value.`);
+    }
     for (const match of matches) {
-      replaceMatch(match, structuredClone(source));
+      replaceMatch(match, structuredClone(sourceMatch.value));
     }
   }
 

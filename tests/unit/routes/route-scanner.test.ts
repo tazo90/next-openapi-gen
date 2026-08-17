@@ -6,6 +6,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { FrameworkSource } from "@workspace/openapi-core/frameworks/types.js";
 import { scanRouteFiles } from "@workspace/openapi-core/routes/route-scanner.js";
+import { IGNORED_SOURCE_DIRECTORIES } from "@workspace/openapi-core/shared/ignored-directories.js";
 
 function createTempDir() {
   return fs.mkdtempSync(path.join(os.tmpdir(), "nxog-route-scanner-"));
@@ -80,5 +81,40 @@ describe("scanRouteFiles", () => {
 
     expect(readdirSpy).toHaveBeenCalledTimes(2);
     expect(statSpy).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not descend into ignored source directories", () => {
+    const root = createTempDir();
+    roots.push(root);
+
+    for (const ignoredDir of IGNORED_SOURCE_DIRECTORIES) {
+      const directory = path.join(root, ignoredDir);
+      fs.mkdirSync(directory, { recursive: true });
+      fs.writeFileSync(path.join(directory, "route.ts"), "");
+    }
+    fs.writeFileSync(path.join(root, "route.ts"), "");
+
+    const visited: string[] = [];
+    const ignored: string[] = [];
+    scanRouteFiles(
+      root,
+      {
+        shouldProcessFile: (fileName: string) => fileName === "route.ts",
+      } as FrameworkSource,
+      {
+        directoryCache: {},
+        statCache: {},
+        processFileTracker: {},
+      },
+      (filePath) => {
+        visited.push(path.relative(root, filePath));
+      },
+      (directoryPath) => {
+        ignored.push(path.basename(directoryPath));
+      },
+    );
+
+    expect(visited).toEqual(["route.ts"]);
+    expect(ignored.toSorted()).toEqual([...IGNORED_SOURCE_DIRECTORIES].toSorted());
   });
 });

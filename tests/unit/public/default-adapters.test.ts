@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { createDefaultGenerationAdapters as createCliDefaultGenerationAdapters } from "@workspace/openapi-cli/default-adapters.js";
 import { FrameworkKind } from "@workspace/openapi-core/shared/types.js";
 import { emitNextDocsArtifact } from "@workspace/openapi-framework-next";
 
@@ -25,6 +26,10 @@ const baseConfig = {
 } as const;
 
 describe("next-openapi-gen default adapters", () => {
+  it("uses the CLI package's concrete default adapter implementation", () => {
+    expect(createDefaultGenerationAdapters).toBe(createCliDefaultGenerationAdapters);
+  });
+
   it("routes each framework kind to the matching source factory", () => {
     const adapters = createDefaultGenerationAdapters();
 

@@ -170,4 +170,25 @@ describe("overlay apply", () => {
     expect(document.tags).toEqual([{ name: "public" }]);
     expect(document.info).toEqual({ version: "1.0.0" });
   });
+
+  it("throws a clear error when a copy source resolves no value", () => {
+    expect(() =>
+      applyOverlay(
+        {
+          info: { title: "Internal" },
+          target: { title: "Target" },
+        },
+        {
+          overlay: "1.1.0",
+          info: { title: "Invalid overlay", version: "1.0.0" },
+          actions: [
+            {
+              target: "$.target",
+              copy: "$.missing",
+            },
+          ],
+        },
+      ),
+    ).toThrow('Overlay copy source "$.missing" resolved no value.');
+  });
 });

@@ -1,16 +1,10 @@
 import fs from "fs";
 import path from "path";
 
+import { IGNORED_SOURCE_DIRECTORIES } from "../../shared/ignored-directories.js";
 import { logger } from "../../shared/logger.js";
 
-export const IGNORED_DIRS: ReadonlySet<string> = new Set([
-  "node_modules",
-  ".git",
-  "dist",
-  ".next",
-  ".turbo",
-  ".cache",
-]);
+export const IGNORED_DIRS: ReadonlySet<string> = IGNORED_SOURCE_DIRECTORIES;
 
 export function collectZodRouteFiles(apiDir?: string): string[] {
   const routeFiles: string[] = [];

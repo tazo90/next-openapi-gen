@@ -23,6 +23,23 @@ describe.sequential("OpenApiGenerator integration flow", () => {
     },
   );
 
+  it("generates the explicitly experimental OpenAPI 3.3-preview golden path", () => {
+    const { project, spec } = generateFixtureSpec({
+      fixturePath: appRouterCoreFixture,
+      openapiVersion: "3.3-preview",
+    });
+
+    try {
+      expect(spec.openapi).toBe("3.3-preview");
+      expect(spec.info.title).toBe("App Router Core Flow (Experimental 3.3 Preview)");
+      expect(spec.$self).toBe("https://example.com/fixtures/core-flow/openapi-preview.json");
+      expect(spec.servers?.[0]).toHaveProperty("name", "preview-production");
+      expect(spec.paths?.["/users/{id}"]?.get).toBeDefined();
+    } finally {
+      project.cleanup();
+    }
+  });
+
   it("scans app router fixtures, applies response config, and exposes diagnostics", () => {
     const { diagnostics, project, spec } = generateFixtureSpec({
       fixturePath: appRouterCoreFixture,

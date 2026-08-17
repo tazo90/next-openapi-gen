@@ -21,7 +21,7 @@ export type TempProject = {
   cleanup(): void;
 };
 
-type FixtureOpenApiVersion = "3.0" | "3.1" | "3.2";
+type FixtureOpenApiVersion = "3.0" | "3.1" | "3.2" | "3.3-preview";
 
 type GenerateFixtureSpecOptions = {
   fixturePath: string;

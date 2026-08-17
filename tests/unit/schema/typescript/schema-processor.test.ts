@@ -5,12 +5,17 @@ import path from "node:path";
 import * as t from "@babel/types";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import {
+  createSharedGenerationRuntime,
+  invalidateRuntimeFile,
+} from "@workspace/openapi-core/core/runtime.js";
 import { DiagnosticsCollector } from "@workspace/openapi-core/diagnostics/collector.js";
 import {
   extractFunctionParameters,
   extractFunctionReturnType,
 } from "@workspace/openapi-core/schema/typescript/function-nodes.js";
 import { SchemaProcessor } from "@workspace/openapi-core/schema/typescript/schema-processor.js";
+import { IGNORED_SOURCE_DIRECTORIES } from "@workspace/openapi-core/shared/ignored-directories.js";
 import { parseTypeScriptFile } from "@workspace/openapi-core/shared/parse-typescript.js";
 
 describe("SchemaProcessor", () => {
@@ -203,6 +208,35 @@ describe("SchemaProcessor", () => {
     expect(lookupSpy).toHaveBeenCalledWith("CreateUserResponse", "response");
   });
 
+  it("reuses TypeScript schema content across processors and invalidates it by file", () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-schema-runtime-"));
+    roots.push(root);
+    const schemaFile = path.join(root, "user.ts");
+    fs.writeFileSync(schemaFile, "export type User = { id: string };\n");
+    const runtime = createSharedGenerationRuntime();
+    const first = new SchemaProcessor(root, "typescript", undefined, undefined, undefined, runtime);
+
+    const firstContent = first.getSchemaContent({ responseType: "User" });
+    expect(firstContent.responses).toBeDefined();
+    expect(runtime.schema.typescript.schemaContentCache.size).toBe(1);
+
+    const second = new SchemaProcessor(
+      root,
+      "typescript",
+      undefined,
+      undefined,
+      undefined,
+      runtime,
+    );
+    const findSchemaDefinition = vi.spyOn(second, "findSchemaDefinition");
+    expect(second.getSchemaContent({ responseType: "User" })).toBe(firstContent);
+    expect(findSchemaDefinition).not.toHaveBeenCalled();
+
+    invalidateRuntimeFile(runtime, schemaFile);
+    expect(runtime.schema.typescript.schemaContentCache.size).toBe(0);
+    expect(runtime.schema.typescript.openapiDefinitions).toEqual({});
+  });
+
   it("rechecks unresolved schemas when zod support is enabled", () => {
     const processor = new SchemaProcessor(process.cwd(), ["typescript", "zod"]);
     const lookupSpy = vi
@@ -273,6 +307,41 @@ describe("SchemaProcessor", () => {
       },
       required: ["id", "success"],
     });
+  });
+
+  it("does not scan TypeScript schemas in ignored source directories", () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-schema-processor-ignore-"));
+    roots.push(root);
+    fs.writeFileSync(path.join(root, "visible.ts"), "export type Visible = { id: string };\n");
+
+    for (const [index, ignoredDir] of [...IGNORED_SOURCE_DIRECTORIES].entries()) {
+      const directory = path.join(root, ignoredDir);
+      fs.mkdirSync(directory, { recursive: true });
+      fs.writeFileSync(
+        path.join(directory, "hidden.ts"),
+        `export type Hidden${index} = { secret: string };\n`,
+      );
+    }
+
+    const diagnostics = new DiagnosticsCollector();
+    const processor = new SchemaProcessor(
+      root,
+      "typescript",
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      diagnostics,
+    );
+    expect(processor.findSchemaDefinition("Visible", "response")).toMatchObject({
+      type: "object",
+    });
+
+    const scannedFiles = (processor as any).schemaFiles as string[];
+    expect(scannedFiles.map((filePath) => path.relative(root, filePath))).toEqual(["visible.ts"]);
+    expect(
+      diagnostics.getAll().filter((diagnostic) => diagnostic.code === "schema-directory-ignored"),
+    ).toHaveLength(IGNORED_SOURCE_DIRECTORIES.size);
   });
 
   it("preserves primitive aliases, required properties, and generic array substitution", () => {

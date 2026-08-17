@@ -156,6 +156,7 @@ const config = {
         "@babel/traverse",
         "@babel/types",
         "commander",
+        "cross-spawn",
         "fs-extra",
         "js-yaml",
         "ora",

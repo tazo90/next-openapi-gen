@@ -46,6 +46,8 @@ catalog:
   typescript: 7.0.2
   vitest: ^4.1.10
   zod: ^4.4.3
+  cross-spawn: ^7.0.6
+  "@types/cross-spawn": ^6.0.6
 
 catalogMode: strict
 
@@ -109,6 +111,9 @@ allowBuilds:
   vue-demi: true
 
 overrides:
+  brace-expansion: 5.0.9
   esbuild: ">=0.28.2"
+  fast-uri: 3.1.5
+  js-yaml@>=4.0.0 <5: 4.3.1
   postcss: ">=8.5.26"
   tmp: ">=0.2.7"

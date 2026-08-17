@@ -8,6 +8,7 @@ import type { GenerationPerformanceProfile } from "../../core/performance.js";
 import type { SharedGenerationRuntime } from "../../core/runtime.js";
 import type { DiagnosticsCollector } from "../../diagnostics/collector.js";
 import { traverse } from "../../shared/babel-traverse.js";
+import { IGNORED_SOURCE_DIRECTORIES } from "../../shared/ignored-directories.js";
 import { logger } from "../../shared/logger.js";
 import { parseTypeScriptFile } from "../../shared/parse-typescript.js";
 import { SymbolResolver } from "../../shared/symbol-resolver.js";
@@ -87,6 +88,7 @@ export class SchemaProcessor {
   private inlineTypeCache: Map<string, OpenAPIDefinition> = new Map();
   private schemaContentCache: Map<string, ReturnType<typeof getSchemaContent>> = new Map();
   private resolvedSchemaCache: Set<string> = new Set();
+  private ignoredSchemaDirectories: Set<string> = new Set();
 
   private zodSchemaConverter: ZodSchemaConverter | null = null;
   private zodSchemaProcessor: ZodSchemaProcessor | null = null;
@@ -128,6 +130,16 @@ export class SchemaProcessor {
       this.fileASTCache = runtime.schema.fileASTCache;
       this.schemaFiles = runtime.schema.schemaFiles;
       this.schemaDefinitionIndex = runtime.schema.schemaDefinitionIndex;
+      this.typeDefinitions = runtime.schema.typescript.typeDefinitions;
+      this.openapiDefinitions = runtime.schema.typescript.openapiDefinitions;
+      this.inlineTypeCache = runtime.schema.typescript.inlineTypeCache;
+      this.schemaContentCache = runtime.schema.typescript.schemaContentCache;
+      this.resolvedSchemaCache = runtime.schema.typescript.resolvedSchemaCache;
+      this.schemaIdAliases = runtime.schema.typescript.schemaIdAliases;
+      this.internalSchemaNames = runtime.schema.typescript.internalSchemaNames;
+      this.importMap = runtime.schema.typescript.importMap;
+      this.typeToFileIndex = runtime.schema.typescript.typeToFileIndex;
+      this.indexedReExportFiles = runtime.schema.typescript.indexedReExportFiles;
     }
     this.customSchemaProcessor = new CustomSchemaProcessor(
       schemaFiles && schemaFiles.length > 0 ? processCustomSchemaFiles(schemaFiles) : {},
@@ -194,6 +206,26 @@ export class SchemaProcessor {
       }
     }
     return result;
+  }
+
+  public getSchemaDependencyFiles(
+    definitions: Record<string, unknown>,
+    additionalSchemaNames: Iterable<string> = [],
+  ): string[] {
+    this.ensureSchemaIndex();
+    const schemaNames = new Set([...Object.keys(definitions), ...additionalSchemaNames]);
+    collectSchemaReferenceNames(definitions, schemaNames);
+    const files = new Set<string>();
+    for (const schemaName of schemaNames) {
+      for (const filePath of this.schemaDefinitionIndex[schemaName] ?? []) {
+        files.add(path.resolve(filePath));
+      }
+      for (const filePath of this.sharedRuntime?.schema.zod.schemaNameToFiles.get(schemaName) ??
+        []) {
+        files.add(path.resolve(filePath));
+      }
+    }
+    return [...files].toSorted((a, b) => a.localeCompare(b, "en", { sensitivity: "base" }));
   }
 
   public preprocessZodSchemas(): void {
@@ -298,6 +330,15 @@ export class SchemaProcessor {
         continue;
       }
 
+      const rootStat = this.fileAccess.statSync(dir);
+      if (rootStat.isFile()) {
+        if (dir.endsWith(".ts") || dir.endsWith(".tsx")) {
+          this.schemaFiles.push(dir);
+          this.indexSchemaFile(dir);
+        }
+        continue;
+      }
+
       const definitionCountBefore = Object.keys(this.schemaDefinitionIndex).length;
       this.scanSchemaDir(dir);
       const definitionCountAfter = Object.keys(this.schemaDefinitionIndex).length;
@@ -328,7 +369,19 @@ export class SchemaProcessor {
       }
 
       if (stat.isDirectory()) {
-        this.scanSchemaDir(filePath);
+        if (IGNORED_SOURCE_DIRECTORIES.has(file)) {
+          if (!this.ignoredSchemaDirectories.has(filePath)) {
+            this.ignoredSchemaDirectories.add(filePath);
+            this.diagnostics?.add({
+              code: "schema-directory-ignored",
+              severity: "warning",
+              message: `Skipped automatically ignored schema directory: ${filePath}`,
+              filePath,
+            });
+          }
+        } else {
+          this.scanSchemaDir(filePath);
+        }
       } else if (file.endsWith(".ts") || file.endsWith(".tsx")) {
         this.schemaFiles!.push(filePath);
         this.indexSchemaFile(filePath);
@@ -1403,5 +1456,26 @@ export class SchemaProcessor {
     typeParameterMap: Record<string, any>,
   ): OpenAPIDefinition {
     return resolveTypeWithSubstitutionValue(this as never, node, typeParameterMap);
+  }
+}
+
+function collectSchemaReferenceNames(value: unknown, names: Set<string>): void {
+  if (Array.isArray(value)) {
+    value.forEach((item) => collectSchemaReferenceNames(item, names));
+    return;
+  }
+  if (!value || typeof value !== "object") {
+    return;
+  }
+
+  for (const [key, item] of Object.entries(value)) {
+    if (key === "$ref" && typeof item === "string") {
+      const match = item.match(/^#\/components\/schemas\/(.+)$/);
+      if (match?.[1]) {
+        names.add(match[1]);
+      }
+      continue;
+    }
+    collectSchemaReferenceNames(item, names);
   }
 }

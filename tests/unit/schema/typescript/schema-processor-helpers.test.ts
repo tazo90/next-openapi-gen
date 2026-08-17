@@ -54,6 +54,7 @@ describe("SchemaProcessor helper seams", () => {
       statSync: () =>
         ({
           isDirectory: () => false,
+          isFile: () => false,
         }) as fs.Stats,
       readFileSync: () => "export interface VirtualUser { id: string; }",
     });
@@ -484,6 +485,7 @@ describe("SchemaProcessor helper seams", () => {
       statSync: () =>
         ({
           isDirectory: () => false,
+          isFile: () => false,
         }) as fs.Stats,
       readFileSync: () => {
         throw "broken schema";

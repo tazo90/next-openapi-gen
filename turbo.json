@@ -29,7 +29,7 @@
       "outputs": []
     },
     "//#test:integration": {
-      "dependsOn": ["transit"],
+      "dependsOn": ["transit", "next-openapi-gen#build"],
       "outputs": []
     },
     "//#transit": {

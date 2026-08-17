@@ -12,7 +12,7 @@ import { extractInternalFlagFromComments } from "../../shared/jsdoc.js";
 import { logger } from "../../shared/logger.js";
 import { parseTypeScriptFile } from "../../shared/parse-typescript.js";
 import { SymbolResolver } from "../../shared/symbol-resolver.js";
-import type { ContentType, OpenApiSchema } from "../../shared/types.js";
+import type { ContentType, Diagnostic, OpenApiSchema } from "../../shared/types.js";
 import {
   expandFactoryCall,
   extractReturnNode,
@@ -1050,6 +1050,12 @@ export class ZodSchemaConverter {
       resolveLiteralValue: (name: string) => this.resolveLiteralValue(name),
       resolveConstArrayValues: (name: string) => this.resolveConstArrayValues(name),
       resolveObjectSchemaNode: (name: string) => this.resolveObjectSchemaNode(name),
+      addDiagnostic: (diagnostic: Diagnostic) => {
+        this.diagnostics?.add({
+          ...diagnostic,
+          ...(this.currentFilePath ? { filePath: this.currentFilePath } : {}),
+        });
+      },
       zodLocalName: this.currentFilePath
         ? (this.zodImportAlias.get(this.currentFilePath) ?? "z")
         : "z",

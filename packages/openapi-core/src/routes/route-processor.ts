@@ -3,7 +3,11 @@ import fs from "fs";
 import { normalizeOpenApiConfig } from "../config/normalize.js";
 import type { FrameworkSourceFactory } from "../core/adapters.js";
 import { measurePerformance, type GenerationPerformanceProfile } from "../core/performance.js";
-import type { CachedRouteFragment, SharedGenerationRuntime } from "../core/runtime.js";
+import {
+  invalidateRuntimeFile,
+  type CachedRouteFragment,
+  type SharedGenerationRuntime,
+} from "../core/runtime.js";
 import type { DiagnosticsCollector } from "../diagnostics/collector.js";
 import type { FrameworkSource } from "../frameworks/types.js";
 import { setPathItemOperation } from "../openapi/path-item.js";
@@ -49,6 +53,7 @@ export class RouteProcessor {
   private directoryCache: Record<string, string[]> = {};
   private statCache: Record<string, fs.Stats> = {};
   private processFileTracker: Record<string, boolean> = {};
+  private ignoredRouteDirectories = new Set<string>();
 
   constructor(
     config: OpenApiConfig | ResolvedOpenApiConfig,
@@ -222,11 +227,27 @@ export class RouteProcessor {
 
   public scanApiRoutes(dir: string): RouteScanPerformanceProfile {
     logger.debug(`Scanning API routes in: ${dir}`);
-    const { filePaths, scanRouteFilesMs } = collectRouteFiles(dir, this.source, {
-      directoryCache: this.directoryCache,
-      statCache: this.statCache,
-      processFileTracker: this.processFileTracker,
-    });
+    const { filePaths, scanRouteFilesMs } = collectRouteFiles(
+      dir,
+      this.source,
+      {
+        directoryCache: this.directoryCache,
+        statCache: this.statCache,
+        processFileTracker: this.processFileTracker,
+      },
+      (directoryPath) => {
+        if (this.ignoredRouteDirectories.has(directoryPath)) {
+          return;
+        }
+        this.ignoredRouteDirectories.add(directoryPath);
+        this.diagnostics?.add({
+          code: "route-directory-ignored",
+          severity: "warning",
+          message: `Skipped automatically ignored route directory: ${directoryPath}`,
+          filePath: directoryPath,
+        });
+      },
+    );
     let processRouteFilesMs = 0;
     let buildOperationsMs = 0;
 
@@ -265,26 +286,20 @@ export class RouteProcessor {
       processRouteFilesMs += performance.now() - phaseStartedAt;
 
       phaseStartedAt = performance.now();
-      const pathsBefore = structuredClone(this.pathDefinitions);
-      const webhooksBefore = structuredClone(this.webhookDefinitions);
-      const tagsBefore = structuredClone(this.tagDefinitions);
       const schemasBefore = this.schemaProcessor.getDefinedSchemas();
       const internalSchemasBefore = this.schemaProcessor.getInternalSchemas();
       const diagnosticsBefore = this.diagnostics?.getAll().length ?? 0;
-      discoveredRoutes.forEach(({ method, filePath: routeFilePath, routePath, dataTypes }) => {
-        measurePerformance(this.performanceProfile, "registerRouteMs", () => {
-          this.registerRoute(method, routeFilePath, routePath, dataTypes);
-        });
-      });
-      buildOperationsMs += performance.now() - phaseStartedAt;
-      this.writeRouteFragment(filePath, routePath, {
-        diagnosticsBefore,
-        internalSchemasBefore,
-        pathsBefore,
+      const fragment = this.buildRouteFragmentTransaction(
+        filePath,
+        routePath,
+        discoveredRoutes,
         schemasBefore,
-        tagsBefore,
-        webhooksBefore,
-      });
+        internalSchemasBefore,
+        diagnosticsBefore,
+      );
+      this.applyRouteFragment(fragment, false);
+      buildOperationsMs += performance.now() - phaseStartedAt;
+      this.runtime?.routeScan.routeFragments.set(filePath, fragment);
     });
 
     return {
@@ -378,47 +393,76 @@ export class RouteProcessor {
     return fragment;
   }
 
-  private applyRouteFragment(fragment: CachedRouteFragment): void {
-    Object.assign(this.pathDefinitions, structuredClone(fragment.paths));
-    Object.assign(this.webhookDefinitions, structuredClone(fragment.webhooks));
-    Object.assign(this.tagDefinitions, structuredClone(fragment.tags));
+  private applyRouteFragment(fragment: CachedRouteFragment, addDiagnostics = true): void {
+    mergePathDefinitionRecords(this.pathDefinitions, fragment.paths);
+    mergePathDefinitionRecords(this.webhookDefinitions, fragment.webhooks);
+    mergeTagDefinitionRecords(this.tagDefinitions, fragment.tags);
     Object.assign(this.cachedSchemaDefinitions, structuredClone(fragment.schemas));
     Object.assign(this.cachedInternalSchemaDefinitions, structuredClone(fragment.internalSchemas));
-    fragment.diagnostics.forEach((diagnostic) => this.diagnostics?.add(diagnostic));
+    if (addDiagnostics) {
+      fragment.diagnostics.forEach((diagnostic) => this.diagnostics?.add(diagnostic));
+    }
   }
 
-  private writeRouteFragment(
+  private buildRouteFragmentTransaction(
     filePath: string,
     routePath: string,
-    previous: {
-      diagnosticsBefore: number;
-      internalSchemasBefore: Record<string, any>;
-      pathsBefore: Record<string, OpenApiPathItem>;
-      schemasBefore: Record<string, any>;
-      tagsBefore: Record<string, OpenApiTag>;
-      webhooksBefore: Record<string, OpenApiPathItem>;
-    },
-  ): void {
-    if (!this.runtime) {
-      return;
+    discoveredRoutes: ReturnType<FrameworkSource["processFile"]>,
+    schemasBefore: Record<string, any>,
+    internalSchemasBefore: Record<string, any>,
+    diagnosticsBefore: number,
+  ): CachedRouteFragment {
+    const accumulatedPaths = this.pathDefinitions;
+    const accumulatedWebhooks = this.webhookDefinitions;
+    const accumulatedTags = this.tagDefinitions;
+    this.pathDefinitions = {};
+    this.webhookDefinitions = {};
+    this.tagDefinitions = {};
+
+    try {
+      discoveredRoutes.forEach(({ method, filePath: routeFilePath, routePath, dataTypes }) => {
+        measurePerformance(this.performanceProfile, "registerRouteMs", () => {
+          this.registerRoute(method, routeFilePath, routePath, dataTypes);
+        });
+      });
+
+      const stat = fs.statSync(filePath);
+      const internalSchemas = getSchemaDelta(
+        internalSchemasBefore,
+        this.schemaProcessor.getInternalSchemas(),
+      );
+      const schemas = getSchemaDelta(schemasBefore, this.schemaProcessor.getDefinedSchemas());
+      const schemaDependencies = this.schemaProcessor.getSchemaDependencyFiles(
+        {
+          ...schemas,
+          ...internalSchemas,
+          paths: this.pathDefinitions,
+          webhooks: this.webhookDefinitions,
+        },
+        collectRouteSchemaNames(discoveredRoutes),
+      );
+      return {
+        cacheKey: this.getRouteFragmentCacheKey(routePath),
+        diagnostics: structuredClone(this.diagnostics?.getAll().slice(diagnosticsBefore) ?? []),
+        internalSchemas,
+        mtimeMs: stat.mtimeMs,
+        paths: this.pathDefinitions,
+        schemaDependencies,
+        schemas,
+        size: stat.size,
+        tags: this.tagDefinitions,
+        webhooks: this.webhookDefinitions,
+      };
+    } catch (error) {
+      if (this.runtime) {
+        invalidateRuntimeFile(this.runtime, filePath);
+      }
+      throw error;
+    } finally {
+      this.pathDefinitions = accumulatedPaths;
+      this.webhookDefinitions = accumulatedWebhooks;
+      this.tagDefinitions = accumulatedTags;
     }
-
-    const stat = fs.statSync(filePath);
-    const currentSchemas = this.schemaProcessor.getDefinedSchemas();
-    const currentInternalSchemas = this.schemaProcessor.getInternalSchemas();
-    const diagnostics = this.diagnostics?.getAll().slice(previous.diagnosticsBefore) ?? [];
-
-    this.runtime.routeScan.routeFragments.set(filePath, {
-      cacheKey: this.getRouteFragmentCacheKey(routePath),
-      diagnostics: structuredClone(diagnostics),
-      internalSchemas: getSchemaDelta(previous.internalSchemasBefore, currentInternalSchemas),
-      mtimeMs: stat.mtimeMs,
-      paths: getRecordDelta(previous.pathsBefore, this.pathDefinitions),
-      schemas: getSchemaDelta(previous.schemasBefore, currentSchemas),
-      size: stat.size,
-      tags: getRecordDelta(previous.tagsBefore, this.tagDefinitions),
-      webhooks: getRecordDelta(previous.webhooksBefore, this.webhookDefinitions),
-    });
   }
 
   private getRouteFragmentCacheKey(routePath: string): string {
@@ -522,21 +566,71 @@ export class RouteProcessor {
   }
 }
 
-function getSchemaDelta(
-  before: Record<string, any>,
-  after: Record<string, any>,
-): Record<string, any> {
-  return getRecordDelta(before, after);
-}
-
-function getRecordDelta<T>(before: Record<string, T>, after: Record<string, T>): Record<string, T> {
-  const delta: Record<string, any> = {};
+function getSchemaDelta<T>(before: Record<string, T>, after: Record<string, T>): Record<string, T> {
+  const delta: Record<string, T> = {};
   for (const [key, value] of Object.entries(after)) {
     if (JSON.stringify(before[key]) !== JSON.stringify(value)) {
       delta[key] = value;
     }
   }
-  return delta as Record<string, T>;
+  return delta;
+}
+
+function mergePathDefinitionRecords(
+  target: Record<string, OpenApiPathItem>,
+  source: Record<string, OpenApiPathItem>,
+): void {
+  for (const [routePath, pathItem] of Object.entries(source)) {
+    target[routePath] = {
+      ...target[routePath],
+      ...structuredClone(pathItem),
+    };
+  }
+}
+
+function mergeTagDefinitionRecords(
+  target: Record<string, OpenApiTag>,
+  source: Record<string, OpenApiTag>,
+): void {
+  for (const [tagName, tag] of Object.entries(source)) {
+    target[tagName] = {
+      ...(target[tagName] ?? { name: tagName }),
+      ...structuredClone(tag),
+    };
+  }
+}
+
+function collectRouteSchemaNames(
+  discoveredRoutes: ReturnType<FrameworkSource["processFile"]>,
+): Set<string> {
+  const names = new Set<string>();
+  for (const { dataTypes } of discoveredRoutes) {
+    const declaredTypes = [
+      dataTypes.pathParamsType,
+      dataTypes.paramsType,
+      dataTypes.querystringType,
+      dataTypes.bodyType,
+      dataTypes.headerType,
+      dataTypes.cookieType,
+      dataTypes.responseType,
+      dataTypes.responseItemType,
+      dataTypes.requestItemType,
+      dataTypes.inferredPathParamsType,
+      dataTypes.inferredQueryParamsType,
+      dataTypes.inferredBodyType,
+      ...(dataTypes.inferredResponses?.flatMap((response) => [
+        response.typeName,
+        response.itemTypeName,
+      ]) ?? []),
+    ];
+    for (const typeName of declaredTypes) {
+      const resolvedName = resolveAnnotationTypeName(typeName);
+      if (resolvedName) {
+        names.add(resolvedName);
+      }
+    }
+  }
+  return names;
 }
 
 function missingFrameworkSourceFactory(): never {

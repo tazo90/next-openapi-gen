@@ -49,5 +49,6 @@ export async function init(options: InitOptions): Promise<void> {
     );
   } catch (error) {
     spinner.fail(`Failed to initialize project: ${getErrorMessage(error)}`);
+    throw error;
   }
 }

@@ -1,15 +1,12 @@
 import fs from "node:fs";
 import path from "node:path";
 
+import { logger } from "../shared/logger.js";
 import type { GenerationAdapters } from "./adapters.js";
 import { loadConfig } from "./config/load-config.js";
 import { DEFAULT_WATCH_DEBOUNCE_MS } from "./defaults.js";
 import { generateFromLoadedConfig } from "./generate.js";
-import {
-  createSharedGenerationRuntime,
-  invalidateRuntimeDirectory,
-  invalidateRuntimeFile,
-} from "./runtime.js";
+import { createSharedGenerationRuntime, invalidateRuntimePaths } from "./runtime.js";
 
 export type WatchProjectOptions = {
   adapters?: GenerationAdapters | undefined;
@@ -25,16 +22,27 @@ export async function watchProject(options: WatchProjectOptions = {}): Promise<(
   const runtime = createSharedGenerationRuntime();
   const watchers = new Map<string, fs.FSWatcher>();
   const debounceMs = loadedConfig.config.watch?.debounceMs ?? DEFAULT_WATCH_DEBOUNCE_MS;
-
-  await generateFromLoadedConfig(loadedConfig, runtime, options.adapters);
-  registerWatchers(loadedConfig);
-
   let timeout: NodeJS.Timeout | undefined;
+  let regenerationRunning = false;
+  let regenerationQueued = false;
+  let stopped = false;
+  const pendingChangedFiles = new Set<string>();
+
+  registerWatchers(loadedConfig);
+  try {
+    await regenerate({ catchErrors: false, reloadConfig: false });
+  } catch (error) {
+    stopWatching();
+    throw error;
+  }
 
   function schedule(filePath?: string) {
+    if (stopped) {
+      return;
+    }
+
     if (filePath) {
-      invalidateRuntimeFile(runtime, filePath);
-      invalidateRuntimeDirectory(runtime, path.dirname(filePath));
+      pendingChangedFiles.add(filePath);
     }
 
     if (timeout) {
@@ -42,15 +50,67 @@ export async function watchProject(options: WatchProjectOptions = {}): Promise<(
     }
 
     timeout = setTimeout(() => {
-      void (async () => {
-        loadedConfig = await loadConfig({
-          cwd: options.cwd,
-          configPath: options.configPath,
-        });
-        registerWatchers(loadedConfig);
-        await generateFromLoadedConfig(loadedConfig, runtime, options.adapters);
-      })();
+      timeout = undefined;
+      void regenerate({ catchErrors: true, reloadConfig: true });
     }, debounceMs);
+  }
+
+  async function regenerate(regenerationOptions: {
+    catchErrors: boolean;
+    reloadConfig: boolean;
+  }): Promise<void> {
+    if (regenerationRunning) {
+      regenerationQueued = true;
+      return;
+    }
+
+    regenerationRunning = true;
+    let shouldReloadConfig = regenerationOptions.reloadConfig;
+    try {
+      do {
+        regenerationQueued = false;
+        const changedFiles = [...pendingChangedFiles];
+        pendingChangedFiles.clear();
+        const catchErrors = regenerationOptions.catchErrors || shouldReloadConfig;
+        let invalidationsApplied = false;
+        try {
+          if (shouldReloadConfig) {
+            const nextConfig = await loadConfig({
+              cwd: options.cwd,
+              configPath: options.configPath,
+            });
+            if (stopped) {
+              return;
+            }
+            loadedConfig = nextConfig;
+            registerWatchers(loadedConfig);
+          }
+          if (changedFiles.length > 0) {
+            invalidateRuntimePaths(runtime, {
+              files: changedFiles,
+              directories: changedFiles.map((changedFile) => path.dirname(changedFile)),
+            });
+          }
+          invalidationsApplied = true;
+          await generateFromLoadedConfig(loadedConfig, runtime, options.adapters);
+        } catch (error) {
+          if (!invalidationsApplied) {
+            changedFiles.forEach((filePath) => pendingChangedFiles.add(filePath));
+          }
+          if (!catchErrors) {
+            throw error;
+          }
+          logger.error(
+            `OpenAPI regeneration failed; continuing to watch: ${
+              error instanceof Error ? error.message : String(error)
+            }`,
+          );
+        }
+        shouldReloadConfig = true;
+      } while (regenerationQueued);
+    } finally {
+      regenerationRunning = false;
+    }
   }
 
   function registerWatchers(configFile: typeof loadedConfig) {
@@ -78,15 +138,21 @@ export async function watchProject(options: WatchProjectOptions = {}): Promise<(
     }
   }
 
-  return () => {
+  function stopWatching(): void {
+    stopped = true;
+    regenerationQueued = false;
+    pendingChangedFiles.clear();
     if (timeout) {
       clearTimeout(timeout);
+      timeout = undefined;
     }
     for (const watcher of watchers.values()) {
       watcher.close();
     }
     watchers.clear();
-  };
+  }
+
+  return stopWatching;
 }
 
 export function getWatchRoots(loadedConfig: Awaited<ReturnType<typeof loadConfig>>): Set<string> {

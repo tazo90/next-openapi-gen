@@ -173,6 +173,9 @@ showcases `3.2` route and document features.
 Framework-specific defaults mainly change `apiDir`, `framework.kind`, and
 `includeOpenApiRoutes`.
 
+For every accepted field, nested option, default, and lifecycle behavior, see
+the [complete configuration reference](./configuration-reference.md).
+
 ## Important options
 
 | Option                                | Purpose                                                                     |
@@ -189,9 +192,21 @@ Framework-specific defaults mainly change `apiDir`, `framework.kind`, and
 | `ignoreRoutes`                        | Wildcard patterns for routes you never want in the output                   |
 | `defaultResponseSet` / `responseSets` | Shared error-response bundles                                               |
 | `errorConfig`                         | Templates for consistent generated error schemas                            |
+| `authPresets`                         | Customize the `@auth` keyword-to-security-scheme mapping                    |
+| `diagnostics`                         | Diagnostic output and CI failure threshold                                  |
+| `cache` / `generatedDir`              | Base-document cache and development metadata workspace                      |
+| `docs`                                | Emit docs-page scaffolding during generation                                |
+| `clientSdk`                           | Run one or more client generators after writing the spec                    |
+| `hooks`                               | Observe or customize generation lifecycle stages                            |
+| `watch`                               | Watch-mode debounce configuration                                           |
 | `debug`                               | Extra generation logs for diagnosing route or schema discovery              |
 | `arazzo`                              | Optional Arazzo workflow generation; see [Arazzo](./arazzo.md)              |
 | `overlay`                             | Optional Overlay apply/generate; see [Overlay](./overlay.md)                |
+
+The configuration reference includes practical
+[client SDK generation](./configuration-reference.md#client-sdk-generation),
+[generation hooks](./configuration-reference.md#generation-hooks), and
+[cache side-effect behavior](./configuration-reference.md#cache-hits-and-artifact-side-effects).
 
 ## Choosing a schema strategy
 
@@ -356,6 +371,7 @@ Example:
 
 ## Where to go next
 
+- [Complete configuration reference](./configuration-reference.md)
 - [JSDoc reference](./jsdoc-reference.md)
 - [Workflows and integrations](./workflows-and-integrations.md)
 - [FAQ and troubleshooting](./faq.md)

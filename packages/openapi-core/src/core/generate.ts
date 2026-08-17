@@ -1,14 +1,17 @@
-import { spawn } from "node:child_process";
+import { randomUUID } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 
+import spawn from "cross-spawn";
 import fse from "fs-extra";
 
-import { resolveCacheSetting } from "../config/normalize.js";
+import { normalizeOpenApiConfig, resolveCacheSetting } from "../config/normalize.js";
 import { DiagnosticsCollector } from "../diagnostics/collector.js";
 import { OpenApiGenerator } from "../generator/openapi-generator.js";
+import { IGNORED_SOURCE_DIRECTORIES } from "../shared/ignored-directories.js";
 import { logger } from "../shared/logger.js";
-import type { Diagnostic, DiagnosticFailOn } from "../shared/types.js";
+import { isPathWithin } from "../shared/path.js";
+import type { Diagnostic, DiagnosticFailOn, OpenApiDocument } from "../shared/types.js";
 import type { GenerationAdapters, GenerationContext, SpecEmitter } from "./adapters.js";
 import { writeDocumentArtifact } from "./artifact-writer.js";
 import { loadConfig } from "./config/load-config.js";
@@ -19,6 +22,8 @@ import { buildGenerationIR } from "./generation-ir.js";
 import { createInputFingerprint, type DiskCacheInputRecord } from "./input-fingerprint.js";
 import {
   createSharedGenerationRuntime,
+  invalidateRuntimePaths,
+  resetSharedGenerationRuntime,
   type CachedRouteFragment,
   type SharedGenerationRuntime,
 } from "./runtime.js";
@@ -43,6 +48,8 @@ export type GenerateProjectResult = {
 };
 
 type DiskCacheRecord = {
+  baseDocumentFile: string;
+  cacheVersion?: number | undefined;
   configPath?: string | undefined;
   diagnostics: Diagnostic[];
   fingerprint: string;
@@ -54,8 +61,22 @@ type DiskCacheRecord = {
   updatedAt: string;
 };
 
+type DiskCacheContext = {
+  baseDocumentFile: string;
+  cacheFile: string;
+  changedFiles: string[];
+  fingerprint: string;
+  inputCount: number;
+  inputs: Record<string, DiskCacheInputRecord>;
+  hasValidPreviousMetadata: boolean;
+  outputFile: string;
+  previousRecord: DiskCacheRecord | null;
+  routeFragments?: Record<string, CachedRouteFragment> | undefined;
+};
+
 export { createInputFingerprint };
 
+const DISK_CACHE_VERSION = 2;
 const processRuntimeCache = new Map<string, SharedGenerationRuntime>();
 
 export async function generateProject(
@@ -83,30 +104,60 @@ export async function generateFromLoadedConfig(
   const cacheKey = getProcessCacheKey(loadedConfig);
   const generatorRuntime =
     runtime ?? (isCacheEnabled(loadedConfig.config) ? getProcessRuntime(cacheKey) : undefined);
+  const resolvedConfig = normalizeOpenApiConfig(loadedConfig.config);
+  const outputDir = path.resolve(resolvedConfig.outputDir);
+  const outputFile = path.join(outputDir, resolvedConfig.outputFile);
+  const diskCache = createDiskCacheContext(loadedConfig, outputFile);
+  if (diskCache && generatorRuntime) {
+    if (!diskCache.hasValidPreviousMetadata) {
+      resetSharedGenerationRuntime(generatorRuntime);
+    } else {
+      if (diskCache.routeFragments) {
+        generatorRuntime.routeScan.routeFragments = new Map(
+          Object.entries(diskCache.routeFragments),
+        );
+      } else {
+        generatorRuntime.routeScan.routeFragments.clear();
+      }
+      invalidateRuntimePaths(generatorRuntime, {
+        files: diskCache.changedFiles,
+        directories: diskCache.changedFiles.map((filePath) => path.dirname(filePath)),
+      });
+    }
+  }
   const generator = new OpenApiGenerator({
     adapters: adapters ?? missingGenerationAdapters(),
     config: loadedConfig.config,
     runtime: generatorRuntime,
   });
   const config = generator.getConfig();
-  const outputDir = path.resolve(config.outputDir);
-  const outputFile = path.join(outputDir, config.outputFile);
-  const diskCache = createDiskCacheContext(loadedConfig, outputFile);
-  if (diskCache?.routeFragments && generatorRuntime) {
-    generatorRuntime.routeScan.routeFragments = new Map(Object.entries(diskCache.routeFragments));
-  }
-  if (diskCache && !hasArtifactSideEffects(loadedConfig)) {
-    const cachedResult = readCachedResult(diskCache, config.diagnostics.failOn as DiagnosticFailOn);
-    if (cachedResult) {
-      logger.log(`OpenAPI specification cache hit at ${cachedResult.outputFile}`);
-      return cachedResult;
-    }
+  const cachedResult = diskCache
+    ? readCachedResult(diskCache, config.diagnostics.failOn as DiagnosticFailOn)
+    : null;
+  if (cachedResult && !hasArtifactSideEffects(loadedConfig)) {
+    logger.log(`OpenAPI specification cache hit at ${cachedResult.outputFile}`);
+    return cachedResult;
   }
 
-  const document = generator.generate();
+  const cachedBaseDocument =
+    cachedResult && diskCache ? readCachedBaseDocument(diskCache.baseDocumentFile) : null;
+  if (cachedResult && cachedBaseDocument) {
+    logger.log(`OpenAPI specification cache hit at ${cachedResult.outputFile}`);
+  }
+
+  const document = cachedBaseDocument ?? generator.generate();
+  const baseDiagnostics = cachedBaseDocument
+    ? (diskCache?.previousRecord?.diagnostics ?? [])
+    : generator.getDiagnostics();
   const diagnostics = new DiagnosticsCollector();
-  for (const diagnostic of generator.getDiagnostics()) {
+  for (const diagnostic of baseDiagnostics) {
     diagnostics.add(diagnostic);
+  }
+  const performance = cachedResult
+    ? diskCache?.previousRecord?.performance
+    : generator.getPerformanceProfile();
+  if (diskCache && !cachedBaseDocument) {
+    writeJsonAtomically(diskCache.baseDocumentFile, document);
   }
 
   const cwd = loadedConfig.configPath ? path.dirname(loadedConfig.configPath) : process.cwd();
@@ -147,7 +198,7 @@ export async function generateFromLoadedConfig(
           configPath: loadedConfig.configPath,
           outputFile,
           diagnostics: diagnostics.getAll(),
-          performance: generator.getPerformanceProfile(),
+          performance,
         },
         null,
         2,
@@ -157,13 +208,15 @@ export async function generateFromLoadedConfig(
 
   if (diskCache) {
     writeDiskCacheRecord(diskCache, {
+      baseDocumentFile: diskCache.baseDocumentFile,
+      cacheVersion: DISK_CACHE_VERSION,
       configPath: loadedConfig.configPath,
-      diagnostics: diagnostics.getAll(),
+      diagnostics: baseDiagnostics,
       fingerprint: diskCache.fingerprint,
       inputCount: diskCache.inputCount,
       inputs: diskCache.inputs,
       outputFile,
-      performance: generator.getPerformanceProfile(),
+      performance,
       routeFragments: Object.fromEntries(generatorRuntime!.routeScan.routeFragments),
       updatedAt: new Date().toISOString(),
     });
@@ -186,7 +239,7 @@ export async function generateFromLoadedConfig(
 
   return {
     artifacts,
-    cached: false,
+    cached: Boolean(cachedBaseDocument),
     diagnostics: diagnostics.getAll(),
     diagnosticsFailOn: config.diagnostics.failOn as DiagnosticFailOn,
     outputFile,
@@ -228,61 +281,70 @@ function hasArtifactSideEffects(loadedConfig: LoadedConfigFile): boolean {
     (loadedConfig.config.docs ? loadedConfig.config.docs.enabled !== false : false) ||
     (loadedConfig.config.clientSdk?.some((sdkConfig) => sdkConfig.enabled !== false) ?? false) ||
     Boolean(loadedConfig.config.arazzo) ||
-    Boolean(loadedConfig.config.overlay)
+    Boolean(loadedConfig.config.overlay) ||
+    Boolean(loadedConfig.config.hooks?.artifactsWritten)
   );
 }
 
 function createDiskCacheContext(
   loadedConfig: LoadedConfigFile,
   outputFile: string,
-): {
-  cacheFile: string;
-  fingerprint: string;
-  inputs: Record<string, DiskCacheInputRecord>;
-  inputCount: number;
-  outputFile: string;
-  routeFragments?: Record<string, CachedRouteFragment> | undefined;
-} | null {
+): DiskCacheContext | null {
   if (!isCacheEnabled(loadedConfig.config)) {
     return null;
   }
 
   const generatedWorkspaceDir = resolveGeneratedWorkspaceDir(loadedConfig.config.generatedDir);
   const inputFiles = collectCacheInputFiles(loadedConfig);
-  const previousRecord = readDiskCacheRecord(
-    path.join(generatedWorkspaceDir, "cache", "generate.json"),
-  );
+  const cacheFile = path.join(generatedWorkspaceDir, "cache", "generate.json");
+  const storedRecord = readDiskCacheRecord(cacheFile);
+  const hasValidPreviousMetadata = isValidDiskCacheRecord(storedRecord);
+  const previousRecord = hasValidPreviousMetadata ? storedRecord : null;
   const { fingerprint, inputs } = createInputFingerprint(inputFiles, previousRecord?.inputs);
-  const routeFragments = canReuseRouteFragments(loadedConfig, inputs, previousRecord)
+  const changedFiles = getChangedInputFiles(inputs, previousRecord?.inputs);
+  const routeFragments = canReuseRouteFragments(loadedConfig, changedFiles, previousRecord)
     ? previousRecord.routeFragments
     : undefined;
   return {
-    cacheFile: path.join(generatedWorkspaceDir, "cache", "generate.json"),
+    baseDocumentFile: path.join(generatedWorkspaceDir, "cache", `base-openapi-${fingerprint}.json`),
+    cacheFile,
+    changedFiles,
     fingerprint,
+    hasValidPreviousMetadata,
     inputs,
     inputCount: inputFiles.length,
     outputFile,
+    previousRecord,
     routeFragments,
   };
 }
 
+function readCachedBaseDocument(baseDocumentFile: string): OpenApiDocument | null {
+  try {
+    return JSON.parse(fs.readFileSync(baseDocumentFile, "utf-8")) as OpenApiDocument;
+  } catch {
+    return null;
+  }
+}
+
 function readCachedResult(
-  diskCache: {
-    cacheFile: string;
-    fingerprint: string;
-    outputFile: string;
-  },
+  diskCache: DiskCacheContext,
   diagnosticsFailOn: DiagnosticFailOn,
 ): GenerateProjectResult | null {
-  if (!fs.existsSync(diskCache.cacheFile) || !fs.existsSync(diskCache.outputFile)) {
+  if (!fs.existsSync(diskCache.outputFile)) {
     return null;
   }
 
-  const record = readDiskCacheRecord(diskCache.cacheFile);
+  const record = diskCache.previousRecord;
   if (!record) {
     return null;
   }
-  if (record.fingerprint !== diskCache.fingerprint || record.outputFile !== diskCache.outputFile) {
+  if (
+    record.cacheVersion !== DISK_CACHE_VERSION ||
+    record.fingerprint !== diskCache.fingerprint ||
+    record.outputFile !== diskCache.outputFile ||
+    record.baseDocumentFile !== diskCache.baseDocumentFile
+  ) {
     return null;
   }
 
@@ -302,16 +364,47 @@ function writeDiskCacheRecord(
   },
   record: DiskCacheRecord,
 ): void {
-  fs.mkdirSync(path.dirname(diskCache.cacheFile), { recursive: true });
-  fs.writeFileSync(diskCache.cacheFile, `${JSON.stringify(record, null, 2)}\n`);
+  writeJsonAtomically(diskCache.cacheFile, record);
 }
 
 function readDiskCacheRecord(cacheFile: string): DiskCacheRecord | null {
-  if (!fs.existsSync(cacheFile)) {
+  try {
+    return JSON.parse(fs.readFileSync(cacheFile, "utf-8")) as DiskCacheRecord;
+  } catch {
+    try {
+      fs.rmSync(cacheFile, { force: true });
+    } catch {
+      // A corrupt cache is still a miss when filesystem permissions prevent invalidation.
+    }
     return null;
   }
+}
 
-  return JSON.parse(fs.readFileSync(cacheFile, "utf-8")) as DiskCacheRecord;
+function isValidDiskCacheRecord(record: DiskCacheRecord | null): record is DiskCacheRecord {
+  return Boolean(
+    record &&
+    record.cacheVersion === DISK_CACHE_VERSION &&
+    typeof record.baseDocumentFile === "string" &&
+    typeof record.fingerprint === "string" &&
+    record.inputs &&
+    typeof record.inputs === "object" &&
+    Array.isArray(record.diagnostics),
+  );
+}
+
+function writeJsonAtomically(filePath: string, value: unknown): void {
+  const directory = path.dirname(filePath);
+  fs.mkdirSync(directory, { recursive: true });
+  const temporaryFile = path.join(
+    directory,
+    `.${path.basename(filePath)}.${process.pid}.${randomUUID()}.tmp`,
+  );
+  try {
+    fs.writeFileSync(temporaryFile, `${JSON.stringify(value, null, 2)}\n`);
+    fs.renameSync(temporaryFile, filePath);
+  } finally {
+    fs.rmSync(temporaryFile, { force: true });
+  }
 }
 
 function collectCacheInputFiles(loadedConfig: LoadedConfigFile): string[] {
@@ -330,6 +423,7 @@ function collectCacheInputFiles(loadedConfig: LoadedConfigFile): string[] {
   ].filter((value): value is string => Boolean(value));
 
   const files = new Set<string>();
+  const explicitCoreFiles = new Set<string>();
   for (const root of roots) {
     collectFiles(root, files);
   }
@@ -337,17 +431,23 @@ function collectCacheInputFiles(loadedConfig: LoadedConfigFile): string[] {
     const resolvedFile = path.resolve(file);
     if (fs.existsSync(resolvedFile) && fs.statSync(resolvedFile).isFile()) {
       files.add(resolvedFile);
+      explicitCoreFiles.add(resolvedFile);
+      explicitCoreFiles.add(fs.realpathSync(resolvedFile));
     }
   }
 
-  const companionPatterns = [
+  const artifactPatterns = [
     ...(loadedConfig.config.arazzo?.files ?? []),
     ...(loadedConfig.config.overlay?.apply ?? []),
     ...(loadedConfig.config.overlay?.generate?.files ?? []),
   ];
   const cwd = loadedConfig.configPath ? path.dirname(loadedConfig.configPath) : process.cwd();
-  for (const file of expandFileGlobs(companionPatterns, cwd)) {
-    files.add(file);
+  for (const artifactFile of expandFileGlobs(artifactPatterns, cwd)) {
+    const canonicalArtifactFile = fs.realpathSync(artifactFile);
+    if (!explicitCoreFiles.has(artifactFile) && !explicitCoreFiles.has(canonicalArtifactFile)) {
+      files.delete(artifactFile);
+      files.delete(canonicalArtifactFile);
+    }
   }
 
   return [...files].toSorted((a, b) => a.localeCompare(b, "en", { sensitivity: "base" }));
@@ -371,12 +471,7 @@ function collectFiles(root: string, files: Set<string>): void {
   }
 
   for (const entry of fs.readdirSync(root).toSorted((a, b) => a.localeCompare(b, "en"))) {
-    if (
-      entry === "node_modules" ||
-      entry === ".next" ||
-      entry === "dist" ||
-      entry === ".openapi-gen"
-    ) {
+    if (IGNORED_SOURCE_DIRECTORIES.has(entry) || entry === ".openapi-gen") {
       continue;
     }
     collectFiles(path.join(root, entry), files);
@@ -408,29 +503,49 @@ function findNearestFiles(fileNames: string[]): string[] {
 
 function canReuseRouteFragments(
   loadedConfig: LoadedConfigFile,
-  currentInputs: Record<string, DiskCacheInputRecord>,
+  changedFiles: string[],
   previousRecord: DiskCacheRecord | null,
 ): previousRecord is DiskCacheRecord & {
   routeFragments: Record<string, CachedRouteFragment>;
 } {
-  if (!previousRecord?.routeFragments || !previousRecord.inputs) {
+  if (
+    previousRecord?.cacheVersion !== DISK_CACHE_VERSION ||
+    !previousRecord.routeFragments ||
+    !previousRecord.inputs
+  ) {
     return false;
   }
 
-  const apiDir = path.resolve(loadedConfig.config.apiDir ?? "./src/app/api");
-  return Object.entries(currentInputs).every(([filePath, input]) => {
-    const previousInput = previousRecord.inputs?.[filePath];
-    if (
-      previousInput &&
-      previousInput.hash === input.hash &&
-      previousInput.mtimeMs === input.mtimeMs &&
-      previousInput.size === input.size
-    ) {
-      return true;
-    }
+  const sourceRoots = [
+    loadedConfig.config.apiDir ?? "./src/app/api",
+    ...(Array.isArray(loadedConfig.config.schemaDir)
+      ? loadedConfig.config.schemaDir
+      : [loadedConfig.config.schemaDir]),
+  ]
+    .filter((value): value is string => Boolean(value))
+    .map((value) => path.resolve(value));
+  return changedFiles.every((filePath) => sourceRoots.some((root) => isPathWithin(root, filePath)));
+}
 
-    const relativePath = path.relative(apiDir, filePath);
-    return relativePath !== "" && !relativePath.startsWith("..") && !path.isAbsolute(relativePath);
+function getChangedInputFiles(
+  currentInputs: Record<string, DiskCacheInputRecord>,
+  previousInputs: Record<string, DiskCacheInputRecord> | undefined,
+): string[] {
+  if (!previousInputs) {
+    return [];
+  }
+
+  const filePaths = new Set([...Object.keys(currentInputs), ...Object.keys(previousInputs)]);
+  return [...filePaths].filter((filePath) => {
+    const current = currentInputs[filePath];
+    const previous = previousInputs[filePath];
+    return (
+      !current ||
+      !previous ||
+      current.hash !== previous.hash ||
+      current.mtimeMs !== previous.mtimeMs ||
+      current.size !== previous.size
+    );
   });
 }
 
@@ -488,7 +603,7 @@ export function runExternalCommand(command: string, args: string[]): Promise<voi
     const child = spawn(command, args, {
       cwd: process.cwd(),
       stdio: "inherit",
-      shell: true,
+      shell: false,
     });
 
     child.on("exit", (code) => {

@@ -220,6 +220,32 @@ describe("ZodSchemaConverter", () => {
     ]);
   });
 
+  it("emits diagnostics for unresolved enums and malformed discriminated unions", () => {
+    const diagnostics = new DiagnosticsCollector();
+    const converter = new ZodSchemaConverter(process.cwd(), undefined, undefined, diagnostics);
+
+    expect(converter.processZodNode(parseInitializer("z.enum(UnknownEnum)"))).toEqual({
+      type: "string",
+    });
+    expect(
+      converter.processZodNode(parseInitializer('z.discriminatedUnion("kind", z.string())')),
+    ).toEqual({
+      type: "object",
+    });
+
+    expect(diagnostics.getAll()).toEqual([
+      expect.objectContaining({
+        code: "unresolved-zod-enum",
+        severity: "warning",
+        metadata: { name: "UnknownEnum" },
+      }),
+      expect.objectContaining({
+        code: "malformed-zod-discriminated-union",
+        severity: "warning",
+      }),
+    ]);
+  });
+
   it("emits a pattern for static z.templateLiteral schemas", () => {
     const converter = new ZodSchemaConverter(process.cwd());
 

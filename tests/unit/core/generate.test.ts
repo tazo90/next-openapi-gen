@@ -4,6 +4,7 @@ import path from "node:path";
 import { FrameworkKind, generateProject } from "next-openapi-gen";
 import { describe, expect, it, vi } from "vitest";
 
+import type { GenerationContext } from "@workspace/openapi-core/core/adapters.js";
 import {
   generateFromLoadedConfig,
   runExternalCommand,
@@ -124,6 +125,11 @@ export async function GET() {}
       fs.writeFileSync(cacheFile, `${JSON.stringify(record)}\n`);
       const mismatched = await withProjectCwd(project.root, () => generateProject());
       expect(mismatched.cached).not.toBe(true);
+
+      fs.writeFileSync(cacheFile, "{not valid json");
+      const corruptCache = await withProjectCwd(project.root, () => generateProject());
+      expect(corruptCache.cached).not.toBe(true);
+      expect(() => JSON.parse(fs.readFileSync(cacheFile, "utf8"))).not.toThrow();
 
       const sdkRuns: Array<{ command: string; args: string[] }> = [];
       await withProjectCwd(project.root, () =>
@@ -433,6 +439,80 @@ export async function GET() {}
     }
   });
 
+  it("reruns artifact diagnostics from a fresh collector on repeated cache hits", async () => {
+    const project = createTempProject("nxog-core-generate-cache-diagnostics-");
+
+    try {
+      const apiDir = path.join(project.root, "src", "app", "api");
+      fs.mkdirSync(apiDir, { recursive: true });
+      fs.writeFileSync(path.join(project.root, "package.json"), "{}\n");
+      const loadedConfig = {
+        configPath: undefined,
+        config: {
+          apiDir,
+          schemaDir: path.join(project.root, "src"),
+          schemaType: "typescript" as const,
+          outputDir: path.join(project.root, "public"),
+          outputFile: "openapi.json",
+          generatedDir: path.join(project.root, ".openapi-cache"),
+          cache: true,
+          diagnostics: { failOn: "warning" as const },
+          framework: { kind: FrameworkKind.Nextjs },
+          overlay: { apply: [] },
+        },
+      };
+      const adapters = {
+        createFrameworkSource: () => ({
+          getScanRoots: () => [apiDir],
+          shouldProcessFile: () => true,
+          getRoutePath: (filePath: string) => filePath,
+          precheckFile: () => true,
+          processFile: () => [],
+        }),
+        createSpecEmitters: () => [
+          {
+            kind: "overlay" as const,
+            emit: async (context: GenerationContext) => {
+              context.diagnostics.add({
+                code: "artifact-warning",
+                severity: "warning",
+                message: "Fresh artifact warning",
+              });
+              return [];
+            },
+          },
+        ],
+      };
+
+      const [first, second, third] = await withProjectCwd(project.root, async () => [
+        await generateFromLoadedConfig(loadedConfig, undefined, adapters),
+        await generateFromLoadedConfig(loadedConfig, undefined, adapters),
+        await generateFromLoadedConfig(loadedConfig, undefined, adapters),
+      ]);
+
+      expect(first.cached).toBe(false);
+      expect(second.cached).toBe(true);
+      expect(third.cached).toBe(true);
+      for (const result of [first, second, third]) {
+        expect(result.diagnosticsFailOn).toBe("warning");
+        expect(
+          result.diagnostics.filter((diagnostic) => diagnostic.code === "artifact-warning"),
+        ).toHaveLength(1);
+      }
+      const cacheRecord = JSON.parse(
+        fs.readFileSync(
+          path.join(project.root, ".openapi-cache", "cache", "generate.json"),
+          "utf8",
+        ),
+      ) as { diagnostics: Array<{ code: string }> };
+      expect(cacheRecord.diagnostics).not.toContainEqual(
+        expect.objectContaining({ code: "artifact-warning" }),
+      );
+    } finally {
+      project.cleanup();
+    }
+  });
+
   it("honors OPENAPI_GEN_CACHE overrides", async () => {
     const project = createTempProject("nxog-core-generate-cache-env-");
     const previous = process.env.OPENAPI_GEN_CACHE;
@@ -499,6 +579,19 @@ export async function GET() {}
   it("covers leftover emitters, docs side effects, and production manifest skip", async () => {
     const project = createTempProject("nxog-core-generate-leftover-");
     const previousNodeEnv = process.env.NODE_ENV;
+    const processFile = vi.fn<() => []>(() => []);
+    const emitOverlay = vi.fn<() => Promise<Array<{ kind: "overlay"; path: string }>>>(async () => [
+      { kind: "overlay", path: path.join(project.root, "overlay.out.json") },
+    ]);
+    const emitArazzo = vi.fn<() => Promise<Array<{ kind: "arazzo"; path: string }>>>(async () => [
+      { kind: "arazzo", path: path.join(project.root, "arazzo.out.json") },
+    ]);
+    const emitDocs = vi.fn<() => Promise<{ kind: "docs"; path: string }>>(async () => ({
+      kind: "docs",
+      path: path.join(project.root, "docs.html"),
+    }));
+    const runCommand = vi.fn<() => Promise<void>>().mockResolvedValue(undefined);
+    const artifactsWritten = vi.fn<() => void>();
 
     try {
       fs.mkdirSync(path.join(project.root, "schemas"), { recursive: true });
@@ -506,7 +599,8 @@ export async function GET() {}
         path.join(project.root, "schemas", "extra.ts"),
         "export type Extra = string;\n",
       );
-      fs.writeFileSync(path.join(project.root, "overlay.json"), "{}\n");
+      fs.mkdirSync(path.join(project.root, "src"), { recursive: true });
+      fs.writeFileSync(path.join(project.root, "src", "overlay.json"), "{}\n");
       writeJsonFile(path.join(project.root, "next.openapi.json"), {
         openapi: "3.0.0",
         info: { title: "API Documentation", version: "1.0.0" },
@@ -519,7 +613,7 @@ export async function GET() {}
         cache: true,
         generatedDir: ".openapi-cache",
         docs: { enabled: true },
-        overlay: { apply: ["./overlay.json"] },
+        overlay: { apply: ["./src/overlay.json"] },
         arazzo: { files: [] },
       });
       writeAppRoute(
@@ -533,64 +627,94 @@ export async function GET() {}
       );
 
       process.env.NODE_ENV = "production";
-      const result = await withProjectCwd(
-        project.root,
-        async () =>
-          await generateFromLoadedConfig(
+      const results = await withProjectCwd(project.root, async () => {
+        const loadedConfig = {
+          configPath: path.join(project.root, "next.openapi.json"),
+          config: {
+            apiDir: "./src/app/api",
+            schemaDir: ["./src", "./schemas"],
+            schemaFiles: ["./schemas/extra.ts"],
+            schemaType: "typescript" as const,
+            outputDir: "./public",
+            outputFile: "openapi.json",
+            cache: true,
+            generatedDir: ".openapi-cache",
+            docs: { enabled: true },
+            overlay: { apply: ["./src/overlay.json"] },
+            arazzo: { files: [] },
+            clientSdk: [{ command: "sdk-generator", enabled: true }],
+            framework: { kind: FrameworkKind.Nextjs },
+            diagnostics: { failOn: "never" as const },
+            hooks: { artifactsWritten },
+          },
+        };
+        const generationAdapters = {
+          createFrameworkSource: () => ({
+            getScanRoots: () => [path.join(project.root, "src", "app", "api")],
+            shouldProcessFile: () => true,
+            getRoutePath: (filePath: string) => filePath,
+            precheckFile: () => true,
+            processFile,
+          }),
+          emitDocsArtifact: emitDocs,
+          createSpecEmitters: () => [
             {
-              configPath: path.join(project.root, "next.openapi.json"),
-              config: {
-                apiDir: "./src/app/api",
-                schemaDir: ["./src", "./schemas"],
-                schemaFiles: ["./schemas/extra.ts"],
-                schemaType: "typescript",
-                outputDir: "./public",
-                outputFile: "openapi.json",
-                cache: true,
-                generatedDir: ".openapi-cache",
-                docs: { enabled: true },
-                overlay: { apply: ["./overlay.json"] },
-                arazzo: { files: [] },
-                framework: { kind: FrameworkKind.Nextjs },
-                diagnostics: { failOn: "never" },
-              },
+              kind: "overlay" as const,
+              emit: emitOverlay,
             },
-            undefined,
             {
-              createFrameworkSource: () => ({
-                getScanRoots: () => [path.join(project.root, "src", "app", "api")],
-                shouldProcessFile: () => true,
-                getRoutePath: (filePath: string) => filePath,
-                precheckFile: () => true,
-                processFile: () => [],
-              }),
-              emitDocsArtifact: async () => ({
-                kind: "docs",
-                path: path.join(project.root, "docs.html"),
-              }),
-              createSpecEmitters: () => [
-                {
-                  kind: "overlay",
-                  emit: async () => [
-                    { kind: "overlay", path: path.join(project.root, "overlay.out.json") },
-                  ],
-                },
-                {
-                  kind: "arazzo",
-                  emit: async () => [
-                    { kind: "arazzo", path: path.join(project.root, "arazzo.out.json") },
-                  ],
-                },
-              ],
+              kind: "arazzo" as const,
+              emit: emitArazzo,
             },
-          ),
-      );
+          ],
+        };
+        const first = await generateFromLoadedConfig(
+          loadedConfig,
+          undefined,
+          generationAdapters,
+          runCommand,
+        );
+        const cacheFile = path.join(project.root, ".openapi-cache", "cache", "generate.json");
+        const firstCache = JSON.parse(fs.readFileSync(cacheFile, "utf8")) as {
+          fingerprint: string;
+          inputs: Record<string, unknown>;
+        };
+        fs.appendFileSync(path.join(project.root, "src", "overlay.json"), "\n");
+        const second = await generateFromLoadedConfig(
+          loadedConfig,
+          undefined,
+          generationAdapters,
+          runCommand,
+        );
+        const secondCache = JSON.parse(fs.readFileSync(cacheFile, "utf8")) as {
+          fingerprint: string;
+          inputs: Record<string, unknown>;
+        };
+        return { first, firstCache, second, secondCache };
+      });
 
-      expect(result.artifacts.map((artifact) => artifact.kind)).toEqual(
+      expect(results.first.artifacts.map((artifact) => artifact.kind)).toEqual(
+        expect.arrayContaining(["spec", "overlay", "arazzo", "docs"]),
+      );
+      expect(results.second.artifacts.map((artifact) => artifact.kind)).toEqual(
         expect.arrayContaining(["spec", "overlay", "arazzo", "docs"]),
       );
       expect(fs.existsSync(path.join(project.root, ".openapi-cache", "manifest.json"))).toBe(false);
-      expect(result.cached).toBe(false);
+      expect(results.first.cached).toBe(false);
+      expect(Object.keys(results.firstCache.inputs)).not.toContain(
+        path.join(project.root, "src", "overlay.json"),
+      );
+      expect(results.secondCache.inputs).toEqual(results.firstCache.inputs);
+      expect(results.secondCache.fingerprint).toBe(results.firstCache.fingerprint);
+      expect(results.second.cached).toBe(true);
+      expect(results.second.diagnostics).toEqual(results.first.diagnostics);
+      expect(results.second.diagnosticsFailOn).toBe("never");
+      expect(processFile).toHaveBeenCalledOnce();
+      expect(emitOverlay).toHaveBeenCalledTimes(2);
+      expect(emitArazzo).toHaveBeenCalledTimes(2);
+      expect(emitDocs).toHaveBeenCalledTimes(2);
+      expect(runCommand).toHaveBeenCalledTimes(2);
+      expect(artifactsWritten).toHaveBeenCalledTimes(2);
     } finally {
       if (previousNodeEnv === undefined) {
         delete process.env.NODE_ENV;

@@ -31,6 +31,7 @@
     "@babel/parser": "catalog:",
     "@babel/traverse": "catalog:",
     "@babel/types": "catalog:",
+    "cross-spawn": "catalog:",
     "fs-extra": "catalog:",
     "js-yaml": "catalog:",
     "typescript": "catalog:typescript-classic",
@@ -38,6 +39,7 @@
   },
   "devDependencies": {
     "@types/babel__traverse": "catalog:",
+    "@types/cross-spawn": "catalog:",
     "@types/fs-extra": "catalog:",
     "@types/node": "catalog:",
     "oxfmt": "catalog:",

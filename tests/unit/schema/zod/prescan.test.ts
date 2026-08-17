@@ -14,6 +14,7 @@ import {
   returnsZodSchemaNode,
   walkTypeScriptFiles,
 } from "@workspace/openapi-core/schema/zod/prescan.js";
+import { IGNORED_SOURCE_DIRECTORIES } from "@workspace/openapi-core/shared/ignored-directories.js";
 import { parseTypeScriptFile } from "@workspace/openapi-core/shared/utils.js";
 
 describe("Zod prescan helpers", () => {
@@ -70,6 +71,11 @@ describe("Zod prescan helpers", () => {
     fs.writeFileSync(path.join(root, "a.ts"), "");
     fs.writeFileSync(path.join(root, "nested", "b.tsx"), "");
     fs.writeFileSync(path.join(root, "ignore.js"), "");
+    for (const ignoredDir of IGNORED_SOURCE_DIRECTORIES) {
+      const directory = path.join(root, ignoredDir);
+      fs.mkdirSync(directory, { recursive: true });
+      fs.writeFileSync(path.join(directory, "ignored.ts"), "");
+    }
 
     const files: string[] = [];
     walkTypeScriptFiles(root, fs, (filePath) => {

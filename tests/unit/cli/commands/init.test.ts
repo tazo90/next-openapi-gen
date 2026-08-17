@@ -169,7 +169,7 @@ describe("init command", () => {
           }));
         });
 
-        await init({});
+        await expect(init({})).rejects.toThrow("disk full");
       });
 
       expect(fs.existsSync(path.join(project.root, "next.openapi.json"))).toBe(true);

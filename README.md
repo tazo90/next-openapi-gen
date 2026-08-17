@@ -8,7 +8,7 @@ Generate OpenAPI `3.0`, `3.1`, and `3.2` from the routes and schemas you already
 
 `next-openapi-gen` scans Next.js, TanStack Router, and React Router route handlers, reads JSDoc metadata, and generates an OpenAPI spec plus an optional docs UI. It is built for real codebases that use Zod, TypeScript, drizzle-zod, or reusable OpenAPI fragments, including mixed-schema migrations.
 
-[Quick start](#quick-start) • [Docs index](./docs/README.md) • [Example apps](#example-apps) • [Validation and coverage](#validation-and-coverage)
+[Quick start](#quick-start) • [Config reference](./docs/configuration-reference.md) • [Docs index](./docs/README.md) • [Example apps](#example-apps) • [Validation and coverage](#validation-and-coverage)
 
 ## Why teams use it
 
@@ -303,7 +303,10 @@ Version guidance:
 During generation, the CLI prints diagnostics grouped by severity (`error`, `warning`, `info`) and also writes them to `.openapi-gen/manifest.json` in non-production runs. Common codes include `missing-query-params-type`, `multipart-missing-body-schema`, `schema-not-found`, `schema-dir-empty`, `path-param-schema-conflict`, `unknown-zod-helper`, `unknown-zod-method`, `type-resolution-fallback`, `inferred-path-params`, `inferred-query-params`, and `inferred-body`.
 
 For a fuller setup guide, Pages Router notes, response sets, and route exclusion
-patterns, see [docs/getting-started.md](./docs/getting-started.md).
+patterns, see [docs/getting-started.md](./docs/getting-started.md). For every
+public config field, including client SDK generation, hooks, docs artifacts,
+cache semantics, Overlay, and Arazzo, see the
+[complete configuration reference](./docs/configuration-reference.md).
 
 ## JSDoc tags you will use most
 
@@ -424,6 +427,7 @@ Use these deeper references when you need more than the quick start:
 
 - [docs/README.md](./docs/README.md): docs index
 - [docs/getting-started.md](./docs/getting-started.md): setup, config, framework defaults, watch mode, and production notes
+- [docs/configuration-reference.md](./docs/configuration-reference.md): complete public config surface, client SDK workflow, hooks, docs, and cache side effects
 - [docs/jsdoc-reference.md](./docs/jsdoc-reference.md): full route tag reference and examples
 - [docs/workflows-and-integrations.md](./docs/workflows-and-integrations.md): framework integrations, mixed schemas, drizzle-zod, and downstream workflows
 - [docs/faq.md](./docs/faq.md): troubleshooting and common questions

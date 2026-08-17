@@ -2,8 +2,12 @@ import path from "node:path";
 
 import type * as t from "@babel/types";
 
+import { isPathWithin } from "../shared/path.js";
 import type { Diagnostic, OpenApiPathItem, OpenApiSchema, OpenApiTag } from "../shared/types.js";
-import { invalidateTypeScriptProject } from "../shared/typescript-project.js";
+import {
+  clearTypeScriptProjectCache,
+  invalidateTypeScriptProject,
+} from "../shared/typescript-project.js";
 
 export type CachedFileContent = {
   content: string;
@@ -17,6 +21,7 @@ export type CachedRouteFragment = {
   internalSchemas: Record<string, OpenApiSchema>;
   mtimeMs: number;
   paths: Record<string, OpenApiPathItem>;
+  schemaDependencies: string[];
   schemas: Record<string, OpenApiSchema>;
   size: number;
   tags: Record<string, OpenApiTag>;
@@ -40,6 +45,29 @@ export type SharedZodGenerationRuntime = {
   zodImportAlias: Map<string, string>;
 };
 
+export type SharedTypeScriptGenerationRuntime = {
+  indexedReExportFiles: Set<string>;
+  inlineTypeCache: Map<string, OpenApiSchema>;
+  internalSchemaNames: Set<string>;
+  openapiDefinitions: Record<string, OpenApiSchema>;
+  importMap: Record<string, Record<string, string>>;
+  resolvedSchemaCache: Set<string>;
+  schemaContentCache: Map<
+    string,
+    {
+      body: OpenApiSchema;
+      params: OpenApiSchema;
+      pathParams: OpenApiSchema;
+      querystring: OpenApiSchema;
+      responses: OpenApiSchema;
+      tag: OpenApiSchema;
+    }
+  >;
+  schemaIdAliases: Record<string, string>;
+  typeDefinitions: Record<string, OpenApiSchema>;
+  typeToFileIndex: Map<string, string>;
+};
+
 export type SharedGenerationRuntime = {
   routeScan: {
     directoryCache: Record<string, string[]>;
@@ -54,6 +82,7 @@ export type SharedGenerationRuntime = {
     fileASTCache: Map<string, import("@babel/types").File>;
     schemaFiles: string[] | null;
     schemaDefinitionIndex: Record<string, string[]>;
+    typescript: SharedTypeScriptGenerationRuntime;
     zod: SharedZodGenerationRuntime;
   };
 };
@@ -73,42 +102,92 @@ export function createSharedGenerationRuntime(): SharedGenerationRuntime {
       fileASTCache: new Map(),
       schemaFiles: null,
       schemaDefinitionIndex: {},
+      typescript: createSharedTypeScriptGenerationRuntime(),
       zod: createSharedZodGenerationRuntime(),
     },
   };
 }
 
 export function invalidateRuntimeFile(runtime: SharedGenerationRuntime, filePath: string): void {
-  const absoluteFilePath = path.resolve(filePath);
-
-  delete runtime.routeScan.statCache[absoluteFilePath];
-  runtime.routeScan.fileASTCache.delete(absoluteFilePath);
-  runtime.routeScan.fileContentCache.delete(absoluteFilePath);
-  runtime.routeScan.routeFragments.delete(absoluteFilePath);
-  delete runtime.schema.statCache[absoluteFilePath];
-  runtime.schema.fileASTCache.delete(absoluteFilePath);
-  runtime.schema.schemaFiles = null;
-  clearRecord(runtime.schema.schemaDefinitionIndex);
-  clearZodRuntime(runtime.schema.zod);
-  invalidateTypeScriptProject(absoluteFilePath);
+  invalidateRuntimePaths(runtime, { files: [filePath] });
 }
 
 export function invalidateRuntimeDirectory(
   runtime: SharedGenerationRuntime,
   directoryPath: string,
 ): void {
-  const absoluteDirectoryPath = path.resolve(directoryPath);
-  delete runtime.routeScan.directoryCache[absoluteDirectoryPath];
-  delete runtime.schema.directoryCache[absoluteDirectoryPath];
-  for (const filePath of runtime.routeScan.routeFragments.keys()) {
-    const relativePath = path.relative(absoluteDirectoryPath, filePath);
-    if (relativePath === "" || (!relativePath.startsWith("..") && !path.isAbsolute(relativePath))) {
+  invalidateRuntimePaths(runtime, { directories: [directoryPath] });
+}
+
+export function invalidateRuntimePaths(
+  runtime: SharedGenerationRuntime,
+  paths: {
+    files?: Iterable<string> | undefined;
+    directories?: Iterable<string> | undefined;
+  },
+): void {
+  const files = new Set([...(paths.files ?? [])].map((filePath) => path.resolve(filePath)));
+  const directories = [
+    ...new Set([...(paths.directories ?? [])].map((directoryPath) => path.resolve(directoryPath))),
+  ];
+  if (files.size === 0 && directories.length === 0) {
+    return;
+  }
+  const filePaths = [...files];
+
+  for (const filePath of files) {
+    delete runtime.routeScan.statCache[filePath];
+    runtime.routeScan.fileASTCache.delete(filePath);
+    runtime.routeScan.fileContentCache.delete(filePath);
+    delete runtime.schema.statCache[filePath];
+    runtime.schema.fileASTCache.delete(filePath);
+  }
+  for (const directoryPath of directories) {
+    delete runtime.routeScan.directoryCache[directoryPath];
+    delete runtime.schema.directoryCache[directoryPath];
+  }
+  for (const cachedDirectory of Object.keys(runtime.routeScan.directoryCache)) {
+    if (filePaths.some((filePath) => isPathWithin(cachedDirectory, filePath))) {
+      delete runtime.routeScan.directoryCache[cachedDirectory];
+    }
+  }
+  for (const cachedDirectory of Object.keys(runtime.schema.directoryCache)) {
+    if (filePaths.some((filePath) => isPathWithin(cachedDirectory, filePath))) {
+      delete runtime.schema.directoryCache[cachedDirectory];
+    }
+  }
+
+  for (const [filePath, fragment] of runtime.routeScan.routeFragments) {
+    if (
+      files.has(filePath) ||
+      fragment.schemaDependencies.some((dependency) => files.has(dependency))
+    ) {
       runtime.routeScan.routeFragments.delete(filePath);
     }
   }
   runtime.schema.schemaFiles = null;
   clearRecord(runtime.schema.schemaDefinitionIndex);
+  clearTypeScriptRuntime(runtime.schema.typescript);
   clearZodRuntime(runtime.schema.zod);
+  for (const filePath of files) {
+    invalidateTypeScriptProject(filePath);
+  }
+}
+
+export function resetSharedGenerationRuntime(runtime: SharedGenerationRuntime): void {
+  clearRecord(runtime.routeScan.directoryCache);
+  clearRecord(runtime.routeScan.statCache);
+  runtime.routeScan.fileASTCache.clear();
+  runtime.routeScan.fileContentCache.clear();
+  runtime.routeScan.routeFragments.clear();
+  clearRecord(runtime.schema.directoryCache);
+  clearRecord(runtime.schema.statCache);
+  runtime.schema.fileASTCache.clear();
+  runtime.schema.schemaFiles = null;
+  clearRecord(runtime.schema.schemaDefinitionIndex);
+  clearTypeScriptRuntime(runtime.schema.typescript);
+  clearZodRuntime(runtime.schema.zod);
+  clearTypeScriptProjectCache();
 }
 
 function clearRecord(record: Record<string, unknown>): void {
@@ -134,6 +213,34 @@ function createSharedZodGenerationRuntime(): SharedZodGenerationRuntime {
     variantSensitiveSchemaNames: new Set(),
     zodImportAlias: new Map(),
   };
+}
+
+function createSharedTypeScriptGenerationRuntime(): SharedTypeScriptGenerationRuntime {
+  return {
+    indexedReExportFiles: new Set(),
+    inlineTypeCache: new Map(),
+    internalSchemaNames: new Set(),
+    openapiDefinitions: {},
+    importMap: {},
+    resolvedSchemaCache: new Set(),
+    schemaContentCache: new Map(),
+    schemaIdAliases: {},
+    typeDefinitions: {},
+    typeToFileIndex: new Map(),
+  };
+}
+
+function clearTypeScriptRuntime(runtime: SharedTypeScriptGenerationRuntime): void {
+  clearRecord(runtime.openapiDefinitions);
+  clearRecord(runtime.importMap);
+  clearRecord(runtime.schemaIdAliases);
+  clearRecord(runtime.typeDefinitions);
+  runtime.indexedReExportFiles.clear();
+  runtime.inlineTypeCache.clear();
+  runtime.internalSchemaNames.clear();
+  runtime.resolvedSchemaCache.clear();
+  runtime.schemaContentCache.clear();
+  runtime.typeToFileIndex.clear();
 }
 
 function clearZodRuntime(runtime: SharedZodGenerationRuntime): void {

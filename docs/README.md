@@ -7,6 +7,9 @@ This folder contains the longer-form guides that support the main
 
 - [Getting started and configuration](./getting-started.md): framework-aware
   setup, config naming, watch mode, and integration entrypoints
+- [Complete configuration reference](./configuration-reference.md): every
+  public field, defaults, client SDK generation, hooks, docs artifacts, and
+  cache side effects
 - [JSDoc reference](./jsdoc-reference.md): route tags, multipart encoding, and
   query serialization behavior
 - [Arazzo workflows](./arazzo.md): compile workflow files against generated
