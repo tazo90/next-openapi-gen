@@ -4,11 +4,11 @@ import type { NodePath } from "@babel/traverse";
 import * as t from "@babel/types";
 
 import { traverse } from "../../shared/babel-traverse.js";
-import { resolveTypeScriptModule } from "../../shared/typescript-project.js";
 import {
   extractInternalFlagFromComments,
   extractSchemaIdFromComments,
-} from "../../shared/utils.js";
+} from "../../shared/jsdoc.js";
+import { resolveTypeScriptModule } from "../../shared/typescript-project.js";
 
 type TypeDefinitions = Record<string, any>;
 

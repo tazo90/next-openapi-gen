@@ -7,6 +7,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { defineConfig } from "@workspace/openapi-core/core/config/define-config.js";
 import {
   DEFAULT_CONFIG_FILENAMES,
+  isExtendedConfigFile,
   loadConfig,
 } from "@workspace/openapi-core/core/config/load-config.js";
 
@@ -158,10 +159,47 @@ describe("loadConfig", () => {
     );
   });
 
+  it("throws when an explicit config path is missing or a module has no default export", async () => {
+    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-config-errors-"));
+    tempDirs.push(tempDir);
+
+    await expect(loadConfig({ cwd: tempDir, configPath: "missing.json" })).rejects.toThrow(
+      /Config file not found/,
+    );
+
+    const emptyDir = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-config-empty-"));
+    tempDirs.push(emptyDir);
+    await expect(loadConfig({ cwd: emptyDir })).rejects.toThrow(/Could not find a config file/);
+
+    fs.writeFileSync(path.join(tempDir, "openapi-gen.config.js"), "export const unused = 1;\n");
+    await expect(loadConfig({ cwd: tempDir, configPath: "openapi-gen.config.js" })).rejects.toThrow(
+      /must export a default config object/,
+    );
+  });
+
+  it("loads a named config export from a typed module", async () => {
+    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-config-named-"));
+    tempDirs.push(tempDir);
+    fs.writeFileSync(
+      path.join(tempDir, "openapi-gen.config.js"),
+      `export const config = ${JSON.stringify({
+        openapi: "3.1.0",
+        info: { title: "Named", version: "1.0.0" },
+      })};`,
+    );
+
+    const loadedConfig = await loadConfig({ cwd: tempDir, configPath: "openapi-gen.config.js" });
+    expect(loadedConfig.config.info.title).toBe("Named");
+  });
+
   it("exposes the supported config discovery names", () => {
     expect(DEFAULT_CONFIG_FILENAMES).toContain("next-openapi.config.ts");
     expect(DEFAULT_CONFIG_FILENAMES).toContain("next.openapi.json");
     expect(DEFAULT_CONFIG_FILENAMES).toContain("openapi-gen.config.ts");
     expect(DEFAULT_CONFIG_FILENAMES).toContain("openapi-gen.config.json");
+  });
+
+  it("treats object templates as extended config files", () => {
+    expect(isExtendedConfigFile({ openapi: "3.2.0" } as never)).toBe(true);
   });
 });

@@ -6,14 +6,14 @@ import {
   CLI_FRAMEWORK_CHOICES,
   CLI_NAME,
   CLI_SCHEMA_CHOICES,
-  GENERATE_CONFIG_OPTION_DESCRIPTION,
-  getCliVersion,
   GENERATE_COMMAND_DESCRIPTION,
+  GENERATE_CONFIG_OPTION_DESCRIPTION,
   GENERATE_WATCH_OPTION_DESCRIPTION,
   INIT_COMMAND_DESCRIPTION,
   INIT_DEFAULTS,
   INIT_FRAMEWORK_OPTION_DESCRIPTION,
   buildProgram,
+  getCliVersion,
 } from "@workspace/openapi-cli";
 import { UI_TYPES_WITH_NONE } from "@workspace/openapi-init/init/ui-registry.js";
 
@@ -150,6 +150,37 @@ describe("CLI program", () => {
       },
       expect.anything(),
     );
+  });
+
+  it("dispatches the registered init and generate actions", async () => {
+    vi.resetModules();
+    const init = vi.fn<MockFn>(async () => undefined);
+    const generate = vi.fn<MockFn>(async () => undefined);
+    vi.doMock("@workspace/openapi-cli/cli/commands/init.js", () => ({ init }));
+    vi.doMock("@workspace/openapi-cli/cli/commands/generate.js", () => ({ generate }));
+
+    const { buildProgram: buildProgramWithActions } =
+      await import("@workspace/openapi-cli/cli/program.js");
+    const program = buildProgramWithActions();
+
+    await program.parseAsync(["init"], { from: "user" });
+    await program.parseAsync(["generate", "--fail-on", "never"], { from: "user" });
+
+    expect(init).toHaveBeenCalledWith(
+      expect.objectContaining({
+        framework: INIT_DEFAULTS.framework,
+        ui: INIT_DEFAULTS.ui,
+      }),
+    );
+    expect(generate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        failOn: "never",
+        watch: false,
+      }),
+    );
+    vi.doUnmock("@workspace/openapi-cli/cli/commands/init.js");
+    vi.doUnmock("@workspace/openapi-cli/cli/commands/generate.js");
+    vi.resetModules();
   });
 
   it("uses package metadata for the CLI version and includes stable help output", () => {

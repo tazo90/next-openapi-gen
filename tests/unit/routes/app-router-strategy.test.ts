@@ -5,8 +5,9 @@ import path from "node:path";
 import * as t from "@babel/types";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { parseTypeScriptFile } from "@workspace/openapi-core/shared/parse-typescript.js";
 import type { OpenApiConfig } from "@workspace/openapi-core/shared/types.js";
-import { parseTypeScriptFile } from "@workspace/openapi-core/shared/utils.js";
+import { inferResponseTypeFromHandler } from "@workspace/openapi-framework-next/routes/app-router-inference.js";
 import { AppRouterStrategy } from "@workspace/openapi-framework-next/routes/app-router-strategy.js";
 
 type AddRoute = Parameters<AppRouterStrategy["processFile"]>[1];
@@ -156,6 +157,10 @@ describe("AppRouterStrategy", () => {
 
     expect(strategy.precheckFile(routeFile)).toBe(true);
     expect(strategy.precheckFile(routeFile)).toBe(true);
+    const addRoute = vi.fn<AddRoute>();
+    strategy.processFile(routeFile, addRoute);
+    strategy.processFile(routeFile, addRoute);
+    expect(addRoute).toHaveBeenCalled();
   });
 
   it("recognizes only App Router route files and extracts exported handlers", () => {
@@ -383,7 +388,7 @@ describe("AppRouterStrategy", () => {
 
     expect(declaration).toBeDefined();
     // @ts-expect-error exercising a focused private helper for annotation coverage
-    expect(strategy.inferResponseTypeFromHandler(declaration)).toBe("Post[]");
+    expect(inferResponseTypeFromHandler(declaration)).toBe("Post[]");
   });
 
   it("returns an empty response type for unsupported annotations or handler nodes", () => {
@@ -404,9 +409,8 @@ describe("AppRouterStrategy", () => {
     }
 
     // @ts-expect-error exercising a focused private helper for unsupported type coverage
-    expect(strategy.inferResponseTypeFromHandler(typedDeclaration.declarations[0])).toBe("");
-    // @ts-expect-error exercising the non-function fallback path
-    expect(strategy.inferResponseTypeFromHandler(t.identifier("GET"))).toBe("");
+    expect(inferResponseTypeFromHandler(typedDeclaration.declarations[0])).toBe("");
+    expect(inferResponseTypeFromHandler(t.identifier("GET"))).toBe("");
   });
 
   it("adds inferred response types when the checker does not provide one", () => {
@@ -464,7 +468,7 @@ describe("AppRouterStrategy", () => {
 
     expect(declaration).toBeDefined();
     // @ts-expect-error exercising a focused private helper for non-reference annotations
-    expect(strategy.inferResponseTypeFromHandler(declaration)).toBe("");
+    expect(inferResponseTypeFromHandler(declaration)).toBe("");
   });
 
   it("ignores exported declarations that are not HTTP handlers", () => {
@@ -501,6 +505,55 @@ describe("AppRouterStrategy", () => {
 
     expect(declaration).toBeDefined();
     // @ts-expect-error exercising the empty-type-parameter branch
-    expect(strategy.inferResponseTypeFromHandler(declaration)).toBe("");
+    expect(inferResponseTypeFromHandler(declaration)).toBe("");
+  });
+
+  it("uses checker fallbacks for const handlers without inferred responses", async () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-app-router-const-"));
+    roots.push(root);
+    const emptyChecker = path.join(root, "empty", "route.ts");
+    const annotatedChecker = path.join(root, "annotated", "route.ts");
+    fs.mkdirSync(path.dirname(emptyChecker), { recursive: true });
+    fs.mkdirSync(path.dirname(annotatedChecker), { recursive: true });
+    fs.writeFileSync(
+      emptyChecker,
+      `
+      export const GET = async () => {
+        const options = { status: 201 };
+        return Response.json({ ok: true }, options);
+      };
+      `,
+    );
+    fs.writeFileSync(
+      annotatedChecker,
+      `
+      export const GET = async (): Promise<NextResponse<User>> => {
+        const options = { status: 201 };
+        return Response.json({ id: 1 }, options);
+      };
+      `,
+    );
+
+    vi.resetModules();
+    vi.doMock("@workspace/openapi-core/routes/typescript-response-inference.js", () => ({
+      inferResponsesForExports: () => new Map(),
+    }));
+    const { AppRouterStrategy: MockedAppRouterStrategy } =
+      await import("@workspace/openapi-framework-next/routes/app-router-strategy.js");
+    const mockedStrategy = new MockedAppRouterStrategy(baseConfig);
+    const addRoute = vi.fn<AddRoute>();
+    mockedStrategy.processFile(emptyChecker, addRoute);
+    mockedStrategy.processFile(annotatedChecker, addRoute);
+
+    expect(addRoute).toHaveBeenCalledWith("GET", emptyChecker, expect.any(Object));
+    expect(addRoute).toHaveBeenCalledWith(
+      "GET",
+      annotatedChecker,
+      expect.objectContaining({
+        responseType: "User",
+      }),
+    );
+    vi.doUnmock("@workspace/openapi-core/routes/typescript-response-inference.js");
+    vi.resetModules();
   });
 });

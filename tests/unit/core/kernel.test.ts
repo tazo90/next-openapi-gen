@@ -30,6 +30,39 @@ describe("generation kernel", () => {
     expect(ir.operationsById.get("searchOrders")?.path).toBe("/orders");
   });
 
+  it("indexes leftover documents without paths or parameters", () => {
+    expect(
+      buildGenerationIR({ openapi: "3.0.0", info: { title: "Empty", version: "1" } }).operations,
+    ).toEqual([]);
+    const ir = buildGenerationIR({
+      openapi: "3.0.0",
+      info: { title: "Params", version: "1" },
+      paths: {
+        "/items": {
+          parameters: [{ name: "shared", in: "query", schema: { type: "string" } }],
+          get: {
+            operationId: "listItems",
+            responses: { "200": { description: "ok" } },
+          },
+          post: {
+            operationId: "createItem",
+            parameters: [{ name: "verbose", in: "query", schema: { type: "boolean" } }],
+            responses: { "201": { description: "created" } },
+          },
+        },
+      },
+    });
+    expect(ir.operationsById.get("listItems")?.parameters).toEqual(
+      expect.arrayContaining([expect.objectContaining({ name: "shared" })]),
+    );
+    expect(ir.operationsById.get("createItem")?.parameters).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ name: "shared" }),
+        expect.objectContaining({ name: "verbose" }),
+      ]),
+    );
+  });
+
   it("writes YAML and JSON artifacts and reloads them", () => {
     const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-kernel-"));
     try {
@@ -57,6 +90,12 @@ describe("generation kernel", () => {
         relativizeDocumentUri(path.join(root, "arazzo.yaml"), path.join(root, "openapi.json")),
       ).toBe("./openapi.json");
       expect(resolveDocumentSelf(undefined, path.join(root, "arazzo.yaml"))).toMatch(/^file:/);
+      expect(
+        resolveDocumentSelf("https://api.example/openapi.json", path.join(root, "arazzo.yaml")),
+      ).toBe("https://api.example/openapi.json");
+      expect(expandFileGlobs([path.join(root, "overlays", "public.overlay.yaml")], root)).toEqual([
+        path.join(root, "overlays", "public.overlay.yaml"),
+      ]);
     } finally {
       fs.rmSync(root, { recursive: true, force: true });
     }

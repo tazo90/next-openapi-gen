@@ -17,11 +17,14 @@ pnpm-debug.log*
 
 # Testing
 coverage/
+.bench-before/
+.bench-after/
 .nyc_output/
 playwright-report/
 test-results/
 blob-report/
 tests/bench/schema/current.json
+tests/bench/cli/current.json
 
 # Caches
 .turbo/

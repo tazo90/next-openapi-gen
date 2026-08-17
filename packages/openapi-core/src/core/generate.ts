@@ -1,5 +1,4 @@
 import { spawn } from "node:child_process";
-import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 
@@ -17,17 +16,21 @@ import type { GeneratedArtifact, LoadedConfigFile } from "./config/types.js";
 import { expandFileGlobs } from "./file-globs.js";
 import { resolveGeneratedWorkspaceDir } from "./generated-workspace.js";
 import { buildGenerationIR } from "./generation-ir.js";
+import { createInputFingerprint, type DiskCacheInputRecord } from "./input-fingerprint.js";
 import {
   createSharedGenerationRuntime,
   type CachedRouteFragment,
   type SharedGenerationRuntime,
 } from "./runtime.js";
 
+export type ExternalCommandRunner = (command: string, args: string[]) => Promise<void>;
+
 export type GenerateProjectOptions = {
   adapters?: GenerationAdapters | undefined;
   cwd?: string | undefined;
   configPath?: string | undefined;
   runtime?: SharedGenerationRuntime | undefined;
+  runCommand?: ExternalCommandRunner | undefined;
 };
 
 export type GenerateProjectResult = {
@@ -51,11 +54,7 @@ type DiskCacheRecord = {
   updatedAt: string;
 };
 
-type DiskCacheInputRecord = {
-  hash: string;
-  mtimeMs: number;
-  size: number;
-};
+export { createInputFingerprint };
 
 const processRuntimeCache = new Map<string, SharedGenerationRuntime>();
 
@@ -67,13 +66,19 @@ export async function generateProject(
     configPath: options.configPath,
   });
 
-  return await generateFromLoadedConfig(loadedConfig, options.runtime, options.adapters);
+  return await generateFromLoadedConfig(
+    loadedConfig,
+    options.runtime,
+    options.adapters,
+    options.runCommand,
+  );
 }
 
 export async function generateFromLoadedConfig(
   loadedConfig: LoadedConfigFile,
   runtime?: SharedGenerationRuntime,
   adapters?: GenerationAdapters,
+  runCommand: ExternalCommandRunner = runExternalCommand,
 ): Promise<GenerateProjectResult> {
   const cacheKey = getProcessCacheKey(loadedConfig);
   const generatorRuntime =
@@ -91,7 +96,7 @@ export async function generateFromLoadedConfig(
     generatorRuntime.routeScan.routeFragments = new Map(Object.entries(diskCache.routeFragments));
   }
   if (diskCache && !hasArtifactSideEffects(loadedConfig)) {
-    const cachedResult = readCachedResult(diskCache, config.diagnostics.failOn ?? "never");
+    const cachedResult = readCachedResult(diskCache, config.diagnostics.failOn as DiagnosticFailOn);
     if (cachedResult) {
       logger.log(`OpenAPI specification cache hit at ${cachedResult.outputFile}`);
       return cachedResult;
@@ -159,9 +164,7 @@ export async function generateFromLoadedConfig(
       inputs: diskCache.inputs,
       outputFile,
       performance: generator.getPerformanceProfile(),
-      routeFragments: generatorRuntime
-        ? Object.fromEntries(generatorRuntime.routeScan.routeFragments)
-        : undefined,
+      routeFragments: Object.fromEntries(generatorRuntime!.routeScan.routeFragments),
       updatedAt: new Date().toISOString(),
     });
   }
@@ -171,7 +174,7 @@ export async function generateFromLoadedConfig(
     artifacts.push(docsArtifact);
   }
 
-  const sdkArtifacts = await emitClientSdkArtifacts(loadedConfig, outputFile);
+  const sdkArtifacts = await emitClientSdkArtifacts(loadedConfig, outputFile, runCommand);
   artifacts.push(...sdkArtifacts);
 
   loadedConfig.config.hooks?.artifactsWritten?.({
@@ -185,7 +188,7 @@ export async function generateFromLoadedConfig(
     artifacts,
     cached: false,
     diagnostics: diagnostics.getAll(),
-    diagnosticsFailOn: config.diagnostics.failOn ?? "never",
+    diagnosticsFailOn: config.diagnostics.failOn as DiagnosticFailOn,
     outputFile,
     configPath: loadedConfig.configPath,
   };
@@ -403,42 +406,6 @@ function findNearestFiles(fileNames: string[]): string[] {
   }
 }
 
-function createInputFingerprint(
-  files: string[],
-  previousInputs: Record<string, DiskCacheInputRecord> = {},
-): {
-  fingerprint: string;
-  inputs: Record<string, DiskCacheInputRecord>;
-} {
-  const hash = crypto.createHash("sha256");
-  const inputs: Record<string, DiskCacheInputRecord> = {};
-  for (const file of files) {
-    const stat = fs.statSync(file);
-    const previousInput = previousInputs[file];
-    const fileHash =
-      previousInput && previousInput.mtimeMs === stat.mtimeMs && previousInput.size === stat.size
-        ? previousInput.hash
-        : createFileHash(file);
-    inputs[file] = {
-      hash: fileHash,
-      mtimeMs: stat.mtimeMs,
-      size: stat.size,
-    };
-    hash.update(file);
-    hash.update(String(stat.mtimeMs));
-    hash.update(String(stat.size));
-    hash.update(fileHash);
-  }
-  return {
-    fingerprint: hash.digest("hex"),
-    inputs,
-  };
-}
-
-function createFileHash(file: string): string {
-  return crypto.createHash("sha256").update(fs.readFileSync(file)).digest("hex");
-}
-
 function canReuseRouteFragments(
   loadedConfig: LoadedConfigFile,
   currentInputs: Record<string, DiskCacheInputRecord>,
@@ -471,11 +438,8 @@ async function emitSpecEmitters(
   emitters: SpecEmitter[],
   context: GenerationContext,
 ): Promise<GeneratedArtifact[]> {
-  const artifacts: GeneratedArtifact[] = [];
-  for (const emitter of emitters) {
-    artifacts.push(...(await emitter.emit(context)));
-  }
-  return artifacts;
+  const emitted = await Promise.all(emitters.map((emitter) => emitter.emit(context)));
+  return emitted.flat();
 }
 
 async function emitDocsArtifacts(
@@ -496,13 +460,14 @@ async function emitDocsArtifacts(
 async function emitClientSdkArtifacts(
   loadedConfig: LoadedConfigFile,
   specPath: string,
+  runCommand: ExternalCommandRunner,
 ): Promise<GeneratedArtifact[]> {
   const sdkConfigs =
     loadedConfig.config.clientSdk?.filter((config) => config.enabled !== false) ?? [];
   const artifacts: GeneratedArtifact[] = [];
 
   for (const sdkConfig of sdkConfigs) {
-    await runExternalCommand(sdkConfig.command, [
+    await runCommand(sdkConfig.command, [
       ...(sdkConfig.args ?? []),
       specPath,
       ...(sdkConfig.outputDir ? [sdkConfig.outputDir] : []),
@@ -518,7 +483,7 @@ async function emitClientSdkArtifacts(
   return artifacts;
 }
 
-function runExternalCommand(command: string, args: string[]): Promise<void> {
+export function runExternalCommand(command: string, args: string[]): Promise<void> {
   return new Promise((resolve, reject) => {
     const child = spawn(command, args, {
       cwd: process.cwd(),

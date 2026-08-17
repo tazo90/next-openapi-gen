@@ -3,21 +3,19 @@ import { measurePerformance } from "../core/performance.js";
 import type { DiagnosticsCollector } from "../diagnostics/collector.js";
 import { createMultipartEncoding } from "../schema/typescript/helpers.js";
 import type { SchemaProcessor } from "../schema/typescript/schema-processor.js";
+import {
+  applyParameterExamples,
+  deepMerge,
+  DEFAULT_AUTH_PRESET_REPLACEMENTS,
+  performAuthPresetReplacements,
+} from "../shared/spec.js";
+import { capitalize, getOperationId, resolveAnnotationTypeName } from "../shared/strings.js";
 import type {
   DataTypes,
   OpenApiOperation,
   OpenApiParameter,
   OpenApiRequestBody,
 } from "../shared/types.js";
-import {
-  applyParameterExamples,
-  capitalize,
-  deepMerge,
-  DEFAULT_AUTH_PRESET_REPLACEMENTS,
-  getOperationId,
-  performAuthPresetReplacements,
-  resolveAnnotationTypeName,
-} from "../shared/utils.js";
 import { createCookieParameters } from "./cookie-parameters.js";
 import type { ResponseProcessor } from "./response-processor.js";
 
@@ -156,8 +154,7 @@ export class OperationProcessor {
       );
     }
 
-    const parameters = definition.parameters ?? [];
-    definition.parameters = parameters;
+    const parameters = definition.parameters!;
 
     if (dataTypes.inferredQueryParamNames?.length) {
       if (!paramsType) {

@@ -45,6 +45,32 @@ describe("overlay version processor", () => {
     );
   });
 
+  it("keeps Overlay 1.0 actions that do not use copy", () => {
+    const finalized = getOverlayVersionProcessor("1.0.0").finalize({
+      overlay: "1.1.0",
+      info: { title: "Overlay", version: "1.0.0" },
+      actions: [{ target: "$.info", update: { title: "Public" } }],
+    });
+
+    expect(finalized.actions).toEqual([{ target: "$.info", update: { title: "Public" } }]);
+  });
+
+  it("keeps non-copy actions when stripping Overlay 1.0 fields", () => {
+    const diagnostics = new DiagnosticsCollector();
+    const finalized = stripUnsupportedOverlayFields(
+      {
+        overlay: "1.1.0",
+        info: { title: "Overlay", version: "1.0.0" },
+        actions: [{ target: "$.info", update: { title: "Public" } }],
+      },
+      "1.0.0",
+      diagnostics,
+    );
+
+    expect(finalized.actions).toEqual([{ target: "$.info", update: { title: "Public" } }]);
+    expect(diagnostics.getAll()).toEqual([]);
+  });
+
   it("drops copy-only actions when finalizing Overlay 1.0", () => {
     const finalized = getOverlayVersionProcessor("1.0.0").finalize({
       overlay: "1.1.0",

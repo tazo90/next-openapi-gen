@@ -4,7 +4,10 @@ import path from "node:path";
 
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { processCustomSchemaFiles } from "@workspace/openapi-core/schema/core/custom-schema-file-processor.js";
+import {
+  loadCustomOpenApiFragments,
+  processCustomSchemaFiles,
+} from "@workspace/openapi-core/schema/core/custom-schema-file-processor.js";
 
 describe("processCustomSchemaFiles", () => {
   const roots: string[] = [];
@@ -70,5 +73,50 @@ describe("processCustomSchemaFiles", () => {
     fs.writeFileSync(scalarJsonPath, JSON.stringify("nope"));
 
     expect(processCustomSchemaFiles([invalidJsonPath, scalarJsonPath])).toEqual({});
+  });
+
+  it("merges OpenAPI fragments including paths, webhooks, and nested components", () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-custom-fragments-"));
+    roots.push(root);
+    const first = path.join(root, "first.json");
+    const second = path.join(root, "second.json");
+    const schemasOnly = path.join(root, "schemas-only.json");
+    fs.writeFileSync(
+      first,
+      JSON.stringify({
+        tags: [{ name: "users" }],
+        paths: { "/users": { get: { operationId: "listUsers" } } },
+        components: { schemas: { User: { type: "object" } } },
+      }),
+    );
+    fs.writeFileSync(
+      second,
+      JSON.stringify({
+        tags: [{ name: "orders" }],
+        webhooks: { payment: { post: { operationId: "pay" } } },
+        components: {
+          schemas: { Order: { type: "object" } },
+          responses: { Error: { description: "err" } },
+        },
+      }),
+    );
+    fs.writeFileSync(
+      schemasOnly,
+      JSON.stringify({
+        Audit: { type: "object" },
+      }),
+    );
+
+    expect(
+      loadCustomOpenApiFragments([first, second, schemasOnly, path.join(root, "missing.json")]),
+    ).toMatchObject({
+      tags: [{ name: "users" }, { name: "orders" }],
+      paths: { "/users": { get: { operationId: "listUsers" } } },
+      webhooks: { payment: { post: { operationId: "pay" } } },
+      components: {
+        schemas: { User: { type: "object" }, Order: { type: "object" }, Audit: { type: "object" } },
+        responses: { Error: { description: "err" } },
+      },
+    });
   });
 });

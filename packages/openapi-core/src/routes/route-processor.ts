@@ -10,6 +10,7 @@ import { setPathItemOperation } from "../openapi/path-item.js";
 import { isRegisteredTagKind } from "../openapi/registries/index.js";
 import { SchemaProcessor } from "../schema/typescript/schema-processor.js";
 import { logger } from "../shared/logger.js";
+import { capitalize, extractPathParameters, resolveAnnotationTypeName } from "../shared/strings.js";
 import type {
   DataTypes,
   OpenApiConfig,
@@ -18,7 +19,6 @@ import type {
   OpenApiTag,
   ResolvedOpenApiConfig,
 } from "../shared/types.js";
-import { capitalize, extractPathParameters, resolveAnnotationTypeName } from "../shared/utils.js";
 import { OperationProcessor } from "./operation-processor.js";
 import { sortPathDefinitions } from "./path-sort.js";
 import { ResponseProcessor } from "./response-processor.js";
@@ -79,7 +79,7 @@ export class RouteProcessor {
       this.config,
       this.performanceProfile,
     );
-    this.ignoreRouteMatchers = (this.config.ignoreRoutes || []).map((pattern) => {
+    this.ignoreRouteMatchers = this.config.ignoreRoutes!.map((pattern) => {
       const regexPattern = pattern.replace(/\*/g, ".*").replace(/\//g, "\\/");
       return new RegExp(`^${regexPattern}$`);
     });

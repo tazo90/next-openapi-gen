@@ -44,4 +44,39 @@ describe("shared generation runtime", () => {
     expect(runtime.schema.schemaFiles).toBeNull();
     expect(runtime.schema.schemaDefinitionIndex).toEqual({});
   });
+
+  it("drops route fragments that live under the invalidated directory", () => {
+    const runtime = createSharedGenerationRuntime();
+    const absoluteDir = path.resolve("/tmp/nxog-runtime-dir-fragments");
+    const nestedFile = path.join(absoluteDir, "users", "route.ts");
+    const siblingFile = path.resolve("/tmp/other-app/route.ts");
+
+    runtime.routeScan.routeFragments.set(nestedFile, {
+      cacheKey: "nested",
+      diagnostics: [],
+      internalSchemas: {},
+      mtimeMs: 1,
+      paths: {},
+      schemas: {},
+      size: 1,
+      tags: {},
+      webhooks: {},
+    });
+    runtime.routeScan.routeFragments.set(siblingFile, {
+      cacheKey: "sibling",
+      diagnostics: [],
+      internalSchemas: {},
+      mtimeMs: 1,
+      paths: {},
+      schemas: {},
+      size: 1,
+      tags: {},
+      webhooks: {},
+    });
+
+    invalidateRuntimeDirectory(runtime, absoluteDir);
+
+    expect(runtime.routeScan.routeFragments.has(nestedFile)).toBe(false);
+    expect(runtime.routeScan.routeFragments.has(siblingFile)).toBe(true);
+  });
 });

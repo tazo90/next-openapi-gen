@@ -249,4 +249,40 @@ describe("Zod prescan helpers", () => {
       }),
     ).toBeNull();
   });
+
+  it("covers leftover infer mappings and if/else factory returns", () => {
+    const inferAst = parseTypeScriptFile(`
+      export type User = z.infer<UserSchema>;
+      export type Empty = z.infer;
+    `);
+    expect(extractTypeMappingsFromAST(inferAst)).toEqual({});
+
+    const isZodSchema = (node: t.Node) =>
+      t.isCallExpression(node) &&
+      t.isMemberExpression(node.callee) &&
+      t.isIdentifier(node.callee.object, { name: "z" });
+
+    const ifElse = parseTypeScriptFile(`
+      export function makeIfElse(cond: boolean) {
+        if (cond) return z.object({});
+        else return z.string();
+      }
+      export function makeBlocks(cond: boolean) {
+        if (cond) {
+          return z.object({});
+        } else {
+          return z.string();
+        }
+      }
+      export const makeFn = function makeFn() {
+        return z.boolean();
+      };
+    `);
+    const makeIfElse = findFunctionInAST(ifElse, "makeIfElse");
+    const makeBlocks = findFunctionInAST(ifElse, "makeBlocks");
+    const makeFn = findFunctionInAST(ifElse, "makeFn");
+    expect(makeIfElse && returnsZodSchemaNode(makeIfElse, isZodSchema)).toBe(true);
+    expect(makeBlocks && returnsZodSchemaNode(makeBlocks, isZodSchema)).toBe(true);
+    expect(makeFn && returnsZodSchemaNode(makeFn, isZodSchema)).toBe(true);
+  });
 });

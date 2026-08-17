@@ -1,3 +1,4 @@
+import { DEFAULT_AUTH_PRESET_REPLACEMENTS } from "../shared/spec.js";
 import type {
   FrameworkConfig,
   FrameworkKind,
@@ -10,7 +11,6 @@ import type {
   SchemaType,
 } from "../shared/types.js";
 import { FrameworkKind as ResolvedFrameworkKind } from "../shared/types.js";
-import { DEFAULT_AUTH_PRESET_REPLACEMENTS } from "../shared/utils.js";
 import {
   DEFAULT_API_DIR,
   DEFAULT_CACHE,

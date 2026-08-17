@@ -144,6 +144,7 @@ describe("NextFrameworkSource", () => {
         });
 
         expect(source.shouldProcessFile("route.ts")).toBe(true);
+        expect(source.precheckFile(routeFile)).toBe(true);
         expect(source.getRoutePath(routeFile)).toBe("/posts");
         expect(source.processFile(routeFile)).toEqual([
           expect.objectContaining({

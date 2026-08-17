@@ -132,6 +132,39 @@ describe("Zod converter runtime helpers", () => {
       ),
     ).toBeTruthy();
     expect(extractReturnNode(t.identifier("noop"))).toBeNull();
+    expect(
+      extractReturnNode(
+        parseTypeScriptFile(`
+          function withElse(flag: boolean) {
+            if (flag) {
+              const skip = true;
+            } else {
+              return z.string();
+            }
+          }
+        `).program.body[0] as t.Node,
+      ),
+    ).toBeTruthy();
+    expect(
+      extractReturnNode(
+        parseTypeScriptFile(`
+          function inlineElse(flag: boolean) {
+            if (flag) {
+              const skip = true;
+            } else return z.boolean();
+          }
+        `).program.body[0] as t.Node,
+      ),
+    ).toBeTruthy();
+
+    const sibling = path.join(root, "sibling.ts");
+    fs.writeFileSync(sibling, "");
+    expect(resolveImportPath(currentFile, "./sibling", fs)).toBe(sibling);
+    expect(
+      resolveImportPath("C:\\\\virtual\\\\schema.ts", "./missing", {
+        existsSync: () => false,
+      }),
+    ).toBeNull();
   });
 
   it("substitutes parameters and expands factory calls", () => {
@@ -224,5 +257,17 @@ describe("Zod converter runtime helpers", () => {
         () => null as never,
       ),
     ).toBeNull();
+
+    const computed = substituteParameters(
+      getFirstInitializer("factory({ [key]: value, ...rest }, items[index])"),
+      new Map<string, t.Node>([
+        ["key", t.stringLiteral("id")],
+        ["value", t.identifier("UserSchema")],
+        ["rest", t.identifier("Base")],
+        ["items", t.identifier("collection")],
+        ["index", t.numericLiteral(0)],
+      ]),
+    );
+    expect(t.isCallExpression(computed)).toBe(true);
   });
 });

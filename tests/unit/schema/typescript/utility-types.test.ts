@@ -465,4 +465,68 @@ describe("TypeScript utility type helpers", () => {
       },
     });
   });
+
+  it("covers leftover imported ReturnType resolve misses", () => {
+    const sourceFile = path.join("/virtual", "schema.ts");
+    const missingImport = createContext({
+      currentFilePath: sourceFile,
+      importMap: {
+        [path.normalize(sourceFile)]: {
+          otherName: "./helpers",
+        },
+      },
+    });
+    expect(
+      resolveUtilityTypeReference(
+        t.tsTypeReference(
+          t.identifier("ReturnType"),
+          t.tsTypeParameterInstantiation([t.tsTypeQuery(t.identifier("importedName"))]),
+        ),
+        missingImport,
+      ),
+    ).toEqual({ type: "object" });
+
+    const unresolved = createContext({
+      currentFilePath: sourceFile,
+      importMap: {
+        [path.normalize(sourceFile)]: {
+          importedName: "./helpers",
+        },
+      },
+      resolveImportPath: () => null,
+    });
+    expect(
+      resolveUtilityTypeReference(
+        t.tsTypeReference(
+          t.identifier("ReturnType"),
+          t.tsTypeParameterInstantiation([t.tsTypeQuery(t.identifier("importedName"))]),
+        ),
+        unresolved,
+      ),
+    ).toEqual({ type: "object" });
+
+    const unreadable = createContext({
+      currentFilePath: sourceFile,
+      importMap: {
+        [path.normalize(sourceFile)]: {
+          importedName: "./helpers",
+        },
+      },
+      resolveImportPath: () => "/virtual/helpers.ts",
+      fileAccess: {
+        readFileSync: () => {
+          throw new Error("missing");
+        },
+      },
+    });
+    expect(
+      resolveUtilityTypeReference(
+        t.tsTypeReference(
+          t.identifier("ReturnType"),
+          t.tsTypeParameterInstantiation([t.tsTypeQuery(t.identifier("importedName"))]),
+        ),
+        unreadable,
+      ),
+    ).toEqual({ type: "object" });
+  });
 });

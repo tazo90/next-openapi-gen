@@ -11,6 +11,7 @@ describe("Schema processors", () => {
   it("merges schema layers in override order", () => {
     expect(
       mergeSchemaDefinitionLayers([
+        undefined,
         {
           User: { type: "object" },
         },

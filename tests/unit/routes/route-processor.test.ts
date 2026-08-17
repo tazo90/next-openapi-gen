@@ -177,4 +177,8 @@ describe("RouteProcessor", () => {
       expect(scanApiRoutesSpy).toHaveBeenCalledWith(".");
     });
   });
+
+  it("throws when constructed without a framework source factory", () => {
+    expect(() => new RouteProcessor(baseConfig)).toThrow(/framework source/i);
+  });
 });

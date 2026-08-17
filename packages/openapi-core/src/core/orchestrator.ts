@@ -67,7 +67,7 @@ export function runGenerationOrchestrator({
   profile.prepareTemplateMs = performance.now() - phaseStartedAt;
 
   phaseStartedAt = performance.now();
-  const schemaFiles = config.schemaFiles ?? [];
+  const schemaFiles = config.schemaFiles!;
   if (schemaFiles.length > 0) {
     const customOpenApiFragments = loadCustomOpenApiFragments(schemaFiles);
     mergeDocumentFragment(document, customOpenApiFragments);
@@ -98,8 +98,8 @@ export function runGenerationOrchestrator({
 
   hooks?.routesDiscovered?.({
     config,
-    paths: document.paths ?? {},
-    tags: document.tags ?? [],
+    paths: document.paths,
+    tags: document.tags!,
     diagnostics: diagnostics.getAll(),
   });
 
@@ -148,7 +148,7 @@ export function runGenerationOrchestrator({
   const internalSchemas = schemaProcessor.getInternalSchemas();
   const patternExcludedNames = matchExcludePatterns(
     Object.keys(mergedSchemas),
-    config.excludeSchemas ?? [],
+    config.excludeSchemas!,
   );
   const allExcludedSchemas = {
     ...routeProcessor.getCachedInternalSchemas(),

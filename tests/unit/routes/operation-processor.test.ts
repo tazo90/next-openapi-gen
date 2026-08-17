@@ -853,4 +853,77 @@ describe("OperationProcessor", () => {
       },
     });
   });
+
+  it("covers leftover externalDocs, response headers, and response links", () => {
+    const schemaProcessor = {
+      getSchemaContent: vi.fn<MockFn>(() => ({
+        params: undefined,
+        pathParams: undefined,
+        body: undefined,
+        responses: undefined,
+      })),
+      createRequestParamsSchema: vi.fn<MockFn>(() => []),
+      createDefaultPathParamsSchema: vi.fn<MockFn>(),
+      detectContentType: vi.fn<MockFn>(),
+      createResponseSchema: vi.fn<MockFn>(() => ({})),
+      ensureSchemaResolved: vi.fn<MockFn>(),
+      getSchemaReferenceName: vi.fn<MockFn>((name: string) => name),
+    };
+    const responseProcessor = {
+      supportsRequestBody: vi.fn<MockFn>(() => false),
+      processResponses: vi.fn<MockFn>(() => ({
+        200: { description: "ok" },
+        201: { $ref: "#/components/responses/Created" },
+      })),
+    };
+    const processor = new OperationProcessor(schemaProcessor as never, responseProcessor as never);
+    const result = processor.processOperation("GET", "/docs", {
+      tag: "Docs",
+      externalDocs: { url: "https://docs.example.com" },
+      responseHeaders: [
+        { status: "200", name: "X-Count", description: "Total", schema: { type: "integer" } },
+        { status: "201", name: "X-Skip", description: "ignored" },
+      ],
+      responseLinks: [
+        {
+          status: "200",
+          name: "self",
+          operationId: "getDocs",
+          operationRef: "/paths/docs",
+          parameters: { id: "$response.body#/id" },
+          requestBody: { id: 1 },
+          description: "Self",
+          server: { url: "https://api.example.com" },
+        },
+        { status: "201", name: "skip" },
+      ],
+    });
+
+    expect(result.definition.externalDocs).toEqual({ url: "https://docs.example.com" });
+    expect(result.definition.responses?.["200"]).toMatchObject({
+      headers: { "X-Count": expect.objectContaining({ description: "Total" }) },
+      links: {
+        self: expect.objectContaining({ operationId: "getDocs", operationRef: "/paths/docs" }),
+      },
+    });
+
+    const multipartProcessor = new OperationProcessor(
+      schemaProcessor as never,
+      {
+        supportsRequestBody: () => true,
+        processResponses: () => ({ 200: { description: "ok" } }),
+      } as never,
+    );
+    const multipart = multipartProcessor.processOperation("POST", "/upload", {
+      contentType: "multipart/form-data",
+      querystringType: "Filter",
+    });
+    expect(multipart.definition.requestBody).toMatchObject({
+      required: true,
+      description: expect.any(String),
+    });
+    expect(multipart.definition.parameters).toEqual(
+      expect.arrayContaining([expect.objectContaining({ in: "querystring", name: "query" })]),
+    );
+  });
 });

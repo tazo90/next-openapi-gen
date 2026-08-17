@@ -1,20 +1,20 @@
+import os from "node:os";
+import path from "node:path";
+
 import traverseModule from "@babel/traverse";
 import { describe, expect, it } from "vitest";
 
 import {
-  capitalize,
   cleanComment,
-  cleanSpec,
-  deepMerge,
   extractInternalFlagFromComments,
-  extractJSDocComments,
+  extractSchemaIdFromComments,
   extractTypeFromComment,
-  extractPathParameters,
-  getOperationId,
+  extractJSDocComments,
+  parseJSDocBlock,
+  parseOpenApiOverrideTag,
   parseResponseTag,
-  parseTypeScriptFile,
-  performAuthPresetReplacements,
-} from "@workspace/openapi-core/shared/utils.js";
+} from "@workspace/openapi-core/shared/jsdoc.js";
+import { parseTypeScriptFile } from "@workspace/openapi-core/shared/parse-typescript.js";
 
 const traverse = traverseModule.default || traverseModule;
 
@@ -31,15 +31,8 @@ function getExportCommentData(source: string) {
   return result;
 }
 
-describe("shared utils", () => {
-  it("formats strings and route metadata helpers", () => {
-    expect(capitalize("users")).toBe("Users");
-    expect(extractPathParameters("/users/{id}/posts/{postId}")).toEqual(["id", "postId"]);
-    expect(extractPathParameters("/users")).toEqual([]);
-    expect(getOperationId("/users/{id}", "get")).toBe("get-users-{id}");
-    expect(performAuthPresetReplacements("bearer,basic,apikey,Custom")).toBe(
-      "BearerAuth,BasicAuth,ApiKeyAuth,Custom",
-    );
+describe("jsdoc", () => {
+  it("cleans JSDoc comment stars", () => {
     expect(cleanComment("* hello\n* world")).toBe("hello\nworld");
   });
 
@@ -403,237 +396,108 @@ describe("shared utils", () => {
     expect(data?.description).toBe("Only metadata");
   });
 
-  it("adds path parameter examples without clobbering existing values", () => {
-    const spec = cleanSpec({
-      paths: {
-        "/users/{id}/{slug}/{category}": {
-          get: {
-            parameters: [
-              { name: "id", in: "path" },
-              { name: "slug", in: "path" },
-              { name: "category", in: "path" },
-              { name: "preset", in: "path", example: "keep-me" },
-              { name: "ignored", in: "query" },
-            ],
-          },
+  it("parses webhooks, deprecation reasons, extra tags, and example references", () => {
+    const withPath = parseJSDocBlock(
+      `
+      * Notify clients
+      * @summary Explicit summary
+      * @webhook payment.received
+      * @deprecated Use v2 instead
+      * @tags billing, notifications
+      * @tag Payments
+      * @tag Webhooks
+      * @server https://api.example.com Production
+      * @servers https://staging.example.com
+      * @externalDocs https://docs.example.com "API docs"
+      * @security bearer:read,write; apiKey
+      * @responseHeader 200 X-Request-Id string Correlation id
+      * @responseHeader 200 RateLimit integer
+      * @responseHeader 200 X-Trace RateLimitHeader
+      * @link 201 next getUser {"userId":"$response.body#/id"}
+      * @link 200 self #/paths/~1users/get
+      * @callback onEvent {$request.body#/callbackUrl} CallbackOp
+      * @openapi-override {"x-internal":true}
+      * @examples response:https://example.com/examples/payment.json
+      * @examples query:serialized:limit=10
+      * @examples header:ref:missingExample
+      * @examples cookie:filters
+      * @openapi
+      `,
+      path.join(os.tmpdir(), "nxog-jsdoc-missing", "route.ts"),
+    );
+
+    expect(withPath).toMatchObject({
+      summary: "Explicit summary",
+      isWebhook: true,
+      webhookName: "payment.received",
+      deprecated: true,
+      deprecationReason: "Use v2 instead",
+      tag: "Payments",
+      tags: ["billing", "notifications", "Webhooks"],
+      servers: [
+        { url: "https://api.example.com", description: "Production" },
+        { url: "https://staging.example.com" },
+      ],
+      externalDocs: { url: "https://docs.example.com", description: "API docs" },
+      security: [{ bearer: ["read", "write"], apiKey: [] }],
+      responseHeaders: [
+        {
+          status: "200",
+          name: "X-Request-Id",
+          schema: { type: "string" },
+          description: "Correlation id",
+        },
+        { status: "200", name: "RateLimit", schema: { type: "integer" } },
+        {
+          status: "200",
+          name: "X-Trace",
+          schema: { $ref: "#/components/schemas/RateLimitHeader" },
+        },
+      ],
+      responseLinks: [
+        {
+          status: "201",
+          name: "next",
+          operationId: "getUser",
+          parameters: { userId: "$response.body#/id" },
+        },
+        { status: "200", name: "self", operationRef: "#/paths/~1users/get" },
+      ],
+      callbacks: [
+        { name: "onEvent", expression: "{$request.body#/callbackUrl}", reference: "CallbackOp" },
+      ],
+      openapiOverride: { "x-internal": true },
+      responseExamples: {
+        example: {
+          externalValue: "https://example.com/examples/payment.json",
+        },
+      },
+      queryExamples: {
+        example: {
+          serializedValue: "limit=10",
         },
       },
     });
+    expect(
+      withPath.diagnostics?.some(
+        (diagnostic) => diagnostic.code === "example-reference-unresolved",
+      ),
+    ).toBe(true);
 
-    expect(spec.paths["/users/{id}/{slug}/{category}"].get.parameters).toEqual([
-      { name: "id", in: "path", example: 123 },
-      { name: "slug", in: "path", example: "example-slug" },
-      { name: "category", in: "path", example: "example" },
-      { name: "preset", in: "path", example: "keep-me" },
-      { name: "ignored", in: "query" },
-    ]);
-  });
-
-  it("skips missing path definitions and operations while cleaning specs", () => {
-    const spec = cleanSpec({
-      paths: {
-        "/users/{id}": {
-          get: undefined,
-        },
-        "/projects/{slug}": undefined,
-      },
+    const withoutPath = parseJSDocBlock(`
+      * @examples body:requestExample
+      * @openapi
+    `);
+    expect(withoutPath.diagnostics?.[0]).toMatchObject({
+      code: "example-reference-unresolved",
     });
 
-    expect(spec.paths["/users/{id}"].get).toBeUndefined();
-    expect(spec.paths["/projects/{slug}"]).toBeUndefined();
-  });
-
-  it("parses TSX with caller-provided parser options", () => {
-    const ast = parseTypeScriptFile("const view = <div />;", {
-      sourceFilename: "component.tsx",
-    });
-
-    expect(ast.program.body).toHaveLength(1);
-    expect(ast.loc?.filename).toBe("component.tsx");
-  });
-
-  it("normalizes auth preset casing while keeping unknown entries", () => {
-    expect(performAuthPresetReplacements("BEARER, apiKey, custom-scheme")).toBe(
-      "BearerAuth,ApiKeyAuth,custom-scheme",
-    );
-  });
-
-  it("applies custom presets when provided, with user keys winning over defaults", () => {
-    const custom = { bearer: "JwtAuth", oauth2: "OAuth2Auth" };
-    expect(performAuthPresetReplacements("bearer", custom)).toBe("JwtAuth");
-    expect(performAuthPresetReplacements("bearer,oauth2", custom)).toBe("JwtAuth,OAuth2Auth");
-    expect(performAuthPresetReplacements("bearer,CustomScheme", custom)).toBe(
-      "JwtAuth,CustomScheme",
-    );
-  });
-
-  it("parses OpenAPI 3.2 JSDoc annotations: @servers, @externalDocs, @security, @tags, @webhook", () => {
-    const data = getExportCommentData(`
-      /**
-       * Subscribe to events
-       * @tag Events
-       * @tags Platform, Streaming
-       * @servers https://api.example.com as production "Primary", https://staging.example.com
-       * @externalDocs https://docs.example.com/events "Event docs"
-       * @security BearerAuth, ApiKeyAuth:read:events|write:events
-       * @webhook newEvent
-       * @deprecated use /v2/subscribe instead
-       * @openapi
-       */
-      export async function POST() {}
-    `);
-
-    expect(data?.tags).toEqual(["Platform", "Streaming"]);
-    expect(data?.servers).toBeDefined();
-    expect(data?.servers?.length).toBeGreaterThan(0);
-    expect(data?.externalDocs).toMatchObject({
-      url: "https://docs.example.com/events",
-    });
-    expect(data?.security).toBeDefined();
-    expect(data?.security?.length).toBeGreaterThan(0);
-    expect(data?.isWebhook).toBe(true);
-    expect(data?.webhookName).toBe("newEvent");
-    expect(data?.deprecated).toBe(true);
-    expect(data?.deprecationReason).toBe("use /v2/subscribe instead");
-  });
-
-  it("handles multiple @tag annotations by using first as primary and rest as additional tags", () => {
-    const data = getExportCommentData(`
-      /**
-       * @tag Events
-       * @tag Platform
-       * @tag Streaming
-       * @openapi
-       */
-      export async function POST() {}
-    `);
-    expect(data?.tag).toBe("Events");
-    expect(data?.tags).toEqual(["Platform", "Streaming"]);
-  });
-
-  it("handles multiple @response annotations by converting extras to @add entries", () => {
-    const data = getExportCommentData(`
-      /**
-       * @response 200:UserResponse:Success
-       * @response 404:NotFound
-       * @response 429:RateLimitResponse:Too many requests
-       * @openapi
-       */
-      export async function POST() {}
-    `);
-    expect(data?.successCode).toBe("200");
-    expect(data?.responseType).toBe("UserResponse");
-    expect(data?.responseDescription).toBe("Success");
-    expect(data?.addResponses).toBe("404:NotFound,429:RateLimitResponse:Too many requests");
-  });
-
-  it("merges multiple @tag with @tags plural", () => {
-    const data = getExportCommentData(`
-      /**
-       * @tag Events
-       * @tag Platform
-       * @tags Streaming, Webhooks
-       * @openapi
-       */
-      export async function POST() {}
-    `);
-    expect(data?.tag).toBe("Events");
-    expect(data?.tags).toEqual(["Streaming", "Webhooks", "Platform"]);
-  });
-
-  it("merges multiple @response with existing @add entries", () => {
-    const data = getExportCommentData(`
-      /**
-       * @response 200:UserResponse
-       * @response 404:NotFound
-       * @add 401:Unauthorized
-       * @openapi
-       */
-      export async function POST() {}
-    `);
-    expect(data?.successCode).toBe("200");
-    expect(data?.responseType).toBe("UserResponse");
-    expect(data?.addResponses).toBe("404:NotFound,401:Unauthorized");
-  });
-
-  it("parses @responseHeader, @link, @callback, and @openapi-override", () => {
-    const data = getExportCommentData(`
-      /**
-       * Rate-limited endpoint
-       * @responseHeader 200 X-RateLimit-Remaining integer Requests left
-       * @responseHeader 429 Retry-After integer Seconds to wait
-       * @link 201 GetUser #/components/links/GetUser
-       * @callback onEvent {$request.body#callbackUrl} EventPayload
-       * @openapi-override {"x-internal": true, "x-rateLimit": 100}
-       * @openapi
-       */
-      export async function POST() {}
-    `);
-
-    expect(data?.responseHeaders).toEqual([
-      {
-        status: "200",
-        name: "X-RateLimit-Remaining",
-        description: "Requests left",
-        schema: { type: "integer" },
-      },
-      {
-        status: "429",
-        name: "Retry-After",
-        description: "Seconds to wait",
-        schema: { type: "integer" },
-      },
-    ]);
-    expect(data?.responseLinks).toEqual([
-      {
-        status: "201",
-        name: "GetUser",
-        operationRef: "#/components/links/GetUser",
-      },
-    ]);
-    expect(data?.callbacks).toEqual([
-      {
-        name: "onEvent",
-        expression: "{$request.body#callbackUrl}",
-        reference: "EventPayload",
-      },
-    ]);
-    expect(data?.openapiOverride).toEqual({
-      "x-internal": true,
-      "x-rateLimit": 100,
-    });
-  });
-
-  it("parses @header and @cookie type references", () => {
-    const data = getExportCommentData(`
-      /**
-       * @header RequestHeaders
-       * @cookie SessionCookies
-       * @openapi
-       */
-      export async function GET() {}
-    `);
-
-    expect(data?.headerType).toBe("RequestHeaders");
-    expect(data?.cookieType).toBe("SessionCookies");
-  });
-
-  it("parses wildcard status codes in @response tags", () => {
-    expect(parseResponseTag("@response 2XX:UserResponse")).toEqual({
-      responseDescription: "",
-      responseType: "UserResponse",
-      successCode: "2XX",
-    });
-    expect(parseResponseTag("@response default:ErrorResponse:Fallback")).toEqual({
-      responseDescription: "Fallback",
-      responseType: "ErrorResponse",
-      successCode: "default",
-    });
-    expect(parseResponseTag("@response 4XX:Unauthorized")).toEqual({
-      responseDescription: "",
-      responseType: "Unauthorized",
-      successCode: "4XX",
-    });
+    expect(parseOpenApiOverrideTag('* @openapi-override {"x-flag":1}')).toEqual({ "x-flag": 1 });
+    expect(parseOpenApiOverrideTag("* @openapi-override true")).toBeUndefined();
+    expect(extractSchemaIdFromComments(null)).toBeNull();
+    expect(
+      extractSchemaIdFromComments([{ type: "CommentBlock", value: "* @id PaymentEvent " }]),
+    ).toBe("PaymentEvent");
   });
 });
 
@@ -664,84 +528,220 @@ describe("extractInternalFlagFromComments", () => {
     ).toBe(false);
   });
 
+  it("covers leftover summary, add-response, and encoding branches", () => {
+    const data = parseJSDocBlock(`
+      @openapi
+      @add 409 Conflict
+      @add 410 Gone
+      @responsePrefixEncoding [{"style":"form"}]
+      @prefixEncoding [{"style":"form"}]
+      @itemEncoding {"style":"form"}
+      @responseItemEncoding {"style":"deepObject"}
+    `);
+    expect(data.addResponses).toContain("409");
+    expect(data.addResponses).toContain("410");
+    expect(data.responsePrefixEncoding).toEqual([{ style: "form" }]);
+
+    const requestEncoding = parseJSDocBlock(`
+      @openapi
+      @prefixEncoding request: [{"style":"form","explode":true}]
+      @itemEncoding request: {"style":"form"}
+      @body CreateUser required
+      @requestBody PatchUser required=false
+      @responseSummary 201 Created
+      @responseSummary Default summary
+      @server
+      @servers https://api.example.com
+      @externalDocs
+    `);
+    expect(requestEncoding.requestPrefixEncoding).toEqual([{ style: "form", explode: true }]);
+    expect(requestEncoding.bodyType).toBe("PatchUser");
+    expect(requestEncoding.requestBodyRequired).toBe(true);
+    expect(requestEncoding.responseSummaries).toMatchObject({
+      "201": "Created",
+    });
+
+    const emptySummary = parseJSDocBlock(`
+      @openapi
+      @summary Explicit
+    `);
+    expect(emptySummary.summary).toBe("Explicit");
+
+    const requiredFlags = parseJSDocBlock(`
+      @openapi
+      @body required
+      @requestBody User optional
+      @itemSchema request: Item
+      @responseHeader
+      @responseHeader 200
+      @security
+      @responseSummary
+      @server
+      @externalDocs
+    `);
+    expect(requiredFlags.requestBodyRequired).toBe(true);
+    expect(requiredFlags.bodyType).toBe("User");
+    expect(requiredFlags.requestItemType).toBe("Item");
+
+    expect(parseJSDocBlock("@openapi\n@webhook").isWebhook).toBe(true);
+    expect(parseJSDocBlock("@openapi\n@webhook").webhookName).toBeFalsy();
+    const leftoverFlags = parseJSDocBlock(`
+      @openapi
+      @add
+      @add 401
+      @tag Users
+      @tag Admin
+      @body User optional
+      @requestBody required=false
+      @itemSchema
+      @itemSchema request: Item
+    `);
+    expect(leftoverFlags.addResponses).toEqual(expect.stringContaining("401"));
+    expect(leftoverFlags.tag).toBe("Users");
+    expect(leftoverFlags.tags).toEqual(expect.arrayContaining(["Admin"]));
+    expect(leftoverFlags.bodyType).toBe("User");
+    expect(parseJSDocBlock("@openapi\n@body required=true").requestBodyRequired).toBe(true);
+    expect(parseJSDocBlock("@openapi\n@body CreateUser required=true").bodyType).toBe("CreateUser");
+
+    const leftoverTags = parseJSDocBlock(`
+      @openapi
+      @link
+      @link 201
+      @link 201 next
+      @link 200 self /paths/users
+      @link 201 next getUser {not-json
+      @responseHeader 200 X-Id weird-type
+      @callback
+      @callback onEvent
+    `);
+    const merged = getExportCommentData(`
+      /**
+       * @openapi
+       * @examples header:ref:missingA
+       * @deprecated
+       * @description First
+       */
+      /**
+       * @openapi
+       * @examples header:ref:missingB
+       * @deprecated
+       * @description
+       */
+      export async function POST() {}
+    `);
+    expect(merged?.deprecated).toBe(true);
+    expect(merged?.description).toBe("First");
+
+    expect(leftoverTags.responseLinks).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ status: "200", name: "self", operationRef: "/paths/users" }),
+      ]),
+    );
+
+    const leftoverMerge = parseJSDocBlock(`List users
+      @openapi
+      @response 200 User
+      @response
+      @add 409
+      @tags public
+      @tag Users
+      @tag Admin
+      @servers https://api.example.com Production
+      @servers https://staging.example.com "Staging"
+      @externalDocs https://docs.example.com "API docs"
+      @security Bearer:read,write
+      @security :empty
+      @security Admin
+      @responseHeader 200 X-Count integer Total items
+    `);
+    expect(leftoverMerge.summary).toBe("List users");
+    expect(leftoverMerge.addResponses).toEqual(expect.stringContaining("409"));
+    expect(leftoverMerge.tag).toBe("Users");
+    expect(leftoverMerge.tags).toEqual(expect.arrayContaining(["public", "Admin"]));
+    expect(leftoverMerge.servers).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ url: "https://api.example.com", description: "Production" }),
+        expect.objectContaining({ url: "https://staging.example.com", description: "Staging" }),
+      ]),
+    );
+    expect(leftoverMerge.externalDocs).toEqual({
+      url: "https://docs.example.com",
+      description: "API docs",
+    });
+    expect(leftoverMerge.security).toEqual(
+      expect.arrayContaining([{ Bearer: ["read", "write"] }, { Admin: [] }]),
+    );
+    expect(leftoverMerge.responseHeaders).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ status: "200", name: "X-Count", description: "Total items" }),
+      ]),
+    );
+    expect(parseJSDocBlock("\n\n@openapi\n@body required=false").requestBodyRequired).toBeFalsy();
+
+    const emptyCaptures = parseJSDocBlock(
+      [
+        "@openapi",
+        "@response \t",
+        "@add \t",
+        "@tag \t",
+        "@body \t",
+        "@itemSchema \t",
+        "@itemSchema response: \t",
+        "@responseSummary \t",
+        "@servers \t",
+        "@externalDocs \t",
+        "@security \t",
+        "@link \t",
+        "@callback \t",
+        "@responseHeader \t",
+      ].join("\n"),
+    );
+    expect(emptyCaptures.responseType).toBeFalsy();
+    expect(emptyCaptures.addResponses).toBeFalsy();
+    expect(emptyCaptures.tag).toBeFalsy();
+
+    const mergedAdds = parseJSDocBlock(`
+      @openapi
+      @response 200 User
+      @response 201 Created
+      @add 409
+    `);
+    expect(mergedAdds.addResponses).toEqual(expect.stringContaining("201"));
+    expect(mergedAdds.addResponses).toEqual(expect.stringContaining("409"));
+
+    expect(parseJSDocBlock("@openapi\n@response 2XX").successCode).toBe("2XX");
+    expect(parseJSDocBlock("@openapi\n@body").bodyType).toBeFalsy();
+    expect(parseJSDocBlock("@openapi\n@querystring SearchFilter").querystringName).toBe(
+      "searchfilter",
+    );
+    expect(
+      parseJSDocBlock(`
+      @openapi
+      @examples request
+      @examples request:named:ref:UserExample
+      @examples body:{"ok":true}
+      @examples response:named:{"ok":true}
+    `).requestExamples,
+    ).toBeDefined();
+    expect(parseOpenApiOverrideTag("* @openapi-override []")).toBeUndefined();
+    expect(
+      parseJSDocBlock(`
+      @openapi
+      @examples request:nameless
+      @examples not-a-target:value
+      @examples header:ref:
+      @examples cookie:name
+    `).headerExamples,
+    ).toBeUndefined();
+  });
+});
+
+describe("extractInternalFlagFromComments leftover", () => {
   it("returns true when @internal is among multiple tags", () => {
     expect(
       extractInternalFlagFromComments([
         { type: "CommentBlock", value: "* @id MySchema\n * @internal " },
       ]),
     ).toBe(true);
-  });
-});
-
-describe("deepMerge", () => {
-  it("merges top-level keys", () => {
-    const target = { a: 1 };
-    const source = { b: 2 };
-    deepMerge(target, source);
-    expect(target).toEqual({ a: 1, b: 2 });
-  });
-
-  it("source overwrites target for primitives", () => {
-    const target = { a: 1 };
-    const source = { a: 2 };
-    deepMerge(target, source);
-    expect(target).toEqual({ a: 2 });
-  });
-
-  it("recursively merges nested plain objects", () => {
-    const target = { outer: { a: 1, b: 2 } };
-    const source = { outer: { b: 3, c: 4 } };
-    deepMerge(target, source);
-    expect(target).toEqual({ outer: { a: 1, b: 3, c: 4 } });
-  });
-
-  it("preserves existing nested keys from target when source does not provide them", () => {
-    const target = {
-      requestBody: {
-        content: { "application/json": { schema: { $ref: "#/components/schemas/Foo" } } },
-      },
-    };
-    const source = { requestBody: { required: true } };
-    deepMerge(target, source);
-    expect(target).toEqual({
-      requestBody: {
-        content: { "application/json": { schema: { $ref: "#/components/schemas/Foo" } } },
-        required: true,
-      },
-    });
-  });
-
-  it("replaces arrays instead of merging them", () => {
-    const target = { tags: ["a", "b"] };
-    const source = { tags: ["c"] };
-    deepMerge(target, source);
-    expect(target).toEqual({ tags: ["c"] });
-  });
-
-  it("replaces target value when source is an object and target is a primitive", () => {
-    const target = { x: 5 };
-    const source = { x: { nested: true } };
-    deepMerge(target, source);
-    expect(target).toEqual({ x: { nested: true } });
-  });
-
-  it("replaces target value when source is a primitive and target is an object", () => {
-    const target = { x: { nested: true } };
-    const source = { x: "replaced" };
-    deepMerge(target, source);
-    expect(target).toEqual({ x: "replaced" });
-  });
-
-  it("handles null source values as replacement", () => {
-    const target = { a: { nested: true } };
-    const source = { a: null };
-    deepMerge(target, source);
-    expect(target).toEqual({ a: null });
-  });
-
-  it("returns target unchanged for empty source", () => {
-    const target = { a: 1 };
-    deepMerge(target, {});
-    expect(target).toEqual({ a: 1 });
   });
 });

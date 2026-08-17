@@ -164,7 +164,13 @@ type FakeRuntime = {
   project: FakeProject;
 };
 
-function createFakeRuntime(): FakeRuntime {
+function createFakeRuntime(
+  flagOverrides: {
+    ObjectFlags?: Record<string, number>;
+    SymbolFlags?: Record<string, number>;
+    TypeFlags?: Record<string, number>;
+  } = {},
+): FakeRuntime {
   const sourceFiles = new Map<string, FakeNode>();
   let checkerOverride: Record<string, unknown> = {};
   let compilerOptions: Record<string, unknown> = {};
@@ -229,10 +235,10 @@ function createFakeRuntime(): FakeRuntime {
       }): FakeSnapshot;
     },
     ModifierFlags,
-    ObjectFlags,
+    ObjectFlags: flagOverrides.ObjectFlags ?? ObjectFlags,
     SignatureKind,
-    SymbolFlags,
-    TypeFlags,
+    SymbolFlags: flagOverrides.SymbolFlags ?? SymbolFlags,
+    TypeFlags: flagOverrides.TypeFlags ?? TypeFlags,
   } as unknown as Record<string, unknown>;
 
   const runtime: NativeTypeScriptRuntime = { ast: astModule, sync: syncModule };
@@ -303,6 +309,13 @@ describe("NativeTypeScriptAdapter", () => {
 
   function withSourceFile(target: FakeNode, fileName: string): FakeNode {
     target.getSourceFile = () => ({ fileName });
+    return target;
+  }
+
+  function asResolvable(target: FakeNode, fileName: string): FakeNode {
+    withSourceFile(target, fileName);
+    withForEachChild(target, []);
+    Object.assign(target, { resolve: () => target });
     return target;
   }
 
@@ -997,6 +1010,60 @@ describe("NativeTypeScriptAdapter", () => {
       });
     });
 
+    it("maps number and boolean literal unions to typed enums", () => {
+      const numberTemp = setupTempProject();
+      const numberAdapter = adapterForType(numberTemp, () =>
+        makeType({
+          flags: TypeFlags.Union,
+          label: "numbers",
+          isUnion: true,
+          unionTypes: [
+            makeType({
+              flags: TypeFlags.NumberLiteral,
+              label: "1",
+              value: 1,
+              isNumberLiteral: true,
+            }),
+            makeType({
+              flags: TypeFlags.NumberLiteral,
+              label: "2",
+              value: 2,
+              isNumberLiteral: true,
+            }),
+          ],
+        }),
+      );
+      expect(numberAdapter.resolveTypeByName("Target", numberTemp.routeFile)).toMatchObject({
+        type: "number",
+        enum: [1, 2],
+      });
+
+      const booleanTemp = setupTempProject();
+      const booleanAdapter = adapterForType(booleanTemp, () =>
+        makeType({
+          flags: TypeFlags.Union,
+          label: "flags",
+          isUnion: true,
+          unionTypes: [
+            makeType({ flags: TypeFlags.BooleanLiteral, label: "true" }),
+            makeType({ flags: TypeFlags.BooleanLiteral, label: "false" }),
+          ],
+        }),
+      );
+      expect(booleanAdapter.resolveTypeByName("Target", booleanTemp.routeFile)).toMatchObject({
+        type: "boolean",
+        enum: [true, false],
+      });
+    });
+
+    it("maps template literal types to strings", () => {
+      const temp = setupTempProject();
+      const adapter = adapterForType(temp, () =>
+        makeType({ flags: TypeFlags.TemplateLiteral, label: "`user-${string}`" }),
+      );
+      expect(adapter.resolveTypeByName("Target", temp.routeFile)).toEqual({ type: "string" });
+    });
+
     it("maps literal unions to enums with nullable metadata", () => {
       const temp = setupTempProject();
       const adapter = adapterForType(temp, () =>
@@ -1277,6 +1344,47 @@ describe("NativeTypeScriptAdapter", () => {
         fs.realpathSync(path.join(packageRoot, "index.js")),
       );
     });
+
+    it("resolves index files, exact path mappings, and skips declaration files", () => {
+      const temp = setupTempProject();
+      fs.mkdirSync(path.join(temp.root, "src", "lib"), { recursive: true });
+      fs.writeFileSync(path.join(temp.root, "src", "lib", "index.ts"), "export const value = 1;\n");
+      fs.writeFileSync(path.join(temp.root, "src", "widget.tsx"), "export const Widget = 1;\n");
+      fs.writeFileSync(
+        path.join(temp.root, "src", "legacy.d.ts"),
+        "export declare const legacy: string;\n",
+      );
+      fs.writeFileSync(path.join(temp.root, "src", "exact.ts"), "export const exact = 1;\n");
+      temp.fake.setProject({
+        baseUrl: ".",
+        paths: {
+          "@exact": ["./src/exact.ts"],
+          "@skip": "not-an-array",
+          "@missing/*": ["./src/missing/*"],
+        },
+      });
+      const adapter = createNativeTypeScriptAdapter({
+        packagePath: temp.root,
+        runtime: temp.fake.runtime,
+        version: "7.0.1-rc",
+      });
+
+      expect(adapter.resolveModule("./lib/index", temp.routeFile)).toBe(
+        path.join(temp.root, "src", "lib", "index.ts"),
+      );
+      expect(adapter.resolveModule("./widget", temp.routeFile)).toBe(
+        path.join(temp.root, "src", "widget.tsx"),
+      );
+      expect(adapter.resolveModule("./legacy", temp.routeFile)).toBeNull();
+      expect(adapter.resolveModule("@exact", temp.routeFile)).toBe(
+        path.join(temp.root, "src", "exact.ts"),
+      );
+      expect(adapter.resolveModule("@skip", temp.routeFile)).toBeNull();
+      expect(adapter.resolveModule("@missing/item", temp.routeFile)).toBeNull();
+      expect(
+        adapter.resolveModule(path.join(temp.root, "src", "lib", "index"), temp.routeFile),
+      ).toBe(path.join(temp.root, "src", "lib", "index.ts"));
+    });
   });
 
   describe("project lifecycle", () => {
@@ -1328,6 +1436,391 @@ describe("NativeTypeScriptAdapter", () => {
       expect(
         adapter.resolveTypeByName("Target", path.join(temp.root, "src", "missing.ts")),
       ).toBeNull();
+    });
+  });
+
+  describe("leftover evaluate and export branches", () => {
+    it("reduces type assertions, plus unary, binding elements, enums, and exported functions", () => {
+      const temp = setupTempProject();
+      const routeFile = temp.routeFile;
+
+      const plus = node("PrefixUnaryExpression", {
+        operand: numLit("4"),
+        operator: SyntaxKind.PlusToken,
+      });
+      const asserted = node("TypeAssertionExpression", { expression: numLit("8") });
+      const binding = asResolvable(node("BindingElement", { initializer: numLit("6") }), routeFile);
+      const enumMember = asResolvable(
+        node("EnumMember", { name: id("Draft"), initializer: strLit("draft") }),
+        routeFile,
+      );
+      const emptyUnary = node("PrefixUnaryExpression", { operator: SyntaxKind.MinusToken });
+      const stringUnary = node("PrefixUnaryExpression", {
+        operand: strLit("nope"),
+        operator: SyntaxKind.MinusToken,
+      });
+      const unknownUnary = node("PrefixUnaryExpression", {
+        operand: numLit("1"),
+        operator: 999,
+      });
+      const noOpUnary = node("PrefixUnaryExpression", { operand: numLit("1") });
+      const emptyParse = callExpr(propAccess(id("schema"), id("parse")), []);
+      const emptyFreeze = callExpr(id("Object.freeze"), []);
+      emptyFreeze.getText = () => "Object.freeze";
+      const otherCall = callExpr(id("Date.now"), []);
+      otherCall.getText = () => "Date.now";
+      const badSpread = node("SpreadAssignment", { expression: numLit("1") });
+      const nameless = node("PropertyAssignment", { initializer: numLit("1") });
+      const arraySpread = node("ArrayLiteralExpression", {
+        elements: [node("SpreadElement", { expression: numLit("1") })],
+      });
+      const emptySpread = node("SpreadAssignment");
+      const emptyArraySpread = node("SpreadElement");
+      const shorthandBare = node("ShorthandPropertyAssignment", { name: id("missing") });
+
+      const symbols: Record<string, FakeSymbol> = {};
+      const addValue = (name: string, initializer: FakeNode): void => {
+        const declaration = asResolvable(
+          node("VariableDeclaration", { name: id(name), initializer }),
+          routeFile,
+        );
+        symbols[name] = {
+          name,
+          flags: SymbolFlags.Variable,
+          valueDeclaration: declaration,
+        };
+      };
+
+      addValue(
+        "value",
+        objLit([
+          propAssign(id("plus"), plus),
+          propAssign(id("asserted"), asserted),
+          propAssign(id("falsy"), node("FalseKeyword")),
+          propAssign(id("nully"), node("NullKeyword")),
+        ]),
+      );
+      addValue("emptyUnary", emptyUnary);
+      addValue("stringUnary", stringUnary);
+      addValue("unknownUnary", unknownUnary);
+      addValue("noOpUnary", noOpUnary);
+      addValue("emptyParse", emptyParse);
+      addValue("emptyFreeze", emptyFreeze);
+      addValue("otherCall", otherCall);
+      addValue("spreadFail", objLit([badSpread]));
+      addValue("emptySpreadObj", objLit([emptySpread]));
+      addValue("namelessObj", objLit([nameless]));
+      addValue("shorthandObj", objLit([shorthandBare]));
+      addValue("arrayFail", arraySpread);
+      addValue("emptyArray", node("ArrayLiteralExpression"));
+      addValue("emptyObject", node("ObjectLiteralExpression"));
+      addValue("emptyItems", node("ArrayLiteralExpression", { elements: [emptyArraySpread] }));
+      symbols.emptyDecl = {
+        name: "emptyDecl",
+        flags: SymbolFlags.Variable,
+        valueDeclaration: asResolvable(
+          node("VariableDeclaration", { name: id("emptyDecl") }),
+          routeFile,
+        ),
+      };
+      const cycleId = id("cycle");
+      addValue("cycle", cycleId);
+
+      const bindingSymbol: FakeSymbol = {
+        name: "bound",
+        flags: SymbolFlags.Variable,
+        valueDeclaration: binding,
+      };
+      const enumSymbol: FakeSymbol = {
+        name: "Draft",
+        flags: SymbolFlags.Value,
+        valueDeclaration: enumMember,
+      };
+      symbols.bound = bindingSymbol;
+      symbols.Draft = enumSymbol;
+
+      const getBody = node("Block");
+      withForEachChild(getBody, []);
+      const exportedFn = fnDecl("GET", getBody);
+      const sourceFile = node("SourceFile");
+      sourceFile.statements = [exportedFn];
+      sourceFile.getSourceFile = () => ({ fileName: routeFile });
+      temp.fake.setSourceFile(routeFile, sourceFile);
+      temp.fake.setChecker({
+        resolveName(name: string): unknown {
+          return symbols[name];
+        },
+        getShorthandAssignmentValueSymbol(): unknown {
+          return undefined;
+        },
+        getSymbolAtLocation(candidate: unknown): unknown {
+          const nodeArg = candidate as FakeNode;
+          if (nodeArg?.text === "cycle") {
+            return symbols.cycle;
+          }
+          return undefined;
+        },
+        getTypeAtLocation(): undefined {
+          return undefined;
+        },
+        getSignaturesOfType(): unknown[] {
+          return [];
+        },
+      });
+
+      const adapter = createNativeTypeScriptAdapter({
+        packagePath: temp.root,
+        runtime: temp.fake.runtime,
+        version: "7.0.1-rc",
+      });
+
+      expect(adapter.resolveValueReference("value", routeFile).value).toEqual({
+        plus: 4,
+        asserted: 8,
+        falsy: false,
+        nully: null,
+      });
+      expect(adapter.resolveValueReference("emptyUnary", routeFile).value).toBeUndefined();
+      expect(adapter.resolveValueReference("stringUnary", routeFile).value).toBeUndefined();
+      expect(adapter.resolveValueReference("unknownUnary", routeFile).value).toBeUndefined();
+      expect(adapter.resolveValueReference("noOpUnary", routeFile).value).toBeUndefined();
+      expect(adapter.resolveValueReference("emptyParse", routeFile).value).toBeUndefined();
+      expect(adapter.resolveValueReference("emptyFreeze", routeFile).value).toBeUndefined();
+      expect(adapter.resolveValueReference("otherCall", routeFile).value).toBeUndefined();
+      expect(adapter.resolveValueReference("spreadFail", routeFile).value).toBeUndefined();
+      expect(adapter.resolveValueReference("emptySpreadObj", routeFile).value).toBeUndefined();
+      expect(adapter.resolveValueReference("namelessObj", routeFile).value).toBeUndefined();
+      expect(adapter.resolveValueReference("shorthandObj", routeFile).value).toEqual({});
+      expect(adapter.resolveValueReference("arrayFail", routeFile).value).toBeUndefined();
+      expect(adapter.resolveValueReference("emptyArray", routeFile).value).toEqual([]);
+      expect(adapter.resolveValueReference("emptyObject", routeFile).value).toEqual({});
+      expect(adapter.resolveValueReference("emptyItems", routeFile).value).toBeUndefined();
+      expect(adapter.resolveValueReference("emptyDecl", routeFile).value).toBeUndefined();
+      expect(adapter.resolveValueReference("cycle", routeFile).value).toBeUndefined();
+      expect(adapter.resolveValueReference("bound", routeFile).value).toBe(6);
+      expect(adapter.resolveValueReference("Draft", routeFile).value).toBe("draft");
+      expect(adapter.inferResponsesForExports(routeFile, ["GET", "value"]).get("GET")).toEqual({
+        responses: [],
+        diagnostics: [],
+      });
+      adapter.invalidate(routeFile);
+    });
+
+    it("throws when a native snapshot cannot produce a project", () => {
+      const temp = setupTempProject({ withTsconfig: false });
+      class EmptyAPI {
+        close(): void {}
+        updateSnapshot(): {
+          dispose(): void;
+          getProject(): undefined;
+          getDefaultProjectForFile(): undefined;
+          getProjects(): [];
+        } {
+          return {
+            dispose() {},
+            getProject() {
+              return undefined;
+            },
+            getDefaultProjectForFile() {
+              return undefined;
+            },
+            getProjects() {
+              return [];
+            },
+          };
+        }
+      }
+      const runtime: NativeTypeScriptRuntime = {
+        ast: temp.fake.runtime.ast,
+        sync: {
+          ...temp.fake.runtime.sync,
+          API: EmptyAPI as unknown,
+        },
+      };
+      const adapter = createNativeTypeScriptAdapter({
+        packagePath: temp.root,
+        runtime,
+        version: "7.0.1-rc",
+      });
+      expect(() => adapter.resolveValueReference("value", temp.routeFile)).toThrow(
+        /Could not create a TypeScript native project/,
+      );
+    });
+
+    it("reads redirect status from an options object and names array aliases", () => {
+      const temp = setupTempProject();
+      const redirectReturn = retStmt(
+        callExpr(propAccess(id("Response"), id("redirect")), [
+          strLit("/next"),
+          objLit([propAssign(id("status"), numLit("308"))]),
+        ]),
+      );
+      const body = node("Block");
+      withForEachChild(body, [redirectReturn]);
+      const getFn = fnDecl("GET", body);
+      const sourceFile = node("SourceFile");
+      sourceFile.statements = [getFn];
+      sourceFile.getSourceFile = () => ({ fileName: temp.routeFile });
+      temp.fake.setSourceFile(temp.routeFile, sourceFile);
+      temp.fake.setChecker({
+        getTypeAtLocation(candidate: unknown): FakeType {
+          const nodeArg = candidate as FakeNode;
+          if (nodeArg?.kind === SyntaxKind.CallExpression) {
+            return makeType({
+              flags: TypeFlags.Any,
+              symbolName: "Response",
+              label: "Response",
+            });
+          }
+          return makeType({ flags: TypeFlags.Any, label: "unknown" });
+        },
+        getSignaturesOfType: () => [],
+      });
+
+      const adapter = createNativeTypeScriptAdapter({
+        packagePath: temp.root,
+        runtime: temp.fake.runtime,
+        version: "7.0.1-rc",
+      });
+      expect(
+        adapter.inferResponsesForExports(temp.routeFile, ["GET"]).get("GET")?.responses[0],
+      ).toEqual(expect.objectContaining({ statusCode: "308" }));
+
+      const arrayAdapter = adapterForType(temp, () =>
+        makeType({
+          flags: TypeFlags.Object,
+          isArray: true,
+          typeArguments: [makeType({ flags: TypeFlags.StringLike, label: "string" })],
+        }),
+      );
+      expect(arrayAdapter.resolveTypeByName("Users", temp.routeFile)).toEqual({
+        type: "array",
+        items: { type: "string" },
+      });
+    });
+
+    it("falls back when compiler flag tables and alias helpers are sparse", () => {
+      const temp = setupTempProject();
+      const sparseRuntime: NativeTypeScriptRuntime = {
+        ast: temp.fake.runtime.ast,
+        sync: {
+          ...temp.fake.runtime.sync,
+          SymbolFlags: { Alias: 1 },
+          ModifierFlags: {},
+          SignatureKind: {},
+          ObjectFlags: {},
+        },
+      };
+      const declaration = asResolvable(
+        node("VariableDeclaration", {
+          name: id("value"),
+          initializer: numLit("1"),
+        }),
+        temp.routeFile,
+      );
+      const aliasSymbol: FakeSymbol = {
+        name: "value",
+        flags: 1,
+        valueDeclaration: declaration,
+        getExportSymbol() {
+          return {
+            name: "value",
+            flags: SymbolFlags.Variable,
+            valueDeclaration: declaration,
+          };
+        },
+      };
+      const sourceFile = node("VariableStatement", {
+        declarationList: { declarations: [declaration] },
+      });
+      temp.fake.setSourceFile(temp.routeFile, sourceFile);
+      temp.fake.setChecker({
+        resolveName: () => aliasSymbol,
+        getAliasedSymbol: undefined,
+        getTypeAtLocation: () => undefined,
+        getDeclaredTypeOfSymbol: () => undefined,
+      });
+
+      const adapter = createNativeTypeScriptAdapter({
+        packagePath: temp.root,
+        runtime: sparseRuntime,
+        version: "7.0.1-rc",
+      });
+
+      expect(adapter.resolveValueReference("value", temp.routeFile).value).toBe(1);
+      expect(adapter.resolveTypeByName("Target", temp.routeFile)).toBeNull();
+    });
+
+    it("covers empty flag tables on resolve helpers", () => {
+      const temp = setupTempProject();
+      const emptyFake = createFakeRuntime({
+        ObjectFlags: {},
+        SymbolFlags: {},
+        TypeFlags: {},
+      });
+      const sourceFile = node("SourceFile");
+      sourceFile.statements = [];
+      sourceFile.getSourceFile = () => ({ fileName: temp.routeFile });
+      emptyFake.setSourceFile(temp.routeFile, sourceFile);
+      const declaration = asResolvable(node("Identifier", { text: "User" }), temp.routeFile);
+      emptyFake.setChecker({
+        resolveName: () => ({
+          name: "User",
+          flags: 0,
+          valueDeclaration: declaration,
+        }),
+        getDeclaredTypeOfSymbol: () => ({ flags: 0 }),
+        getTypeOfSymbol: () => ({ flags: 0 }),
+        getPropertiesOfType: () => [],
+        getIndexInfosOfType: () => [],
+        getSymbolAtLocation: () => undefined,
+        getTypeAtLocation: () => ({ flags: 0 }),
+        getSignaturesOfType: () => [],
+        typeToString: () => "User",
+      });
+
+      const adapter = createNativeTypeScriptAdapter({
+        packagePath: temp.root,
+        runtime: emptyFake.runtime,
+        version: "7.0.1-rc",
+      });
+
+      expect(adapter.resolveTypeByName("User", temp.routeFile)).toEqual({ type: "object" });
+      expect(adapter.resolveValueReference("missing", temp.routeFile).value).toBeUndefined();
+    });
+
+    it("covers leftover export maps and missing declaration lists", () => {
+      const temp = setupTempProject();
+      const emptySource = node("SourceFile");
+      emptySource.getSourceFile = () => ({ fileName: temp.routeFile });
+      temp.fake.setSourceFile(temp.routeFile, emptySource);
+      const adapter = createNativeTypeScriptAdapter({
+        packagePath: temp.root,
+        runtime: temp.fake.runtime,
+        version: "7.0.1-rc",
+      });
+      expect(adapter.inferResponsesForExports(temp.routeFile, ["GET"]).size).toBe(0);
+
+      const namelessFn = fnDecl("", node("Block"));
+      namelessFn.name = node("Identifier");
+      const bareVariable = node("VariableStatement", {
+        modifierFlags: ModifierFlags.Export,
+      });
+      const unnamedDecl = asResolvable(
+        node("VariableDeclaration", { name: node("Identifier") }),
+        temp.routeFile,
+      );
+      const namedVariable = node("VariableStatement", {
+        modifierFlags: ModifierFlags.Export,
+        declarationList: { declarations: [unnamedDecl] },
+      });
+      const sourceFile = node("SourceFile");
+      sourceFile.statements = [namelessFn, bareVariable, namedVariable];
+      sourceFile.getSourceFile = () => ({ fileName: temp.routeFile });
+      temp.fake.setSourceFile(temp.routeFile, sourceFile);
+      expect(
+        adapter.inferResponsesForExports(temp.routeFile, ["GET", ""]).size,
+      ).toBeGreaterThanOrEqual(0);
     });
   });
 });

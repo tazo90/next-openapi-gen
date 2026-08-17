@@ -5,6 +5,7 @@ import path from "node:path";
 import * as t from "@babel/types";
 import { afterEach, describe, expect, it } from "vitest";
 
+import { createSharedGenerationRuntime } from "@workspace/openapi-core/core/runtime.js";
 import { DiagnosticsCollector } from "@workspace/openapi-core/diagnostics/collector.js";
 import { ZodSchemaConverter } from "@workspace/openapi-core/schema/zod/zod-converter.js";
 import { parseTypeScriptFile } from "@workspace/openapi-core/shared/utils.js";
@@ -85,6 +86,54 @@ describe("ZodSchemaConverter", () => {
     expect(converter.convertZodSchemaToOpenApi("LoopSchema")).toEqual({
       $ref: "#/components/schemas/LoopSchema",
     });
+  });
+
+  it("dispatches leftover zod-node reference, coerce, and factory shapes", () => {
+    const converter = new ZodSchemaConverter(process.cwd());
+    converter.zodSchemas.UserSchema = {
+      type: "object",
+      properties: { id: { type: "string" } },
+      required: ["id"],
+    };
+    converter.zodSchemas.UserBaseSchema = {
+      type: "object",
+      properties: { id: { type: "string" } },
+      required: ["id"],
+    };
+
+    expect(converter.processZodNode(parseInitializer("z.coerce.string()"))).toEqual({
+      type: "string",
+    });
+    expect(converter.processZodNode(parseInitializer("z.coerce.number()"))).toEqual({
+      type: "number",
+    });
+    expect(converter.processZodNode(parseInitializer("UserSchema.optional()"))).toEqual({
+      allOf: [{ $ref: "#/components/schemas/UserSchema" }],
+    });
+    expect(converter.processZodNode(parseInitializer("UserSchema.nullable()"))).toEqual({
+      anyOf: [{ $ref: "#/components/schemas/UserSchema" }, { type: "null" }],
+    });
+    expect(converter.processZodNode(parseInitializer('UserSchema.describe("User")'))).toEqual({
+      allOf: [{ $ref: "#/components/schemas/UserSchema" }],
+      description: "User",
+    });
+    expect(
+      converter.processZodNode(parseInitializer("UserBaseSchema.extend({ name: z.string() })")),
+    ).toMatchObject({
+      type: "object",
+    });
+    expect(converter.processZodNode(parseInitializer("z.lazy(() => UserSchema)"))).toEqual({
+      $ref: "#/components/schemas/UserSchema",
+    });
+    expect(converter.processZodNode(parseInitializer("UnknownFactory(UserSchema)"))).toEqual({
+      type: "object",
+    });
+    expect(converter.processZodNode(parseInitializer("UserSchema"))).toEqual({
+      $ref: "#/components/schemas/UserSchema",
+    });
+    expect(converter.processZodNode(parseInitializer("z.optional()"))).toEqual({ type: "string" });
+    expect(converter.processZodNode(parseInitializer("z.nullable()"))).toEqual({ type: "string" });
+    expect(converter.processZodNode(parseInitializer("z.nullish()"))).toEqual({ type: "string" });
   });
 
   it("converts primitive, collection, and custom Zod nodes", () => {
@@ -894,6 +943,103 @@ export const EnvelopeSchema = createEnvelope({
       });
     });
 
+    it("covers leftover pick, infer, pipe, bounds, and parse-error branches", () => {
+      const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-zod-leftover-"));
+      roots.push(root);
+
+      fs.writeFileSync(
+        path.join(root, "schemas.ts"),
+        [
+          'import { z } from "zod";',
+          "",
+          "const MASK = { id: true, name: false };",
+          'const KEYS = ["id"];',
+          "const EXTRA = { role: z.string() };",
+          "",
+          "export const UserSchema = z.object({",
+          "  id: z.string(),",
+          "  name: z.string(),",
+          "  email: z.string(),",
+          "});",
+          "",
+          "export const PickedMask = UserSchema.pick(MASK);",
+          "export const PickedKeys = UserSchema.pick(KEYS);",
+          'export const PickedQuoted = UserSchema.pick({ "id": true });',
+          "export const ExtendedConst = UserSchema.extend(EXTRA);",
+          "export const PipedRef = z.string().pipe(UserSchema);",
+          "export const PipedUnion = z.string().pipe(z.union([z.string(), z.number()]));",
+          "export const BoundedHigh = z.number().min(1).gt(5);",
+          "export const BoundedLow = z.number().max(10).lt(3);",
+          "export const Deep = z",
+          "  .object({",
+          "    items: z.array(z.object({ id: z.string() })),",
+          "    either: z.union([z.object({ a: z.string() }), z.object({ b: z.number() })]),",
+          "  })",
+          "  .deepPartial();",
+          "export const Named = z.string().meta({ id: 'NamedString' });",
+          "export type User = z.infer<typeof UserSchema>;",
+        ].join("\n"),
+      );
+
+      const converter = new ZodSchemaConverter(root);
+      const schemaFile = path.join(root, "schemas.ts");
+      converter.processFileForZodSchema(schemaFile, "User");
+      for (const name of [
+        "UserSchema",
+        "PickedMask",
+        "PickedKeys",
+        "PickedQuoted",
+        "ExtendedConst",
+        "PipedRef",
+        "PipedUnion",
+        "BoundedHigh",
+        "BoundedLow",
+        "Deep",
+        "Named",
+      ]) {
+        converter.convertZodSchemaToOpenApi(name);
+      }
+      converter.processAllSchemasInFile(schemaFile);
+
+      expect(converter.zodSchemas.PickedMask).toMatchObject({
+        type: "object",
+        properties: { id: { type: "string" } },
+      });
+      expect(converter.zodSchemas.PickedKeys).toMatchObject({
+        type: "object",
+        properties: { id: { type: "string" } },
+      });
+      expect(converter.zodSchemas.PickedQuoted).toMatchObject({
+        type: "object",
+        properties: { id: { type: "string" } },
+      });
+      expect(converter.zodSchemas.ExtendedConst).toBeDefined();
+      expect(converter.zodSchemas.PipedRef).toEqual({
+        $ref: "#/components/schemas/UserSchema",
+      });
+      expect(converter.zodSchemas.PipedUnion).toMatchObject({
+        anyOf: expect.any(Array),
+      });
+      expect(converter.zodSchemas.BoundedHigh).toMatchObject({ type: "number" });
+      expect(converter.zodSchemas.BoundedLow).toMatchObject({ type: "number" });
+      expect(converter.zodSchemas.Deep.required).toBeUndefined();
+      expect(converter.zodSchemas.NamedString ?? converter.zodSchemas.Named).toBeDefined();
+      expect(converter.typeToSchemaMapping.User).toBe("UserSchema");
+
+      const broken = new ZodSchemaConverter(root, undefined, {
+        existsSync: () => true,
+        readdirSync: () => [],
+        statSync: () => ({ isDirectory: () => false, isFile: () => true }) as fs.Stats,
+        readFileSync: () => {
+          throw new Error("boom");
+        },
+      });
+      expect(() =>
+        broken.processFileForZodSchema(path.join(root, "missing.ts"), "X"),
+      ).not.toThrow();
+      expect(() => broken.processAllSchemasInFile(path.join(root, "missing.ts"))).not.toThrow();
+    });
+
     it("resolves imported constants from another file", () => {
       const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-zod-const-import-"));
       roots.push(root);
@@ -931,5 +1077,484 @@ export const EnvelopeSchema = createEnvelope({
         required: ["items"],
       });
     });
+  });
+
+  it("covers leftover private mask, pipe, and deepPartial helpers", () => {
+    const converter = new ZodSchemaConverter(process.cwd()) as unknown as {
+      extractMaskKeysFromNode(arg: t.Node | undefined): string[];
+      mergePipeSchema(
+        base: Record<string, unknown>,
+        piped: Record<string, unknown>,
+      ): Record<string, unknown>;
+      applyDeepPartial(schema: Record<string, unknown>): void;
+      isZodLocalName(name: string | undefined): boolean;
+      resolveMaskKeys(name: string): string[] | null;
+      resolveConstObjectNode(name: string): t.ObjectExpression | null;
+      resolveConstArrayValues(name: string): (string | number)[] | null;
+    };
+
+    expect(converter.extractMaskKeysFromNode(undefined)).toEqual([]);
+    expect(
+      converter.extractMaskKeysFromNode(t.tsAsExpression(t.objectExpression([]), t.tsAnyKeyword())),
+    ).toEqual([]);
+    expect(
+      converter.extractMaskKeysFromNode(
+        t.objectExpression([
+          t.objectProperty(t.identifier("id"), t.booleanLiteral(true)),
+          t.objectProperty(t.stringLiteral("name"), t.booleanLiteral(true)),
+          t.objectProperty(t.identifier("skip"), t.booleanLiteral(false)),
+        ]),
+      ),
+    ).toEqual(["id", "name"]);
+    expect(
+      converter.extractMaskKeysFromNode(
+        t.arrayExpression([t.stringLiteral("id"), t.numericLiteral(1), null]),
+      ),
+    ).toEqual(["id"]);
+    expect(converter.extractMaskKeysFromNode(t.identifier("UnknownMask"))).toEqual([]);
+    expect(
+      converter.mergePipeSchema({ type: "string" }, { $ref: "#/components/schemas/X" }),
+    ).toEqual({ $ref: "#/components/schemas/X" });
+    expect(converter.mergePipeSchema({ type: "string" }, { allOf: [{ type: "string" }] })).toEqual({
+      allOf: [{ type: "string" }],
+    });
+    expect(converter.mergePipeSchema({ type: "string" }, { anyOf: [{ type: "string" }] })).toEqual({
+      anyOf: [{ type: "string" }],
+    });
+    expect(converter.mergePipeSchema({ type: "string" }, { oneOf: [{ type: "string" }] })).toEqual({
+      oneOf: [{ type: "string" }],
+    });
+    expect(converter.mergePipeSchema({ type: "string" }, { format: "email" })).toEqual({
+      type: "string",
+      format: "email",
+    });
+
+    const deep = {
+      type: "object",
+      required: ["items"],
+      properties: {
+        items: {
+          type: "array",
+          items: { type: "object", required: ["id"], properties: { id: { type: "string" } } },
+        },
+      },
+      allOf: [{ type: "object", required: ["a"], properties: { a: { type: "string" } } }],
+      anyOf: [{ type: "object", required: ["b"], properties: { b: { type: "number" } } }],
+      oneOf: [{ type: "object", required: ["c"], properties: { c: { type: "boolean" } } }],
+    };
+    converter.applyDeepPartial(deep);
+    expect(deep.required).toBeUndefined();
+    expect(
+      (deep.properties.items as { items: { required?: string[] } }).items.required,
+    ).toBeUndefined();
+    converter.applyDeepPartial(null as never);
+    expect(converter.isZodLocalName(undefined)).toBe(false);
+    expect(converter.isZodLocalName("z")).toBe(true);
+    expect(converter.isZodLocalName("zod")).toBe(false);
+    expect(converter.resolveMaskKeys("MASK")).toBeNull();
+    expect(converter.resolveConstObjectNode("OBJ")).toBeNull();
+    expect(converter.resolveConstArrayValues("KEYS")).toBeNull();
+  });
+
+  it("covers leftover convert lookup, convention, circular, and route-file branches", () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-zod-convert-leftover-"));
+    roots.push(root);
+    fs.mkdirSync(path.join(root, "api"), { recursive: true });
+    fs.writeFileSync(
+      path.join(root, "schemas.ts"),
+      [
+        'import { z } from "zod";',
+        "export const sliderSchema = z.object({ id: z.string() });",
+      ].join("\n"),
+    );
+    fs.writeFileSync(
+      path.join(root, "api", "route.ts"),
+      [
+        'import { z } from "zod";',
+        "export const RouteOnlySchema = z.object({ ok: z.boolean() });",
+      ].join("\n"),
+    );
+
+    const runtime = createSharedGenerationRuntime();
+    const profile = { zodConvertMs: 0, zodPreScanMs: 0 } as never;
+    const converter = new ZodSchemaConverter(
+      root,
+      path.join(root, "api"),
+      undefined,
+      undefined,
+      undefined,
+      runtime.schema.zod,
+      profile,
+    );
+
+    converter.preprocessSchemaDirectories();
+    expect(converter.convertZodSchemaToOpenApi("Slider", "" as never)).toMatchObject({
+      type: "object",
+    });
+    expect(converter.convertZodSchemaToOpenApi("sliderSchema")).toMatchObject({ type: "object" });
+
+    converter.processingSchemas.add("MissingSchema");
+    expect(converter.convertZodSchemaToOpenApi("MissingSchema")).toEqual({
+      $ref: "#/components/schemas/MissingSchema",
+    });
+    converter.processingSchemas.delete("MissingSchema");
+
+    expect(converter.convertZodSchemaToOpenApi("RouteOnlySchema")).toMatchObject({
+      type: "object",
+      properties: { ok: { type: "boolean" } },
+    });
+    expect(converter.convertZodSchemaToOpenApi("DefinitelyMissing")).toBeNull();
+    expect(profile.zodConvertMs).toBeGreaterThanOrEqual(0);
+  });
+
+  it("covers identifier-chain transforms, factories, infer aliases, and scan errors", () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-zod-chain-leftover-"));
+    roots.push(root);
+    fs.mkdirSync(path.join(root, "ignored"), { recursive: true });
+    fs.writeFileSync(
+      path.join(root, "schemas.ts"),
+      [
+        'import { z } from "zod";',
+        'import { createInsertSchema } from "drizzle-zod";',
+        "",
+        "const MASK = { id: true } as const;",
+        'const KEYS = ["id"] as const;',
+        "const EXTRA = { extra: z.boolean() };",
+        "",
+        "export const UserSchema = z.object({",
+        "  id: z.string(),",
+        "  secret: z.string(),",
+        "  extra: z.number().optional(),",
+        "});",
+        "export const ExtraSchema = z.object({ tag: z.string() });",
+        "export const PublicUserSchema = UserSchema.omit({ secret: true });",
+        "export const PickedUserSchema = UserSchema.pick(MASK);",
+        "export const PickedKeysSchema = UserSchema.pick(KEYS);",
+        "export const PartialUserSchema = UserSchema.partial();",
+        "export const RequiredUserSchema = UserSchema.required();",
+        "export const ExtendedUserSchema = UserSchema.extend({ nick: z.string() });",
+        "export const ExtendedFromConstSchema = UserSchema.extend(EXTRA);",
+        "export const MergedUserSchema = UserSchema.merge(ExtraSchema);",
+        "function createUserSchema() {",
+        "  return z.object({ factory: z.string() });",
+        "}",
+        "export const FromFactorySchema = createUserSchema();",
+        "export const MissingFactorySchema = missingFactory();",
+        "export type User = z.infer<typeof UserSchema>;",
+        "export const InsertSchema = createInsertSchema(users);",
+      ].join("\n"),
+    );
+
+    const converter = new ZodSchemaConverter(root);
+    converter.drizzleZodImports.add("createInsertSchema");
+    expect(converter.convertZodSchemaToOpenApi("PublicUserSchema")).toMatchObject({
+      type: "object",
+      properties: expect.objectContaining({ id: { type: "string" } }),
+    });
+    expect(converter.convertZodSchemaToOpenApi("PickedUserSchema")?.properties).toEqual({
+      id: { type: "string" },
+    });
+    expect(converter.convertZodSchemaToOpenApi("PickedKeysSchema")?.properties).toEqual({
+      id: { type: "string" },
+    });
+    expect(converter.convertZodSchemaToOpenApi("PartialUserSchema")?.required).toBeUndefined();
+    expect(converter.convertZodSchemaToOpenApi("RequiredUserSchema")?.required).toEqual(
+      expect.arrayContaining(["id", "secret"]),
+    );
+    expect(converter.convertZodSchemaToOpenApi("ExtendedUserSchema")?.properties).toMatchObject({
+      nick: { type: "string" },
+    });
+    expect(converter.convertZodSchemaToOpenApi("FromFactorySchema")).toMatchObject({
+      type: "object",
+      properties: { factory: { type: "string" } },
+    });
+    expect(converter.convertZodSchemaToOpenApi("User")).toMatchObject({ type: "object" });
+    expect(converter.convertZodSchemaToOpenApi("MissingFactorySchema")).toBeDefined();
+
+    const routeFiles: string[] = [];
+    converter.findRouteFilesInDir(path.join(root, "missing-dir"), routeFiles);
+    expect(routeFiles).toEqual([]);
+    converter.findRouteFilesInDir(path.join(root, "ignored"), routeFiles);
+    expect(routeFiles).toEqual([]);
+  });
+
+  it("covers leftover private argument, spread, and static-json helpers", () => {
+    const converter = new ZodSchemaConverter(process.cwd()) as unknown as {
+      currentFilePath?: string;
+      currentAST?: t.File;
+      resolveLiteralValue(name: string): unknown;
+      unwrapTypeAssertion(node: t.Node | null | undefined): t.Node | undefined;
+      resolveNumericArg(arg: t.Node | null | undefined): number | undefined;
+      resolveStringArg(arg: t.Node | null | undefined): string | undefined;
+      resolveStringArrayArg(arg: t.Node | null | undefined): string[] | undefined;
+      resolveObjectSchemaNode(name: string): t.CallExpression | null;
+      resolveSpreadMembers(argument: t.Expression): unknown;
+      extractStaticJsonValue(node: t.Node | null | undefined): unknown;
+      storeResolvedSchema(
+        name: string,
+        schema: Record<string, unknown>,
+        contentType?: string,
+      ): string;
+      zodSchemas: Record<string, unknown>;
+    };
+
+    expect(converter.resolveLiteralValue("MISSING")).toBeUndefined();
+    expect(converter.unwrapTypeAssertion(null)).toBeUndefined();
+    expect(converter.unwrapTypeAssertion(t.stringLiteral("x"))).toMatchObject({
+      type: "StringLiteral",
+    });
+    expect(
+      converter.unwrapTypeAssertion(t.tsAsExpression(t.numericLiteral(2), t.tsNumberKeyword())),
+    ).toMatchObject({
+      type: "NumericLiteral",
+    });
+    expect(converter.resolveNumericArg(null)).toBeUndefined();
+    expect(converter.resolveNumericArg(t.numericLiteral(4))).toBe(4);
+    expect(converter.resolveNumericArg(t.unaryExpression("-", t.numericLiteral(3)))).toBe(-3);
+    expect(converter.resolveNumericArg(t.identifier("COUNT"))).toBeUndefined();
+    expect(converter.resolveStringArg(null)).toBeUndefined();
+    expect(converter.resolveStringArg(t.stringLiteral("hi"))).toBe("hi");
+    expect(converter.resolveStringArg(t.identifier("LABEL"))).toBeUndefined();
+    expect(converter.resolveStringArrayArg(null)).toBeUndefined();
+    expect(converter.resolveStringArrayArg(t.stringLiteral("solo"))).toEqual(["solo"]);
+    expect(
+      converter.resolveStringArrayArg(
+        t.arrayExpression([t.stringLiteral("a"), t.identifier("nope")]),
+      ),
+    ).toEqual(["a"]);
+    expect(converter.resolveStringArrayArg(t.arrayExpression([]))).toBeUndefined();
+    expect(converter.resolveStringArrayArg(t.identifier("KEYS"))).toBeUndefined();
+    expect(converter.resolveObjectSchemaNode("UserSchema")).toBeNull();
+    expect(converter.resolveSpreadMembers(t.identifier("Base"))).toBeNull();
+    expect(
+      converter.resolveSpreadMembers(
+        t.memberExpression(t.identifier("Base"), t.identifier("shape")),
+      ),
+    ).toBeNull();
+    expect(converter.resolveSpreadMembers(t.numericLiteral(1) as never)).toBeNull();
+    expect(converter.extractStaticJsonValue(null)).toBeUndefined();
+    expect(converter.extractStaticJsonValue(t.nullLiteral())).toBeNull();
+    expect(converter.extractStaticJsonValue(t.identifier("MISSING"))).toBeUndefined();
+    expect(
+      converter.extractStaticJsonValue(t.tsAsExpression(t.stringLiteral("x"), t.tsStringKeyword())),
+    ).toBe("x");
+    expect(
+      converter.extractStaticJsonValue(t.arrayExpression([t.spreadElement(t.identifier("rest"))])),
+    ).toBeUndefined();
+    expect(
+      converter.extractStaticJsonValue(t.objectExpression([t.spreadElement(t.identifier("rest"))])),
+    ).toBeUndefined();
+    expect(
+      converter.extractStaticJsonValue(
+        t.objectExpression([t.objectProperty(t.identifier("id"), t.identifier("MISSING"))]),
+      ),
+    ).toBeUndefined();
+
+    converter.zodSchemas.User = { type: "object", properties: { id: { type: "string" } } };
+    expect(
+      converter.storeResolvedSchema(
+        "User",
+        { type: "object", properties: { name: { type: "string" } } },
+        "response",
+      ),
+    ).toBe("UserOutput");
+    expect(
+      converter.storeResolvedSchema(
+        "User",
+        { type: "object", properties: { email: { type: "string" } } },
+        "body",
+      ),
+    ).toBe("User");
+  });
+
+  it("covers leftover falsy content types, preprocess, and route.tsx discovery", () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-zod-content-type-"));
+    roots.push(root);
+    fs.mkdirSync(path.join(root, "node_modules"), { recursive: true });
+    fs.writeFileSync(path.join(root, "route.tsx"), "");
+    fs.writeFileSync(path.join(root, "users-api.ts"), "");
+
+    const converter = new ZodSchemaConverter(root, root);
+    expect(converter.convertZodSchemaToOpenApi("MissingSchema", "" as never)).toBeNull();
+    converter.preprocessSchemaDirectories();
+    converter.preprocessSchemaDirectories();
+    converter.schemaVariantRefs.set("response:Ghost", "GhostOutput");
+    expect(
+      (
+        converter as unknown as {
+          getStoredSchema(name: string, contentType?: string, allowBaseFallback?: boolean): unknown;
+        }
+      ).getStoredSchema("Ghost", "", false),
+    ).toBeNull();
+
+    const routeFiles: string[] = [];
+    converter.findRouteFilesInDir(root, routeFiles);
+    expect(routeFiles.some((file) => file.endsWith("route.tsx"))).toBe(true);
+    expect(routeFiles.some((file) => file.endsWith("users-api.ts"))).toBe(true);
+  });
+
+  it("covers leftover processZodObject identifier, computed keys, and spreads", () => {
+    const converter = new ZodSchemaConverter("/virtual");
+    const processZodObject = converter.processZodObject.bind(converter) as (
+      node: t.CallExpression,
+    ) => Record<string, unknown>;
+
+    expect(
+      processZodObject(
+        t.callExpression(t.memberExpression(t.identifier("z"), t.identifier("object")), []),
+      ),
+    ).toEqual({ type: "object" });
+    expect(
+      processZodObject(
+        t.callExpression(t.memberExpression(t.identifier("z"), t.identifier("object")), [
+          t.numericLiteral(1) as never,
+        ]),
+      ),
+    ).toEqual({ type: "object" });
+
+    converter.resolveObjectSchemaNode = (name: string) =>
+      name === "Shape"
+        ? t.callExpression(t.memberExpression(t.identifier("z"), t.identifier("object")), [
+            t.objectExpression([
+              t.objectProperty(
+                t.identifier("id"),
+                t.callExpression(t.memberExpression(t.identifier("z"), t.identifier("string")), []),
+              ),
+            ]),
+          ])
+        : name === "EmptyCall"
+          ? t.callExpression(t.memberExpression(t.identifier("z"), t.identifier("object")), [])
+          : null;
+    converter.resolveConstObjectNode = (name: string) =>
+      name === "ConstShape"
+        ? t.objectExpression([
+            t.objectProperty(
+              t.identifier("label"),
+              t.callExpression(t.memberExpression(t.identifier("z"), t.identifier("string")), []),
+            ),
+          ])
+        : null;
+    converter.resolveLiteralValue = (name: string) => (name === "KEY" ? "nick" : undefined);
+    converter.resolveSpreadMembers = () => null;
+    converter.convertZodSchemaToOpenApi = () => ({ type: "object" });
+    converter.getStoredSchema = (name: string) =>
+      name === "UserSchema"
+        ? { type: "object", properties: { id: { type: "string" } } }
+        : undefined;
+
+    expect(
+      processZodObject(
+        t.callExpression(t.memberExpression(t.identifier("z"), t.identifier("object")), [
+          t.identifier("Shape"),
+        ]),
+      ),
+    ).toMatchObject({
+      type: "object",
+      properties: { id: { type: "string" } },
+    });
+    expect(
+      processZodObject(
+        t.callExpression(t.memberExpression(t.identifier("z"), t.identifier("object")), [
+          t.identifier("ConstShape"),
+        ]),
+      ),
+    ).toMatchObject({
+      type: "object",
+      properties: { label: { type: "string" } },
+    });
+    expect(
+      processZodObject(
+        t.callExpression(t.memberExpression(t.identifier("z"), t.identifier("object")), [
+          t.identifier("UserSchema"),
+        ]),
+      ),
+    ).toEqual({ $ref: "#/components/schemas/UserSchema" });
+    expect(
+      processZodObject(
+        t.callExpression(t.memberExpression(t.identifier("z"), t.identifier("object")), [
+          t.identifier("Missing"),
+        ]),
+      ),
+    ).toEqual({ type: "object" });
+    expect(
+      processZodObject(
+        t.callExpression(t.memberExpression(t.identifier("z"), t.identifier("object")), [
+          t.identifier("EmptyCall"),
+        ]),
+      ),
+    ).toEqual({ type: "object" });
+
+    expect(
+      processZodObject(
+        t.callExpression(t.memberExpression(t.identifier("z"), t.identifier("object")), [
+          t.objectExpression([
+            t.spreadElement(t.identifier("Base")),
+            t.objectProperty(
+              t.identifier("KEY"),
+              t.callExpression(t.memberExpression(t.identifier("z"), t.identifier("string")), []),
+              true,
+            ),
+            t.objectProperty(
+              t.stringLiteral("full-name"),
+              t.callExpression(t.memberExpression(t.identifier("z"), t.identifier("string")), []),
+            ),
+          ]),
+        ]),
+      ),
+    ).toMatchObject({
+      type: "object",
+      properties: {
+        nick: { type: "string" },
+        "full-name": { type: "string" },
+      },
+    });
+  });
+
+  it("covers leftover processFileForZodSchema import cache and infer walks", () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-zod-process-file-"));
+    roots.push(root);
+    const schemaFile = path.join(root, "schemas.ts");
+    fs.writeFileSync(
+      schemaFile,
+      [
+        'import { z } from "zod";',
+        'import { createInsertSchema } from "drizzle-zod";',
+        "",
+        "export const UserSchema = z.object({ id: z.string() });",
+        "export const ExtendedSchema = UserSchema.extend({ nick: z.string() });",
+        "function makeSchema() {",
+        "  return z.object({ factory: z.string() });",
+        "}",
+        "export const FactorySchema = makeSchema();",
+        "function failFactory() { return 1; }",
+        "export const FailedFactorySchema = failFactory();",
+        "export const MissingFactorySchema = missingFactory();",
+        "export const InsertSchema = createInsertSchema(users);",
+        "export type User = z.infer<typeof UserSchema>;",
+        "export type EmptyInfer = z.infer;",
+        'const ghostNote = "GhostA GhostB";',
+        "const LocalSchema = z.object({ local: z.boolean() });",
+      ].join("\n"),
+    );
+
+    const converter = new ZodSchemaConverter(root);
+    converter.processFileForZodSchema(schemaFile, "GhostA");
+    converter.processFileForZodSchema(schemaFile, "GhostB");
+    converter.processFileForZodSchema(schemaFile, "UserSchema");
+    converter.processFileForZodSchema(schemaFile, "ExtendedSchema");
+    converter.processFileForZodSchema(schemaFile, "FactorySchema");
+    converter.processFileForZodSchema(schemaFile, "FailedFactorySchema");
+    converter.processFileForZodSchema(schemaFile, "MissingFactorySchema");
+    converter.processFileForZodSchema(schemaFile, "InsertSchema");
+    converter.processFileForZodSchema(schemaFile, "LocalSchema");
+    converter.processFileForZodSchema(schemaFile, "User");
+    converter.processAllSchemasInFile(schemaFile);
+
+    expect(converter.convertZodSchemaToOpenApi("UserSchema")).toMatchObject({ type: "object" });
+    expect(converter.convertZodSchemaToOpenApi("FactorySchema")).toMatchObject({
+      type: "object",
+      properties: { factory: { type: "string" } },
+    });
+    expect(converter.typeToSchemaMapping.User).toBe("UserSchema");
   });
 });

@@ -67,14 +67,11 @@ export class DrizzleZodProcessor {
 
     const schema = this.createBaseSchema(functionName, node.arguments[0], context);
     const properties = schema.properties;
-    const required = new Set(schema.required ?? []);
+    const required = new Set(schema.required);
 
     // Check if there's a refinements object (second argument)
-    if (node.arguments.length > 1 && t.isObjectExpression(node.arguments[1])) {
+    if (node.arguments.length > 1 && t.isObjectExpression(node.arguments[1]) && properties) {
       const refinements = node.arguments[1];
-      if (!properties) {
-        return { type: "object" };
-      }
 
       // Process each property in the refinements object
       refinements.properties.forEach((prop) => {

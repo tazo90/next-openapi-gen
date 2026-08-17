@@ -70,6 +70,19 @@ describe("TypeScript runtime adapter", () => {
     expect(getTypeScriptVersionSupport("6.0.2")).toBe("supported");
     expect(getTypeScriptVersionSupport("7.0.0-dev.20260626")).toBe("supported");
     expect(getTypeScriptVersionSupport("8.0.0")).toBe("too-new");
+    expect(getTypeScriptVersionSupport("not-a-version")).toBe("too-new");
+  });
+
+  it("marks unsupported project TypeScript packages without loading the compiler", () => {
+    const root = createTempRoot("nxog-ts-runtime-old-");
+    writeMockTypeScriptPackage(root, "5.8.3", 99);
+    const sourceFile = path.join(root, "src", "route.ts");
+
+    const runtime = resolveTypeScriptRuntime(sourceFile);
+    expect(runtime.support).toBe("too-old");
+    expect(runtime.version).toBe("5.8.3");
+    expect(runtime.ts).toBeUndefined();
+    expect(runtime.native).toBeUndefined();
   });
 
   it("reads TypeScript 7 package metadata without loading a bare package export", () => {

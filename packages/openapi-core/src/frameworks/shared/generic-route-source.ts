@@ -7,12 +7,10 @@ import type * as t from "@babel/types";
 import { measurePerformance, type GenerationPerformanceProfile } from "../../core/performance.js";
 import type { CachedFileContent, SharedGenerationRuntime } from "../../core/runtime.js";
 import { traverse } from "../../shared/babel-traverse.js";
+import { extractJSDocComments } from "../../shared/jsdoc.js";
+import { parseTypeScriptFile } from "../../shared/parse-typescript.js";
+import { extractPathParameters } from "../../shared/strings.js";
 import type { ResolvedOpenApiConfig } from "../../shared/types.js";
-import {
-  extractJSDocComments,
-  extractPathParameters,
-  parseTypeScriptFile,
-} from "../../shared/utils.js";
 import type { DiscoveredRoute, FrameworkSource } from "../types.js";
 import { applyHandlerInsightsToDataTypes } from "./handler-insights.js";
 

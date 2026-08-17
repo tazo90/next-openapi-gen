@@ -294,6 +294,32 @@ describe("Zod features › modifiers", () => {
     });
   });
 
+  it("covers leftover default, partial-mask, and pipe-ref chain branches", () => {
+    expect(convert("z.string().default(null)", roots)).toMatchObject({
+      type: "string",
+      default: null,
+    });
+    expect(convert("z.string().default({ label: 'x', count: 1, ok: true })", roots)).toMatchObject({
+      type: "string",
+      default: { label: "x", count: 1, ok: true },
+    });
+    expect(
+      convert("z.object({ a: z.string(), b: z.number() }).partial({ a: true })", roots),
+    ).toMatchObject({
+      type: "object",
+      required: ["b"],
+    });
+    expect(
+      convert("z.object({ a: z.string() }).partial({ a: true })", roots).required,
+    ).toBeUndefined();
+    expect(convert("z.string().pipe(z.union([z.string(), z.number()]))", roots)).toMatchObject({
+      anyOf: expect.any(Array),
+    });
+    expect(convert("z.string().or()", roots)).toMatchObject({ type: "string" });
+    expect(convert("z.string().and()", roots)).toMatchObject({ type: "string" });
+    expect(convert("z.string().pipe()", roots)).toMatchObject({ type: "string" });
+  });
+
   it("z.union([T, z.undefined()]) treats undefined as optional semantics", () => {
     const schema = convert(
       `z.object({

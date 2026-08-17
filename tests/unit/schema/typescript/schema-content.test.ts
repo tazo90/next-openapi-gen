@@ -197,6 +197,10 @@ describe("TypeScript schema content helpers", () => {
         },
       })[0],
     ).toMatchObject({ example: "completed" });
+    expect(createRequestBodySchema({ type: [] }).content).toBeDefined();
+    expect(createRequestBodySchema({ type: ["null"] }).content).toBeDefined();
+    expect(createRequestBodySchema({ type: ["string", "null"] }).content).toBeDefined();
+    expect(createRequestBodySchema({}).content).toBeDefined();
     expect(createRequestBodySchema({ type: "string" })).toEqual({
       content: {
         "application/json": {
@@ -292,5 +296,103 @@ describe("TypeScript schema content helpers", () => {
     expect(findSchemaDefinition).toHaveBeenCalledWith("Path", "pathParams");
     expect(findSchemaDefinition).toHaveBeenCalledWith("Body", "body");
     expect(findSchemaDefinition).toHaveBeenCalledWith("Response", "response");
+  });
+
+  it("covers leftover response defaults, content params, and schema-content fallbacks", () => {
+    expect(createMultipleResponsesSchema({ 200: {} }, "Default")).toEqual({
+      200: {
+        description: "Default",
+        content: { "application/json": { schema: {} } },
+      },
+    });
+    expect(
+      createMultipleResponsesSchema({
+        201: { schema: { type: "string" } },
+      }),
+    ).toEqual({
+      201: {
+        description: "Response",
+        content: { "application/json": { schema: { type: "string" } } },
+      },
+    });
+
+    const params = createRequestParamsSchema(
+      {
+        properties: {
+          q: {
+            in: "query",
+            description: "Search",
+            example: "abc",
+            examples: { a: { value: "abc" } },
+            content: { "application/json": { schema: { type: "string" } } },
+          },
+          filter: {
+            type: "object",
+            properties: { name: { type: "string" } },
+          },
+          id: {
+            type: ["string", "null"],
+          },
+        },
+        required: ["q"],
+      },
+      false,
+    );
+    expect(params).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          name: "q",
+          in: "query",
+          content: expect.any(Object),
+          examples: expect.any(Object),
+        }),
+        expect.objectContaining({ name: "filter", style: "deepObject", explode: true }),
+      ]),
+    );
+
+    expect(
+      getSchemaContent(
+        {
+          tag: { type: "string" },
+          paramsType: "MissingQuery",
+          querystringType: "",
+          pathParamsType: "MissingPath",
+          bodyType: "",
+          responseType: "",
+        },
+        {
+          openapiDefinitions: {},
+          schemaTypes: ["typescript"],
+          findSchemaDefinition: () => ({}),
+        },
+      ),
+    ).toMatchObject({
+      params: {},
+      pathParams: {},
+      body: {},
+      responses: {},
+    });
+
+    expect(
+      getSchemaContent(
+        {
+          tag: { type: "string" },
+          paramsType: "",
+          querystringType: "MissingQuery",
+          pathParamsType: "",
+          bodyType: "MissingBody",
+          responseType: "MissingResponse",
+        },
+        {
+          openapiDefinitions: {},
+          schemaTypes: ["typescript"],
+          findSchemaDefinition: () => undefined,
+        },
+      ),
+    ).toMatchObject({
+      querystring: {},
+      body: {},
+      responses: {},
+    });
   });
 });

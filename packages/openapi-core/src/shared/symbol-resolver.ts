@@ -4,8 +4,8 @@ import path from "path";
 import * as t from "@babel/types";
 
 import { logger } from "./logger.js";
+import { parseTypeScriptFile } from "./parse-typescript.js";
 import { buildFileSymbolIndex, type FileSymbolIndex } from "./symbol-index.js";
-import { parseTypeScriptFile } from "./utils.js";
 
 export type SymbolResolverFileAccess = Pick<typeof fs, "existsSync" | "readFileSync">;
 

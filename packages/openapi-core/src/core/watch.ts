@@ -89,7 +89,7 @@ export async function watchProject(options: WatchProjectOptions = {}): Promise<(
   };
 }
 
-function getWatchRoots(loadedConfig: Awaited<ReturnType<typeof loadConfig>>): Set<string> {
+export function getWatchRoots(loadedConfig: Awaited<ReturnType<typeof loadConfig>>): Set<string> {
   const roots = new Set<string>();
   roots.add(path.resolve(loadedConfig.config.apiDir ?? "./src/app/api"));
 

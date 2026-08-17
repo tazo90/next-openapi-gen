@@ -6,12 +6,23 @@ import * as t from "@babel/types";
 import { afterEach, describe, expect, it } from "vitest";
 
 import {
+  extractFunctionParameters,
+  extractFunctionReturnType,
+} from "@workspace/openapi-core/schema/typescript/function-nodes.js";
+import {
+  extractKeysFromLiteralType,
+  getPropertyOptions,
+  isDateNode,
+  isDateObject,
+  isDateString,
+} from "@workspace/openapi-core/schema/typescript/helpers.js";
+import {
   createTypeReferenceFromString,
   parseGenericTypeString,
   SchemaProcessor,
   splitGenericTypeArguments,
 } from "@workspace/openapi-core/schema/typescript/schema-processor.js";
-import { parseTypeScriptFile } from "@workspace/openapi-core/shared/utils.js";
+import { parseTypeScriptFile } from "@workspace/openapi-core/shared/parse-typescript.js";
 
 describe("SchemaProcessor helper seams", () => {
   const roots: string[] = [];
@@ -325,7 +336,6 @@ describe("SchemaProcessor helper seams", () => {
   });
 
   it("covers arrow-function helper extraction branches", () => {
-    const processor = new SchemaProcessor(process.cwd(), "typescript");
     const ast = parseTypeScriptFile("const makeValue = (input: string): number => input.length;");
     const declaration = ast.program.body[0];
 
@@ -339,10 +349,10 @@ describe("SchemaProcessor helper seams", () => {
       throw new Error("Expected arrow function");
     }
 
-    expect(t.isTSNumberKeyword((processor as any).extractFunctionReturnType(arrow))).toBe(true);
-    expect((processor as any).extractFunctionParameters(arrow)).toHaveLength(1);
-    expect((processor as any).extractFunctionReturnType(variable)).toBeDefined();
-    expect((processor as any).extractFunctionParameters(variable)).toHaveLength(1);
+    expect(t.isTSNumberKeyword(extractFunctionReturnType(arrow))).toBe(true);
+    expect(extractFunctionParameters(arrow)).toHaveLength(1);
+    expect(extractFunctionReturnType(variable)).toBeDefined();
+    expect(extractFunctionParameters(variable)).toHaveLength(1);
   });
 
   it("covers direct TypeScript node resolution helpers", () => {
@@ -499,16 +509,13 @@ describe("SchemaProcessor helper seams", () => {
     );
     property.optional = true;
     property.leadingComments = [{ type: "CommentLine", value: " display name" }] as never;
-    (processor as any).contentType = "body";
-    expect((processor as any).getPropertyOptions(property)).toEqual({
+    expect(getPropertyOptions(property, "body")).toEqual({
       description: "display name",
       nullable: true,
     });
+    expect(extractKeysFromLiteralType(t.tsLiteralType(t.stringLiteral("slug")))).toEqual(["slug"]);
     expect(
-      (processor as any).extractKeysFromLiteralType(t.tsLiteralType(t.stringLiteral("slug"))),
-    ).toEqual(["slug"]);
-    expect(
-      (processor as any).extractKeysFromLiteralType(
+      extractKeysFromLiteralType(
         t.tsUnionType([
           t.tsLiteralType(t.stringLiteral("a")),
           t.tsLiteralType(t.stringLiteral("b")),
@@ -596,9 +603,9 @@ describe("SchemaProcessor helper seams", () => {
     );
     expect((processor as any).resolveImportPath("zod", "/virtual/schema.ts")).toBeNull();
 
-    expect((processor as any).isDateString(t.stringLiteral("2026-03-27T10:00:00Z"))).toBe(true);
-    expect((processor as any).isDateObject(t.newExpression(t.identifier("Date"), []))).toBe(true);
-    expect((processor as any).isDateNode(t.stringLiteral("not-a-date"))).toBe(false);
+    expect(isDateString(t.stringLiteral("2026-03-27T10:00:00Z"))).toBe(true);
+    expect(isDateObject(t.newExpression(t.identifier("Date"), []))).toBe(true);
+    expect(isDateNode(t.stringLiteral("not-a-date"))).toBe(false);
 
     expect(
       (processor as any).resolveTSNodeType(t.tsTypeReference(t.identifier("Promise"))),

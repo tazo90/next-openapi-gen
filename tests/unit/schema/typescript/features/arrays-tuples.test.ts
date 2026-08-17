@@ -51,4 +51,12 @@ describe("TypeScript features › arrays and tuples", () => {
       maxItems: 2,
     });
   });
+
+  it("indexes into tuples, arrays, and object properties", () => {
+    expect(resolve("[string, number][0]")).toEqual({ type: "string" });
+    expect(resolve("[string, number][5]")).toEqual({ type: "object" });
+    expect(resolve("string[][0]")).toEqual({ type: "string" });
+    expect(resolve('{ id: string; name: number }["id"]')).toEqual({ type: "string" });
+    expect(resolve('{ id: string }["missing"]')).toEqual({ type: "object" });
+  });
 });

@@ -40,4 +40,74 @@ describe("overlay apply", () => {
       get: { operationId: "getOrdersList" },
     });
   });
+
+  it("updates array items, deletes null merge-patch keys, and replaces primitives", () => {
+    const document = applyOverlay(
+      {
+        tags: [{ name: "orders" }, { name: "internal" }],
+        info: { title: "Internal API", version: "1.0.0", contact: { name: "Ops" } },
+        servers: ["https://internal.example"],
+      },
+      {
+        overlay: "1.1.0",
+        info: { title: "Public overlay", version: "1.0.0" },
+        actions: [
+          {
+            target: "$.tags[1]",
+            update: { name: "public" },
+          },
+          {
+            target: "$.tags[0]",
+            remove: true,
+          },
+          {
+            target: "$.info",
+            update: { contact: { email: "ops@example.com" }, license: { name: "MIT" } },
+          },
+          {
+            target: "$.info.contact",
+            update: { email: null, name: "Support" },
+          },
+          {
+            target: "$.servers",
+            update: ["https://public.example"],
+          },
+        ],
+      },
+    );
+
+    expect(document.tags).toEqual([{ name: "public" }]);
+    expect(document.info).toEqual({
+      title: "Internal API",
+      version: "1.0.0",
+      contact: { name: "Support" },
+      license: { name: "MIT" },
+    });
+    expect(document.servers).toEqual(["https://public.example"]);
+  });
+
+  it("replaces the document root and ignores unmatched remove targets", () => {
+    const document = applyOverlay(
+      { openapi: "3.2.0", info: { title: "Internal", version: "1.0.0" } },
+      {
+        overlay: "1.1.0",
+        info: { title: "Public overlay", version: "1.0.0" },
+        actions: [
+          {
+            target: "$",
+            update: { openapi: "3.2.0", info: { title: "Public", version: "2.0.0" } },
+          },
+          {
+            target: "$",
+            remove: true,
+          },
+        ],
+      },
+    );
+
+    expect(document).toEqual({
+      openapi: "3.2.0",
+      info: { title: "Public", version: "2.0.0" },
+    });
+  });
 });

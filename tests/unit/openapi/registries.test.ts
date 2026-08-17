@@ -2,10 +2,13 @@ import { describe, expect, it } from "vitest";
 
 import {
   backportExtension,
+  isDeprecatedFormat,
   isRegisteredFormat,
   isRegisteredTagKind,
+  isReservedOaiNamespace,
   mediaTypeGroup,
   moveFieldToExtension,
+  nativeFieldForExtension,
   OAI_REGISTRY_SNAPSHOT_DATE,
   promoteExtensionField,
 } from "@workspace/openapi-core/openapi/registries/index.js";
@@ -21,6 +24,13 @@ describe("OAI registries", () => {
     expect(mediaTypeGroup("application/jsonl")).toBe("sequential-json");
     expect(mediaTypeGroup("text/event-stream")).toBe("sse");
     expect(mediaTypeGroup("application/json")).toBe("json");
+    expect(isDeprecatedFormat("binary")).toBe(true);
+    expect(isDeprecatedFormat("email")).toBe(false);
+    expect(isDeprecatedFormat("not-a-format")).toBe(false);
+    expect(nativeFieldForExtension("x-oai-$self")).toBe("$self");
+    expect(nativeFieldForExtension("x-unknown")).toBeNull();
+    expect(isReservedOaiNamespace("x-oai-extra")).toBe(true);
+    expect(isReservedOaiNamespace("x-custom")).toBe(false);
   });
 
   it("backports native fields onto registered extensions for older OAS versions", () => {

@@ -1,3 +1,4 @@
+import { cleanSpec } from "../shared/spec.js";
 import type {
   OpenApiDocument,
   OpenApiExampleMap,
@@ -13,7 +14,6 @@ import type {
   OpenApiTag,
   OpenApiVersion,
 } from "../shared/types.js";
-import { cleanSpec } from "../shared/utils.js";
 import { moveFieldToExtension, promoteExtensionField } from "./registries/index.js";
 
 interface OpenApiVersionProcessor {

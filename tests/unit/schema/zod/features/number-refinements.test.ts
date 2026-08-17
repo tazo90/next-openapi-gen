@@ -40,6 +40,25 @@ describe("Zod features › number refinements", () => {
     });
   });
 
+  it("reconciles overlapping inclusive and exclusive bounds", () => {
+    expect(convert("z.number().min(0).positive()", roots)).toMatchObject({
+      type: "number",
+      exclusiveMinimum: 0,
+    });
+    expect(convert("z.number().min(1).positive()", roots)).toMatchObject({
+      type: "number",
+      minimum: 1,
+    });
+    expect(convert("z.number().max(0).negative()", roots)).toMatchObject({
+      type: "number",
+      exclusiveMaximum: 0,
+    });
+    expect(convert("z.number().max(-1).negative()", roots)).toMatchObject({
+      type: "number",
+      maximum: -1,
+    });
+  });
+
   it("multipleOf()/step() emit multipleOf", () => {
     expect(convert("z.number().multipleOf(0.5)", roots)).toEqual({
       type: "number",
