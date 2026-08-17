@@ -93,7 +93,6 @@
     "@playwright/test": "catalog:",
     "@seriousme/openapi-schema-validator": "catalog:",
     "@types/node": "catalog:",
-    "@typescript/native": "catalog:",
     "@vitest/coverage-v8": "catalog:",
     "@workspace/openapi-cli": "workspace:*",
     "@workspace/openapi-core": "workspace:*",

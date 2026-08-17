@@ -26,7 +26,6 @@
     "@types/react": "catalog:tanstack",
     "@types/react-dom": "catalog:tanstack",
     "@vitejs/plugin-react": "catalog:tanstack",
-    "ajv": "catalog:",
     "next-openapi-gen": "workspace:*",
     "typescript": "catalog:",
     "vite": "catalog:tanstack"

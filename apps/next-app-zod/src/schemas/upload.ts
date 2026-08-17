@@ -11,7 +11,7 @@ export const UploadFormDataSchema = z.object({
   category: z.string().min(1).describe("File category (required)"),
 });
 
-export const UploadResponseSchema = z.object({
+const UploadResponseSchema = z.object({
   id: z.string().describe("Upload ID"),
   filename: z.string().describe("Original filename"),
   size: z.number().describe("File size in bytes"),

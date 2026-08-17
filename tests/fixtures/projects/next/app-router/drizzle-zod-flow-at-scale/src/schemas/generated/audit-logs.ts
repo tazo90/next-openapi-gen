@@ -14,7 +14,7 @@ export const UpdateAuditLogSchema = CreateAuditLogSchema.partial();
 export const AuditLogSchema = createSelectSchema(auditLogs);
 
 export const AuditLogListResponse = z.object({
-  items: z.array(AuditLogSchema),
+  items: z.array(AuditLogSchema as unknown as z.ZodTypeAny),
   total: z.number().int().nonnegative(),
 });
 

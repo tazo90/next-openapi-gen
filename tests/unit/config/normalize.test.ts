@@ -126,21 +126,21 @@ describe("normalizeOpenApiConfig", () => {
       normalizeOpenApiConfig({
         openapi: "3.1.0",
         info: { title: "Fixture", version: "1.0.0", description: "Fixture" },
-      } as never).openapiVersion,
+      }).openapiVersion,
     ).toBe("3.1");
 
     expect(
       normalizeOpenApiConfig({
         openapi: "3.3-preview",
         info: { title: "Fixture", version: "1.0.0", description: "Fixture" },
-      } as never).openapiVersion,
+      }).openapiVersion,
     ).toBe("3.3-preview");
 
     expect(
       normalizeOpenApiConfig({
         openapi: "3.3.0-preview",
         info: { title: "Fixture", version: "1.0.0", description: "Fixture" },
-      } as never).openapiVersion,
+      }).openapiVersion,
     ).toBe("3.3-preview");
   });
 
@@ -149,7 +149,7 @@ describe("normalizeOpenApiConfig", () => {
       normalizeOpenApiConfig({
         openapi: "4.0.0",
         info: { title: "Fixture", version: "1.0.0", description: "Fixture" },
-      } as never).openapiVersion,
+      }).openapiVersion,
     ).toBe("3.2");
   });
 
@@ -186,7 +186,7 @@ describe("normalizeOpenApiConfig", () => {
       info: { title: "Fixture", version: "1.0.0" },
       arazzo: { version: "1.1.0", files: ["./arazzo/**/*.yaml"] },
       overlay: { version: "1.1.0", apply: ["./overlays/public.overlay.yaml"] },
-    } as never);
+    });
 
     expect(config.openapiVersion).toBe("3.2");
     expect(config.arazzo).toEqual({ version: "1.1.0", files: ["./arazzo/**/*.yaml"] });

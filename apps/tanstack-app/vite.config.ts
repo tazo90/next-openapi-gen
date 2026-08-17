@@ -4,5 +4,14 @@ import { createViteOpenApiPlugin } from "next-openapi-gen/vite";
 import { defineConfig } from "vite";
 
 export default defineConfig({
-  plugins: [tanstackStart(), createViteOpenApiPlugin(), react()],
+  plugins: [
+    tanstackStart({
+      router: {
+        // Scale-generated OpenAPI fixtures live under `generated/` and are not routes.
+        routeFileIgnorePattern: "^generated$",
+      },
+    }),
+    createViteOpenApiPlugin(),
+    react(),
+  ],
 });

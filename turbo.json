@@ -11,7 +11,9 @@
     "GENERATOR_BENCH_OUTPUT",
     "NEXT_OPENAPI_GEN_TIMING",
     "NODE_ENV",
-    "PATH"
+    "PATH",
+    "PAYMENT_WEBHOOK_SECRET",
+    "WEBHOOK_SECRET"
   ],
   "tasks": {
     "//#knip": {

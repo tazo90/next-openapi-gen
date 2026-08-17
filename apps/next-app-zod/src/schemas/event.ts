@@ -44,7 +44,7 @@ export const EventExportJob = z.object({
   submittedAt: z.string().datetime().describe("Submission timestamp"),
 });
 
-export const LegacyEventCsv = z.string().describe("Legacy CSV export payload");
+const LegacyEventCsv = z.string().describe("Legacy CSV export payload");
 
 export const eventStreamQueryExamples = [
   {

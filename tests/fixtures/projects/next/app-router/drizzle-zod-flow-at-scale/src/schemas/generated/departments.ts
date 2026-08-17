@@ -14,7 +14,7 @@ export const UpdateDepartmentSchema = CreateDepartmentSchema.partial();
 export const DepartmentSchema = createSelectSchema(departments);
 
 export const DepartmentListResponse = z.object({
-  items: z.array(DepartmentSchema),
+  items: z.array(DepartmentSchema as unknown as z.ZodTypeAny),
   total: z.number().int().nonnegative(),
 });
 

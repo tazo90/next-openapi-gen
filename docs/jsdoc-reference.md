@@ -209,9 +209,7 @@ export default defineConfig({
       JwtAuth: { type: "http", scheme: "bearer", bearerFormat: "JWT" },
       OAuth2Auth: {
         type: "oauth2",
-        flows: {
-          /* ... */
-        },
+        flows: {/* ... */},
       },
     },
   },

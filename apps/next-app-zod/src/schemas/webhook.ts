@@ -94,7 +94,7 @@ export const PaymentEvent = z.discriminatedUnion("type", [
  * `@callback` payload for the `integrations/subscribe` route.
  * Reuses the same event envelope so examples stay coherent.
  */
-export const SubscriptionEventPayload = WebhookEnvelopeSchema.extend({
+const SubscriptionEventPayload = WebhookEnvelopeSchema.extend({
   type: z.literal("integration.ping"),
   subscriptionId: z.ulid().describe("Subscription identifier"),
 });

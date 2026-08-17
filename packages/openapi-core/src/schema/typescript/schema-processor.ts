@@ -148,10 +148,7 @@ export class SchemaProcessor {
       // Share the AST cache across TS + Zod converters so each file is parsed once.
       this.symbolResolver = this.zodSchemaConverter.symbolResolver;
     } else {
-      this.symbolResolver = new SymbolResolver(
-        this.fileAccess as Pick<typeof fs, "existsSync" | "readFileSync">,
-        this.fileASTCache,
-      );
+      this.symbolResolver = new SymbolResolver(this.fileAccess, this.fileASTCache);
     }
   }
 

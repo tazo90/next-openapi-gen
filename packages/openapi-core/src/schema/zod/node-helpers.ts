@@ -96,7 +96,7 @@ export function processZodLiteral(
   // Unwrap `as const` / `satisfies` wrappers
   if (t.isTSAsExpression(arg) || t.isTSSatisfiesExpression(arg)) {
     return processZodLiteral(
-      { ...node, arguments: [arg.expression, ...node.arguments.slice(1)] } as t.CallExpression,
+      { ...node, arguments: [arg.expression, ...node.arguments.slice(1)] },
       context,
     );
   }

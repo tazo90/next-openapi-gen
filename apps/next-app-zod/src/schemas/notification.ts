@@ -46,14 +46,10 @@ export const NotificationSchema = z.discriminatedUnion("type", [
  * Simple literal union (converted to enum in OpenAPI)
  * This is equivalent to: type NotificationType = "email" | "sms" | "push"
  */
-export const NotificationTypeSchema = z.union([
-  z.literal("email"),
-  z.literal("sms"),
-  z.literal("push"),
-]);
+const NotificationTypeSchema = z.union([z.literal("email"), z.literal("sms"), z.literal("push")]);
 
 // Alternative: Using z.enum (produces the same result)
-export const NotificationTypeEnumSchema = z.enum(["email", "sms", "push"]);
+const NotificationTypeEnumSchema = z.enum(["email", "sms", "push"]);
 
 // ========================================
 // 3. API Response Union (Success/Error Pattern)
@@ -90,10 +86,10 @@ export const ApiResponseSchema = z.discriminatedUnion("status", [
  * Optional message that can be null
  * This demonstrates nullable type handling
  */
-export const OptionalMessageSchema = z.union([z.string(), z.null()]);
+const OptionalMessageSchema = z.union([z.string(), z.null()]);
 
 // Alternative: Using .nullable()
-export const OptionalMessageAlternativeSchema = z.string().nullable();
+const OptionalMessageAlternativeSchema = z.string().nullable();
 
 // ========================================
 // 5. Processing Status Enum
@@ -103,7 +99,7 @@ export const OptionalMessageAlternativeSchema = z.string().nullable();
  * Processing status for async operations
  * Literal unions are converted to enums in OpenAPI
  */
-export const ProcessingStatusSchema = z.union([
+const ProcessingStatusSchema = z.union([
   z.literal("pending"),
   z.literal("processing"),
   z.literal("completed"),
@@ -117,7 +113,7 @@ export const ProcessingStatusSchema = z.union([
 /**
  * User permission levels using z.enum
  */
-export const PermissionSchema = z.enum(["read", "write", "admin"]);
+const PermissionSchema = z.enum(["read", "write", "admin"]);
 
 // ========================================
 // 7. Mixed Type Union
@@ -127,7 +123,7 @@ export const PermissionSchema = z.enum(["read", "write", "admin"]);
  * Union of different primitive types
  * This demonstrates oneOf in OpenAPI
  */
-export const StringOrNumberSchema = z.union([z.string(), z.number()]);
+const StringOrNumberSchema = z.union([z.string(), z.number()]);
 
 // ========================================
 // 8. Array of Union Types
@@ -136,7 +132,7 @@ export const StringOrNumberSchema = z.union([z.string(), z.number()]);
 /**
  * Array containing mixed types
  */
-export const MixedArraySchema = z.array(z.union([z.string(), z.number(), z.boolean()]));
+const MixedArraySchema = z.array(z.union([z.string(), z.number(), z.boolean()]));
 
 // ========================================
 // 9. Complex Nested Union Example
@@ -152,11 +148,7 @@ const UserDataSchema = z.object({
  * Loading state that can be a string literal or user data
  * This demonstrates a union of literals and complex types
  */
-export const LoadingStateSchema = z.union([
-  z.literal("loading"),
-  z.literal("error"),
-  UserDataSchema,
-]);
+const LoadingStateSchema = z.union([z.literal("loading"), z.literal("error"), UserDataSchema]);
 
 // ========================================
 // 10. Payment Method Example (Real-world Use Case)
@@ -187,7 +179,7 @@ const BankTransferPaymentSchema = z.object({
  * Payment method discriminated union
  * Demonstrates how to model payment methods with different required fields
  */
-export const PaymentMethodSchema = z.discriminatedUnion("type", [
+const PaymentMethodSchema = z.discriminatedUnion("type", [
   CreditCardPaymentSchema,
   PayPalPaymentSchema,
   BankTransferPaymentSchema,

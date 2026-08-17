@@ -1188,7 +1188,7 @@ export const EnvelopeSchema = createEnvelope({
     );
 
     converter.preprocessSchemaDirectories();
-    expect(converter.convertZodSchemaToOpenApi("Slider", "" as never)).toMatchObject({
+    expect(converter.convertZodSchemaToOpenApi("Slider", "")).toMatchObject({
       type: "object",
     });
     expect(converter.convertZodSchemaToOpenApi("sliderSchema")).toMatchObject({ type: "object" });
@@ -1375,7 +1375,7 @@ export const EnvelopeSchema = createEnvelope({
     fs.writeFileSync(path.join(root, "users-api.ts"), "");
 
     const converter = new ZodSchemaConverter(root, root);
-    expect(converter.convertZodSchemaToOpenApi("MissingSchema", "" as never)).toBeNull();
+    expect(converter.convertZodSchemaToOpenApi("MissingSchema", "")).toBeNull();
     converter.preprocessSchemaDirectories();
     converter.preprocessSchemaDirectories();
     converter.schemaVariantRefs.set("response:Ghost", "GhostOutput");
@@ -1395,9 +1395,7 @@ export const EnvelopeSchema = createEnvelope({
 
   it("covers leftover processZodObject identifier, computed keys, and spreads", () => {
     const converter = new ZodSchemaConverter("/virtual");
-    const processZodObject = converter.processZodObject.bind(converter) as (
-      node: t.CallExpression,
-    ) => Record<string, unknown>;
+    const processZodObject = converter.processZodObject.bind(converter);
 
     expect(
       processZodObject(

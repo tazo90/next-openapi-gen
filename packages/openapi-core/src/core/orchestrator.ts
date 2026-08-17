@@ -221,11 +221,11 @@ function mergeDocumentFragment(document: OpenApiDocument, fragment: Partial<Open
     }
 
     if (isRecord(existingValue) && isRecord(value)) {
-      document[key as keyof OpenApiDocument] = mergeRecord(existingValue, value) as never;
+      document[key as keyof OpenApiDocument] = mergeRecord(existingValue, value);
       continue;
     }
 
-    document[key as keyof OpenApiDocument] = structuredClone(value) as never;
+    document[key as keyof OpenApiDocument] = structuredClone(value);
   }
 }
 

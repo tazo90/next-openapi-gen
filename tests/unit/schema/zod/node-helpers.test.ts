@@ -153,11 +153,11 @@ describe("Zod node helpers", () => {
     const refA: OpenApiSchema = {
       $ref: "#/components/schemas/Circle",
       properties: { kind: { type: "string", enum: ["circle"] } },
-    } as OpenApiSchema;
+    };
     const refB: OpenApiSchema = {
       $ref: "#/components/schemas/Square",
       properties: { kind: { type: "string", enum: ["square"] } },
-    } as OpenApiSchema;
+    };
     let callIdx = 0;
     const variants = [refA, refB];
     const processVariants = (): OpenApiSchema => {

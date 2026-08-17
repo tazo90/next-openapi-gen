@@ -24,7 +24,6 @@
     "@types/react": "catalog:nextjs",
     "@types/react-dom": "catalog:nextjs",
     "@workspace/next-config": "workspace:*",
-    "ajv": "catalog:",
     "autoprefixer": "catalog:",
     "babel-plugin-react-compiler": "catalog:",
     "next-openapi-gen": "workspace:*",

@@ -14,7 +14,7 @@ export const UpdateReportSchema = CreateReportSchema.partial();
 export const ReportSchema = createSelectSchema(reports);
 
 export const ReportListResponse = z.object({
-  items: z.array(ReportSchema),
+  items: z.array(ReportSchema as unknown as z.ZodTypeAny),
   total: z.number().int().nonnegative(),
 });
 

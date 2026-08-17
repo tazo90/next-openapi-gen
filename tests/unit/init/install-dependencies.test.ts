@@ -49,7 +49,7 @@ describe("installDependencies", () => {
     };
     const execMock = vi.fn<ExecMock>((command: string, callback: ExecCallback) => {
       callback(null, "", "");
-      return {} as never;
+      return {};
     });
     const hasDependencyMock = vi.fn<HasDependencyMock>(async (_pkg: string) => false);
 
@@ -84,7 +84,7 @@ describe("installDependencies", () => {
     };
     const execMock = vi.fn<ExecMock>((command: string, callback: ExecCallback) => {
       callback(null, "", "");
-      return {} as never;
+      return {};
     });
     const hasDependencyMock = vi.fn<HasDependencyMock>(async (pkg: string) => pkg !== "typescript");
 
@@ -107,7 +107,7 @@ describe("installDependencies", () => {
     };
     const execMock = vi.fn<ExecMock>((command: string, callback: ExecCallback) => {
       callback(null, "", "");
-      return {} as never;
+      return {};
     });
     const hasDependencyMock = vi.fn<HasDependencyMock>(async (pkg: string) => pkg === "zod");
 
@@ -139,7 +139,7 @@ describe("installDependencies", () => {
     };
     const execMock = vi.fn<ExecMock>((command: string, callback: ExecCallback) => {
       callback(null, "", "");
-      return {} as never;
+      return {};
     });
     const hasDependencyMock = vi.fn<HasDependencyMock>(async (_pkg: string) => false);
 
@@ -170,7 +170,7 @@ describe("installDependencies", () => {
     };
     const execMock = vi.fn<ExecMock>((command: string, callback: ExecCallback) => {
       callback(null, "", "");
-      return {} as never;
+      return {};
     });
     const hasDependencyMock = vi.fn<HasDependencyMock>(async (_pkg: string) => true);
 

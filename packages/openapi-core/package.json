@@ -33,7 +33,7 @@
     "@babel/types": "catalog:",
     "fs-extra": "catalog:",
     "js-yaml": "catalog:",
-    "typescript": "catalog:",
+    "typescript": "catalog:typescript-classic",
     "zod": "catalog:"
   },
   "devDependencies": {

@@ -70,7 +70,7 @@ actions:
           files: ["./overlays/generate.yaml"],
         },
       });
-      const artifacts = await createOverlayEmitter().emit(context as never);
+      const artifacts = await createOverlayEmitter().emit(context);
 
       expect(context.openapiDocument.info.title).toBe("Public API");
       expect(artifacts).toEqual([
@@ -97,7 +97,7 @@ actions:
       await createOverlayEmitter().emit(
         createEmitterContext(root, {
           generate: { files: ["./overlays/**/*.yaml"] },
-        }) as never,
+        }),
       );
 
       expect(fs.readFileSync(path.join(root, "public", "overlay.yaml"), "utf8")).toContain(

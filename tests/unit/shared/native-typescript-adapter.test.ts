@@ -193,7 +193,7 @@ function createFakeRuntime(
           return undefined;
         },
       },
-    ) as Record<string, unknown>,
+    ),
     compilerOptions,
     configFileName: "",
     program: {
@@ -250,7 +250,7 @@ function createFakeRuntime(
       sourceFiles.set(path.resolve(absolutePath), sourceFile);
     },
     setChecker(checker: Partial<FakeProject["checker"]>) {
-      checkerOverride = checker as Record<string, unknown>;
+      checkerOverride = checker;
     },
     setProject(options: Record<string, unknown>) {
       compilerOptions = options;
@@ -1634,7 +1634,7 @@ describe("NativeTypeScriptAdapter", () => {
         ast: temp.fake.runtime.ast,
         sync: {
           ...temp.fake.runtime.sync,
-          API: EmptyAPI as unknown,
+          API: EmptyAPI,
         },
       };
       const adapter = createNativeTypeScriptAdapter({

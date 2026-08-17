@@ -14,7 +14,7 @@ export const UpdateWebhookSchema = CreateWebhookSchema.partial();
 export const WebhookSchema = createSelectSchema(webhooks);
 
 export const WebhookListResponse = z.object({
-  items: z.array(WebhookSchema),
+  items: z.array(WebhookSchema as unknown as z.ZodTypeAny),
   total: z.number().int().nonnegative(),
 });
 

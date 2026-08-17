@@ -20,4 +20,4 @@ workflows:
         successCriteria:
           - condition: $statusCode == 200
 components: {}
-$self: file:///E:/dev/projects/libs/next-openapi-gen/apps/next-app-zod/public/arazzo.yaml
+$self: file:///Users/mhvdijk/Code/next-openapi-gen/apps/next-app-zod/public/arazzo.yaml

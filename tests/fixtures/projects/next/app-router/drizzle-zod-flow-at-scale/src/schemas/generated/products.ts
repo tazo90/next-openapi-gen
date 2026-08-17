@@ -14,7 +14,7 @@ export const UpdateProductSchema = CreateProductSchema.partial();
 export const ProductSchema = createSelectSchema(products);
 
 export const ProductListResponse = z.object({
-  items: z.array(ProductSchema),
+  items: z.array(ProductSchema as unknown as z.ZodTypeAny),
   total: z.number().int().nonnegative(),
 });
 

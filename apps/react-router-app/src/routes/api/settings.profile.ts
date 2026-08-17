@@ -14,12 +14,3 @@ export async function loader() {
     theme: "dark",
   } satisfies ProfileSettings;
 }
-
-export default function SettingsRoute() {
-  return (
-    <main>
-      <h1>Settings profile</h1>
-      <pre>{JSON.stringify({ locale: "en-US", theme: "dark" }, null, 2)}</pre>
-    </main>
-  );
-}

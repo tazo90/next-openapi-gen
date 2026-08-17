@@ -14,7 +14,7 @@ export const UpdateTeamSchema = CreateTeamSchema.partial();
 export const TeamSchema = createSelectSchema(teams);
 
 export const TeamListResponse = z.object({
-  items: z.array(TeamSchema),
+  items: z.array(TeamSchema as unknown as z.ZodTypeAny),
   total: z.number().int().nonnegative(),
 });
 

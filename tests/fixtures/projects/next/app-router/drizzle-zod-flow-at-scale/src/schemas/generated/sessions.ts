@@ -14,7 +14,7 @@ export const UpdateSessionSchema = CreateSessionSchema.partial();
 export const SessionSchema = createSelectSchema(sessions);
 
 export const SessionListResponse = z.object({
-  items: z.array(SessionSchema),
+  items: z.array(SessionSchema as unknown as z.ZodTypeAny),
   total: z.number().int().nonnegative(),
 });
 

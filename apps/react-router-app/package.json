@@ -25,7 +25,6 @@
     "@types/react": "catalog:react-router",
     "@types/react-dom": "catalog:react-router",
     "@vitejs/plugin-react": "catalog:react-router",
-    "ajv": "catalog:",
     "next-openapi-gen": "workspace:*",
     "typescript": "catalog:",
     "vite": "catalog:react-router"

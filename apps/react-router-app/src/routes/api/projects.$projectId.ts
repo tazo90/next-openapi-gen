@@ -1,4 +1,4 @@
-import type { Project, ProjectIdParams, ProjectMutationInput } from "../../schemas/models";
+import type { Project } from "../../schemas/models";
 
 /**
  * Load a project.
@@ -37,21 +37,4 @@ export async function action() {
     name: "OpenAPI launchpad",
     visibility: "private",
   } satisfies Project;
-}
-
-export default function ProjectRoute() {
-  const params = {
-    projectId: "project_123",
-  } satisfies ProjectIdParams;
-  const payload = {
-    name: "OpenAPI launchpad",
-    visibility: "private",
-  } satisfies ProjectMutationInput;
-
-  return (
-    <main>
-      <h1>Project {params.projectId}</h1>
-      <pre>{JSON.stringify({ payload }, null, 2)}</pre>
-    </main>
-  );
 }

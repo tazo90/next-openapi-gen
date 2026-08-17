@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import "@/schemas/product";
 
 type RouteContext = {
   params: Promise<{ id: string }>;

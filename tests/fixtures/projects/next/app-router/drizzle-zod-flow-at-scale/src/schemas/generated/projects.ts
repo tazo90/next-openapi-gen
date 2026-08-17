@@ -14,7 +14,7 @@ export const UpdateProjectSchema = CreateProjectSchema.partial();
 export const ProjectSchema = createSelectSchema(projects);
 
 export const ProjectListResponse = z.object({
-  items: z.array(ProjectSchema),
+  items: z.array(ProjectSchema as unknown as z.ZodTypeAny),
   total: z.number().int().nonnegative(),
 });
 

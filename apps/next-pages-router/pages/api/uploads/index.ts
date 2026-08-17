@@ -1,5 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 
+import "../../../schemas/upload";
+
 /**
  * Upload an attachment
  * @description Demonstrates multipart-style documentation and auth-heavy Pages Router handlers.

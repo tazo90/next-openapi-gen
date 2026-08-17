@@ -574,7 +574,7 @@ export function resolveTypeNodeSchema(host: TypeNodeSchemaHost, node: any): Open
         const valueType = member.typeAnnotation?.typeAnnotation
           ? resolveTypeNodeSchema(host, member.typeAnnotation.typeAnnotation)
           : true;
-        additionalProperties = valueType as OpenAPIDefinition | boolean;
+        additionalProperties = valueType;
       }
     });
     const result: OpenAPIDefinition = { type: "object", properties };

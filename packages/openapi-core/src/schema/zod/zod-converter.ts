@@ -329,10 +329,7 @@ export class ZodSchemaConverter {
       this.typeToSchemaMapping = runtimeState.typeToSchemaMapping;
       this.hasPreScanned = runtimeState.preScanned;
     }
-    this.symbolResolver = new SymbolResolver(
-      fileAccess as Pick<typeof fs, "existsSync" | "readFileSync">,
-      this.fileASTCache,
-    );
+    this.symbolResolver = new SymbolResolver(fileAccess, this.fileASTCache);
   }
 
   /**

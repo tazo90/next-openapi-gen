@@ -14,7 +14,7 @@ export const UpdateMemberSchema = CreateMemberSchema.partial();
 export const MemberSchema = createSelectSchema(members);
 
 export const MemberListResponse = z.object({
-  items: z.array(MemberSchema),
+  items: z.array(MemberSchema as unknown as z.ZodTypeAny),
   total: z.number().int().nonnegative(),
 });
 

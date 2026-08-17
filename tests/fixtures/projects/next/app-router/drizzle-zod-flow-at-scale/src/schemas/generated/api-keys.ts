@@ -14,7 +14,7 @@ export const UpdateApiKeySchema = CreateApiKeySchema.partial();
 export const ApiKeySchema = createSelectSchema(apiKeys);
 
 export const ApiKeyListResponse = z.object({
-  items: z.array(ApiKeySchema),
+  items: z.array(ApiKeySchema as unknown as z.ZodTypeAny),
   total: z.number().int().nonnegative(),
 });
 

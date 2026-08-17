@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-import type { AssetUpload, AssetUploadInput } from "../../schemas/models";
+import { UploadRoute } from "../../pages/uploads";
+import type { AssetUpload } from "../../schemas/models";
 
 /**
  * Load upload instructions.
@@ -38,18 +39,3 @@ export const Route = createFileRoute("/api/uploads")({
   component: UploadRoute,
   loader,
 });
-
-function UploadRoute() {
-  const instructions = Route.useLoaderData();
-  const payload = {
-    fileName: "q1-report.pdf",
-    kind: "report",
-  } satisfies AssetUploadInput;
-
-  return (
-    <main>
-      <h1>Uploads</h1>
-      <pre>{JSON.stringify({ instructions, payload }, null, 2)}</pre>
-    </main>
-  );
-}

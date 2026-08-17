@@ -1,4 +1,4 @@
-import type { UploadArtifact, UploadDraft } from "../../schemas/models";
+import type { UploadArtifact } from "../../schemas/models";
 
 /**
  * Load upload instructions.
@@ -30,18 +30,4 @@ export async function action() {
     id: "upload_456",
     url: "https://example.com/uploads/upload_456",
   } satisfies UploadArtifact;
-}
-
-export default function UploadRoute() {
-  const payload = {
-    fileName: "avatar.png",
-    folder: "avatars",
-  } satisfies UploadDraft;
-
-  return (
-    <main>
-      <h1>Uploads</h1>
-      <pre>{JSON.stringify({ payload }, null, 2)}</pre>
-    </main>
-  );
 }

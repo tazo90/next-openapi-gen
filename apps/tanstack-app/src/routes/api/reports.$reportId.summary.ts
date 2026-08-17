@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-import type { ReportIdParams, ReportSummary } from "../../schemas/models";
+import { ReportSummaryRoute } from "../../pages/report-summary";
+import type { ReportSummary } from "../../schemas/models";
 
 /**
  * Load a report summary.
@@ -24,15 +25,3 @@ export const Route = createFileRoute("/api/reports/$reportId/summary")({
   component: ReportSummaryRoute,
   loader,
 });
-
-function ReportSummaryRoute() {
-  const report = Route.useLoaderData();
-  const params = Route.useParams() satisfies ReportIdParams;
-
-  return (
-    <main>
-      <h1>Report {params.reportId}</h1>
-      <pre>{JSON.stringify(report, null, 2)}</pre>
-    </main>
-  );
-}

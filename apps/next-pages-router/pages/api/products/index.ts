@@ -1,5 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 
+import "../../../schemas/product";
+
 /**
  * Get all products
  * @description Retrieve a list of products with optional filtering

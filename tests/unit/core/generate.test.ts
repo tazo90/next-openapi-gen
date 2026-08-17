@@ -533,55 +533,57 @@ export async function GET() {}
       );
 
       process.env.NODE_ENV = "production";
-      const result = await withProjectCwd(project.root, async () =>
-        await generateFromLoadedConfig(
-          {
-            configPath: path.join(project.root, "next.openapi.json"),
-            config: {
-              apiDir: "./src/app/api",
-              schemaDir: ["./src", "./schemas"],
-              schemaFiles: ["./schemas/extra.ts"],
-              schemaType: "typescript",
-              outputDir: "./public",
-              outputFile: "openapi.json",
-              cache: true,
-              generatedDir: ".openapi-cache",
-              docs: { enabled: true },
-              overlay: { apply: ["./overlay.json"] },
-              arazzo: { files: [] },
-              framework: { kind: FrameworkKind.Nextjs },
-              diagnostics: { failOn: "never" },
+      const result = await withProjectCwd(
+        project.root,
+        async () =>
+          await generateFromLoadedConfig(
+            {
+              configPath: path.join(project.root, "next.openapi.json"),
+              config: {
+                apiDir: "./src/app/api",
+                schemaDir: ["./src", "./schemas"],
+                schemaFiles: ["./schemas/extra.ts"],
+                schemaType: "typescript",
+                outputDir: "./public",
+                outputFile: "openapi.json",
+                cache: true,
+                generatedDir: ".openapi-cache",
+                docs: { enabled: true },
+                overlay: { apply: ["./overlay.json"] },
+                arazzo: { files: [] },
+                framework: { kind: FrameworkKind.Nextjs },
+                diagnostics: { failOn: "never" },
+              },
+            } as never,
+            undefined,
+            {
+              createFrameworkSource: () => ({
+                getScanRoots: () => [path.join(project.root, "src", "app", "api")],
+                shouldProcessFile: () => true,
+                getRoutePath: (filePath: string) => filePath,
+                precheckFile: () => true,
+                processFile: () => [],
+              }),
+              emitDocsArtifact: async () => ({
+                kind: "docs",
+                path: path.join(project.root, "docs.html"),
+              }),
+              createSpecEmitters: () => [
+                {
+                  kind: "overlay",
+                  emit: async () => [
+                    { kind: "overlay", path: path.join(project.root, "overlay.out.json") },
+                  ],
+                },
+                {
+                  kind: "arazzo",
+                  emit: async () => [
+                    { kind: "arazzo", path: path.join(project.root, "arazzo.out.json") },
+                  ],
+                },
+              ],
             },
-          } as never,
-          undefined,
-          {
-            createFrameworkSource: () => ({
-              getScanRoots: () => [path.join(project.root, "src", "app", "api")],
-              shouldProcessFile: () => true,
-              getRoutePath: (filePath: string) => filePath,
-              precheckFile: () => true,
-              processFile: () => [],
-            }),
-            emitDocsArtifact: async () => ({
-              kind: "docs",
-              path: path.join(project.root, "docs.html"),
-            }),
-            createSpecEmitters: () => [
-              {
-                kind: "overlay",
-                emit: async () => [
-                  { kind: "overlay", path: path.join(project.root, "overlay.out.json") },
-                ],
-              },
-              {
-                kind: "arazzo",
-                emit: async () => [
-                  { kind: "arazzo", path: path.join(project.root, "arazzo.out.json") },
-                ],
-              },
-            ],
-          },
-        ),
+          ),
       );
 
       expect(result.artifacts.map((artifact) => artifact.kind)).toEqual(

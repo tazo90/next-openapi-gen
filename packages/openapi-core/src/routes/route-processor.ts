@@ -144,8 +144,7 @@ export class RouteProcessor {
         ? routePathOrDataTypes
         : this.source.getRoutePath(filePath);
     const dataTypes =
-      (typeof routePathOrDataTypes === "string" ? maybeDataTypes : routePathOrDataTypes) ||
-      ({} as DataTypes);
+      (typeof routePathOrDataTypes === "string" ? maybeDataTypes : routePathOrDataTypes) || {};
 
     if (this.shouldIgnoreRoute(routePath, dataTypes)) {
       logger.debug(`Ignoring route: ${routePath}`);

@@ -473,23 +473,17 @@ describe("OpenAPI version processor", () => {
           mediaTypes: {
             Json: { schema: { type: "object" } },
           },
-        } as never,
+        },
       });
 
     const finalized32 = getOpenApiVersionProcessor("3.2").finalize(document());
-    expect(
-      (finalized32.components as Record<string, unknown> | undefined)?.mediaTypes,
-    ).toBeDefined();
+    expect(finalized32.components?.mediaTypes).toBeDefined();
 
     const finalized31 = getOpenApiVersionProcessor("3.1").finalize(document());
-    expect(
-      (finalized31.components as Record<string, unknown> | undefined)?.mediaTypes,
-    ).toBeUndefined();
+    expect(finalized31.components?.mediaTypes).toBeUndefined();
 
     const finalized30 = getOpenApiVersionProcessor("3.0").finalize(document());
-    expect(
-      (finalized30.components as Record<string, unknown> | undefined)?.mediaTypes,
-    ).toBeUndefined();
+    expect(finalized30.components?.mediaTypes).toBeUndefined();
   });
 
   it("covers leftover 3.1 upgrade and 3.0 downgrade schema branches", () => {
@@ -617,7 +611,7 @@ describe("OpenAPI version processor", () => {
       },
       paths: {},
     };
-    const downgraded = getOpenApiVersionProcessor("3.0").finalize(withLicense as never);
+    const downgraded = getOpenApiVersionProcessor("3.0").finalize(withLicense);
     expect(downgraded.info?.license).toMatchObject({
       name: "MIT",
       "x-oai-license-identifier": "MIT",
@@ -632,7 +626,7 @@ describe("OpenAPI version processor", () => {
         license: { name: "MIT", "x-oai-license-identifier": "MIT" },
       },
       paths: {},
-    } as never);
+    });
     expect(upgraded.info?.license).toMatchObject({
       name: "MIT",
       identifier: "MIT",
@@ -693,7 +687,7 @@ describe("OpenAPI version processor", () => {
           get: { responses: { "200": { description: "ok" } } },
         },
       },
-    } as never);
+    });
     expect(withInvalidExtension.paths?.["/ops"]).toMatchObject({
       "x-oai-additionalOperations": expect.objectContaining({
         query: expect.any(Object),

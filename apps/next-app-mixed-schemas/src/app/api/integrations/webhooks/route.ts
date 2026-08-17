@@ -1,3 +1,5 @@
+import { createHmac, timingSafeEqual } from "node:crypto";
+
 import {
   CreateWebhookEndpointSchema,
   WebhookEndpointSchema,
@@ -5,6 +7,22 @@ import {
 } from "@/schemas/zod-schemas";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
+
+function verifyWebhookSignature(
+  rawBody: string,
+  signatureHeader: string | null,
+  webhookSecret: string,
+): boolean {
+  if (!signatureHeader) {
+    return false;
+  }
+
+  const expected = createHmac("sha256", webhookSecret).update(rawBody).digest("hex");
+  const provided = Buffer.from(signatureHeader);
+  const computed = Buffer.from(expected);
+
+  return provided.length === computed.length && timingSafeEqual(provided, computed);
+}
 
 /**
  * List registered webhooks
@@ -51,7 +69,20 @@ export async function GET(_request: NextRequest) {
  * @openapi
  */
 export async function POST(request: NextRequest) {
-  const body = CreateWebhookEndpointSchema.parse(await request.json());
+  const webhookSecret = process.env.WEBHOOK_SECRET;
+  if (!webhookSecret) {
+    return NextResponse.json({ error: "Webhook secret is not configured" }, { status: 500 });
+  }
+
+  const signature = request.headers.get("x-webhook-signature");
+  const rawBody = await request.text();
+
+  if (!verifyWebhookSignature(rawBody, signature, webhookSecret)) {
+    return NextResponse.json({ error: "Invalid webhook signature" }, { status: 401 });
+  }
+
+  const payload: unknown = JSON.parse(rawBody);
+  const body = CreateWebhookEndpointSchema.parse(payload);
 
   return NextResponse.json(
     WebhookEndpointSchema.parse({

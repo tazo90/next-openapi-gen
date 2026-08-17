@@ -14,7 +14,7 @@ export const UpdateAttachmentSchema = CreateAttachmentSchema.partial();
 export const AttachmentSchema = createSelectSchema(attachments);
 
 export const AttachmentListResponse = z.object({
-  items: z.array(AttachmentSchema),
+  items: z.array(AttachmentSchema as unknown as z.ZodTypeAny),
   total: z.number().int().nonnegative(),
 });
 

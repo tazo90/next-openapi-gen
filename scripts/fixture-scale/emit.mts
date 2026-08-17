@@ -39,6 +39,7 @@ export function generateScaleTarget(target: ScaleTarget, dryRun: boolean): numbe
     outputDir: target.outputPath,
     framework: target.framework,
     flavor,
+    schemaLayout: target.schemaLayout,
     dryRun,
     operationIdPrefix: target.operationIdPrefix,
   });
@@ -62,6 +63,7 @@ export function generateAppTarget(target: AppTarget, dryRun: boolean): number {
     outputDir: target.outputPath,
     framework: target.framework,
     flavor,
+    schemaLayout: target.schemaLayout,
     dryRun,
     operationIdPrefix: target.operationIdPrefix,
   });
