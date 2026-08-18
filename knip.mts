@@ -128,6 +128,51 @@ const config = {
       ],
       ignoreDependencies: ["ajv"],
     },
+    "apps/remix-app": {
+      project: ["**/*.{ts,tsx,js,jsx,mjs,mts,cjs,cts}"],
+      typescript: true,
+      entry: ["openapi-gen.config.ts", "server.mjs", "app/routes/**/*.ts", "app/schemas/**/*.ts"],
+    },
+    "apps/sveltekit-app": {
+      project: ["**/*.{ts,tsx,js,jsx,mjs,mts,cjs,cts}"],
+      typescript: true,
+      entry: [
+        "openapi-gen.config.ts",
+        "server.mjs",
+        "src/routes/**/*.{ts,js}",
+        "src/schemas/**/*.ts",
+      ],
+    },
+    "apps/nuxt-app": {
+      project: ["**/*.{ts,tsx,js,jsx,mjs,mts,cjs,cts}"],
+      typescript: true,
+      entry: [
+        "openapi-gen.config.ts",
+        "server.mjs",
+        "server/api/**/*.ts",
+        "server/schemas/**/*.ts",
+      ],
+    },
+    "apps/astro-app": {
+      project: ["**/*.{ts,tsx,js,jsx,mjs,mts,cjs,cts}"],
+      typescript: true,
+      entry: [
+        "openapi-gen.config.ts",
+        "server.mjs",
+        "src/pages/api/**/*.ts",
+        "src/schemas/**/*.ts",
+      ],
+    },
+    "apps/hono-app": {
+      project: ["**/*.{ts,tsx,js,jsx,mjs,mts,cjs,cts}"],
+      typescript: true,
+      entry: ["openapi-gen.config.ts", "server.mjs", "src/index.ts", "src/schemas/**/*.ts"],
+    },
+    "apps/express-app": {
+      project: ["**/*.{ts,tsx,js,jsx,mjs,mts,cjs,cts}"],
+      typescript: true,
+      entry: ["openapi-gen.config.ts", "server.mjs", "src/index.ts", "src/schemas/**/*.ts"],
+    },
     "packages/*": {
       project: ["**/*.{ts,tsx,js,jsx,mjs,mts,cjs,cts,json}"],
       oxfmt: true,

@@ -76,6 +76,16 @@ describe("createDocsPage", () => {
     expect(getDocsPageRelativePath("react-router", "")).toBe(
       path.join("src", "routes", "_index.tsx"),
     );
+    expect(getDocsPageRelativePath("remix", "")).toBe(path.join("app", "routes", "_index.tsx"));
+    expect(getDocsPageRelativePath("sveltekit", "api-docs")).toBe(
+      path.join("src", "routes", "api-docs", "+page.svelte"),
+    );
+    expect(getDocsPageRelativePath("nuxt", "api-docs")).toBe(path.join("pages", "api-docs.vue"));
+    expect(getDocsPageRelativePath("astro", "api-docs")).toBe(
+      path.join("src", "pages", "api-docs.astro"),
+    );
+    expect(getDocsPageRelativePath("hono", "api-docs")).toBe(path.join("src", "api-docs.ts"));
+    expect(getDocsPageRelativePath("express", "api-docs")).toBe(path.join("src", "api-docs.ts"));
   });
 
   it("writes TanStack docs routes using file-route syntax", async () => {
@@ -173,6 +183,20 @@ describe("createDocsPage", () => {
     expect(getDocsPageRelativePath("react-router", "internal/reference")).toBe(
       path.join("src", "routes", "internal.reference.tsx"),
     );
+    expect(getDocsPageRelativePath("remix", "internal/reference")).toBe(
+      path.join("app", "routes", "internal.reference.tsx"),
+    );
+    expect(getDocsPageRelativePath("sveltekit", "internal/reference")).toBe(
+      path.join("src", "routes", "internal", "reference", "+page.svelte"),
+    );
+    expect(getDocsPageRelativePath("nuxt", "internal/reference")).toBe(
+      path.join("pages", "internal", "reference.vue"),
+    );
+    expect(getDocsPageRelativePath("astro", "internal/reference")).toBe(
+      path.join("src", "pages", "internal", "reference.astro"),
+    );
+    expect(getDocsPageRelativePath("hono", "api-docs")).toBe(path.join("src", "api-docs.ts"));
+    expect(getDocsPageRelativePath("express", "api-docs")).toBe(path.join("src", "api-docs.ts"));
   });
 
   it("uses docsUrl to determine the generated Next app route path", async () => {

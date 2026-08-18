@@ -544,6 +544,12 @@ jobs:
           - next-app-mixed-schemas
           - tanstack-app
           - react-router-app
+          - remix-app
+          - sveltekit-app
+          - nuxt-app
+          - astro-app
+          - hono-app
+          - express-app
           - next-app-adapter
           - next-app-next-config
           - next-app-ts-config

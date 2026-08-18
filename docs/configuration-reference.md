@@ -90,10 +90,10 @@ docs: {
 }
 ```
 
-| Field       | Type                                 | Behavior                                                                                                                                                                                                                                                                                    |
-| ----------- | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `enabled`   | `boolean`                            | The built-in docs emitter runs only when this is exactly `true`. `false` disables it.                                                                                                                                                                                                       |
-| `framework` | `"next" \| "vite" \| "react-router"` | Selects the docs-page template written at generate time. `vite` emits the TanStack route (`src/routes/<docsUrl>.tsx`). When omitted, the emitter infers Next, TanStack, or React Router from `framework.kind`, including the legacy `"react-router"` kind used in sample React Router apps. |
+| Field       | Type                                                                                                       | Behavior                                                                                                                                                                                                                                                                      |
+| ----------- | ---------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `enabled`   | `boolean`                                                                                                  | The built-in docs emitter runs only when this is exactly `true`. `false` disables it.                                                                                                                                                                                         |
+| `framework` | `"next" \| "vite" \| "react-router" \| "remix" \| "sveltekit" \| "nuxt" \| "astro" \| "hono" \| "express"` | Selects the docs-page template written at generate time. `vite` emits the TanStack route (`src/routes/<docsUrl>.tsx`). When omitted, the emitter infers the docs template from `framework.kind`, including the legacy `"react-router"` kind used in sample React Router apps. |
 
 Docs generation uses `docsUrl`, `ui`, and `outputFile`, and records a `docs`
 artifact when a page is written. Treat the target page as generated
@@ -111,12 +111,12 @@ framework: {
 }
 ```
 
-| Field         | Type                                                                          | Behavior                                                                                         |
-| ------------- | ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
-| `kind`        | `FrameworkKind.Nextjs \| FrameworkKind.Tanstack \| FrameworkKind.ReactRouter` | Selects the framework route source. Resolved values are `nextjs`, `tanstack`, and `reactrouter`. |
-| `router`      | `"app" \| "pages"`                                                            | Required for the Next.js variant.                                                                |
-| `modulePath`  | `string`                                                                      | Optional framework module metadata.                                                              |
-| `adapterPath` | `string`                                                                      | Optional adapter metadata. It is also used as `modulePath` when `modulePath` is absent.          |
+| Field         | Type               | Behavior                                                                                                                                                                                                                         |
+| ------------- | ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `kind`        | `FrameworkKind`    | Selects the framework route source. Resolved values are `nextjs`, `tanstack`, `reactrouter`, `remix`, `sveltekit`, `nuxt`, `astro`, `hono`, and `express`. Unknown or misspelled kinds error instead of falling back to Next.js. |
+| `router`      | `"app" \| "pages"` | Required for the Next.js variant.                                                                                                                                                                                                |
+| `modulePath`  | `string`           | Optional framework module metadata.                                                                                                                                                                                              |
+| `adapterPath` | `string`           | Optional adapter metadata. It is also used as `modulePath` when `modulePath` is absent.                                                                                                                                          |
 
 For Next.js, `framework.adapterPath` falls back to `next.adapterPath`.
 

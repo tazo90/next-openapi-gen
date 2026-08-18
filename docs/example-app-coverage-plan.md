@@ -24,6 +24,8 @@ Open one of these first based on what you want to evaluate:
 - `apps/next-pages-router`: legacy Pages Router support
 - `apps/tanstack-app`: TanStack Router framework parity
 - `apps/react-router-app`: React Router framework parity
+- `apps/remix-app`, `apps/sveltekit-app`, `apps/nuxt-app`, `apps/astro-app`,
+  `apps/hono-app`, `apps/express-app`: compact framework-parity apps
 - `apps/next-app-next-config`, `apps/next-app-ts-config`, `apps/next-app-adapter`: config and adapter integration paths (`next-app-ts-config` also owns `clientSdk`)
 - `apps/next-app-sandbox`: edge-case route behavior and exclusion coverage
 - `apps/next-app-scalar`, `apps/next-app-swagger`: docs UI scaffolding variants
@@ -61,6 +63,12 @@ confidence.
 | `apps/next-pages-router`      | Pages Router parity and `@method` coverage                       | Shared route packs adapted to default-export handlers              |
 | `apps/tanstack-app`           | TanStack Router framework parity                                 | Compact auth, multipart, response-set, loader/action coverage      |
 | `apps/react-router-app`       | React Router framework parity                                    | Compact auth, multipart, response-set, loader/action coverage      |
+| `apps/remix-app`              | Remix file-route parity                                          | `loader`/`action` plus `@method` mutation coverage                 |
+| `apps/sveltekit-app`          | SvelteKit `+server` parity                                       | Named HTTP exports under `src/routes`                              |
+| `apps/nuxt-app`               | Nuxt/Nitro filename-method parity                                | `users.get.ts` / `users.post.ts` suffixes                          |
+| `apps/astro-app`              | Astro endpoint parity                                            | Named `APIRoute` exports under `src/pages/api`                     |
+| `apps/hono-app`               | Hono call-expression parity                                      | `app.get` / `app.post` discovery                                   |
+| `apps/express-app`            | Express call-expression parity                                   | `app.get` / `app.post` discovery                                   |
 | `apps/next-app-adapter`       | Adapter-stage generation smoke coverage                          | One advanced route family proving adapter support                  |
 | `apps/next-app-next-config`   | `next-openapi` config through Next config integration            | One advanced route family proving config wiring                    |
 | `apps/next-app-ts-config`     | Typed config smoke coverage and `clientSdk` golden path          | Thin `openapi-generator-cli` wrapper; one advanced route family    |
@@ -227,6 +235,12 @@ with custom fragments because it already combines route-generated content with
 - Keep the pack smaller than the Next apps, but equivalent enough to validate
   framework support.
 
+### File-export and call-expression apps
+
+Remix, SvelteKit, Nuxt, Astro, Hono, and Express stay compact domain APIs.
+`*-at-scale` fixtures and bench matrix rows for these stacks are a follow-up
+after the core-flow fixtures and sample apps exist.
+
 ### Config-focused apps
 
 For `next-app-adapter`, `next-app-next-config`, and `next-app-ts-config`:
@@ -274,6 +288,12 @@ Add cross-framework parity:
 
 - `apps/tanstack-app`
 - `apps/react-router-app`
+- `apps/remix-app`
+- `apps/sveltekit-app`
+- `apps/nuxt-app`
+- `apps/astro-app`
+- `apps/hono-app`
+- `apps/express-app`
 - config-focused apps
 
 Outcome:

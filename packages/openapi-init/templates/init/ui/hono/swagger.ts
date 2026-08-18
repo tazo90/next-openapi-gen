@@ -1,0 +1,23 @@
+export function createApiDocsApp(): {
+  fetch: (request: Request) => Response;
+} {
+  const html = `<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>API Documentation</title>
+    <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist/swagger-ui.css">
+    <script src="https://unpkg.com/swagger-ui-dist/swagger-ui-bundle.js"></script>
+  </head>
+  <body>
+    <div id="swagger-ui"></div><script>window.ui = SwaggerUIBundle({ url: "/__NEXT_OPENAPI_GEN_OUTPUT_FILE__", dom_id: "#swagger-ui" })</script>
+  </body>
+</html>`;
+  return {
+    fetch(): Response {
+      return new Response(html, {
+        headers: { "content-type": "text/html; charset=utf-8" },
+      });
+    },
+  };
+}

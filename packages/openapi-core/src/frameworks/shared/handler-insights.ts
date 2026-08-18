@@ -372,7 +372,11 @@ function getHandlerValueSource(
     return options.hasPathParams ? "pathParamsType" : "queryParamsType";
   }
 
-  if (isJsonBodyExpression(node) || isFormDataExpression(node)) {
+  if (
+    isJsonBodyExpression(node) ||
+    isFormDataExpression(node) ||
+    (t.isMemberExpression(node) && t.isIdentifier(node.property, { name: "body" }))
+  ) {
     return "bodyType";
   }
 
@@ -385,22 +389,37 @@ function getHandlerValueSource(
 
 function isContextParamsExpression(node: t.Node): boolean {
   return (
-    t.isMemberExpression(node) &&
-    t.isIdentifier(node.property, { name: "params" }) &&
-    t.isIdentifier(node.object)
+    (t.isMemberExpression(node) &&
+      t.isIdentifier(node.property, { name: "params" }) &&
+      t.isIdentifier(node.object)) ||
+    isNamedCall(node, "getRouterParam") ||
+    isMemberCall(node, "param")
   );
 }
 
 function isRequestQueryExpression(node: t.Node): boolean {
   return (
-    t.isMemberExpression(node) &&
-    t.isIdentifier(node.property, { name: "query" }) &&
-    t.isIdentifier(node.object)
+    (t.isMemberExpression(node) &&
+      t.isIdentifier(node.property, { name: "query" }) &&
+      t.isIdentifier(node.object)) ||
+    isNamedCall(node, "getQuery")
   );
 }
 
 function isJsonBodyExpression(node: t.Node): boolean {
-  return isRequestMethodCall(node, "json");
+  return isRequestMethodCall(node, "json") || isNamedCall(node, "readBody");
+}
+
+function isNamedCall(node: t.Node, name: string): boolean {
+  return t.isCallExpression(node) && t.isIdentifier(node.callee, { name });
+}
+
+function isMemberCall(node: t.Node, methodName: string): boolean {
+  return (
+    t.isCallExpression(node) &&
+    t.isMemberExpression(node.callee) &&
+    t.isIdentifier(node.callee.property, { name: methodName })
+  );
 }
 
 function isFormDataExpression(node: t.Node): boolean {
@@ -412,7 +431,9 @@ function isRequestMethodCall(node: t.Node, methodName: string): boolean {
     t.isCallExpression(node) &&
     t.isMemberExpression(node.callee) &&
     t.isIdentifier(node.callee.property, { name: methodName }) &&
-    t.isIdentifier(node.callee.object)
+    (t.isIdentifier(node.callee.object) ||
+      (t.isMemberExpression(node.callee.object) &&
+        t.isIdentifier(node.callee.object.property, { name: "req" })))
   );
 }
 

@@ -4,6 +4,7 @@
   "globalEnv": [
     "CI",
     "COVERAGE_SCOPE",
+    "DOCS_TITLE",
     "E2E_APP",
     "EXPOSE_TESTING_API",
     "FORCE_COLOR",
@@ -13,6 +14,7 @@
     "NODE_ENV",
     "PATH",
     "PAYMENT_WEBHOOK_SECRET",
+    "PORT",
     "WEBHOOK_SECRET"
   ],
   "tasks": {

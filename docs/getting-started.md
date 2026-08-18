@@ -12,6 +12,12 @@ supported frameworks.
   - Next.js with App Router or Pages Router
   - TanStack Router
   - React Router
+  - Remix
+  - SvelteKit
+  - Nuxt
+  - Astro
+  - Hono
+  - Express
 - Route handlers documented with JSDoc tags when you want explicit metadata
 
 TypeScript 7 can be installed as your project `tsc` for faster builds and
@@ -45,6 +51,12 @@ yarn add --dev next-openapi-gen
 | Next.js         | `--framework next`         | `./src/app/api`    | `src/app/<docsUrl>/page.tsx` when `src/` exists       | `false`                        |
 | TanStack Router | `--framework tanstack`     | `./src/routes/api` | `src/routes/<docsUrl>.tsx`                            | `true`                         |
 | React Router    | `--framework react-router` | `./src/routes/api` | `src/routes/<docsUrl>.tsx` or `src/routes/_index.tsx` | `true`                         |
+| Remix           | `--framework remix`        | `./app/routes`     | `app/routes/<docsUrl>.tsx`                            | `true`                         |
+| SvelteKit       | `--framework sveltekit`    | `./src/routes`     | `src/routes/<docsUrl>/+page.svelte`                   | `true`                         |
+| Nuxt            | `--framework nuxt`         | `./server/api`     | `pages/<docsUrl>.vue`                                 | `true`                         |
+| Astro           | `--framework astro`        | `./src/pages/api`  | `src/pages/<docsUrl>.astro`                           | `true`                         |
+| Hono            | `--framework hono`         | `./src`            | `src/api-docs.ts` mountable app                       | `true`                         |
+| Express         | `--framework express`      | `./src`            | `src/api-docs.ts` mountable router                    | `true`                         |
 
 Next.js is the default, so `pnpm exec openapi-gen init` and
 `pnpm exec openapi-gen init --framework next` are equivalent.
@@ -62,6 +74,9 @@ pnpm exec openapi-gen init --framework tanstack
 
 # React Router
 pnpm exec openapi-gen init --framework react-router
+
+# Remix, SvelteKit, Nuxt, Astro, Hono, or Express
+pnpm exec openapi-gen init --framework remix
 ```
 
 This creates:
@@ -90,8 +105,8 @@ A typical setup is:
 4. Review the generated spec or open `/api-docs`.
 
 Set `docs.enabled: true` if generate (including CI) should rewrite the docs
-page the same way `init` scaffolds it. This works for Next.js, TanStack, and
-React Router. Treat that page as generated scaffolding; keep custom UI work
+page the same way `init` scaffolds it. This works for every supported
+framework. Treat that page as generated scaffolding; keep custom UI work
 outside it or disable docs emission after the first write.
 
 For local development, `--watch` is usually the best default:
@@ -274,6 +289,12 @@ when you want generation tied to the dev server or build pipeline.
 | `next-openapi-gen/next`         | You want a Next-specific adapter surface                            | `createNextOpenApiAdapter()` generates on build completion          |
 | `next-openapi-gen/vite`         | You are using TanStack Router on Vite, or want the shared Vite path | Generates on build start and watches in dev unless `watch: false`   |
 | `next-openapi-gen/react-router` | You want a React Router-specific plugin entrypoint                  | Mirrors the React Router framework adapters explicitly              |
+| `next-openapi-gen/remix`        | You want Remix Vite generation                                      | Reuses the shared Vite plugin with Remix adapters                   |
+| `next-openapi-gen/sveltekit`    | You want SvelteKit Vite generation                                  | Reuses the shared Vite plugin with SvelteKit adapters               |
+| `next-openapi-gen/nuxt`         | You want Nuxt/Nitro build-hook generation                           | Runs generate before the Nitro build                                |
+| `next-openapi-gen/astro`        | You want Astro/Vite generation                                      | Injects the Vite plugin from `astro:config:setup`                   |
+| `next-openapi-gen/hono`         | You want Hono Vite generation                                       | Reuses the shared Vite plugin with Hono adapters                    |
+| `next-openapi-gen/express`      | You want a programmatic Express generate helper                     | No fake Next-style adapter; CLI remains the default path            |
 
 ### Next.js
 
@@ -311,6 +332,31 @@ export default defineConfig({
 
 React Router projects can use the React Router-specific subpath export or the
 shared Vite integration when the app already runs on Vite.
+
+### Remix and SvelteKit
+
+Both stacks reuse the Vite plugin. Import `createRemixOpenApiPlugin` from
+`next-openapi-gen/remix` or `createSvelteKitOpenApiPlugin` from
+`next-openapi-gen/sveltekit`.
+
+### Nuxt
+
+Add the Nuxt module from `next-openapi-gen/nuxt`. It generates before the Nitro
+build. Scan `server/api` files; method comes from the Nitro filename suffix
+(`users.get.ts`). If there is no suffix, add `@method` or the generator emits
+GET plus a diagnostic.
+
+### Astro
+
+Use the Astro integration from `next-openapi-gen/astro`. Endpoints live under
+`src/pages/api` with named `GET`/`POST` exports.
+
+### Hono and Express
+
+Hono can use `next-openapi-gen/hono` on Vite. Express uses the CLI or
+`generateExpressOpenApi()` from `next-openapi-gen/express`. Both scan
+`app.get` / `router.route` call expressions. Point `framework.modulePath` at
+the app entry when you do not want every file under `apiDir` scanned.
 
 ## Pages Router setup
 

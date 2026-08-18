@@ -27,7 +27,17 @@ export const GENERATE_WATCH_OPTION_DESCRIPTION =
 export const GENERATE_FAIL_ON_OPTION_DESCRIPTION =
   "Fail generation when diagnostics include the selected severity";
 
-export const CLI_FRAMEWORK_CHOICES = ["next", "tanstack", "react-router"] as const;
+export const CLI_FRAMEWORK_CHOICES = [
+  "next",
+  "tanstack",
+  "react-router",
+  "remix",
+  "sveltekit",
+  "nuxt",
+  "astro",
+  "hono",
+  "express",
+] as const;
 export const CLI_SCHEMA_CHOICES: typeof SCHEMA_TYPES = SCHEMA_TYPES;
 export const CLI_UI_CHOICES = [
   "scalar",

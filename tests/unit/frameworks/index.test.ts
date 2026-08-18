@@ -80,6 +80,42 @@ describe("createDefaultGenerationAdapters", () => {
     ).toBeTruthy();
   });
 
+  it("supports the additional first-class framework sources", () => {
+    const adapters = createDefaultGenerationAdapters();
+    const kinds = [
+      FrameworkKind.Remix,
+      FrameworkKind.SvelteKit,
+      FrameworkKind.Nuxt,
+      FrameworkKind.Astro,
+      FrameworkKind.Hono,
+      FrameworkKind.Express,
+    ];
+
+    for (const kind of kinds) {
+      expect(
+        adapters.createFrameworkSource({
+          apiDir: "./src",
+          schemaDir: "./src",
+          outputDir: "./public",
+          outputFile: "openapi.json",
+          docsUrl: "api-docs",
+          ui: "scalar",
+          includeOpenApiRoutes: false,
+          ignoreRoutes: [],
+          schemaType: "typescript",
+          schemaBackends: ["typescript"],
+          schemaFiles: [],
+          framework: { kind },
+          next: {},
+          diagnostics: { enabled: true },
+          routerType: "app",
+          openapiVersion: "3.0",
+          debug: false,
+        }),
+      ).toBeTruthy();
+    }
+  });
+
   it("creates companion-spec emitters from overlay and arazzo config", () => {
     const adapters = createDefaultGenerationAdapters();
 

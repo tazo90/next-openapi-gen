@@ -69,6 +69,26 @@ describe("next-openapi-gen default adapters", () => {
         })
         .getScanRoots(),
     ).toEqual(["./src/app/api"]);
+
+    for (const kind of [
+      FrameworkKind.Remix,
+      FrameworkKind.SvelteKit,
+      FrameworkKind.Nuxt,
+      FrameworkKind.Astro,
+      FrameworkKind.Hono,
+      FrameworkKind.Express,
+    ]) {
+      expect(
+        adapters
+          .createFrameworkSource({
+            ...baseConfig,
+            framework: {
+              kind,
+            },
+          })
+          .getScanRoots(),
+      ).toEqual(["./src/app/api"]);
+    }
   });
 
   it("uses the Next docs emitter by default", () => {

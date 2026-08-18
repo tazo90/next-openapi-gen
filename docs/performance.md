@@ -31,6 +31,7 @@ Canonical scenarios to inspect first:
 - `next/app-router/ts-full-coverage` with OpenAPI 3.2 for TypeScript schema-heavy behavior.
 - `next/app-router/drizzle-zod-flow` with OpenAPI 3.2 for Drizzle-Zod conversion.
 - `tanstack/core-flow` and `react-router/core-flow` with OpenAPI 3.2 for non-Next adapters.
+- `remix`, `sveltekit`, `nuxt`, `astro`, `hono`, and `express` `core-flow` fixtures cover the newer adapters. `*-at-scale` rows and bench-matrix entries for those stacks are a follow-up.
 
 ## Scale Fixture Tier
 

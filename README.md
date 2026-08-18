@@ -6,7 +6,7 @@
 
 Generate OpenAPI `3.0`, `3.1`, and `3.2` from the routes and schemas you already have.
 
-`next-openapi-gen` scans Next.js, TanStack Router, and React Router route handlers, reads JSDoc metadata, and generates an OpenAPI spec plus an optional docs UI. It is built for real codebases that use Zod, TypeScript, drizzle-zod, or reusable OpenAPI fragments, including mixed-schema migrations.
+`next-openapi-gen` scans Next.js, TanStack Router, React Router, Remix, SvelteKit, Nuxt, Astro, Hono, and Express route handlers, reads JSDoc metadata, and generates an OpenAPI spec plus an optional docs UI. It is built for real codebases that use Zod, TypeScript, drizzle-zod, or reusable OpenAPI fragments, including mixed-schema migrations.
 
 [Quick start](#quick-start) • [Config reference](./docs/configuration-reference.md) • [Docs index](./docs/README.md) • [Example apps](#example-apps) • [Validation and coverage](#validation-and-coverage)
 
@@ -29,6 +29,12 @@ Generate OpenAPI `3.0`, `3.1`, and `3.2` from the routes and schemas you already
   - Next.js using App Router or Pages Router
   - TanStack Router
   - React Router
+  - Remix
+  - SvelteKit
+  - Nuxt
+  - Astro
+  - Hono
+  - Express
 
 ### Install
 
@@ -94,6 +100,12 @@ Need the full setup flow, config walkthrough, or production notes? See
 | Next.js         | `pnpm exec openapi-gen init`                          | Supports App Router and Pages Router                           |
 | TanStack Router | `pnpm exec openapi-gen init --framework tanstack`     | Uses the public `next-openapi-gen/vite` plugin surface         |
 | React Router    | `pnpm exec openapi-gen init --framework react-router` | Uses the public `next-openapi-gen/react-router` plugin surface |
+| Remix           | `pnpm exec openapi-gen init --framework remix`        | Vite plugin via `next-openapi-gen/remix`                       |
+| SvelteKit       | `pnpm exec openapi-gen init --framework sveltekit`    | Vite plugin via `next-openapi-gen/sveltekit`                   |
+| Nuxt            | `pnpm exec openapi-gen init --framework nuxt`         | Nitro module via `next-openapi-gen/nuxt`                       |
+| Astro           | `pnpm exec openapi-gen init --framework astro`        | Astro integration via `next-openapi-gen/astro`                 |
+| Hono            | `pnpm exec openapi-gen init --framework hono`         | Vite plugin via `next-openapi-gen/hono`                        |
+| Express         | `pnpm exec openapi-gen init --framework express`      | CLI or `generateExpressOpenApi()` helper                       |
 
 ## Minimal example
 
@@ -127,7 +139,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 
 | Capability                            | Why it matters                                                                                        |
 | ------------------------------------- | ----------------------------------------------------------------------------------------------------- |
-| Framework-aware route scanning        | Covers Next.js, TanStack Router, and React Router with one generator and shared docs story.           |
+| Framework-aware route scanning        | Covers Next.js, TanStack Router, React Router, Remix, SvelteKit, Nuxt, Astro, Hono, and Express.      |
 | Mixed schema sources                  | Combine `zod`, `typescript`, `schemaFiles`, and drizzle-zod-backed schemas during gradual migrations. |
 | OpenAPI `3.0` / `3.1` / `3.2` targets | Keep one authoring flow while emitting version-aware output for newer spec features.                  |
 | Response inference                    | Infer typed App Router responses when `@response` is omitted, while still letting explicit tags win.  |
@@ -340,13 +352,13 @@ OpenAPI `3.2`-specific tags such as `@querystring`, `@tagSummary`, `@tagKind`,
 
 ## Compatibility
 
-| Area            | Support                                                      |
-| --------------- | ------------------------------------------------------------ |
-| Frameworks      | Next.js, TanStack Router, React Router                       |
-| Next.js routers | App Router and Pages Router                                  |
-| OpenAPI targets | `3.0`, `3.1`, `3.2`, experimental `3.3-preview`              |
-| Schema sources  | `zod`, `typescript`, drizzle-zod output, YAML/JSON fragments |
-| Docs UIs        | Scalar, Swagger, Redoc, Stoplight Elements, RapiDoc          |
+| Area            | Support                                                                              |
+| --------------- | ------------------------------------------------------------------------------------ |
+| Frameworks      | Next.js, TanStack Router, React Router, Remix, SvelteKit, Nuxt, Astro, Hono, Express |
+| Next.js routers | App Router and Pages Router                                                          |
+| OpenAPI targets | `3.0`, `3.1`, `3.2`, experimental `3.3-preview`                                      |
+| Schema sources  | `zod`, `typescript`, drizzle-zod output, YAML/JSON fragments                         |
+| Docs UIs        | Scalar, Swagger, Redoc, Stoplight Elements, RapiDoc                                  |
 
 For Pages Router projects, set `routerType` to `"pages"` and annotate handlers with `@method`. See [apps/next-pages-router](./apps/next-pages-router).
 
@@ -360,6 +372,12 @@ Use the integration that matches your framework:
 - `next-openapi-gen/next`: Next.js adapter helpers such as `createNextOpenApiAdapter`
 - `next-openapi-gen/vite`: Vite plugin surface used by the TanStack example app
 - `next-openapi-gen/react-router`: React Router plugin surface
+- `next-openapi-gen/remix`: Remix Vite plugin
+- `next-openapi-gen/sveltekit`: SvelteKit Vite plugin
+- `next-openapi-gen/nuxt`: Nuxt/Nitro module
+- `next-openapi-gen/astro`: Astro integration
+- `next-openapi-gen/hono`: Hono Vite plugin
+- `next-openapi-gen/express`: Express generate helper
 
 The main package export also exposes `generateProject`, `watchProject`, and
 config helpers when you want to script generation directly.
@@ -379,6 +397,12 @@ Use the checked-in examples to evaluate the tool in realistic setups:
 - [apps/next-pages-router](./apps/next-pages-router): legacy Pages Router support
 - [apps/tanstack-app](./apps/tanstack-app): TanStack Router framework parity example
 - [apps/react-router-app](./apps/react-router-app): React Router framework parity example
+- [apps/remix-app](./apps/remix-app): Remix file-route parity example
+- [apps/sveltekit-app](./apps/sveltekit-app): SvelteKit `+server` parity example
+- [apps/nuxt-app](./apps/nuxt-app): Nuxt/Nitro filename-method parity example
+- [apps/astro-app](./apps/astro-app): Astro endpoint parity example
+- [apps/hono-app](./apps/hono-app): Hono call-expression parity example
+- [apps/express-app](./apps/express-app): Express call-expression parity example
 - [apps/next-app-scalar](./apps/next-app-scalar), [apps/next-app-swagger](./apps/next-app-swagger): docs UI variants
 
 ### Run an example

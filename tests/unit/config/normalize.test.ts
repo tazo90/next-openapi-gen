@@ -121,6 +121,34 @@ describe("normalizeOpenApiConfig", () => {
     });
   });
 
+  it("normalizes the new file-based and call-expression framework kinds", () => {
+    expect(
+      normalizeOpenApiConfig({
+        info: { title: "Fixture", version: "1.0.0" },
+        framework: { kind: "remix" },
+      }).framework.kind,
+    ).toBe(FrameworkKind.Remix);
+    expect(
+      normalizeOpenApiConfig({
+        info: { title: "Fixture", version: "1.0.0" },
+        framework: { kind: FrameworkKind.Hono, adapterPath: "./src/index.ts" },
+      }).framework,
+    ).toEqual({
+      kind: FrameworkKind.Hono,
+      adapterPath: "./src/index.ts",
+      modulePath: "./src/index.ts",
+    });
+  });
+
+  it("throws for unknown framework kinds instead of falling back to Next.js", () => {
+    expect(() =>
+      normalizeOpenApiConfig({
+        info: { title: "Fixture", version: "1.0.0" },
+        framework: { kind: "fastify" as never },
+      }),
+    ).toThrow(/Unknown framework kind "fastify"/);
+  });
+
   it("infers OpenAPI versions from the template version string", () => {
     expect(
       normalizeOpenApiConfig({

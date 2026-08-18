@@ -16,7 +16,8 @@ This folder contains the longer-form guides that support the main
   `operationId`s
 - [OpenAPI Overlay](./overlay.md): apply or generate Overlay documents
 - [Workflows and integrations](./workflows-and-integrations.md): Next.js,
-  TanStack Router, React Router, schema migration, and downstream OpenAPI use
+  TanStack Router, React Router, Remix, SvelteKit, Nuxt, Astro, Hono, Express,
+  schema migration, and downstream OpenAPI use
 - [FAQ and troubleshooting](./faq.md)
 
 ## Coverage and support matrices

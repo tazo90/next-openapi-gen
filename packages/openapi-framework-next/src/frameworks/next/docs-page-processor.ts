@@ -61,12 +61,24 @@ const DOCS_EMITTER_FRAMEWORKS = {
   next: "next",
   vite: "tanstack",
   "react-router": "react-router",
+  remix: "remix",
+  sveltekit: "sveltekit",
+  nuxt: "nuxt",
+  astro: "astro",
+  hono: "hono",
+  express: "express",
 } as const satisfies Record<NonNullable<DocsEmitterConfig["framework"]>, InitFramework>;
 
 const PROJECT_FRAMEWORK_TO_DOCS_PAGE = {
   [FrameworkKind.Nextjs]: "next",
   [FrameworkKind.Tanstack]: "tanstack",
   [FrameworkKind.ReactRouter]: "react-router",
+  [FrameworkKind.Remix]: "remix",
+  [FrameworkKind.SvelteKit]: "sveltekit",
+  [FrameworkKind.Nuxt]: "nuxt",
+  [FrameworkKind.Astro]: "astro",
+  [FrameworkKind.Hono]: "hono",
+  [FrameworkKind.Express]: "express",
   next: "next",
   "react-router": "react-router",
 } as const satisfies Record<FrameworkKind | LegacyFrameworkKind, InitFramework>;

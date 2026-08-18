@@ -19,6 +19,13 @@ generation to happen as part of local dev or build hooks.
 - `next-openapi-gen/react-router`: best for React Router projects that want a
   framework-specific plugin import. It uses the React Router framework adapters
   directly.
+- `next-openapi-gen/remix` and `next-openapi-gen/sveltekit`: Vite plugins for
+  Remix and SvelteKit.
+- `next-openapi-gen/nuxt`: Nuxt module that generates before the Nitro build.
+- `next-openapi-gen/astro`: Astro integration that injects the Vite plugin.
+- `next-openapi-gen/hono`: Vite plugin for Hono apps.
+- `next-openapi-gen/express`: `generateExpressOpenApi()` helper. Express has no
+  Next-style adapter; use the CLI or call the helper from `listen`.
 
 ### Next.js
 
@@ -71,6 +78,46 @@ export default defineConfig({
 
 If your React Router app already standardizes on the shared Vite integration
 surface, the checked-in example app shows that path too.
+
+### Remix and SvelteKit
+
+```ts
+import { createRemixOpenApiPlugin } from "next-openapi-gen/remix";
+import { defineConfig } from "vite";
+
+export default defineConfig({
+  plugins: [createRemixOpenApiPlugin()],
+});
+```
+
+SvelteKit uses `createSvelteKitOpenApiPlugin` from `next-openapi-gen/sveltekit`.
+
+### Nuxt
+
+```ts
+import { createNuxtOpenApiModule } from "next-openapi-gen/nuxt";
+
+export default defineNuxtConfig({
+  modules: [createNuxtOpenApiModule()],
+});
+```
+
+### Astro
+
+```ts
+import { createAstroOpenApiIntegration } from "next-openapi-gen/astro";
+import { defineConfig } from "astro/config";
+
+export default defineConfig({
+  integrations: [createAstroOpenApiIntegration()],
+});
+```
+
+### Hono and Express
+
+Hono can attach `createHonoOpenApiPlugin` from `next-openapi-gen/hono` in Vite.
+Express stays CLI-first, or call `generateExpressOpenApi()` from
+`next-openapi-gen/express` before `listen`.
 
 ### Route scanning only vs framework hooks
 
@@ -295,6 +342,12 @@ Choose an example app based on your use case:
   support
 - [../apps/tanstack-app](../apps/tanstack-app) for TanStack Router parity
 - [../apps/react-router-app](../apps/react-router-app) for React Router parity
+- [../apps/remix-app](../apps/remix-app) for Remix file-route parity
+- [../apps/sveltekit-app](../apps/sveltekit-app) for SvelteKit `+server` parity
+- [../apps/nuxt-app](../apps/nuxt-app) for Nuxt/Nitro filename-method parity
+- [../apps/astro-app](../apps/astro-app) for Astro endpoint parity
+- [../apps/hono-app](../apps/hono-app) for Hono call-expression parity
+- [../apps/express-app](../apps/express-app) for Express call-expression parity
 - [../apps/next-app-next-config](../apps/next-app-next-config),
   [../apps/next-app-ts-config](../apps/next-app-ts-config), and
   [../apps/next-app-adapter](../apps/next-app-adapter) for config and adapter

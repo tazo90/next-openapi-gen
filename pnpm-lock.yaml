@@ -321,6 +321,42 @@ importers:
         specifier: 'catalog:'
         version: 4.1.10(@opentelemetry/api@1.9.0)(@types/node@26.2.0)(@vitest/coverage-v8@4.1.10)(vite@8.2.1(@types/node@26.2.0)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.22.4)(yaml@2.9.0))
 
+  apps/astro-app:
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.2.0
+      next-openapi-gen:
+        specifier: workspace:*
+        version: link:../../packages/next-openapi-gen
+      typescript:
+        specifier: 'catalog:'
+        version: 7.0.2
+
+  apps/express-app:
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.2.0
+      next-openapi-gen:
+        specifier: workspace:*
+        version: link:../../packages/next-openapi-gen
+      typescript:
+        specifier: 'catalog:'
+        version: 7.0.2
+
+  apps/hono-app:
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.2.0
+      next-openapi-gen:
+        specifier: workspace:*
+        version: link:../../packages/next-openapi-gen
+      typescript:
+        specifier: 'catalog:'
+        version: 7.0.2
+
   apps/next-app-adapter:
     dependencies:
       '@scalar/api-reference-react':
@@ -818,6 +854,18 @@ importers:
         specifier: 'catalog:'
         version: 7.0.2
 
+  apps/nuxt-app:
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.2.0
+      next-openapi-gen:
+        specifier: workspace:*
+        version: link:../../packages/next-openapi-gen
+      typescript:
+        specifier: 'catalog:'
+        version: 7.0.2
+
   apps/react-router-app:
     dependencies:
       '@scalar/api-reference-react':
@@ -854,6 +902,30 @@ importers:
       vite:
         specifier: catalog:react-router
         version: 8.2.1(@types/node@26.2.0)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.22.4)(yaml@2.9.0)
+
+  apps/remix-app:
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.2.0
+      next-openapi-gen:
+        specifier: workspace:*
+        version: link:../../packages/next-openapi-gen
+      typescript:
+        specifier: 'catalog:'
+        version: 7.0.2
+
+  apps/sveltekit-app:
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.2.0
+      next-openapi-gen:
+        specifier: workspace:*
+        version: link:../../packages/next-openapi-gen
+      typescript:
+        specifier: 'catalog:'
+        version: 7.0.2
 
   apps/tanstack-app:
     dependencies:
@@ -956,12 +1028,30 @@ importers:
       '@workspace/openapi-core':
         specifier: workspace:*
         version: link:../openapi-core
+      '@workspace/openapi-framework-astro':
+        specifier: workspace:*
+        version: link:../openapi-framework-astro
+      '@workspace/openapi-framework-express':
+        specifier: workspace:*
+        version: link:../openapi-framework-express
+      '@workspace/openapi-framework-hono':
+        specifier: workspace:*
+        version: link:../openapi-framework-hono
       '@workspace/openapi-framework-next':
         specifier: workspace:*
         version: link:../openapi-framework-next
+      '@workspace/openapi-framework-nuxt':
+        specifier: workspace:*
+        version: link:../openapi-framework-nuxt
       '@workspace/openapi-framework-react-router':
         specifier: workspace:*
         version: link:../openapi-framework-react-router
+      '@workspace/openapi-framework-remix':
+        specifier: workspace:*
+        version: link:../openapi-framework-remix
+      '@workspace/openapi-framework-sveltekit':
+        specifier: workspace:*
+        version: link:../openapi-framework-sveltekit
       '@workspace/openapi-framework-tanstack':
         specifier: workspace:*
         version: link:../openapi-framework-tanstack
@@ -1008,12 +1098,30 @@ importers:
       '@workspace/openapi-core':
         specifier: workspace:*
         version: link:../openapi-core
+      '@workspace/openapi-framework-astro':
+        specifier: workspace:*
+        version: link:../openapi-framework-astro
+      '@workspace/openapi-framework-express':
+        specifier: workspace:*
+        version: link:../openapi-framework-express
+      '@workspace/openapi-framework-hono':
+        specifier: workspace:*
+        version: link:../openapi-framework-hono
       '@workspace/openapi-framework-next':
         specifier: workspace:*
         version: link:../openapi-framework-next
+      '@workspace/openapi-framework-nuxt':
+        specifier: workspace:*
+        version: link:../openapi-framework-nuxt
       '@workspace/openapi-framework-react-router':
         specifier: workspace:*
         version: link:../openapi-framework-react-router
+      '@workspace/openapi-framework-remix':
+        specifier: workspace:*
+        version: link:../openapi-framework-remix
+      '@workspace/openapi-framework-sveltekit':
+        specifier: workspace:*
+        version: link:../openapi-framework-sveltekit
       '@workspace/openapi-framework-tanstack':
         specifier: workspace:*
         version: link:../openapi-framework-tanstack
@@ -1095,6 +1203,63 @@ importers:
         specifier: 'catalog:'
         version: 1.78.0(oxlint-tsgolint@7.0.2001)
 
+  packages/openapi-framework-astro:
+    dependencies:
+      '@workspace/openapi-core':
+        specifier: workspace:*
+        version: link:../openapi-core
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.2.0
+      oxfmt:
+        specifier: 'catalog:'
+        version: 0.63.0
+      oxlint:
+        specifier: 'catalog:'
+        version: 1.78.0(oxlint-tsgolint@7.0.2001)
+      typescript:
+        specifier: 'catalog:'
+        version: 7.0.2
+
+  packages/openapi-framework-express:
+    dependencies:
+      '@workspace/openapi-core':
+        specifier: workspace:*
+        version: link:../openapi-core
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.2.0
+      oxfmt:
+        specifier: 'catalog:'
+        version: 0.63.0
+      oxlint:
+        specifier: 'catalog:'
+        version: 1.78.0(oxlint-tsgolint@7.0.2001)
+      typescript:
+        specifier: 'catalog:'
+        version: 7.0.2
+
+  packages/openapi-framework-hono:
+    dependencies:
+      '@workspace/openapi-core':
+        specifier: workspace:*
+        version: link:../openapi-core
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.2.0
+      oxfmt:
+        specifier: 'catalog:'
+        version: 0.63.0
+      oxlint:
+        specifier: 'catalog:'
+        version: 1.78.0(oxlint-tsgolint@7.0.2001)
+      typescript:
+        specifier: 'catalog:'
+        version: 7.0.2
+
   packages/openapi-framework-next:
     dependencies:
       '@babel/traverse':
@@ -1126,7 +1291,64 @@ importers:
         specifier: 'catalog:'
         version: 7.0.2
 
+  packages/openapi-framework-nuxt:
+    dependencies:
+      '@workspace/openapi-core':
+        specifier: workspace:*
+        version: link:../openapi-core
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.2.0
+      oxfmt:
+        specifier: 'catalog:'
+        version: 0.63.0
+      oxlint:
+        specifier: 'catalog:'
+        version: 1.78.0(oxlint-tsgolint@7.0.2001)
+      typescript:
+        specifier: 'catalog:'
+        version: 7.0.2
+
   packages/openapi-framework-react-router:
+    dependencies:
+      '@workspace/openapi-core':
+        specifier: workspace:*
+        version: link:../openapi-core
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.2.0
+      oxfmt:
+        specifier: 'catalog:'
+        version: 0.63.0
+      oxlint:
+        specifier: 'catalog:'
+        version: 1.78.0(oxlint-tsgolint@7.0.2001)
+      typescript:
+        specifier: 'catalog:'
+        version: 7.0.2
+
+  packages/openapi-framework-remix:
+    dependencies:
+      '@workspace/openapi-core':
+        specifier: workspace:*
+        version: link:../openapi-core
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.2.0
+      oxfmt:
+        specifier: 'catalog:'
+        version: 0.63.0
+      oxlint:
+        specifier: 'catalog:'
+        version: 1.78.0(oxlint-tsgolint@7.0.2001)
+      typescript:
+        specifier: 'catalog:'
+        version: 7.0.2
+
+  packages/openapi-framework-sveltekit:
     dependencies:
       '@workspace/openapi-core':
         specifier: workspace:*
@@ -1530,11 +1752,11 @@ packages:
 
   '@esbuild-kit/core-utils@3.3.2':
     resolution: {integrity: sha512-sPRAnw9CdSsRmEtnsl2WXWdyquogVpB3yZ3dgwJfe8zrOzTsV7cJvmwrKVa+0ma5BoiGJ+BoqkMvawbayKUsqQ==}
-    deprecated: 'Merged into tsx: https://tsx.hirok.io'
+    deprecated: 'Merged into tsx: https://tsx.is'
 
   '@esbuild-kit/esm-loader@2.6.5':
     resolution: {integrity: sha512-FxEMIkJKnodyA1OaCUoEvbYRkoZlLZ4d/eXFu9Fh8CbBBgP5EmZxrfTRyN0qpXZ4vOvqnE5YdRdcrmUUXuU+dA==}
-    deprecated: 'Merged into tsx: https://tsx.hirok.io'
+    deprecated: 'Merged into tsx: https://tsx.is'
 
   '@esbuild/aix-ppc64@0.28.2':
     resolution: {integrity: sha512-XExcO+dvLKvVtNTibSTBej1NCAbaGhWn9Ww1ZPx80qsahhPFe/8jgWP0IchNe0F3HwkU7n8ejhH8bjonqht8mQ==}

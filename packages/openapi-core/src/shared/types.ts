@@ -69,9 +69,24 @@ export enum FrameworkKind {
   Nextjs = "nextjs",
   Tanstack = "tanstack",
   ReactRouter = "reactrouter",
+  Remix = "remix",
+  SvelteKit = "sveltekit",
+  Nuxt = "nuxt",
+  Astro = "astro",
+  Hono = "hono",
+  Express = "express",
 }
 
-export type LegacyFrameworkKind = "next" | "tanstack" | "react-router";
+export type LegacyFrameworkKind =
+  | "next"
+  | "tanstack"
+  | "react-router"
+  | "remix"
+  | "sveltekit"
+  | "nuxt"
+  | "astro"
+  | "hono"
+  | "express";
 
 export type DiagnosticsConfig = {
   enabled?: boolean | undefined;
@@ -97,10 +112,55 @@ export type ReactRouterFrameworkConfig = {
   adapterPath?: string | undefined;
 };
 
+export type RemixFrameworkConfig = {
+  kind: FrameworkKind.Remix;
+  modulePath?: string | undefined;
+  adapterPath?: string | undefined;
+};
+
+export type SvelteKitFrameworkConfig = {
+  kind: FrameworkKind.SvelteKit;
+  modulePath?: string | undefined;
+  adapterPath?: string | undefined;
+};
+
+export type NuxtFrameworkConfig = {
+  kind: FrameworkKind.Nuxt;
+  modulePath?: string | undefined;
+  adapterPath?: string | undefined;
+};
+
+export type AstroFrameworkConfig = {
+  kind: FrameworkKind.Astro;
+  modulePath?: string | undefined;
+  adapterPath?: string | undefined;
+};
+
+export type HonoFrameworkConfig = {
+  kind: FrameworkKind.Hono;
+  modulePath?: string | undefined;
+  adapterPath?: string | undefined;
+};
+
+export type ExpressFrameworkConfig = {
+  kind: FrameworkKind.Express;
+  modulePath?: string | undefined;
+  adapterPath?: string | undefined;
+};
+
+export type FileFrameworkConfig =
+  | RemixFrameworkConfig
+  | SvelteKitFrameworkConfig
+  | NuxtFrameworkConfig
+  | AstroFrameworkConfig
+  | HonoFrameworkConfig
+  | ExpressFrameworkConfig;
+
 export type FrameworkConfig =
   | NextFrameworkConfig
   | TanstackFrameworkConfig
-  | ReactRouterFrameworkConfig;
+  | ReactRouterFrameworkConfig
+  | FileFrameworkConfig;
 
 export type Diagnostic = {
   code: string;
