@@ -115,6 +115,6 @@ describe("scanRouteFiles", () => {
     );
 
     expect(visited).toEqual(["route.ts"]);
-    expect(ignored.toSorted()).toEqual([...IGNORED_SOURCE_DIRECTORIES].toSorted());
+    expect(new Set(ignored)).toEqual(IGNORED_SOURCE_DIRECTORIES);
   });
 });

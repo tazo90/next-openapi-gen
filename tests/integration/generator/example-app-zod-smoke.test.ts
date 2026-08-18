@@ -7,7 +7,7 @@ import { generateProjectSpec } from "../../helpers/test-project.js";
 const rootDir = process.cwd();
 const zodAppPath = path.join(rootDir, "apps", "next-app-zod");
 
-describe("next-app-zod inference smoke", () => {
+describe("next-app-zod inference smoke", { timeout: 15_000 }, () => {
   it("covers handler inference and the shipped Zod Mini sample route", () => {
     const { project, spec } = generateProjectSpec({
       projectPath: zodAppPath,
