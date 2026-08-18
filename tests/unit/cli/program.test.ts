@@ -30,7 +30,7 @@ describe("CLI program", () => {
       framework: "next",
       docsUrl: "api-docs",
       schema: "zod",
-      output: "next.openapi.json",
+      output: "openapi-gen.config.ts",
     });
     expect(generateCommand?.opts()).toEqual({
       config: undefined,

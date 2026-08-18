@@ -135,7 +135,7 @@ The tool will:
 
 ## Configuration
 
-The `next.openapi.json` file in the root directory controls the documentation generation:
+The `openapi-gen.config.json` file in the root directory controls the documentation generation:
 
 ```json
 {

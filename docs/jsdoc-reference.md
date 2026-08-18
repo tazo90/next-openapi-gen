@@ -32,7 +32,7 @@ explicit `@response` metadata always wins over inferred responses.
 | `@itemSchema`             | Sequential media `itemSchema`. Default is the response; use `request:Type` for request bodies. `@responseItem` remains an alias. |
 | `@itemEncoding`           | Sequential media `itemEncoding`. `@responseItemEncoding` remains an alias.                                                       |
 | `@prefixEncoding`         | Sequential media `prefixEncoding`. `@responsePrefixEncoding` remains an alias.                                                   |
-| `@responseSet`            | Use a named response set from `next.openapi.json`                                                                                |
+| `@responseSet`            | Use a named response set from `openapi-gen.config.ts`                                                                            |
 | `@add`                    | Add extra responses to the operation                                                                                             |
 | `@requestContentType`     | Request content type such as `multipart/form-data`. `@contentType` remains an alias.                                             |
 | `@auth`                   | Operation security requirement(s) via preset names                                                                               |
@@ -583,7 +583,7 @@ For a runnable checked-in example, see the event routes in
 
 ## Response sets and extra responses
 
-If you use `responseSets` in `next.openapi.json`, routes can opt into them with
+If you use `responseSets` in `openapi-gen.config.ts`, routes can opt into them with
 `@responseSet` and extend them with `@add`:
 
 ```ts

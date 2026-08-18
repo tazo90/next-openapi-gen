@@ -2,13 +2,14 @@
   "name": "next-app-zod",
   "version": "0.1.1",
   "private": true,
+  "type": "module",
   "scripts": {
     "build": "next build",
     "check": "pnpm format:check && pnpm lint",
     "dev": "next dev",
     "format": "oxfmt --config ../../oxfmt.config.ts --ignore-path ../../.gitignore .",
     "format:check": "oxfmt --config ../../oxfmt.config.ts --ignore-path ../../.gitignore --check .",
-    "generate": "pnpm exec next-openapi-gen generate",
+    "generate": "pnpm exec openapi-gen generate",
     "lint": "oxlint --type-aware --config ../../oxlint.config.ts . --ignore-path ../../.gitignore --deny-warnings",
     "lint:fix": "oxlint --type-aware --config ../../oxlint.config.ts . --ignore-path ../../.gitignore --fix --deny-warnings",
     "start": "next start"

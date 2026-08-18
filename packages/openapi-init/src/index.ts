@@ -2,7 +2,13 @@ export { createDocsPage, getDocsPageRelativePath } from "./init/create-docs-page
 export { getInitFrameworkTemplateOverrides, INIT_FRAMEWORKS } from "./init/framework.js";
 export { createOpenApiTemplate } from "./init/openapi-template.js";
 export { installDependencies } from "./init/install-dependencies.js";
-export { extendOpenApiTemplate, getErrorMessage, getOutputPath } from "./init/template.js";
+export {
+  extendOpenApiTemplate,
+  getErrorMessage,
+  getOutputPath,
+  isJsonConfigPath,
+  serializeOpenApiTemplate,
+} from "./init/template.js";
 export {
   getDocsPageDependencies,
   getDocsPageDevDependencies,

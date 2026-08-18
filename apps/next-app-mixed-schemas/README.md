@@ -28,7 +28,7 @@ This example demonstrates using **multiple schema types simultaneously** with ne
 
 ## Configuration
 
-The `next.openapi.json` config shows how to enable multiple schema types:
+The `openapi-gen.config.json` config shows how to enable multiple schema types:
 
 ```json
 {

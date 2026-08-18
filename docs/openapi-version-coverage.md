@@ -5,7 +5,7 @@ This document describes how `next-openapi-gen` supports OpenAPI `3.0`, `3.1`, `3
 Feature status uses three buckets:
 
 - `generated`: emitted directly from route metadata, TypeScript types, or Zod schemas
-- `template/custom`: preserved from `next.openapi.json` or `schemaFiles`
+- `template/custom`: preserved from `openapi-gen.config.ts` or `schemaFiles`
 - `validated`: covered by version-aware tests and schema validation
 
 ## Shared Strategy

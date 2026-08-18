@@ -13,6 +13,7 @@ import {
   getErrorMessage,
   getOutputPath,
   installDependencies,
+  serializeOpenApiTemplate,
   type InitOptions,
   type UiType,
 } from "@workspace/openapi-init";
@@ -29,7 +30,7 @@ export async function init(options: InitOptions): Promise<void> {
 
     extendOpenApiTemplate(template, options);
 
-    await fse.writeJson(outputPath, template, { spaces: 2 });
+    await fse.outputFile(outputPath, serializeOpenApiTemplate(template, outputPath));
     spinner.succeed(`Created OpenAPI template in ${outputPath}`);
 
     const docsPagePath = await createDocsPage({

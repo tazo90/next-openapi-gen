@@ -3,7 +3,8 @@ import type { DiagnosticFailOn, OpenApiVersion, RouterType, SchemaType } from ".
 export const DEFAULT_API_DIR = "./src/app/api";
 export const DEFAULT_DOCS_URL = "api-docs";
 export const DEFAULT_GENERATED_OPENAPI_FILENAME = "openapi.json";
-export const DEFAULT_GENERATE_TEMPLATE_PATH = "next.openapi.json";
+export const DEFAULT_GENERATE_TEMPLATE_PATH = "openapi-gen.config.ts";
+export const DEFAULT_JSON_TEMPLATE_PATH = "next.openapi.json";
 export const DEFAULT_INCLUDE_OPENAPI_ROUTES = false;
 export const DEFAULT_INIT_SCHEMA_TYPE: SchemaType = "zod";
 export const DEFAULT_OPENAPI_VERSION: OpenApiVersion = "3.0";

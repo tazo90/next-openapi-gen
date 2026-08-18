@@ -15,15 +15,17 @@ The Pages Router uses a different file structure and API pattern:
 
 ## Configuration
 
-In `next.openapi.json`, set `routerType` to `"pages"`:
+In `openapi-gen.config.ts`, set `routerType` to `"pages"`:
 
-```json
-{
-  "routerType": "pages",
-  "apiDir": "./pages/api",
-  "schemaDir": "./schemas",
-  "schemaType": "zod"
-}
+```ts
+import { defineConfig } from "next-openapi-gen";
+
+export default defineConfig({
+  routerType: "pages",
+  apiDir: "./pages/api",
+  schemaDir: "./schemas",
+  schemaType: "zod",
+});
 ```
 
 ## Documenting Pages Router APIs
