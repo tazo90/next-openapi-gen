@@ -96,6 +96,7 @@ const config = {
         "scripts/generate-typescript-client.mjs",
         "src/schemas/**/*.{ts,tsx}",
       ],
+      ignoreBinaries: ["openapi-generator-cli"],
       ignoreDependencies: ["ajv", "autoprefixer", "postcss"],
     },
     "apps/next-app-typescript": {
