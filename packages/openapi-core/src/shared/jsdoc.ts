@@ -1,6 +1,7 @@
 import type { NodePath } from "@babel/traverse";
 import type * as t from "@babel/types";
 
+import { parseSecurityRequirementList } from "./security-requirements.js";
 import { escapeRegExp, toCamelCase } from "./strings.js";
 import type {
   DataTypes,
@@ -9,6 +10,7 @@ import type {
   JsonValue,
   OpenApiEncoding,
   OpenApiExampleMap,
+  OpenApiSecurityRequirement,
 } from "./types.js";
 import { resolveTypeScriptValueReference } from "./typescript-project.js";
 
@@ -463,34 +465,12 @@ function parseExternalDocsTag(
   return description ? { url, description: description.replace(/^["']|["']$/g, "") } : { url };
 }
 
-function parseSecurityTag(commentValue: string): import("./types.js").OpenApiSecurityRequirement[] {
+function parseSecurityTag(commentValue: string): OpenApiSecurityRequirement[] {
   const matches = [...commentValue.matchAll(SECURITY_TAG_RE)];
-  const requirements: import("./types.js").OpenApiSecurityRequirement[] = [];
+  const requirements: OpenApiSecurityRequirement[] = [];
   for (const match of matches) {
     const raw = (match[1] as string).trim();
-    // format: <scheme>[:scope1,scope2][; <scheme2>[:scope...]]
-    const entry: import("./types.js").OpenApiSecurityRequirement = {};
-    const segments = raw
-      .split(";")
-      .map((segment) => segment.trim())
-      .filter(Boolean);
-    for (const segment of segments) {
-      const [schemeRaw, scopesRaw] = segment.split(":");
-      const scheme = schemeRaw?.trim();
-      if (!scheme) {
-        continue;
-      }
-      const scopes = scopesRaw
-        ? scopesRaw
-            .split(",")
-            .map((scope) => scope.trim())
-            .filter(Boolean)
-        : [];
-      entry[scheme] = scopes;
-    }
-    if (Object.keys(entry).length > 0) {
-      requirements.push(entry);
-    }
+    requirements.push(...parseSecurityRequirementList(raw));
   }
   return requirements;
 }

@@ -20,6 +20,10 @@ describe("spec", () => {
     expect(performAuthPresetReplacements("bearer,CustomScheme", custom)).toBe(
       "JwtAuth,CustomScheme",
     );
+    expect(performAuthPresetReplacements("bearer;apikey")).toBe("BearerAuth;ApiKeyAuth");
+    expect(performAuthPresetReplacements("bearer;apikey,custom")).toBe(
+      "BearerAuth;ApiKeyAuth,custom",
+    );
   });
 
   it("adds path parameter examples without clobbering existing values", () => {

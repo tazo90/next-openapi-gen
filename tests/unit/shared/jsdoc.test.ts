@@ -671,6 +671,18 @@ describe("extractInternalFlagFromComments", () => {
     expect(leftoverMerge.security).toEqual(
       expect.arrayContaining([{ Bearer: ["read", "write"] }, { Admin: [] }]),
     );
+
+    const commaOr = parseJSDocBlock(`
+      @openapi
+      @security BearerAuth, ApiKeyAuth
+    `);
+    expect(commaOr.security).toEqual([{ BearerAuth: [] }, { ApiKeyAuth: [] }]);
+
+    const scopedOauth = parseJSDocBlock(`
+      @openapi
+      @security OAuth2Auth:read:pets,write:pets
+    `);
+    expect(scopedOauth.security).toEqual([{ OAuth2Auth: ["read:pets", "write:pets"] }]);
     expect(leftoverMerge.responseHeaders).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ status: "200", name: "X-Count", description: "Total items" }),

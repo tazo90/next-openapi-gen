@@ -4,6 +4,7 @@ import {
   generateErrorResponsesFromConfig,
 } from "../generator/error-responses.js";
 import { createDocumentFromTemplate, getTemplateServerUrl } from "../openapi/document.js";
+import { ensureBuiltinSecuritySchemes } from "../openapi/security-schemes.js";
 import { getOpenApiVersionProcessor } from "../openapi/version-processor.js";
 import { sortPathDefinitions } from "../routes/path-sort.js";
 import { RouteProcessor } from "../routes/route-processor.js";
@@ -171,6 +172,7 @@ export function runGenerationOrchestrator({
   profile.mergeSchemasMs = performance.now() - phaseStartedAt;
 
   phaseStartedAt = performance.now();
+  ensureBuiltinSecuritySchemes(document, config.authPresets);
   const finalizedDocument = getOpenApiVersionProcessor(config.openapiVersion).finalize(document);
   profile.finalizeDocumentMs = performance.now() - phaseStartedAt;
   profile.totalMs = performance.now() - generationStartedAt;

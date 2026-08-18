@@ -152,10 +152,18 @@ export function performAuthPresetReplacements(
   authValue: string,
   presets: Record<string, string> = DEFAULT_AUTH_PRESET_REPLACEMENTS,
 ): string {
-  const authParts = authValue.split(",").map((part) => part.trim());
-  const mappedParts = authParts.map((part) => presets[part.toLowerCase()] || part);
-
-  return mappedParts.join(",");
+  return authValue
+    .split(",")
+    .map((orGroup) =>
+      orGroup
+        .split(";")
+        .map((part) => {
+          const token = part.trim();
+          return presets[token.toLowerCase()] || token;
+        })
+        .join(";"),
+    )
+    .join(",");
 }
 
 /**

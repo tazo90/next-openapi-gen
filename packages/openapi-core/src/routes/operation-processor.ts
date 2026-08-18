@@ -3,11 +3,11 @@ import { measurePerformance } from "../core/performance.js";
 import type { DiagnosticsCollector } from "../diagnostics/collector.js";
 import { createMultipartEncoding } from "../schema/typescript/helpers.js";
 import type { SchemaProcessor } from "../schema/typescript/schema-processor.js";
+import { applyAuthPresets, parseSecurityRequirementList } from "../shared/security-requirements.js";
 import {
   applyParameterExamples,
   deepMerge,
   DEFAULT_AUTH_PRESET_REPLACEMENTS,
-  performAuthPresetReplacements,
 } from "../shared/spec.js";
 import { capitalize, getOperationId, resolveAnnotationTypeName } from "../shared/strings.js";
 import type {
@@ -119,17 +119,9 @@ export class OperationProcessor {
     }
 
     if (explicitSecurity && explicitSecurity.length > 0) {
-      definition.security = explicitSecurity.map((req) =>
-        Object.fromEntries(
-          Object.entries(req).map(([scheme, scopes]) => [this.applyPreset(scheme), scopes]),
-        ),
-      );
+      definition.security = applyAuthPresets(explicitSecurity, this.authPresets);
     } else if (auth) {
-      const mapped = performAuthPresetReplacements(auth, this.authPresets);
-      const authItems = mapped.split(",").map((item) => item.trim());
-      definition.security = authItems.map((authItem) => ({
-        [authItem]: [],
-      }));
+      definition.security = applyAuthPresets(parseSecurityRequirementList(auth), this.authPresets);
     }
 
     if (servers && servers.length > 0) {
@@ -561,10 +553,6 @@ export class OperationProcessor {
         metadata: { schemaName: dataTypes.inferredBodyType },
       });
     }
-  }
-
-  private applyPreset(scheme: string): string {
-    return this.authPresets[scheme.toLowerCase()] ?? scheme;
   }
 
   private createRequestBody(

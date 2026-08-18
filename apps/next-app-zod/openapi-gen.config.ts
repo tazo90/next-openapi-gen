@@ -41,6 +41,24 @@ export default defineConfig({
         type: "http",
         scheme: "basic",
       },
+      SessionCookie: {
+        type: "apiKey",
+        in: "cookie",
+        name: "session",
+      },
+      OAuth2Auth: {
+        type: "oauth2",
+        flows: {
+          authorizationCode: {
+            authorizationUrl: "https://github.com/login/oauth/authorize",
+            tokenUrl: "https://github.com/login/oauth/access_token",
+            scopes: {
+              repo: "Full repository access",
+              user: "Read user profile",
+            },
+          },
+        },
+      },
     },
   },
   defaultResponseSet: "common",

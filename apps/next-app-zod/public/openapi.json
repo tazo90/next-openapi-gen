@@ -38,6 +38,24 @@
       "BasicAuth": {
         "type": "http",
         "scheme": "basic"
+      },
+      "SessionCookie": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "session"
+      },
+      "OAuth2Auth": {
+        "type": "oauth2",
+        "flows": {
+          "authorizationCode": {
+            "authorizationUrl": "https://github.com/login/oauth/authorize",
+            "tokenUrl": "https://github.com/login/oauth/access_token",
+            "scopes": {
+              "repo": "Full repository access",
+              "user": "Read user profile"
+            }
+          }
+        }
       }
     },
     "schemas": {
@@ -6782,6 +6800,41 @@
         }
       }
     },
+    "/auth/elevated": {
+      "get": {
+        "operationId": "zodGetElevatedSession",
+        "summary": "Elevated session",
+        "description": "Requires both a bearer token and the session cookie.",
+        "tags": [
+          "Auth"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": [],
+            "SessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    },
     "/generated/catalog-items": {
       "get": {
         "operationId": "zodAppScaleListCatalogItem",
@@ -8577,6 +8630,36 @@
                 }
               }
             }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    },
+    "/integrations/github": {
+      "get": {
+        "operationId": "zodListGithubRepos",
+        "summary": "GitHub repositories",
+        "description": "Returns repositories visible to the authorized GitHub OAuth app.",
+        "tags": [
+          "Integrations"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "OAuth2Auth": [
+              "repo",
+              "user"
+            ]
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Linked repositories"
           },
           "400": {
             "$ref": "#/components/responses/400"
@@ -11781,7 +11864,10 @@
         ],
         "security": [
           {
-            "BearerAuth, ApiKeyAuth": []
+            "BearerAuth": []
+          },
+          {
+            "ApiKeyAuth": []
           }
         ],
         "responses": {
@@ -13780,6 +13866,9 @@
     },
     {
       "name": "AuditLogs"
+    },
+    {
+      "name": "Auth"
     },
     {
       "name": "Catalog"

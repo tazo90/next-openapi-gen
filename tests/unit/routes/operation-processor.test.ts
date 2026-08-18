@@ -789,6 +789,50 @@ describe("OperationProcessor", () => {
       security: [{ bearer: ["read"] }],
     });
     expect(withSecurity.definition.security).toEqual([{ JwtAuth: ["read"] }]);
+
+    const combined = processor.processOperation("GET", "/e", {
+      tag: "E",
+      auth: "bearer;apikey",
+    });
+    expect(combined.definition.security).toEqual([{ JwtAuth: [], ApiKeyAuth: [] }]);
+
+    const combinedThenAlternative = processor.processOperation("GET", "/f", {
+      tag: "F",
+      auth: "bearer;apikey,custom",
+    });
+    expect(combinedThenAlternative.definition.security).toEqual([
+      { JwtAuth: [], ApiKeyAuth: [] },
+      { custom: [] },
+    ]);
+  });
+
+  it("emits combined @auth requirements with default presets", () => {
+    const schemaProcessor = {
+      getSchemaContent: vi.fn<MockFn>(() => ({
+        params: undefined,
+        pathParams: undefined,
+        body: undefined,
+        responses: undefined,
+      })),
+      createRequestParamsSchema: vi.fn<MockFn>(() => []),
+      createDefaultPathParamsSchema: vi.fn<MockFn>(),
+      detectContentType: vi.fn<MockFn>(),
+      createResponseSchema: vi.fn<MockFn>(() => ({})),
+      ensureSchemaResolved: vi.fn<MockFn>(),
+      getSchemaReferenceName: vi.fn<MockFn>((name: string) => name),
+    };
+    const responseProcessor = {
+      supportsRequestBody: vi.fn<MockFn>(() => false),
+      processResponses: vi.fn<MockFn>(() => ({})),
+    };
+
+    const processor = new OperationProcessor(schemaProcessor, responseProcessor);
+    const result = processor.processOperation("GET", "/secure", {
+      tag: "Secure",
+      auth: "bearer;apikey",
+    });
+
+    expect(result.definition.security).toEqual([{ BearerAuth: [], ApiKeyAuth: [] }]);
   });
 
   it("emits requestBody.required, request itemSchema, and query parameter examples", () => {

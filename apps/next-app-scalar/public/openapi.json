@@ -1471,7 +1471,10 @@
         "parameters": [],
         "security": [
           {
-            "BasicAuth, BearerAuth": []
+            "BasicAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ],
         "requestBody": {

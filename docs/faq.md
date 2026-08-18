@@ -65,9 +65,11 @@ protect any other internal route in your application or deployment environment.
 
 ## How do I model advanced security schemes?
 
-Use route-level `@auth` for operation security requirements, and use
-`schemaFiles` or template content for richer `components.securitySchemes`
-objects such as OAuth details, API key locations, or OpenID Connect metadata.
+Use route-level `@auth` or `@security` for operation requirements. Referenced
+built-in presets (`bearer`, `basic`, `apikey`) emit default
+`components.securitySchemes` objects when those names are missing. Put OAuth
+flows, cookie names, API key locations, and OpenID Connect metadata in
+`components` or `schemaFiles`.
 
 ## My imported types or schemas are not being resolved. What should I check?
 

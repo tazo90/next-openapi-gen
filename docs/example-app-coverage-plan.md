@@ -98,13 +98,16 @@ Use where the framework and schema style can demonstrate it clearly:
 
 ### Security pack
 
-Use in TypeScript, Zod, and framework parity apps:
+`apps/next-app-zod` covers the generated surface:
 
-- bearer auth
-- API key or partner token
-- cookie or header auth
-- alternative security requirements via comma-separated `@auth`
+- bearer auth (built-in preset + default scheme object)
+- cookie session scheme (`SessionCookie` in config)
+- scoped OAuth (`OAuth2Auth` in config, `@security OAuth2Auth:repo,user`)
+- alternative requirements via comma-separated `@auth` / `@security`
+- combined requirements via semicolon (`@auth bearer;SessionCookie`)
 - per-operation overrides
+
+Use the same pack in TypeScript and framework parity apps as follow-up.
 
 ### Async and streaming pack
 
