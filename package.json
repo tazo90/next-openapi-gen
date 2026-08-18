@@ -48,7 +48,7 @@
     "test:bench:schema:check": "pnpm test:bench:schema && node --experimental-strip-types scripts/check-bench-regression.mts --current tests/bench/schema/current.json --baseline tests/bench/schema/baseline.json",
     "test:bench:schema:update": "pnpm test:bench:schema && node --experimental-strip-types scripts/check-bench-regression.mts --current tests/bench/schema/current.json --baseline tests/bench/schema/baseline.json --write-baseline",
     "test:bench:vitest": "vitest bench --config vitest.bench.config.ts --dir tests/bench --exclude \"**/.pnpm-store/**\"",
-    "test:coverage": "pnpm test:coverage:openapi-cli && pnpm test:coverage:openapi-framework-next && pnpm test:coverage:openapi-framework-tanstack && pnpm test:coverage:openapi-framework-react-router && pnpm test:coverage:openapi-init && pnpm test:coverage:openapi-arazzo && pnpm test:coverage:openapi-overlay && pnpm test:coverage:next-openapi-gen && pnpm test:coverage:openapi-core",
+    "test:coverage": "pnpm exec turbo run build --filter=next-openapi-gen... && pnpm test:coverage:openapi-cli && pnpm test:coverage:openapi-framework-next && pnpm test:coverage:openapi-framework-tanstack && pnpm test:coverage:openapi-framework-react-router && pnpm test:coverage:openapi-init && pnpm test:coverage:openapi-arazzo && pnpm test:coverage:openapi-overlay && pnpm test:coverage:next-openapi-gen && pnpm test:coverage:openapi-core",
     "test:coverage:next-openapi-gen": "COVERAGE_SCOPE=next-openapi-gen vitest run --config vitest.config.ts --coverage",
     "test:coverage:openapi-arazzo": "COVERAGE_SCOPE=openapi-arazzo vitest run --config vitest.config.ts --coverage",
     "test:coverage:openapi-cli": "COVERAGE_SCOPE=openapi-cli vitest run --config vitest.config.ts --coverage",

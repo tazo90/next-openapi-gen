@@ -36,7 +36,7 @@
       "dependsOn": ["^transit"]
     },
     "test:coverage": {
-      "dependsOn": ["transit"],
+      "dependsOn": ["transit", "next-openapi-gen#build"],
       "outputs": ["coverage/**"]
     },
     "//#test:unit": {
