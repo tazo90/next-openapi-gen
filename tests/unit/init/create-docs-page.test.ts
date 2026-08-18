@@ -197,6 +197,11 @@ describe("createDocsPage", () => {
     );
     expect(getDocsPageRelativePath("hono", "api-docs")).toBe(path.join("src", "api-docs.ts"));
     expect(getDocsPageRelativePath("express", "api-docs")).toBe(path.join("src", "api-docs.ts"));
+    expect(getDocsPageRelativePath("nuxt", "")).toBe(path.join("pages", "index.vue"));
+    expect(getDocsPageRelativePath("astro", "")).toBe(path.join("src", "pages", "index.astro"));
+    expect(() => getDocsPageRelativePath("unknown" as never, "api-docs")).toThrow(
+      'Unknown init framework "unknown"',
+    );
   });
 
   it("uses docsUrl to determine the generated Next app route path", async () => {
