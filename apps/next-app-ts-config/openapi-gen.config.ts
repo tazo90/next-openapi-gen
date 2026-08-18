@@ -16,4 +16,13 @@ export default defineConfig({
   outputFile: "openapi.json",
   includeOpenApiRoutes: false,
   debug: false,
+  clientSdk: [
+    {
+      name: "typescript-fetch",
+      command: "node",
+      args: ["./scripts/generate-typescript-client.mjs"],
+      outputDir: "./src/generated/api",
+      enabled: process.env.GENERATE_CLIENT_SDK === "1",
+    },
+  ],
 });

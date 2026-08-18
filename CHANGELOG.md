@@ -22,6 +22,7 @@
 
 ### 📝 Documentation
 
+- demonstrate `clientSdk` generation in the typed-config sample app
 - add drizzle-kit config and align coverage threshold docs ([#174](https://github.com/tazo90/next-openapi-gen/issues/174)) ([98987f5](https://github.com/tazo90/next-openapi-gen/commit/98987f526884136ec835fb58653ec591cfe349e1)) by [@martijn00](https://github.com/martijn00)
 
 ### 🔨 Chores

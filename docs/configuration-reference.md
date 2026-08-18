@@ -86,14 +86,14 @@ When multiple schema backends are enabled, resolution priority is
 ```ts
 docs: {
   enabled: true,
-  framework: "next",
+  framework: "vite",
 }
 ```
 
-| Field       | Type                                 | Behavior                                                                                                                                                                                                                               |
-| ----------- | ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `enabled`   | `boolean`                            | The built-in docs emitter runs only when this is exactly `true`. `false` disables it.                                                                                                                                                  |
-| `framework` | `"next" \| "vite" \| "react-router"` | Declares the intended docs framework. The current built-in generation adapter emits a docs page only for a Next.js project; other framework values are accepted by the public config type but do not currently select another emitter. |
+| Field       | Type                                 | Behavior                                                                                                                                                                                                                                                                                    |
+| ----------- | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `enabled`   | `boolean`                            | The built-in docs emitter runs only when this is exactly `true`. `false` disables it.                                                                                                                                                                                                       |
+| `framework` | `"next" \| "vite" \| "react-router"` | Selects the docs-page template written at generate time. `vite` emits the TanStack route (`src/routes/<docsUrl>.tsx`). When omitted, the emitter infers Next, TanStack, or React Router from `framework.kind`, including the legacy `"react-router"` kind used in sample React Router apps. |
 
 Docs generation uses `docsUrl`, `ui`, and `outputFile`, and records a `docs`
 artifact when a page is written. Treat the target page as generated

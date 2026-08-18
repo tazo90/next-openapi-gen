@@ -334,6 +334,124 @@ export async function GET() {}
     }
   });
 
+  it("optionally emits the TanStack docs route when enabled", async () => {
+    const project = createTempProject("nxog-core-generate-tanstack-docs-");
+
+    try {
+      writeJsonFile(path.join(project.root, "next.openapi.json"), {
+        openapi: "3.0.0",
+        info: {
+          title: "API Documentation",
+          version: "1.0.0",
+          description: "Fixture template",
+        },
+        apiDir: "./src/routes/api",
+        schemaDir: "./src",
+        schemaType: "zod",
+        outputDir: "./public",
+        outputFile: "openapi.json",
+        docsUrl: "api-docs",
+        ui: "scalar",
+        includeOpenApiRoutes: true,
+        ignoreRoutes: [],
+        debug: false,
+        framework: {
+          kind: FrameworkKind.Tanstack,
+        },
+        docs: {
+          enabled: true,
+        },
+      });
+      fs.mkdirSync(path.join(project.root, "src", "routes", "api"), { recursive: true });
+      fs.writeFileSync(
+        path.join(project.root, "src", "routes", "api", "users.ts"),
+        `/**
+ * @openapi
+ */
+export async function GET() {}
+`,
+      );
+
+      const { docsPath, result } = await withProjectCwd(project.root, async () => {
+        const result = await generateProject();
+        return {
+          result,
+          docsPath: fs.realpathSync(path.join(project.root, "src", "routes", "api-docs.tsx")),
+        };
+      });
+      const docsPage = fs.readFileSync(docsPath, "utf8");
+
+      expect(result.artifacts).toContainEqual(
+        expect.objectContaining({
+          kind: "docs",
+          path: docsPath,
+        }),
+      );
+      expect(docsPage).toContain('createFileRoute("/api-docs")');
+    } finally {
+      project.cleanup();
+    }
+  });
+
+  it("optionally emits the React Router docs route when enabled", async () => {
+    const project = createTempProject("nxog-core-generate-rr-docs-");
+
+    try {
+      writeJsonFile(path.join(project.root, "next.openapi.json"), {
+        openapi: "3.0.0",
+        info: {
+          title: "API Documentation",
+          version: "1.0.0",
+          description: "Fixture template",
+        },
+        apiDir: "./src/routes/api",
+        schemaDir: "./src",
+        schemaType: "zod",
+        outputDir: "./public",
+        outputFile: "openapi.json",
+        docsUrl: "api-docs",
+        ui: "scalar",
+        includeOpenApiRoutes: true,
+        ignoreRoutes: [],
+        debug: false,
+        framework: {
+          kind: "react-router",
+        },
+        docs: {
+          enabled: true,
+        },
+      });
+      fs.mkdirSync(path.join(project.root, "src", "routes", "api"), { recursive: true });
+      fs.writeFileSync(
+        path.join(project.root, "src", "routes", "api", "users.ts"),
+        `/**
+ * @openapi
+ */
+export async function GET() {}
+`,
+      );
+
+      const { docsPath, result } = await withProjectCwd(project.root, async () => {
+        const result = await generateProject();
+        return {
+          result,
+          docsPath: fs.realpathSync(path.join(project.root, "src", "routes", "api-docs.tsx")),
+        };
+      });
+      const docsPage = fs.readFileSync(docsPath, "utf8");
+
+      expect(result.artifacts).toContainEqual(
+        expect.objectContaining({
+          kind: "docs",
+          path: docsPath,
+        }),
+      );
+      expect(docsPage).toContain("export default function ApiDocsPage()");
+    } finally {
+      project.cleanup();
+    }
+  });
+
   it("reuses previous file hashes when mtime and size are unchanged", () => {
     const project = createTempProject("nxog-core-generate-fingerprint-");
     try {

@@ -229,6 +229,30 @@ Common examples include:
 If a tool accepts a standard OpenAPI file, it can usually consume the generated
 `openapi.json`.
 
+### Client SDK generation after the spec write
+
+`clientSdk` runs an external generator after the spec is written so you do not
+have to remember a second command. This project does not ship a client
+generator; it invokes the tool you already use.
+
+[`../apps/next-app-ts-config`](../apps/next-app-ts-config) is the checked-in
+golden path: a typed `clientSdk` entry plus
+`scripts/generate-typescript-client.mjs`, a thin Node wrapper with the contract
+`wrapper <spec-path> <output-dir>`. The wrapper translates that contract to
+`openapi-generator-cli` (`typescript-fetch`).
+
+Default `pnpm generate` leaves the entry disabled so CI and local generate stay
+free of Java. Install `@openapitools/openapi-generator-cli` in the app (it
+needs a JRE), then:
+
+```bash
+cd apps/next-app-ts-config
+GENERATE_CLIENT_SDK=1 pnpm generate
+```
+
+See [Client SDK generation](./configuration-reference.md#client-sdk-generation)
+for the command shape, cache-reuse rule, and security notes.
+
 ## Keeping docs current in development and CI
 
 Two common patterns work well:
@@ -274,7 +298,7 @@ Choose an example app based on your use case:
 - [../apps/next-app-next-config](../apps/next-app-next-config),
   [../apps/next-app-ts-config](../apps/next-app-ts-config), and
   [../apps/next-app-adapter](../apps/next-app-adapter) for config and adapter
-  integration paths
+  integration paths. `next-app-ts-config` also demonstrates `clientSdk`.
 
 For the broader coverage map that shows what each example is meant to prove, see
 [example-app-coverage-plan](./example-app-coverage-plan.md).
