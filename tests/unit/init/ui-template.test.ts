@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import type { InitFramework } from "@workspace/openapi-init/init/framework.js";
 import { normalizeRapidocTemplate } from "@workspace/openapi-init/init/rapidoc-template.js";
 import {
   getUiTemplateFileName,
@@ -56,10 +57,12 @@ describe("ui template helpers", () => {
   });
 
   it("throws for unknown init frameworks", () => {
-    expect(() => getUiTemplateFileName("unknown" as never, "scalar.tsx")).toThrow(
+    const unknownFramework = "unknown" as InitFramework;
+
+    expect(() => getUiTemplateFileName(unknownFramework, "scalar.tsx")).toThrow(
       'Unknown init framework "unknown"',
     );
-    expect(() => resolveUiTemplatePath("unknown" as never, "scalar.tsx")).toThrow(
+    expect(() => resolveUiTemplatePath(unknownFramework, "scalar.tsx")).toThrow(
       'Unknown init framework "unknown"',
     );
   });

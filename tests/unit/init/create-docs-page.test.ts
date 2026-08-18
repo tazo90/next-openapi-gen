@@ -7,6 +7,7 @@ import {
   createDocsPage,
   getDocsPageRelativePath,
 } from "@workspace/openapi-init/init/create-docs-page.js";
+import type { InitFramework } from "@workspace/openapi-init/init/framework.js";
 
 import { createTempProject, withProjectCwd } from "../../helpers/test-project.js";
 
@@ -199,7 +200,7 @@ describe("createDocsPage", () => {
     expect(getDocsPageRelativePath("express", "api-docs")).toBe(path.join("src", "api-docs.ts"));
     expect(getDocsPageRelativePath("nuxt", "")).toBe(path.join("pages", "index.vue"));
     expect(getDocsPageRelativePath("astro", "")).toBe(path.join("src", "pages", "index.astro"));
-    expect(() => getDocsPageRelativePath("unknown" as never, "api-docs")).toThrow(
+    expect(() => getDocsPageRelativePath("unknown" as InitFramework, "api-docs")).toThrow(
       'Unknown init framework "unknown"',
     );
   });
