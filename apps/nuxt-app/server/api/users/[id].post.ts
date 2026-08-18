@@ -13,10 +13,7 @@ function defineEventHandler<T>(handler: () => T) {
  * @tag Users
  * @openapi
  */
-export default defineEventHandler(
-  (_params: UserIdParams, _body: UpdateUserInput) =>
-    ({
-      id: "1",
-      email: "ada@example.com",
-    }),
-);
+export default defineEventHandler((_params: UserIdParams, _body: UpdateUserInput): User => ({
+  id: "1",
+  email: "ada@example.com",
+}));

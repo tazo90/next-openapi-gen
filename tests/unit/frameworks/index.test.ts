@@ -116,6 +116,32 @@ describe("createDefaultGenerationAdapters", () => {
     }
   });
 
+  it("throws for unknown framework kinds", () => {
+    const adapters = createDefaultGenerationAdapters();
+
+    expect(() =>
+      adapters.createFrameworkSource({
+        apiDir: "./src",
+        schemaDir: "./src",
+        outputDir: "./public",
+        outputFile: "openapi.json",
+        docsUrl: "api-docs",
+        ui: "scalar",
+        includeOpenApiRoutes: false,
+        ignoreRoutes: [],
+        schemaType: "typescript",
+        schemaBackends: ["typescript"],
+        schemaFiles: [],
+        framework: { kind: "unknown" as FrameworkKind },
+        next: {},
+        diagnostics: { enabled: true },
+        routerType: "app",
+        openapiVersion: "3.0",
+        debug: false,
+      }),
+    ).toThrow('Unknown framework kind "unknown"');
+  });
+
   it("creates companion-spec emitters from overlay and arazzo config", () => {
     const adapters = createDefaultGenerationAdapters();
 

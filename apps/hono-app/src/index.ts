@@ -13,7 +13,10 @@ const app = {
  * @tag Users
  * @openapi
  */
-app.get("/users/:id", (_params: UserIdParams) => ({ id: "1", email: "ada@example.com" }));
+app.get("/users/:id", (_params: UserIdParams): User => ({
+  id: "1",
+  email: "ada@example.com",
+}));
 
 /**
  * Update a user.
@@ -24,6 +27,9 @@ app.get("/users/:id", (_params: UserIdParams) => ({ id: "1", email: "ada@example
  * @tag Users
  * @openapi
  */
-app.post("/users/:id", () => ({}));
+app.post("/users/:id", (_params: UserIdParams, _body: UpdateUserInput): User => ({
+  id: "1",
+  email: "ada@example.com",
+}));
 
 export default app;
