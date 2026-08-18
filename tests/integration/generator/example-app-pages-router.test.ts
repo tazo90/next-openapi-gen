@@ -8,8 +8,8 @@ const rootDir = process.cwd();
 const pagesRouterAppPath = path.join(rootDir, "apps", "next-pages-router");
 
 describe("next-pages-router example app generation", () => {
-  it("documents transport routes with plain-text and multipart handlers on one path", () => {
-    const { project, spec } = generateProjectSpec({
+  it("documents transport routes with plain-text and multipart handlers on one path", async () => {
+    const { project, spec } = await generateProjectSpec({
       projectPath: pagesRouterAppPath,
     });
 
@@ -58,8 +58,8 @@ describe("next-pages-router example app generation", () => {
     }
   });
 
-  it("documents header, cookie, and fallback error responses on list routes", () => {
-    const { project, spec } = generateProjectSpec({
+  it("documents header, cookie, and fallback error responses on list routes", async () => {
+    const { project, spec } = await generateProjectSpec({
       projectPath: pagesRouterAppPath,
     });
 
@@ -112,8 +112,8 @@ describe("next-pages-router example app generation", () => {
     }
   });
 
-  it("documents create responses with Location headers and method-specific product routes", () => {
-    const { project, spec } = generateProjectSpec({
+  it("documents create responses with Location headers and method-specific product routes", async () => {
+    const { project, spec } = await generateProjectSpec({
       projectPath: pagesRouterAppPath,
     });
 

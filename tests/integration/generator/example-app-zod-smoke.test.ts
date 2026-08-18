@@ -8,8 +8,8 @@ const rootDir = process.cwd();
 const zodAppPath = path.join(rootDir, "apps", "next-app-zod");
 
 describe("next-app-zod inference smoke", { timeout: 15_000 }, () => {
-  it("covers handler inference and the shipped Zod Mini sample route", () => {
-    const { project, spec } = generateProjectSpec({
+  it("covers handler inference and the shipped Zod Mini sample route", async () => {
+    const { project, spec } = await generateProjectSpec({
       projectPath: zodAppPath,
     });
 

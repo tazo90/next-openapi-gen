@@ -1,3 +1,9 @@
+# Unreleased
+
+### ✨ Features
+
+- apply Overlay 1.2 reusable actions, `$self`, and optional `targetFormat`
+
 # [1.8.0](https://github.com/tazo90/next-openapi-gen/compare/v1.7.3...v1.8.0) (2026-08-17)
 
 ### ♻️ Code Refactoring

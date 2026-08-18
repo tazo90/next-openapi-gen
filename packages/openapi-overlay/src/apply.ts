@@ -1,16 +1,18 @@
 import { queryJsonPath, type JsonPathMatch } from "@workspace/openapi-core/shared/jsonpath.js";
 
-import type { ActionObject, OverlayObject } from "./types.js";
+import { resolveOverlayActions } from "./resolve.js";
+import type { OverlayAction, OverlayObject } from "./types.js";
 
 export function applyOverlay<T>(document: T, overlay: OverlayObject): T {
+  const resolved = resolveOverlayActions(overlay);
   const nextDocument = structuredClone(document);
-  for (const action of overlay.actions) {
+  for (const action of resolved.actions) {
     applyAction(nextDocument, action);
   }
   return nextDocument;
 }
 
-function applyAction(document: unknown, action: ActionObject): void {
+function applyAction(document: unknown, action: OverlayAction): void {
   const matches = queryJsonPath(document, action.target);
   if (action.remove === true) {
     for (const match of matches) {

@@ -8,8 +8,8 @@ const rootDir = process.cwd();
 const typescriptAppPath = path.join(rootDir, "apps", "next-app-typescript");
 
 describe("next-app-typescript transport and session generation", () => {
-  it("documents CSV export downloads with explicit media types and response sets", () => {
-    const { project, spec } = generateProjectSpec({
+  it("documents CSV export downloads with explicit media types and response sets", async () => {
+    const { project, spec } = await generateProjectSpec({
       projectPath: typescriptAppPath,
     });
 
@@ -50,8 +50,8 @@ describe("next-app-typescript transport and session generation", () => {
     }
   });
 
-  it("documents redirect transport routes without JSON response bodies", () => {
-    const { project, spec } = generateProjectSpec({
+  it("documents redirect transport routes without JSON response bodies", async () => {
+    const { project, spec } = await generateProjectSpec({
       projectPath: typescriptAppPath,
     });
 
@@ -75,8 +75,8 @@ describe("next-app-typescript transport and session generation", () => {
     }
   });
 
-  it("documents generic session envelopes with alternative security requirements", () => {
-    const { project, spec } = generateProjectSpec({
+  it("documents generic session envelopes with alternative security requirements", async () => {
+    const { project, spec } = await generateProjectSpec({
       projectPath: typescriptAppPath,
     });
 
@@ -134,8 +134,8 @@ describe("next-app-typescript transport and session generation", () => {
     }
   });
 
-  it("documents ReturnType-derived create product responses from utility types", () => {
-    const { project, spec } = generateProjectSpec({
+  it("documents ReturnType-derived create product responses from utility types", async () => {
+    const { project, spec } = await generateProjectSpec({
       projectPath: typescriptAppPath,
     });
 

@@ -125,7 +125,7 @@ export type OverlayGenerateConfig = {
 };
 
 export type OverlayGeneratorConfig = {
-  version?: "1.0.0" | "1.1.0" | (string & {}) | undefined;
+  version?: "1.0.0" | "1.1.0" | "1.2.0" | (string & {}) | undefined;
   apply?: string[] | undefined;
   generate?: OverlayGenerateConfig | undefined;
 };

@@ -311,7 +311,7 @@ only when it is safe for generation to finish before that work.
 
 ```ts
 overlay: {
-  version: "1.1.0",
+  version: "1.2.0",
   apply: ["./overlays/public.overlay.yaml"],
   generate: {
     files: ["./overlays/source/**/*.yaml"],
@@ -321,13 +321,13 @@ overlay: {
 }
 ```
 
-| Field                 | Type       | Purpose                                                                  |
-| --------------------- | ---------- | ------------------------------------------------------------------------ |
-| `version`             | `string`   | Overlay target version; defaults to `1.1.0`.                             |
-| `apply`               | `string[]` | Overlay files applied in order before the OpenAPI spec is written.       |
-| `generate.files`      | `string[]` | Source files used to generate an Overlay document.                       |
-| `generate.outputDir`  | `string`   | Generated Overlay output directory; defaults to the OpenAPI `outputDir`. |
-| `generate.outputFile` | `string`   | Generated Overlay filename; defaults to `overlay.yaml`.                  |
+| Field                 | Type       | Purpose                                                                     |
+| --------------------- | ---------- | --------------------------------------------------------------------------- |
+| `version`             | `string`   | Overlay target version (`1.0.0`, `1.1.0`, or `1.2.0`); defaults to `1.1.0`. |
+| `apply`               | `string[]` | Overlay files applied in order before the OpenAPI spec is written.          |
+| `generate.files`      | `string[]` | Source files used to generate an Overlay document.                          |
+| `generate.outputDir`  | `string`   | Generated Overlay output directory; defaults to the OpenAPI `outputDir`.    |
+| `generate.outputFile` | `string`   | Generated Overlay filename; defaults to `overlay.yaml`.                     |
 
 See [OpenAPI Overlay](./overlay.md) for supported operations and versions.
 

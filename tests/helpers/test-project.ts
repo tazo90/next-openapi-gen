@@ -4,6 +4,10 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import {
+  generateProject,
+  LEGACY_CONFIG_FILENAMES,
+  loadConfig,
+  MODERN_CONFIG_FILENAMES,
   OpenApiGenerator,
   type Diagnostic,
   type GeneratorPerformanceProfile,
@@ -178,42 +182,65 @@ export function generateFixtureSpec({
   }
 }
 
-export function generateProjectSpec({
+export async function generateProjectSpec({
   projectPath,
   templateOverrides = {},
-  templatePath = "next.openapi.json",
-}: GenerateProjectSpecOptions): GeneratedFixtureSpec {
+  templatePath,
+}: GenerateProjectSpecOptions): Promise<GeneratedFixtureSpec> {
   const project = copyProjectFixture(projectPath);
-  const resolvedTemplatePath = path.join(project.root, templatePath);
-
-  if (Object.keys(templateOverrides).length > 0) {
-    const template = JSON.parse(fs.readFileSync(resolvedTemplatePath, "utf-8")) as OpenApiTemplate;
-    writeJsonFile(resolvedTemplatePath, mergeJson(template, templateOverrides));
-  }
+  const sourceConfigPath = resolveProjectConfigPath(projectPath, templatePath);
+  const materializedConfigPath = path.join(project.root, "openapi-gen.config.json");
 
   try {
-    const { diagnostics, performanceProfile, spec } = withProjectCwd(project.root, () => {
-      const generator = new OpenApiGenerator({ templatePath: resolvedTemplatePath });
-      const spec = generator.generate();
+    const loadedConfig = await loadConfig({
+      cwd: projectPath,
+      configPath: sourceConfigPath,
+    });
+    const materializedConfig = mergeJson(mergeJson(loadedConfig.config, templateOverrides), {
+      cache: false,
+    });
+    writeJsonFile(materializedConfigPath, materializedConfig);
 
+    const { diagnostics, spec } = await withProjectCwd(project.root, async () => {
+      const result = await generateProject({
+        cwd: project.root,
+        configPath: materializedConfigPath,
+      });
       return {
-        diagnostics: generator.getDiagnostics(),
-        performanceProfile: generator.getPerformanceProfile(),
-        spec,
+        diagnostics: result.diagnostics,
+        spec: JSON.parse(fs.readFileSync(result.outputFile, "utf-8")) as OpenApiDocument,
       };
     });
 
     return {
       diagnostics,
-      performanceProfile,
+      performanceProfile: null,
       project,
       spec,
-      templatePath: resolvedTemplatePath,
+      templatePath: materializedConfigPath,
     };
   } catch (error) {
     project.cleanup();
     throw error;
   }
+}
+
+function resolveProjectConfigPath(projectRoot: string, templatePath?: string): string {
+  if (templatePath) {
+    const explicitPath = path.join(projectRoot, templatePath);
+    if (fs.existsSync(explicitPath)) {
+      return explicitPath;
+    }
+  }
+
+  for (const candidate of [...MODERN_CONFIG_FILENAMES, ...LEGACY_CONFIG_FILENAMES]) {
+    const candidatePath = path.join(projectRoot, candidate);
+    if (fs.existsSync(candidatePath)) {
+      return candidatePath;
+    }
+  }
+
+  return path.join(projectRoot, templatePath ?? "next.openapi.json");
 }
 
 function copyDirectoryContents(sourceDir: string, targetDir: string) {
