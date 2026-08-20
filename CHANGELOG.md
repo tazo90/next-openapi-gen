@@ -1,3 +1,4 @@
+## [1.8.1](https://github.com/tazo90/next-openapi-gen/compare/v1.8.0...v1.8.1) (2026-08-20)
 # Unreleased
 
 ### ✨ Features
