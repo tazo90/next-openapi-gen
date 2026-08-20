@@ -473,23 +473,336 @@ describe("OpenAPI version processor", () => {
           mediaTypes: {
             Json: { schema: { type: "object" } },
           },
-        } as never,
+        },
       });
 
     const finalized32 = getOpenApiVersionProcessor("3.2").finalize(document());
-    expect(
-      (finalized32.components as Record<string, unknown> | undefined)?.mediaTypes,
-    ).toBeDefined();
+    expect(finalized32.components?.mediaTypes).toBeDefined();
 
     const finalized31 = getOpenApiVersionProcessor("3.1").finalize(document());
-    expect(
-      (finalized31.components as Record<string, unknown> | undefined)?.mediaTypes,
-    ).toBeUndefined();
+    expect(finalized31.components?.mediaTypes).toBeUndefined();
 
     const finalized30 = getOpenApiVersionProcessor("3.0").finalize(document());
-    expect(
-      (finalized30.components as Record<string, unknown> | undefined)?.mediaTypes,
-    ).toBeUndefined();
+    expect(finalized30.components?.mediaTypes).toBeUndefined();
+  });
+
+  it("covers leftover 3.1 upgrade and 3.0 downgrade schema branches", () => {
+    const document = () =>
+      createDocumentFromTemplate({
+        openapi: "3.2.0",
+        info: { title: "Fixture", version: "1.0.0" },
+        paths: {
+          "/upload": {
+            post: {
+              requestBody: {
+                content: {
+                  "multipart/form-data": {
+                    schema: {
+                      type: "object",
+                      properties: {
+                        file: { type: "string", format: "binary" },
+                      },
+                    },
+                  },
+                  "text/plain": {
+                    schema: { type: "string", format: "binary" },
+                  },
+                },
+              },
+              responses: {
+                "200": {
+                  description: "ok",
+                  content: {
+                    "application/json": {
+                      schema: {
+                        nullable: true,
+                        exclusiveMinimum: false,
+                        exclusiveMaximum: false,
+                        minimum: 1,
+                        maximum: 10,
+                        if: { type: "string" },
+                        // OpenAPI JSON Schema uses `then` as a keyword, not a thenable.
+                        // eslint-disable-next-line unicorn/no-thenable -- OpenAPI if/then/else
+                        then: { type: "string" },
+                        else: { type: "number" },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        components: {
+          schemas: {
+            Exclusive: {
+              type: "number",
+              exclusiveMinimum: 1,
+              exclusiveMaximum: 10,
+              minimum: 5,
+              maximum: 4,
+            },
+            NullableArray: {
+              nullable: true,
+              type: ["string"],
+            },
+            ExclusiveBounds: {
+              type: "number",
+              exclusiveMinimum: true,
+              exclusiveMaximum: true,
+              minimum: 2,
+              maximum: 8,
+            },
+            Binary: {
+              type: "string",
+              contentMediaType: "application/octet-stream",
+            },
+            Tuple: {
+              prefixItems: [{ type: "string" }, { type: "number" }],
+            },
+          },
+        },
+      });
+
+    const upgraded = getOpenApiVersionProcessor("3.1").finalize(document());
+    expect(upgraded.components?.schemas?.NullableArray).toMatchObject({
+      type: expect.arrayContaining(["string", "null"]),
+    });
+    expect(upgraded.components?.schemas?.ExclusiveBounds).toMatchObject({
+      exclusiveMinimum: 2,
+      exclusiveMaximum: 8,
+    });
+    const upload31 = upgraded.paths?.["/upload"]?.post;
+    const multipart =
+      upload31?.requestBody && "content" in upload31.requestBody
+        ? upload31.requestBody.content?.["multipart/form-data"]?.schema
+        : undefined;
+    const plain =
+      upload31?.requestBody && "content" in upload31.requestBody
+        ? upload31.requestBody.content?.["text/plain"]?.schema
+        : undefined;
+    expect(multipart).toMatchObject({
+      properties: {
+        file: { type: "string", contentMediaType: "application/octet-stream" },
+      },
+    });
+    expect(plain).toMatchObject({
+      type: "string",
+      contentMediaType: "text/plain",
+    });
+
+    const downgraded = getOpenApiVersionProcessor("3.0").finalize(document());
+    expect(downgraded.components?.schemas?.Exclusive).toMatchObject({
+      type: "number",
+      minimum: 5,
+      maximum: 4,
+    });
+    expect(downgraded.components?.schemas?.Exclusive).not.toHaveProperty("exclusiveMinimum");
+    expect(downgraded.components?.schemas?.Exclusive).not.toHaveProperty("exclusiveMaximum");
+  });
+
+  it("moves and promotes license identifiers across versions", () => {
+    const withLicense = {
+      openapi: "3.1.0",
+      info: {
+        title: "License",
+        version: "1.0.0",
+        license: { name: "MIT", identifier: "MIT" },
+      },
+      paths: {},
+    };
+    const downgraded = getOpenApiVersionProcessor("3.0").finalize(withLicense);
+    expect(downgraded.info?.license).toMatchObject({
+      name: "MIT",
+      "x-oai-license-identifier": "MIT",
+    });
+    expect(downgraded.info?.license).not.toHaveProperty("identifier");
+
+    const upgraded = getOpenApiVersionProcessor("3.1").finalize({
+      openapi: "3.0.0",
+      info: {
+        title: "License",
+        version: "1.0.0",
+        license: { name: "MIT", "x-oai-license-identifier": "MIT" },
+      },
+      paths: {},
+    });
+    expect(upgraded.info?.license).toMatchObject({
+      name: "MIT",
+      identifier: "MIT",
+    });
+  });
+
+  it("covers leftover path-item query and additionalOperations promotion", () => {
+    const document = {
+      openapi: "3.2.0",
+      info: { title: "Paths", version: "1.0.0" },
+      paths: {
+        "/invalid": "not-a-path-item",
+        "/ops": {
+          parameters: [{ name: "q", in: "query", schema: { type: "string" } }],
+          additionalOperations: {
+            purge: { responses: { "204": { description: "gone" } } },
+          },
+          query: { responses: { "200": { description: "query" } } },
+          get: { responses: { "200": { description: "ok" } } },
+        },
+        "/promote": {
+          "x-oai-additionalOperations": {
+            query: { responses: { "200": { description: "promoted-query" } } },
+            purge: { responses: { "204": { description: "promoted-purge" } } },
+          },
+        },
+      },
+    };
+
+    const for30 = getOpenApiVersionProcessor("3.0").finalize(document);
+    expect(for30.paths?.["/invalid"]).toEqual({});
+    expect(for30.paths?.["/ops"]).toMatchObject({
+      "x-oai-additionalOperations": expect.objectContaining({
+        query: expect.any(Object),
+        purge: expect.any(Object),
+      }),
+    });
+    expect(for30.paths?.["/ops"]).not.toHaveProperty("query");
+    expect(for30.paths?.["/ops"]).not.toHaveProperty("additionalOperations");
+
+    const for32 = getOpenApiVersionProcessor("3.2").finalize(document);
+    expect(for32.paths?.["/promote"]).toMatchObject({
+      query: expect.objectContaining({
+        responses: { "200": { description: "promoted-query" } },
+      }),
+    });
+
+    const withInvalidExtension = getOpenApiVersionProcessor("3.0").finalize({
+      openapi: "3.2.0",
+      info: { title: "Paths", version: "1.0.0" },
+      paths: {
+        "/ops": {
+          query: { responses: { "200": { description: "query" } } },
+          additionalOperations: {
+            purge: { responses: { "204": { description: "gone" } } },
+          },
+          "x-oai-additionalOperations": "not-a-record",
+          get: { responses: { "200": { description: "ok" } } },
+        },
+      },
+    });
+    expect(withInvalidExtension.paths?.["/ops"]).toMatchObject({
+      "x-oai-additionalOperations": expect.objectContaining({
+        query: expect.any(Object),
+        purge: expect.any(Object),
+      }),
+    });
+
+    const for32Merge = getOpenApiVersionProcessor("3.2").finalize({
+      openapi: "3.2.0",
+      info: { title: "Paths", version: "1.0.0" },
+      paths: {
+        "/merge": {
+          query: { responses: { "200": { description: "existing-query" } } },
+          additionalOperations: {
+            existing: { responses: { "204": { description: "kept" } } },
+          },
+          "x-oai-additionalOperations": {
+            query: { responses: { "200": { description: "ignored-query" } } },
+            purge: { responses: { "204": { description: "promoted-purge" } } },
+            skip: undefined,
+          },
+          get: "not-an-operation",
+        },
+        "/empty-extension": {
+          "x-oai-additionalOperations": {
+            query: { responses: { "200": { description: "only-query" } } },
+          },
+        },
+      },
+    });
+    expect(for32Merge.paths?.["/merge"]).toMatchObject({
+      query: { responses: { "200": { description: "existing-query" } } },
+      additionalOperations: expect.objectContaining({
+        existing: expect.any(Object),
+        purge: expect.any(Object),
+      }),
+    });
+    expect(for32Merge.paths?.["/merge"]?.get).toEqual({});
+    expect(for32Merge.paths?.["/empty-extension"]).toMatchObject({
+      query: expect.any(Object),
+    });
+    expect(for32Merge.paths?.["/empty-extension"]).not.toHaveProperty("x-oai-additionalOperations");
+  });
+
+  it("covers leftover operation, media, security, and example transforms", () => {
+    const document = {
+      openapi: "3.2.0",
+      info: { title: "Ops", version: "1.0.0" },
+      paths: {
+        "/ops": {
+          get: {
+            parameters: [
+              "not-a-parameter",
+              {
+                name: "q",
+                in: "querystring",
+                schema: { type: "string" },
+                content: {
+                  "application/json": { schema: { type: "string" } },
+                  "text/plain": { $ref: "#/components/schemas/Plain" },
+                },
+                examples: {
+                  a: { value: "x" },
+                  b: "not-an-example",
+                  c: { $ref: "#/components/examples/C" },
+                },
+              },
+            ],
+            requestBody: { $ref: "#/components/requestBodies/Create" },
+            responses: {
+              "200": {
+                description: "ok",
+                content: {
+                  "application/json": { schema: { type: "object" } },
+                  "text/plain": { $ref: "#/components/schemas/Plain" },
+                },
+              },
+              "204": "not-a-response",
+            },
+            callbacks: {
+              onEvent: {
+                "{$request.body#/callback}": {
+                  post: { responses: { "200": { description: "ok" } } },
+                },
+              },
+            },
+          },
+          post: {
+            requestBody: "not-a-body",
+            responses: { "201": { description: "created" } },
+          },
+        },
+      },
+      components: {
+        securitySchemes: {
+          bearer: { type: "http", scheme: "bearer", deprecated: true },
+          invalid: "not-a-scheme",
+        },
+        examples: {
+          a: { value: "x" },
+          b: "not-an-example",
+          c: { $ref: "#/components/examples/C" },
+        },
+      },
+    };
+
+    const for30 = getOpenApiVersionProcessor("3.0").finalize(document);
+    expect(for30.paths?.["/ops"]?.get?.parameters?.[0]).toBe("not-a-parameter");
+    expect(for30.paths?.["/ops"]?.get?.parameters?.[1]).toMatchObject({ in: "query" });
+    expect(for30.paths?.["/ops"]?.get?.requestBody).toEqual({
+      $ref: "#/components/requestBodies/Create",
+    });
+    expect(for30.paths?.["/ops"]?.post?.requestBody).toBe("not-a-body");
+    expect(for30.paths?.["/ops"]?.get?.responses?.["204"]).toBe("not-a-response");
+    expect(for30.components?.securitySchemes?.invalid).toBe("not-a-scheme");
   });
 });
 

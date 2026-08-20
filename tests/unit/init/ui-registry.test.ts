@@ -37,7 +37,7 @@ describe("OpenAPI init defaults", () => {
   });
 
   it("creates framework-aware defaults for each supported init target", () => {
-    expect(INIT_FRAMEWORKS).toEqual(["next", "tanstack", "react-router"]);
+    expect(INIT_FRAMEWORKS).toHaveLength(9);
     expect(createOpenApiTemplate("next")).toMatchObject({
       apiDir: "./src/app/api",
       framework: {
@@ -58,6 +58,14 @@ describe("OpenAPI init defaults", () => {
       framework: {
         kind: "reactrouter",
       },
+    });
+    expect(createOpenApiTemplate("remix")).toMatchObject({
+      apiDir: "./app/routes",
+      framework: { kind: "remix" },
+    });
+    expect(createOpenApiTemplate("hono")).toMatchObject({
+      apiDir: "./src",
+      framework: { kind: "hono", modulePath: "./src/index.ts" },
     });
   });
 });
@@ -143,6 +151,15 @@ describe("UI registry helpers", () => {
     );
     expect(getDocsPageTemplatePath("react-router", "scalar")).toContain(
       path.join("templates", "init", "ui", "reactrouter", "scalar.tsx"),
+    );
+    expect(getDocsPageTemplatePath("remix", "scalar")).toContain(
+      path.join("templates", "init", "ui", "remix", "scalar.tsx"),
+    );
+    expect(getDocsPageTemplatePath("sveltekit", "scalar")).toContain(
+      path.join("templates", "init", "ui", "sveltekit", "scalar.svelte"),
+    );
+    expect(getDocsPageTemplatePath("hono", "scalar")).toContain(
+      path.join("templates", "init", "ui", "hono", "scalar.ts"),
     );
   });
 

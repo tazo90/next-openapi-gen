@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 import type { FrameworkSource } from "../frameworks/types.js";
+import { IGNORED_SOURCE_DIRECTORIES } from "../shared/ignored-directories.js";
 
 type ScanState = {
   directoryCache: Record<string, string[]>;
@@ -18,12 +19,19 @@ export function collectRouteFiles(
   rootDir: string,
   source: FrameworkSource,
   state: ScanState,
+  onIgnoredDirectory?: (directoryPath: string) => void,
 ): CollectedRouteFiles {
   const filePaths: string[] = [];
   const startedAt = performance.now();
-  scanRouteFiles(rootDir, source, state, (filePath) => {
-    filePaths.push(filePath);
-  });
+  scanRouteFiles(
+    rootDir,
+    source,
+    state,
+    (filePath) => {
+      filePaths.push(filePath);
+    },
+    onIgnoredDirectory,
+  );
   return {
     filePaths,
     scanRouteFilesMs: performance.now() - startedAt,
@@ -35,6 +43,7 @@ export function scanRouteFiles(
   source: FrameworkSource,
   state: ScanState,
   onFile: (filePath: string) => void,
+  onIgnoredDirectory?: (directoryPath: string) => void,
 ): void {
   let files = state.directoryCache[rootDir];
   if (!files) {
@@ -53,7 +62,11 @@ export function scanRouteFiles(
     }
 
     if (stat.isDirectory()) {
-      scanRouteFiles(filePath, source, state, onFile);
+      if (IGNORED_SOURCE_DIRECTORIES.has(file)) {
+        onIgnoredDirectory?.(filePath);
+        return;
+      }
+      scanRouteFiles(filePath, source, state, onFile, onIgnoredDirectory);
       return;
     }
 

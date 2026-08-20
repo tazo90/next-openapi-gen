@@ -3,12 +3,16 @@ import path from "node:path";
 import type { SpecEmitter } from "@workspace/openapi-core/core/adapters.js";
 import { writeDocumentArtifact } from "@workspace/openapi-core/core/artifact-writer.js";
 import { loadYamlOrJson } from "@workspace/openapi-core/core/document-io.js";
-import { relativizeDocumentUri } from "@workspace/openapi-core/core/document-uri.js";
+import {
+  relativizeDocumentUri,
+  resolveDocumentSelf,
+} from "@workspace/openapi-core/core/document-uri.js";
 import { expandFileGlobs } from "@workspace/openapi-core/core/file-globs.js";
 import type { OpenApiDocument } from "@workspace/openapi-core/shared/types.js";
 
 import { applyOverlay } from "./apply.js";
-import type { OverlayObject } from "./types.js";
+import { overlayTargetFormatMatches } from "./target-format.js";
+import type { OverlayComponents, OverlayObject, ReusableActionObject } from "./types.js";
 import { getOverlayVersionProcessor, stripUnsupportedOverlayFields } from "./version-processor.js";
 
 export function createOverlayEmitter(): SpecEmitter {
@@ -27,6 +31,17 @@ export function createOverlayEmitter(): SpecEmitter {
         const applyFiles = expandFileGlobs(overlayConfig.apply, context.cwd);
         for (const filePath of applyFiles) {
           const overlay = loadOverlayFile(filePath);
+          const formatMatch = overlayTargetFormatMatches(context.openapiDocument, overlay);
+          if (!formatMatch.ok) {
+            context.diagnostics.add({
+              code: "OVERLAY_TARGET_FORMAT_MISMATCH",
+              severity: "error",
+              message: `Overlay targetFormat "${formatMatch.expected}" does not match the target document format "${formatMatch.actual}".`,
+              filePath,
+              metadata: { expected: formatMatch.expected, actual: formatMatch.actual },
+            });
+            continue;
+          }
           const finalized = stripUnsupportedOverlayFields(
             overlay,
             version,
@@ -40,18 +55,15 @@ export function createOverlayEmitter(): SpecEmitter {
       if (overlayConfig.generate?.files?.length) {
         const generateFiles = expandFileGlobs(overlayConfig.generate.files, context.cwd);
         const overlay = mergeOverlayFiles(generateFiles, version);
-        overlay.extends = relativizeDocumentUri(
-          path.join(
-            overlayConfig.generate.outputDir ?? context.outputDir,
-            overlayConfig.generate.outputFile ?? "overlay.yaml",
-          ),
-          context.outputFile,
-        );
-        const finalized = getOverlayVersionProcessor(version).finalize(overlay);
         const outputFile = path.resolve(
           overlayConfig.generate.outputDir ?? context.outputDir,
           overlayConfig.generate.outputFile ?? "overlay.yaml",
         );
+        overlay.extends = relativizeDocumentUri(outputFile, context.outputFile);
+        if (version.startsWith("1.2")) {
+          overlay.$self = resolveDocumentSelf(overlay.$self, outputFile);
+        }
+        const finalized = getOverlayVersionProcessor(version).finalize(overlay);
         writeDocumentArtifact(outputFile, finalized);
         artifacts.push({ kind: "overlay" as const, path: outputFile });
       }
@@ -83,8 +95,23 @@ function mergeOverlayFiles(filePaths: string[], version: string): OverlayObject 
   return {
     overlay: version,
     info: first.info,
+    $self: first.$self,
+    targetFormat: first.targetFormat,
     actions: overlays.flatMap((overlay) => overlay.actions),
+    components: mergeOverlayComponents(overlays),
   };
+}
+
+function mergeOverlayComponents(overlays: OverlayObject[]): OverlayComponents | undefined {
+  const actions = overlays.reduce<Record<string, ReusableActionObject>>((merged, overlay) => {
+    return overlay.components?.actions ? { ...merged, ...overlay.components.actions } : merged;
+  }, {});
+
+  if (Object.keys(actions).length === 0) {
+    return undefined;
+  }
+
+  return { actions };
 }
 
 function isOverlayObject(value: unknown): value is OverlayObject {

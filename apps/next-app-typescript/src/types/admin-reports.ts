@@ -38,7 +38,7 @@ export type TimestampFields<T> = {
 /**
  * Promise-returning function exercising `Awaited<ReturnType<...>>`.
  */
-export async function loadReportManifest() {
+async function loadReportManifest() {
   return {
     version: 1 as const,
     generatedAt: new Date().toISOString(),

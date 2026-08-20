@@ -7,10 +7,32 @@ import {
   createDocsPage,
   getDocsPageRelativePath,
 } from "@workspace/openapi-init/init/create-docs-page.js";
+import type { InitFramework } from "@workspace/openapi-init/init/framework.js";
 
 import { createTempProject, withProjectCwd } from "../../helpers/test-project.js";
 
 describe("createDocsPage", () => {
+  it("defaults to Next and writes app/page.tsx when src is missing", async () => {
+    const project = createTempProject("nxog-docs-no-src-");
+
+    try {
+      fs.rmSync(path.join(project.root, "src"), { recursive: true, force: true });
+      const pagePath = await withProjectCwd(project.root, () =>
+        createDocsPage({
+          docsUrl: "api-docs",
+          ui: "scalar",
+          outputFile: "openapi.json",
+        }),
+      );
+      const componentPath = path.join(project.root, "app", "api-docs", "page.tsx");
+
+      expect(pagePath).toBe(path.join("app", "api-docs", "page.tsx"));
+      expect(fs.existsSync(componentPath)).toBe(true);
+    } finally {
+      project.cleanup();
+    }
+  });
+
   it("returns null when ui is none", async () => {
     const project = createTempProject("nxog-docs-none-");
 
@@ -55,6 +77,16 @@ describe("createDocsPage", () => {
     expect(getDocsPageRelativePath("react-router", "")).toBe(
       path.join("src", "routes", "_index.tsx"),
     );
+    expect(getDocsPageRelativePath("remix", "")).toBe(path.join("app", "routes", "_index.tsx"));
+    expect(getDocsPageRelativePath("sveltekit", "api-docs")).toBe(
+      path.join("src", "routes", "api-docs", "+page.svelte"),
+    );
+    expect(getDocsPageRelativePath("nuxt", "api-docs")).toBe(path.join("pages", "api-docs.vue"));
+    expect(getDocsPageRelativePath("astro", "api-docs")).toBe(
+      path.join("src", "pages", "api-docs.astro"),
+    );
+    expect(getDocsPageRelativePath("hono", "api-docs")).toBe(path.join("src", "api-docs.ts"));
+    expect(getDocsPageRelativePath("express", "api-docs")).toBe(path.join("src", "api-docs.ts"));
   });
 
   it("writes TanStack docs routes using file-route syntax", async () => {
@@ -109,12 +141,67 @@ describe("createDocsPage", () => {
     }
   });
 
+  it("writes Stoplight and RapiDoc Next docs pages", async () => {
+    const project = createTempProject("nxog-docs-extra-ui-");
+
+    try {
+      await withProjectCwd(project.root, () =>
+        createDocsPage({
+          framework: "next",
+          docsUrl: "stoplight-docs",
+          ui: "stoplight",
+          outputFile: "openapi.json",
+        }),
+      );
+      const stoplightPage = fs.readFileSync(
+        path.join(project.root, "src", "app", "stoplight-docs", "page.tsx"),
+        "utf8",
+      );
+      expect(stoplightPage).toContain("openapi.json");
+
+      await withProjectCwd(project.root, () =>
+        createDocsPage({
+          framework: "next",
+          docsUrl: "rapidoc-docs",
+          ui: "rapidoc",
+          outputFile: "openapi.json",
+        }),
+      );
+      const rapidocPage = fs.readFileSync(
+        path.join(project.root, "src", "app", "rapidoc-docs", "page.tsx"),
+        "utf8",
+      );
+      expect(rapidocPage.toLowerCase()).toContain("rapi-doc");
+    } finally {
+      project.cleanup();
+    }
+  });
+
   it("returns the expected route file paths for each framework", () => {
     expect(getDocsPageRelativePath("tanstack", "internal/reference")).toBe(
       path.join("src", "routes", "internal.reference.tsx"),
     );
     expect(getDocsPageRelativePath("react-router", "internal/reference")).toBe(
       path.join("src", "routes", "internal.reference.tsx"),
+    );
+    expect(getDocsPageRelativePath("remix", "internal/reference")).toBe(
+      path.join("app", "routes", "internal.reference.tsx"),
+    );
+    expect(getDocsPageRelativePath("sveltekit", "internal/reference")).toBe(
+      path.join("src", "routes", "internal", "reference", "+page.svelte"),
+    );
+    expect(getDocsPageRelativePath("nuxt", "internal/reference")).toBe(
+      path.join("pages", "internal", "reference.vue"),
+    );
+    expect(getDocsPageRelativePath("astro", "internal/reference")).toBe(
+      path.join("src", "pages", "internal", "reference.astro"),
+    );
+    expect(getDocsPageRelativePath("hono", "api-docs")).toBe(path.join("src", "api-docs.ts"));
+    expect(getDocsPageRelativePath("express", "api-docs")).toBe(path.join("src", "api-docs.ts"));
+    expect(getDocsPageRelativePath("nuxt", "")).toBe(path.join("pages", "index.vue"));
+    expect(getDocsPageRelativePath("astro", "")).toBe(path.join("src", "pages", "index.astro"));
+    expect(() => getDocsPageRelativePath("unknown" as InitFramework, "api-docs")).toThrow(
+      'Unknown init framework "unknown"',
     );
   });
 

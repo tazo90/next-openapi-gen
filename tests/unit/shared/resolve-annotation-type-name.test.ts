@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { resolveAnnotationTypeName } from "../../../packages/openapi-core/src/shared/utils.js";
+import { resolveAnnotationTypeName } from "@workspace/openapi-core/shared/strings.js";
 
 describe("resolveAnnotationTypeName", () => {
   it("treats empty JSDoc annotation values as absent so inferred types can apply", () => {

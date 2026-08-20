@@ -7,8 +7,8 @@ import { generateProjectSpec } from "../../helpers/test-project.js";
 const rootDir = process.cwd();
 
 describe.sequential("README-backed generator samples", { timeout: 15_000 }, () => {
-  it("covers multipart uploads, custom operation IDs, response sets, and inline @add descriptions from the sample apps", () => {
-    const { project, spec } = generateProjectSpec({
+  it("covers multipart uploads, custom operation IDs, response sets, and inline @add descriptions from the sample apps", async () => {
+    const { project, spec } = await generateProjectSpec({
       projectPath: path.join(rootDir, "apps", "next-app-zod"),
     });
 
@@ -146,8 +146,8 @@ describe.sequential("README-backed generator samples", { timeout: 15_000 }, () =
     }
   });
 
-  it("covers generic and utility-type README samples from the TypeScript app", () => {
-    const { project, spec } = generateProjectSpec({
+  it("covers generic and utility-type README samples from the TypeScript app", async () => {
+    const { project, spec } = await generateProjectSpec({
       projectPath: path.join(rootDir, "apps", "next-app-typescript"),
     });
 
@@ -231,8 +231,8 @@ describe.sequential("README-backed generator samples", { timeout: 15_000 }, () =
     }
   });
 
-  it("covers @queryParams alias and combined response-set examples from the sandbox app", () => {
-    const { project, spec } = generateProjectSpec({
+  it("covers @queryParams alias and combined response-set examples from the sandbox app", async () => {
+    const { project, spec } = await generateProjectSpec({
       projectPath: path.join(rootDir, "apps", "next-app-sandbox"),
     });
 
@@ -260,8 +260,8 @@ describe.sequential("README-backed generator samples", { timeout: 15_000 }, () =
     }
   });
 
-  it("covers mixed schema backends plus schemaFiles from the README-style mixed app", () => {
-    const { project, spec } = generateProjectSpec({
+  it("covers mixed schema backends plus schemaFiles from the README-style mixed app", async () => {
+    const { project, spec } = await generateProjectSpec({
       projectPath: path.join(rootDir, "apps", "next-app-mixed-schemas"),
     });
 
@@ -309,8 +309,8 @@ describe.sequential("README-backed generator samples", { timeout: 15_000 }, () =
     }
   });
 
-  it("covers the Drizzle-Zod README sample through full document generation", () => {
-    const { project, spec } = generateProjectSpec({
+  it("covers the Drizzle-Zod README sample through full document generation", async () => {
+    const { project, spec } = await generateProjectSpec({
       projectPath: path.join(rootDir, "apps", "next-app-drizzle-zod"),
     });
 
@@ -343,11 +343,11 @@ describe.sequential("README-backed generator samples", { timeout: 15_000 }, () =
     }
   });
 
-  it("covers TanStack and React Router sample-app route mapping and multipart actions", () => {
-    const tanstack = generateProjectSpec({
+  it("covers TanStack and React Router sample-app route mapping and multipart actions", async () => {
+    const tanstack = await generateProjectSpec({
       projectPath: path.join(rootDir, "apps", "tanstack-app"),
     });
-    const reactRouter = generateProjectSpec({
+    const reactRouter = await generateProjectSpec({
       projectPath: path.join(rootDir, "apps", "react-router-app"),
     });
 

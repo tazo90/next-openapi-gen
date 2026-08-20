@@ -155,4 +155,79 @@ describe("cross-framework fixture generation", () => {
       project.cleanup();
     }
   });
+
+  it.each([
+    [
+      "remix",
+      "/api/users/{id}",
+      "/api/reports/{reportId}/summary",
+      "remixGetUserById",
+      "remixUpdateUserById",
+      "remixGetReportSummary",
+    ],
+    [
+      "sveltekit",
+      "/api/users/{id}",
+      "/api/reports/{reportId}/summary",
+      "sveltekitGetUserById",
+      "sveltekitUpdateUserById",
+      "sveltekitGetReportSummary",
+    ],
+    [
+      "nuxt",
+      "/users/{id}",
+      "/reports/{reportId}/summary",
+      "nuxtGetUserById",
+      "nuxtUpdateUserById",
+      "nuxtGetReportSummary",
+    ],
+    [
+      "astro",
+      "/users/{id}",
+      "/reports/{reportId}/summary",
+      "astroGetUserById",
+      "astroUpdateUserById",
+      "astroGetReportSummary",
+    ],
+    [
+      "hono",
+      "/users/{id}",
+      "/reports/{reportId}/summary",
+      "honoGetUserById",
+      "honoUpdateUserById",
+      "honoGetReportSummary",
+    ],
+    [
+      "express",
+      "/users/{id}",
+      "/reports/{reportId}/summary",
+      "expressGetUserById",
+      "expressUpdateUserById",
+      "expressGetReportSummary",
+    ],
+  ] as const)(
+    "maps %s core-flow users and reports",
+    (framework, userPath, reportPath, getUser, updateUser, getReport) => {
+      const { project, spec } = generateFixtureSpec({
+        fixturePath: getProjectFixturePath(framework, "core-flow"),
+        openapiVersion: "3.1",
+      });
+
+      try {
+        expect(spec.paths?.[userPath]?.get).toMatchObject({
+          operationId: getUser,
+          tags: ["Users"],
+        });
+        expect(spec.paths?.[userPath]?.post).toMatchObject({
+          operationId: updateUser,
+        });
+        expect(spec.paths?.[reportPath]?.get).toMatchObject({
+          operationId: getReport,
+        });
+        expect(spec.components?.schemas?.User).toBeTruthy();
+      } finally {
+        project.cleanup();
+      }
+    },
+  );
 });

@@ -63,7 +63,7 @@ describe("OperationProcessor", () => {
       })),
     };
 
-    const processor = new OperationProcessor(schemaProcessor as never, responseProcessor as never);
+    const processor = new OperationProcessor(schemaProcessor, responseProcessor);
 
     const result = processor.processOperation(
       "POST",
@@ -142,7 +142,7 @@ describe("OperationProcessor", () => {
       })),
     };
 
-    const processor = new OperationProcessor(schemaProcessor as never, responseProcessor as never);
+    const processor = new OperationProcessor(schemaProcessor, responseProcessor);
     const result = processor.processOperation("POST", "/uploads/logo", {
       bodyDescription: "Organization logo file",
       contentType: "multipart/form-data",
@@ -191,7 +191,7 @@ describe("OperationProcessor", () => {
       })),
     };
 
-    const processor = new OperationProcessor(schemaProcessor as never, responseProcessor as never);
+    const processor = new OperationProcessor(schemaProcessor, responseProcessor);
     const result = processor.processOperation("GET", "/uploads/logo", {
       contentType: "multipart/form-data",
       tag: "Uploads",
@@ -240,7 +240,7 @@ describe("OperationProcessor", () => {
       processResponses: vi.fn<MockFn>(() => ({})),
     };
 
-    const processor = new OperationProcessor(schemaProcessor as never, responseProcessor as never);
+    const processor = new OperationProcessor(schemaProcessor, responseProcessor);
 
     const result = processor.processOperation("GET", "/", {
       tag: "",
@@ -298,7 +298,7 @@ describe("OperationProcessor", () => {
       })),
     };
 
-    const processor = new OperationProcessor(schemaProcessor as never, responseProcessor as never);
+    const processor = new OperationProcessor(schemaProcessor, responseProcessor);
     const result = processor.processOperation("PATCH", "/comments", {
       inferredQueryParamNames: ["commentId"],
     });
@@ -348,7 +348,7 @@ describe("OperationProcessor", () => {
       })),
     };
 
-    const processor = new OperationProcessor(schemaProcessor as never, responseProcessor as never);
+    const processor = new OperationProcessor(schemaProcessor, responseProcessor);
 
     const result = processor.processOperation(
       "POST",
@@ -432,7 +432,7 @@ describe("OperationProcessor", () => {
       processResponses: vi.fn<MockFn>(() => ({})),
     };
 
-    const processor = new OperationProcessor(schemaProcessor as never, responseProcessor as never);
+    const processor = new OperationProcessor(schemaProcessor, responseProcessor);
 
     const result = processor.processOperation("PUT", "/reports", {
       pathParamsType: "ReportPathParams",
@@ -494,7 +494,7 @@ describe("OperationProcessor", () => {
       })),
     };
 
-    const processor = new OperationProcessor(schemaProcessor as never, responseProcessor as never);
+    const processor = new OperationProcessor(schemaProcessor, responseProcessor);
     const result = processor.processOperation("POST", "/events/search", {
       bodyDescription: "Search request",
       querystringType: "SearchFilter",
@@ -555,7 +555,7 @@ describe("OperationProcessor", () => {
       processResponses: vi.fn<MockFn>(() => ({ 200: { description: "OK" } })),
     };
 
-    const processor = new OperationProcessor(schemaProcessor as never, responseProcessor as never);
+    const processor = new OperationProcessor(schemaProcessor, responseProcessor);
     const result = processor.processOperation("GET", "/events", {
       tag: "Events",
       tags: ["Platform", "Streaming"],
@@ -647,7 +647,7 @@ describe("OperationProcessor", () => {
       processResponses: vi.fn<MockFn>(() => ({ 200: { description: "OK" } })),
     };
 
-    const processor = new OperationProcessor(schemaProcessor as never, responseProcessor as never);
+    const processor = new OperationProcessor(schemaProcessor, responseProcessor);
     const result = processor.processOperation("GET", "/secure", {
       headerType: "RequestHeaders",
       cookieType: "SessionCookies",
@@ -689,7 +689,7 @@ describe("OperationProcessor", () => {
       processResponses: vi.fn<MockFn>(() => ({ 200: { description: "OK" } })),
     };
 
-    const processor = new OperationProcessor(schemaProcessor as never, responseProcessor as never);
+    const processor = new OperationProcessor(schemaProcessor, responseProcessor);
     const result = processor.processOperation("GET", "/custom", {
       tag: "Custom",
       openapiOverride: {
@@ -724,7 +724,7 @@ describe("OperationProcessor", () => {
       processResponses: vi.fn<MockFn>(() => ({ 201: { description: "Created" } })),
     };
 
-    const processor = new OperationProcessor(schemaProcessor as never, responseProcessor as never);
+    const processor = new OperationProcessor(schemaProcessor, responseProcessor);
     const result = processor.processOperation("POST", "/items", {
       tag: "Items",
       bodyType: "CreateItemBody",
@@ -765,7 +765,7 @@ describe("OperationProcessor", () => {
       processResponses: vi.fn<MockFn>(() => ({})),
     };
 
-    const processor = new OperationProcessor(schemaProcessor as never, responseProcessor as never, {
+    const processor = new OperationProcessor(schemaProcessor, responseProcessor, {
       authPresets: { bearer: "JwtAuth", oauth2: "OAuth2Flow" },
     });
 
@@ -789,6 +789,50 @@ describe("OperationProcessor", () => {
       security: [{ bearer: ["read"] }],
     });
     expect(withSecurity.definition.security).toEqual([{ JwtAuth: ["read"] }]);
+
+    const combined = processor.processOperation("GET", "/e", {
+      tag: "E",
+      auth: "bearer;apikey",
+    });
+    expect(combined.definition.security).toEqual([{ JwtAuth: [], ApiKeyAuth: [] }]);
+
+    const combinedThenAlternative = processor.processOperation("GET", "/f", {
+      tag: "F",
+      auth: "bearer;apikey,custom",
+    });
+    expect(combinedThenAlternative.definition.security).toEqual([
+      { JwtAuth: [], ApiKeyAuth: [] },
+      { custom: [] },
+    ]);
+  });
+
+  it("emits combined @auth requirements with default presets", () => {
+    const schemaProcessor = {
+      getSchemaContent: vi.fn<MockFn>(() => ({
+        params: undefined,
+        pathParams: undefined,
+        body: undefined,
+        responses: undefined,
+      })),
+      createRequestParamsSchema: vi.fn<MockFn>(() => []),
+      createDefaultPathParamsSchema: vi.fn<MockFn>(),
+      detectContentType: vi.fn<MockFn>(),
+      createResponseSchema: vi.fn<MockFn>(() => ({})),
+      ensureSchemaResolved: vi.fn<MockFn>(),
+      getSchemaReferenceName: vi.fn<MockFn>((name: string) => name),
+    };
+    const responseProcessor = {
+      supportsRequestBody: vi.fn<MockFn>(() => false),
+      processResponses: vi.fn<MockFn>(() => ({})),
+    };
+
+    const processor = new OperationProcessor(schemaProcessor, responseProcessor);
+    const result = processor.processOperation("GET", "/secure", {
+      tag: "Secure",
+      auth: "bearer;apikey",
+    });
+
+    expect(result.definition.security).toEqual([{ BearerAuth: [], ApiKeyAuth: [] }]);
   });
 
   it("emits requestBody.required, request itemSchema, and query parameter examples", () => {
@@ -820,7 +864,7 @@ describe("OperationProcessor", () => {
       })),
     };
 
-    const processor = new OperationProcessor(schemaProcessor as never, responseProcessor as never);
+    const processor = new OperationProcessor(schemaProcessor, responseProcessor);
     const result = processor.processOperation("POST", "/events", {
       tag: "Events",
       paramsType: "EventQuery",
@@ -852,5 +896,75 @@ describe("OperationProcessor", () => {
         },
       },
     });
+  });
+
+  it("covers leftover externalDocs, response headers, and response links", () => {
+    const schemaProcessor = {
+      getSchemaContent: vi.fn<MockFn>(() => ({
+        params: undefined,
+        pathParams: undefined,
+        body: undefined,
+        responses: undefined,
+      })),
+      createRequestParamsSchema: vi.fn<MockFn>(() => []),
+      createDefaultPathParamsSchema: vi.fn<MockFn>(),
+      detectContentType: vi.fn<MockFn>(),
+      createResponseSchema: vi.fn<MockFn>(() => ({})),
+      ensureSchemaResolved: vi.fn<MockFn>(),
+      getSchemaReferenceName: vi.fn<MockFn>((name: string) => name),
+    };
+    const responseProcessor = {
+      supportsRequestBody: vi.fn<MockFn>(() => false),
+      processResponses: vi.fn<MockFn>(() => ({
+        200: { description: "ok" },
+        201: { $ref: "#/components/responses/Created" },
+      })),
+    };
+    const processor = new OperationProcessor(schemaProcessor, responseProcessor);
+    const result = processor.processOperation("GET", "/docs", {
+      tag: "Docs",
+      externalDocs: { url: "https://docs.example.com" },
+      responseHeaders: [
+        { status: "200", name: "X-Count", description: "Total", schema: { type: "integer" } },
+        { status: "201", name: "X-Skip", description: "ignored" },
+      ],
+      responseLinks: [
+        {
+          status: "200",
+          name: "self",
+          operationId: "getDocs",
+          operationRef: "/paths/docs",
+          parameters: { id: "$response.body#/id" },
+          requestBody: { id: 1 },
+          description: "Self",
+          server: { url: "https://api.example.com" },
+        },
+        { status: "201", name: "skip" },
+      ],
+    });
+
+    expect(result.definition.externalDocs).toEqual({ url: "https://docs.example.com" });
+    expect(result.definition.responses?.["200"]).toMatchObject({
+      headers: { "X-Count": expect.objectContaining({ description: "Total" }) },
+      links: {
+        self: expect.objectContaining({ operationId: "getDocs", operationRef: "/paths/docs" }),
+      },
+    });
+
+    const multipartProcessor = new OperationProcessor(schemaProcessor, {
+      supportsRequestBody: () => true,
+      processResponses: () => ({ 200: { description: "ok" } }),
+    });
+    const multipart = multipartProcessor.processOperation("POST", "/upload", {
+      contentType: "multipart/form-data",
+      querystringType: "Filter",
+    });
+    expect(multipart.definition.requestBody).toMatchObject({
+      required: true,
+      description: expect.any(String),
+    });
+    expect(multipart.definition.parameters).toEqual(
+      expect.arrayContaining([expect.objectContaining({ in: "querystring", name: "query" })]),
+    );
   });
 });

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import "@/types/user";
 
 type UserRouteContext = {
   params: Promise<{ id: string }>;

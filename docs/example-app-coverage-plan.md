@@ -24,7 +24,9 @@ Open one of these first based on what you want to evaluate:
 - `apps/next-pages-router`: legacy Pages Router support
 - `apps/tanstack-app`: TanStack Router framework parity
 - `apps/react-router-app`: React Router framework parity
-- `apps/next-app-next-config`, `apps/next-app-ts-config`, `apps/next-app-adapter`: config and adapter integration paths
+- `apps/remix-app`, `apps/sveltekit-app`, `apps/nuxt-app`, `apps/astro-app`,
+  `apps/hono-app`, `apps/express-app`: compact framework-parity apps
+- `apps/next-app-next-config`, `apps/next-app-ts-config`, `apps/next-app-adapter`: config and adapter integration paths (`next-app-ts-config` also owns `clientSdk`)
 - `apps/next-app-sandbox`: edge-case route behavior and exclusion coverage
 - `apps/next-app-scalar`, `apps/next-app-swagger`: docs UI scaffolding variants
 
@@ -34,7 +36,7 @@ The example suite should cover two classes of functionality:
 
 1. Generated features that come directly from route metadata, schemas, and type
    inference.
-2. Preserved features that come from `next.openapi.json`, `schemaFiles`, or
+2. Preserved features that come from `openapi-gen.config.ts`, `schemaFiles`, or
    custom OpenAPI fragments.
 
 ```mermaid
@@ -61,11 +63,21 @@ confidence.
 | `apps/next-pages-router`      | Pages Router parity and `@method` coverage                       | Shared route packs adapted to default-export handlers              |
 | `apps/tanstack-app`           | TanStack Router framework parity                                 | Compact auth, multipart, response-set, loader/action coverage      |
 | `apps/react-router-app`       | React Router framework parity                                    | Compact auth, multipart, response-set, loader/action coverage      |
+| `apps/remix-app`              | Remix file-route parity                                          | `loader`/`action` plus `@method` mutation coverage                 |
+| `apps/sveltekit-app`          | SvelteKit `+server` parity                                       | Named HTTP exports under `src/routes`                              |
+| `apps/nuxt-app`               | Nuxt/Nitro filename-method parity                                | `users.get.ts` / `users.post.ts` suffixes                          |
+| `apps/astro-app`              | Astro endpoint parity                                            | Named `APIRoute` exports under `src/pages/api`                     |
+| `apps/hono-app`               | Hono call-expression parity                                      | `app.get` / `app.post` discovery                                   |
+| `apps/express-app`            | Express call-expression parity                                   | `app.get` / `app.post` discovery                                   |
 | `apps/next-app-adapter`       | Adapter-stage generation smoke coverage                          | One advanced route family proving adapter support                  |
 | `apps/next-app-next-config`   | `next-openapi` config through Next config integration            | One advanced route family proving config wiring                    |
-| `apps/next-app-ts-config`     | Typed config smoke coverage                                      | One advanced route family proving config loading                   |
+| `apps/next-app-ts-config`     | Typed config smoke coverage and `clientSdk` golden path          | Thin `openapi-generator-cli` wrapper; one advanced route family    |
 | `apps/next-app-scalar`        | Scalar UI example                                                | Reuse baseline App Router route surface                            |
 | `apps/next-app-swagger`       | Swagger UI example                                               | Reuse baseline App Router route surface                            |
+
+The suite also keeps a mix of config filenames so discovery stays covered:
+`openapi-gen.config.ts` (default), `openapi-gen.config.mts`,
+`openapi-gen.config.json`, and legacy `next.openapi.json`.
 
 ## Shared route packs
 
@@ -94,13 +106,16 @@ Use where the framework and schema style can demonstrate it clearly:
 
 ### Security pack
 
-Use in TypeScript, Zod, and framework parity apps:
+`apps/next-app-zod` covers the generated surface:
 
-- bearer auth
-- API key or partner token
-- cookie or header auth
-- alternative security requirements via comma-separated `@auth`
+- bearer auth (built-in preset + default scheme object)
+- cookie session scheme (`SessionCookie` in config)
+- scoped OAuth (`OAuth2Auth` in config, `@security OAuth2Auth:repo,user`)
+- alternative requirements via comma-separated `@auth` / `@security`
+- combined requirements via semicolon (`@auth bearer;SessionCookie`)
 - per-operation overrides
+
+Use the same pack in TypeScript and framework parity apps as follow-up.
 
 ### Async and streaming pack
 
@@ -220,6 +235,12 @@ with custom fragments because it already combines route-generated content with
 - Keep the pack smaller than the Next apps, but equivalent enough to validate
   framework support.
 
+### File-export and call-expression apps
+
+Remix, SvelteKit, Nuxt, Astro, Hono, and Express stay compact domain APIs.
+`*-at-scale` fixtures and bench matrix rows for these stacks are a follow-up
+after the core-flow fixtures and sample apps exist.
+
 ### Config-focused apps
 
 For `next-app-adapter`, `next-app-next-config`, and `next-app-ts-config`:
@@ -227,6 +248,10 @@ For `next-app-adapter`, `next-app-next-config`, and `next-app-ts-config`:
 - add one advanced smoke route family
 - ensure generation still works through the intended config entrypoint
 - avoid turning these into full tutorial apps
+
+`next-app-ts-config` also owns the `clientSdk` golden path: one typed config
+entry and one Node wrapper that calls `openapi-generator-cli`. Do not add a
+second wrapper language or vendor a client generator.
 
 ## Rollout phases
 
@@ -263,6 +288,12 @@ Add cross-framework parity:
 
 - `apps/tanstack-app`
 - `apps/react-router-app`
+- `apps/remix-app`
+- `apps/sveltekit-app`
+- `apps/nuxt-app`
+- `apps/astro-app`
+- `apps/hono-app`
+- `apps/express-app`
 - config-focused apps
 
 Outcome:

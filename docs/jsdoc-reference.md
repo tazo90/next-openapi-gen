@@ -32,7 +32,7 @@ explicit `@response` metadata always wins over inferred responses.
 | `@itemSchema`             | Sequential media `itemSchema`. Default is the response; use `request:Type` for request bodies. `@responseItem` remains an alias. |
 | `@itemEncoding`           | Sequential media `itemEncoding`. `@responseItemEncoding` remains an alias.                                                       |
 | `@prefixEncoding`         | Sequential media `prefixEncoding`. `@responsePrefixEncoding` remains an alias.                                                   |
-| `@responseSet`            | Use a named response set from `next.openapi.json`                                                                                |
+| `@responseSet`            | Use a named response set from `openapi-gen.config.ts`                                                                            |
 | `@add`                    | Add extra responses to the operation                                                                                             |
 | `@requestContentType`     | Request content type such as `multipart/form-data`. `@contentType` remains an alias.                                             |
 | `@auth`                   | Operation security requirement(s) via preset names                                                                               |
@@ -182,12 +182,17 @@ export async function GET() {
 }
 ```
 
-Comma-separated values produce alternative security requirements. For example,
-`@auth bearer,SessionCookie` generates a requirement that accepts either scheme.
-Advanced `securitySchemes` objects should still be modeled in templates or
-reusable OpenAPI fragments.
+Comma-separated values produce alternative security requirements (OR). Semicolons
+combine schemes in one requirement (AND). For example, `@auth bearer,SessionCookie`
+accepts either scheme, and `@auth bearer;SessionCookie` requires both.
 
-**Built-in presets** map the following lowercase keywords to scheme names:
+When a built-in preset is referenced and `components.securitySchemes` does not
+already define that name, the generator emits a default scheme object. Custom
+OAuth, OIDC, cookie names, and other advanced scheme fields stay in
+`components` or `schemaFiles`.
+
+**Built-in presets** map the following lowercase keywords to scheme names and
+default objects:
 
 | Keyword  | Default scheme name |
 | -------- | ------------------- |
@@ -209,16 +214,17 @@ export default defineConfig({
       JwtAuth: { type: "http", scheme: "bearer", bearerFormat: "JWT" },
       OAuth2Auth: {
         type: "oauth2",
-        flows: {
-          /* ... */
-        },
+        flows: {/* ... */},
       },
     },
   },
 });
 ```
 
-Unknown values (e.g. `@auth MyCustomScheme`) are passed through unchanged regardless of preset configuration.
+Unknown values (e.g. `@auth MyCustomScheme`) are passed through unchanged
+regardless of preset configuration. Default objects are emitted only for the
+three built-in presets (or their remapped names) when they are referenced and
+missing.
 
 ### File uploads
 
@@ -386,9 +392,11 @@ export async function POST() {
 }
 ```
 
-`@security` accepts comma-separated security requirements; use `Scheme:scope1|scope2`
-to attach scopes to a scheme. `@auth` remains available for preset-based
-shortcuts such as `bearer`, `basic`, and `apikey`.
+`@security` uses the same grammar as `@auth`: comma separates alternatives (OR),
+semicolon combines schemes (AND), and `Scheme:scope1|scope2` or
+`Scheme:scope1,scope2` attaches scopes. The first `:` starts the scope list, so
+`read:events` is a single scope. Multiple `@security` tags are also OR.
+`@auth` remains the preset shortcut for `bearer`, `basic`, and `apikey`.
 
 ## Response headers and links
 
@@ -585,7 +593,7 @@ For a runnable checked-in example, see the event routes in
 
 ## Response sets and extra responses
 
-If you use `responseSets` in `next.openapi.json`, routes can opt into them with
+If you use `responseSets` in `openapi-gen.config.ts`, routes can opt into them with
 `@responseSet` and extend them with `@add`:
 
 ```ts

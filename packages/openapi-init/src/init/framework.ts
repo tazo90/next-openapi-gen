@@ -1,6 +1,16 @@
 import { FrameworkKind, type OpenApiTemplate } from "@workspace/openapi-core/shared/types.js";
 
-export const INIT_FRAMEWORKS = ["next", "tanstack", "react-router"] as const;
+export const INIT_FRAMEWORKS = [
+  "next",
+  "tanstack",
+  "react-router",
+  "remix",
+  "sveltekit",
+  "nuxt",
+  "astro",
+  "hono",
+  "express",
+] as const;
 
 export type InitFramework = (typeof INIT_FRAMEWORKS)[number];
 
@@ -41,6 +51,80 @@ const FRAMEWORK_TEMPLATE_OVERRIDES: Record<InitFramework, FrameworkTemplateOverr
     schemaDir: "./src",
     framework: {
       kind: FrameworkKind.ReactRouter,
+    },
+    next: {
+      adapterPath: undefined,
+    },
+    includeOpenApiRoutes: true,
+  },
+  remix: {
+    apiDir: "./app/routes",
+    routerType: "app",
+    schemaDir: "./app",
+    framework: {
+      kind: FrameworkKind.Remix,
+    },
+    next: {
+      adapterPath: undefined,
+    },
+    includeOpenApiRoutes: true,
+  },
+  sveltekit: {
+    apiDir: "./src/routes",
+    routerType: "app",
+    schemaDir: "./src",
+    framework: {
+      kind: FrameworkKind.SvelteKit,
+    },
+    next: {
+      adapterPath: undefined,
+    },
+    includeOpenApiRoutes: true,
+  },
+  nuxt: {
+    apiDir: "./server/api",
+    routerType: "app",
+    schemaDir: "./server",
+    framework: {
+      kind: FrameworkKind.Nuxt,
+    },
+    next: {
+      adapterPath: undefined,
+    },
+    includeOpenApiRoutes: true,
+  },
+  astro: {
+    apiDir: "./src/pages/api",
+    routerType: "app",
+    schemaDir: "./src",
+    framework: {
+      kind: FrameworkKind.Astro,
+    },
+    next: {
+      adapterPath: undefined,
+    },
+    includeOpenApiRoutes: true,
+  },
+  hono: {
+    apiDir: "./src",
+    routerType: "app",
+    schemaDir: "./src",
+    framework: {
+      kind: FrameworkKind.Hono,
+      modulePath: "./src/index.ts",
+    },
+    next: {
+      adapterPath: undefined,
+    },
+    includeOpenApiRoutes: true,
+  },
+  express: {
+    apiDir: "./src",
+    routerType: "app",
+    schemaDir: "./src",
+    framework: {
+      kind: FrameworkKind.Express,
+      modulePath: "./src/index.ts",
     },
     next: {
       adapterPath: undefined,

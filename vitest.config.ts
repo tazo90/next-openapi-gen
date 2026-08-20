@@ -26,6 +26,42 @@ const packageSrcDirs = {
     "openapi-framework-tanstack",
     "src",
   ),
+  "@workspace/openapi-framework-remix": path.join(
+    rootDir,
+    "packages",
+    "openapi-framework-remix",
+    "src",
+  ),
+  "@workspace/openapi-framework-sveltekit": path.join(
+    rootDir,
+    "packages",
+    "openapi-framework-sveltekit",
+    "src",
+  ),
+  "@workspace/openapi-framework-nuxt": path.join(
+    rootDir,
+    "packages",
+    "openapi-framework-nuxt",
+    "src",
+  ),
+  "@workspace/openapi-framework-astro": path.join(
+    rootDir,
+    "packages",
+    "openapi-framework-astro",
+    "src",
+  ),
+  "@workspace/openapi-framework-hono": path.join(
+    rootDir,
+    "packages",
+    "openapi-framework-hono",
+    "src",
+  ),
+  "@workspace/openapi-framework-express": path.join(
+    rootDir,
+    "packages",
+    "openapi-framework-express",
+    "src",
+  ),
   "@workspace/openapi-init": path.join(rootDir, "packages", "openapi-init", "src"),
   "@workspace/openapi-overlay": path.join(rootDir, "packages", "openapi-overlay", "src"),
   "@next-openapi-gen": path.join(rootDir, "packages", "next-openapi-gen", "src"),
@@ -33,6 +69,18 @@ const packageSrcDirs = {
 } as const;
 
 const defaultTestInclude = ["tests/unit/**/*.test.ts", "tests/integration/**/*.test.ts"];
+const satelliteCoverageThresholds = {
+  statements: 99,
+  branches: 95,
+  functions: 99,
+  lines: 99,
+} as const;
+const coreCoverageThresholds = {
+  statements: 95,
+  branches: 92,
+  functions: 95,
+  lines: 95,
+} as const;
 const coverageScopes = {
   "next-openapi-gen": {
     include: ["packages/next-openapi-gen/src/**/*.ts"],
@@ -41,43 +89,24 @@ const coverageScopes = {
       "tests/unit/next/**/*.test.ts",
       "tests/unit/react-router/**/*.test.ts",
       "tests/unit/vite/**/*.test.ts",
+      "tests/unit/public/framework-exports.test.ts",
     ],
-    thresholds: {
-      statements: 75,
-      branches: 75,
-      functions: 75,
-      lines: 75,
-    },
+    thresholds: satelliteCoverageThresholds,
   },
   "openapi-arazzo": {
     include: ["packages/openapi-arazzo/src/**/*.ts"],
     testInclude: ["tests/unit/arazzo/**/*.test.ts", "tests/integration/arazzo/**/*.test.ts"],
-    thresholds: {
-      statements: 75,
-      branches: 75,
-      functions: 75,
-      lines: 75,
-    },
+    thresholds: satelliteCoverageThresholds,
   },
   "openapi-cli": {
     include: ["packages/openapi-cli/src/**/*.ts"],
     testInclude: ["tests/unit/cli/**/*.test.ts", "tests/unit/frameworks/index.test.ts"],
-    thresholds: {
-      statements: 75,
-      branches: 75,
-      functions: 75,
-      lines: 75,
-    },
+    thresholds: satelliteCoverageThresholds,
   },
   "openapi-core": {
     include: ["packages/openapi-core/src/**/*.ts"],
     testInclude: defaultTestInclude,
-    thresholds: {
-      statements: 75,
-      branches: 73,
-      functions: 75,
-      lines: 75,
-    },
+    thresholds: coreCoverageThresholds,
   },
   "openapi-framework-next": {
     include: ["packages/openapi-framework-next/src/**/*.ts"],
@@ -85,14 +114,10 @@ const coverageScopes = {
       "tests/unit/frameworks/next/**/*.test.ts",
       "tests/unit/next/**/*.test.ts",
       "tests/unit/routes/app-router-strategy.test.ts",
+      "tests/unit/routes/app-router-inference.test.ts",
       "tests/unit/routes/pages-router-strategy.test.ts",
     ],
-    thresholds: {
-      statements: 75,
-      branches: 75,
-      functions: 75,
-      lines: 75,
-    },
+    thresholds: satelliteCoverageThresholds,
   },
   "openapi-framework-react-router": {
     include: ["packages/openapi-framework-react-router/src/**/*.ts"],
@@ -100,42 +125,52 @@ const coverageScopes = {
       "tests/unit/frameworks/react-router/**/*.test.ts",
       "tests/unit/react-router/**/*.test.ts",
     ],
-    thresholds: {
-      statements: 75,
-      branches: 75,
-      functions: 75,
-      lines: 75,
-    },
+    thresholds: satelliteCoverageThresholds,
   },
   "openapi-framework-tanstack": {
     include: ["packages/openapi-framework-tanstack/src/**/*.ts"],
     testInclude: ["tests/unit/frameworks/tanstack/**/*.test.ts", "tests/unit/vite/**/*.test.ts"],
-    thresholds: {
-      statements: 75,
-      branches: 75,
-      functions: 75,
-      lines: 75,
-    },
+    thresholds: satelliteCoverageThresholds,
+  },
+  "openapi-framework-remix": {
+    include: ["packages/openapi-framework-remix/src/**/*.ts"],
+    testInclude: ["tests/unit/frameworks/remix/**/*.test.ts"],
+    thresholds: satelliteCoverageThresholds,
+  },
+  "openapi-framework-sveltekit": {
+    include: ["packages/openapi-framework-sveltekit/src/**/*.ts"],
+    testInclude: ["tests/unit/frameworks/sveltekit/**/*.test.ts"],
+    thresholds: satelliteCoverageThresholds,
+  },
+  "openapi-framework-nuxt": {
+    include: ["packages/openapi-framework-nuxt/src/**/*.ts"],
+    testInclude: ["tests/unit/frameworks/nuxt/**/*.test.ts"],
+    thresholds: satelliteCoverageThresholds,
+  },
+  "openapi-framework-astro": {
+    include: ["packages/openapi-framework-astro/src/**/*.ts"],
+    testInclude: ["tests/unit/frameworks/astro/**/*.test.ts"],
+    thresholds: satelliteCoverageThresholds,
+  },
+  "openapi-framework-hono": {
+    include: ["packages/openapi-framework-hono/src/**/*.ts"],
+    testInclude: ["tests/unit/frameworks/hono/**/*.test.ts"],
+    thresholds: satelliteCoverageThresholds,
+  },
+  "openapi-framework-express": {
+    include: ["packages/openapi-framework-express/src/**/*.ts"],
+    testInclude: ["tests/unit/frameworks/express/**/*.test.ts"],
+    thresholds: satelliteCoverageThresholds,
   },
   "openapi-init": {
     include: ["packages/openapi-init/src/**/*.ts"],
     testInclude: ["tests/unit/init/**/*.test.ts"],
-    thresholds: {
-      statements: 75,
-      branches: 75,
-      functions: 75,
-      lines: 75,
-    },
+    thresholds: satelliteCoverageThresholds,
   },
   "openapi-overlay": {
     include: ["packages/openapi-overlay/src/**/*.ts"],
     testInclude: ["tests/unit/overlay/**/*.test.ts", "tests/integration/overlay/**/*.test.ts"],
-    thresholds: {
-      statements: 75,
-      branches: 75,
-      functions: 75,
-      lines: 75,
-    },
+    thresholds: satelliteCoverageThresholds,
   },
 } as const;
 const coverageScope = process.env.COVERAGE_SCOPE as keyof typeof coverageScopes | undefined;
@@ -164,6 +199,12 @@ export default defineConfig({
           "packages/openapi-framework-next/src/**/*.ts",
           "packages/openapi-framework-react-router/src/**/*.ts",
           "packages/openapi-framework-tanstack/src/**/*.ts",
+          "packages/openapi-framework-remix/src/**/*.ts",
+          "packages/openapi-framework-sveltekit/src/**/*.ts",
+          "packages/openapi-framework-nuxt/src/**/*.ts",
+          "packages/openapi-framework-astro/src/**/*.ts",
+          "packages/openapi-framework-hono/src/**/*.ts",
+          "packages/openapi-framework-express/src/**/*.ts",
           "packages/openapi-init/src/**/*.ts",
           "packages/openapi-overlay/src/**/*.ts",
           "packages/next-openapi-gen/src/**/*.ts",
@@ -181,28 +222,21 @@ export default defineConfig({
         "packages/openapi-core/src/index.ts",
         // Type-only adapter contracts (no runtime executable statements).
         "packages/openapi-core/src/core/adapters.ts",
-        // TypeScript compiler host wiring is validated indirectly via schema and route tests.
-        "packages/openapi-core/src/shared/typescript-project.ts",
-        // Framework route-source glue is covered via framework integration fixtures.
-        "packages/openapi-core/src/frameworks/shared/generic-route-source.ts",
-        // Heavy OpenAPI definition merging is covered via generator integration fixtures.
-        "packages/openapi-core/src/schema/core/schema-definition-processor.ts",
-        // OpenAPI version coercion is covered via validation fixtures and integration flows.
-        "packages/openapi-core/src/openapi/version-processor.ts",
         // Pure re-export barrels (non-openapi-core — see packages above).
         "packages/openapi-arazzo/src/index.ts",
         "packages/openapi-framework-next/src/index.ts",
         "packages/openapi-framework-tanstack/src/index.ts",
         "packages/openapi-framework-react-router/src/index.ts",
+        "packages/openapi-framework-remix/src/index.ts",
+        "packages/openapi-framework-sveltekit/src/index.ts",
+        "packages/openapi-framework-nuxt/src/index.ts",
+        "packages/openapi-framework-astro/src/index.ts",
+        "packages/openapi-framework-hono/src/index.ts",
+        "packages/openapi-framework-express/src/index.ts",
         "packages/openapi-init/src/index.ts",
         "packages/openapi-overlay/src/index.ts",
       ],
-      thresholds: selectedCoverageScope?.thresholds ?? {
-        statements: 80,
-        branches: 80,
-        functions: 80,
-        lines: 80,
-      },
+      thresholds: selectedCoverageScope?.thresholds ?? coreCoverageThresholds,
     },
   },
 });

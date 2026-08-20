@@ -67,33 +67,19 @@ export class ZodRuntimeExporter {
       case "number":
         return z.number();
       case "float32":
-        return typeof (z as { float32?: () => z.ZodTypeAny }).float32 === "function"
-          ? (z as { float32: () => z.ZodTypeAny }).float32()
-          : z.number();
+        return (z as { float32: () => z.ZodTypeAny }).float32();
       case "float64":
-        return typeof (z as { float64?: () => z.ZodTypeAny }).float64 === "function"
-          ? (z as { float64: () => z.ZodTypeAny }).float64()
-          : z.number();
+        return (z as { float64: () => z.ZodTypeAny }).float64();
       case "int":
-        return typeof (z as { int?: () => z.ZodTypeAny }).int === "function"
-          ? (z as { int: () => z.ZodTypeAny }).int()
-          : z.number().int();
+        return (z as { int: () => z.ZodTypeAny }).int();
       case "int32":
-        return typeof (z as { int32?: () => z.ZodTypeAny }).int32 === "function"
-          ? (z as { int32: () => z.ZodTypeAny }).int32()
-          : z.number().int();
+        return (z as { int32: () => z.ZodTypeAny }).int32();
       case "int64":
-        return typeof (z as { int64?: () => z.ZodTypeAny }).int64 === "function"
-          ? (z as { int64: () => z.ZodTypeAny }).int64()
-          : z.bigint();
+        return (z as { int64: () => z.ZodTypeAny }).int64();
       case "uint32":
-        return typeof (z as { uint32?: () => z.ZodTypeAny }).uint32 === "function"
-          ? (z as { uint32: () => z.ZodTypeAny }).uint32()
-          : z.number().int().nonnegative().max(4294967295);
+        return (z as { uint32: () => z.ZodTypeAny }).uint32();
       case "uint64":
-        return typeof (z as { uint64?: () => z.ZodTypeAny }).uint64 === "function"
-          ? (z as { uint64: () => z.ZodTypeAny }).uint64()
-          : z.bigint().nonnegative();
+        return (z as { uint64: () => z.ZodTypeAny }).uint64();
       case "boolean":
         return z.boolean();
       case "any":

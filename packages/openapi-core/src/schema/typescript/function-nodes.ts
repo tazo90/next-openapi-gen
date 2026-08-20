@@ -24,15 +24,15 @@ export function extractFunctionReturnType(funcNode: any): any | null {
 
 export function extractFunctionParameters(funcNode: any): any[] {
   if (t.isFunctionDeclaration(funcNode) || t.isFunctionExpression(funcNode)) {
-    return funcNode.params || [];
+    return funcNode.params;
   }
 
   if (t.isArrowFunctionExpression(funcNode)) {
-    return funcNode.params || [];
+    return funcNode.params;
   }
 
   if (t.isVariableDeclarator(funcNode) && t.isArrowFunctionExpression(funcNode.init)) {
-    return funcNode.init.params || [];
+    return funcNode.init.params;
   }
 
   return [];

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import "@/schemas/extended-schemas";
 
 /**
  * Get nested schema example

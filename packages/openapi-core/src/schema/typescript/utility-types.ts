@@ -4,9 +4,9 @@ import path from "path";
 import * as t from "@babel/types";
 
 import { logger } from "../../shared/logger.js";
+import { parseTypeScriptFile } from "../../shared/parse-typescript.js";
 import type { SymbolResolver } from "../../shared/symbol-resolver.js";
 import type { ContentType, OpenAPIDefinition } from "../../shared/types.js";
-import { parseTypeScriptFile } from "../../shared/utils.js";
 
 type TypeDefinitionEntry = {
   node?: any;

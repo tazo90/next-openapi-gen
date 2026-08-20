@@ -1,3 +1,4 @@
+import { DEFAULT_AUTH_PRESET_REPLACEMENTS } from "../shared/spec.js";
 import type {
   FrameworkConfig,
   FrameworkKind,
@@ -10,7 +11,6 @@ import type {
   SchemaType,
 } from "../shared/types.js";
 import { FrameworkKind as ResolvedFrameworkKind } from "../shared/types.js";
-import { DEFAULT_AUTH_PRESET_REPLACEMENTS } from "../shared/utils.js";
 import {
   DEFAULT_API_DIR,
   DEFAULT_CACHE,
@@ -71,22 +71,33 @@ type RawFrameworkConfig = {
   adapterPath?: string | undefined;
 };
 
+const FRAMEWORK_KIND_ALIASES: Record<string, FrameworkKind> = {
+  next: ResolvedFrameworkKind.Nextjs,
+  nextjs: ResolvedFrameworkKind.Nextjs,
+  tanstack: ResolvedFrameworkKind.Tanstack,
+  "react-router": ResolvedFrameworkKind.ReactRouter,
+  reactrouter: ResolvedFrameworkKind.ReactRouter,
+  remix: ResolvedFrameworkKind.Remix,
+  sveltekit: ResolvedFrameworkKind.SvelteKit,
+  nuxt: ResolvedFrameworkKind.Nuxt,
+  astro: ResolvedFrameworkKind.Astro,
+  hono: ResolvedFrameworkKind.Hono,
+  express: ResolvedFrameworkKind.Express,
+};
+
 function normalizeFrameworkKind(kind: RawFrameworkConfig["kind"]): FrameworkKind {
-  switch (kind) {
-    case undefined:
-      return ResolvedFrameworkKind.Nextjs;
-    case ResolvedFrameworkKind.Nextjs:
-    case "next":
-      return ResolvedFrameworkKind.Nextjs;
-    case ResolvedFrameworkKind.Tanstack:
-    case "tanstack":
-      return ResolvedFrameworkKind.Tanstack;
-    case ResolvedFrameworkKind.ReactRouter:
-    case "react-router":
-      return ResolvedFrameworkKind.ReactRouter;
-    default:
-      return ResolvedFrameworkKind.Nextjs;
+  if (kind === undefined) {
+    return ResolvedFrameworkKind.Nextjs;
   }
+
+  const resolved = FRAMEWORK_KIND_ALIASES[kind];
+  if (!resolved) {
+    throw new Error(
+      `Unknown framework kind "${kind}". Expected one of: ${Object.keys(FRAMEWORK_KIND_ALIASES).join(", ")}.`,
+    );
+  }
+
+  return resolved;
 }
 
 function normalizeFramework(
@@ -110,11 +121,21 @@ function normalizeFramework(
         };
       case ResolvedFrameworkKind.Tanstack:
       case ResolvedFrameworkKind.ReactRouter:
+      case ResolvedFrameworkKind.Remix:
+      case ResolvedFrameworkKind.SvelteKit:
+      case ResolvedFrameworkKind.Nuxt:
+      case ResolvedFrameworkKind.Astro:
+      case ResolvedFrameworkKind.Hono:
+      case ResolvedFrameworkKind.Express:
         return {
           ...config.framework,
           kind: frameworkKind,
           modulePath: config.framework.modulePath || config.framework.adapterPath,
         };
+      default: {
+        const exhaustive: never = frameworkKind;
+        throw new Error(`Unknown framework kind "${String(exhaustive)}"`);
+      }
     }
   }
 

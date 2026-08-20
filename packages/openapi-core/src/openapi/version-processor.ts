@@ -1,3 +1,4 @@
+import { cleanSpec } from "../shared/spec.js";
 import type {
   OpenApiDocument,
   OpenApiExampleMap,
@@ -13,7 +14,6 @@ import type {
   OpenApiTag,
   OpenApiVersion,
 } from "../shared/types.js";
-import { cleanSpec } from "../shared/utils.js";
 import { moveFieldToExtension, promoteExtensionField } from "./registries/index.js";
 
 interface OpenApiVersionProcessor {
@@ -78,17 +78,9 @@ class DefaultOpenApiVersionProcessor implements OpenApiVersionProcessor {
     }
 
     if (nextDocument.info?.license && !this.capabilities.supportsOpenApi31Schema) {
-      moveFieldToExtension(
-        nextDocument.info.license as Record<string, unknown>,
-        "identifier",
-        this.capabilities.version,
-      );
+      moveFieldToExtension(nextDocument.info.license, "identifier", this.capabilities.version);
     } else if (nextDocument.info?.license) {
-      promoteExtensionField(
-        nextDocument.info.license as Record<string, unknown>,
-        "identifier",
-        this.capabilities.version,
-      );
+      promoteExtensionField(nextDocument.info.license, "identifier", this.capabilities.version);
     }
 
     if (nextDocument.tags) {
@@ -831,8 +823,8 @@ function downgradeSchemaForOpenApi30(schema: OpenApiSchema, mediaTypeName?: stri
     }
   }
 
-  moveFieldToExtension(nextSchema as Record<string, unknown>, "contentEncoding", "3.0");
-  moveFieldToExtension(nextSchema as Record<string, unknown>, "contentMediaType", "3.0");
+  moveFieldToExtension(nextSchema, "contentEncoding", "3.0");
+  moveFieldToExtension(nextSchema, "contentMediaType", "3.0");
   delete nextSchema.$schema;
 
   if (Array.isArray(nextSchema.prefixItems) && nextSchema.prefixItems.length > 0) {
@@ -864,7 +856,7 @@ function downgradeSchemaForOpenApi30(schema: OpenApiSchema, mediaTypeName?: stri
   ];
   for (const keyword of unsupportedOpenApi30Keywords) {
     if (keyword in nextSchema) {
-      moveFieldToExtension(nextSchema as Record<string, unknown>, keyword, "3.0");
+      moveFieldToExtension(nextSchema, keyword, "3.0");
       if (keyword in nextSchema) {
         delete (nextSchema as Record<string, unknown>)[keyword];
       }
@@ -882,9 +874,7 @@ function mapObjectValues<T, U>(
   record: Record<string, T>,
   map: (value: T, key: string) => U,
 ): Record<string, U> {
-  return Object.fromEntries(
-    Object.entries(record).map(([key, value]) => [key, map(value, key)]),
-  ) as Record<string, U>;
+  return Object.fromEntries(Object.entries(record).map(([key, value]) => [key, map(value, key)]));
 }
 
 const HTTP_METHODS = new Set([

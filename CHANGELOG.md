@@ -1,42 +1,42 @@
-# [1.8.0](https://github.com/tazo90/next-openapi-gen/compare/v1.7.3...v1.8.0) (2026-08-17)
-
-
-### ♻️ Code Refactoring
-
-* compose sample home pages from compound parts ([#177](https://github.com/tazo90/next-openapi-gen/issues/177)) ([863d21b](https://github.com/tazo90/next-openapi-gen/commit/863d21b17debe62aac9ef937d40cf0dbcfa85737)) by [@martijn00](https://github.com/martijn00)
-
-
-### ⚡ Performance Improvements
-
-* enable isolatedDeclarations and TypeScript project references ([#176](https://github.com/tazo90/next-openapi-gen/issues/176)) ([41c0d5f](https://github.com/tazo90/next-openapi-gen/commit/41c0d5f7e3016e68fa75497c081afd0e1ed14f54)) by [@martijn00](https://github.com/martijn00)
-
-
-### ✅ Tests
-
-* lock instant navigation for the drizzle-zod sample ([#178](https://github.com/tazo90/next-openapi-gen/issues/178)) ([c4cba36](https://github.com/tazo90/next-openapi-gen/commit/c4cba3669af25343da7f9e4ff46f22fa6f788980)) by [@martijn00](https://github.com/martijn00)
-
+# Unreleased
 
 ### ✨ Features
 
-* generate Overlay and Arazzo docs with OAS-aligned JSDoc ([#179](https://github.com/tazo90/next-openapi-gen/issues/179)) ([5be407b](https://github.com/tazo90/next-openapi-gen/commit/5be407b5d9766b9d0bef198f76179953bf5d6c0f)) by [@martijn00](https://github.com/martijn00)
+- apply Overlay 1.2 reusable actions, `$self`, and optional `targetFormat`
 
+# [1.8.0](https://github.com/tazo90/next-openapi-gen/compare/v1.7.3...v1.8.0) (2026-08-17)
+
+### ♻️ Code Refactoring
+
+- compose sample home pages from compound parts ([#177](https://github.com/tazo90/next-openapi-gen/issues/177)) ([863d21b](https://github.com/tazo90/next-openapi-gen/commit/863d21b17debe62aac9ef937d40cf0dbcfa85737)) by [@martijn00](https://github.com/martijn00)
+
+### ⚡ Performance Improvements
+
+- enable isolatedDeclarations and TypeScript project references ([#176](https://github.com/tazo90/next-openapi-gen/issues/176)) ([41c0d5f](https://github.com/tazo90/next-openapi-gen/commit/41c0d5f7e3016e68fa75497c081afd0e1ed14f54)) by [@martijn00](https://github.com/martijn00)
+
+### ✅ Tests
+
+- lock instant navigation for the drizzle-zod sample ([#178](https://github.com/tazo90/next-openapi-gen/issues/178)) ([c4cba36](https://github.com/tazo90/next-openapi-gen/commit/c4cba3669af25343da7f9e4ff46f22fa6f788980)) by [@martijn00](https://github.com/martijn00)
+
+### ✨ Features
+
+- generate Overlay and Arazzo docs with OAS-aligned JSDoc ([#179](https://github.com/tazo90/next-openapi-gen/issues/179)) ([5be407b](https://github.com/tazo90/next-openapi-gen/commit/5be407b5d9766b9d0bef198f76179953bf5d6c0f)) by [@martijn00](https://github.com/martijn00)
 
 ### 🐛 Bug Fixes
 
-* build with ts issues ([#182](https://github.com/tazo90/next-openapi-gen/issues/182)) ([8bdec2f](https://github.com/tazo90/next-openapi-gen/commit/8bdec2fe1eb64dbb5c2230e3c9a031d9cdc43bbb)) by [@tazo90](https://github.com/tazo90)
-
+- build with ts issues ([#182](https://github.com/tazo90/next-openapi-gen/issues/182)) ([8bdec2f](https://github.com/tazo90/next-openapi-gen/commit/8bdec2fe1eb64dbb5c2230e3c9a031d9cdc43bbb)) by [@tazo90](https://github.com/tazo90)
 
 ### 📝 Documentation
 
-* add drizzle-kit config and align coverage threshold docs ([#174](https://github.com/tazo90/next-openapi-gen/issues/174)) ([98987f5](https://github.com/tazo90/next-openapi-gen/commit/98987f526884136ec835fb58653ec591cfe349e1)) by [@martijn00](https://github.com/martijn00)
-
+- demonstrate `clientSdk` generation in the typed-config sample app
+- add drizzle-kit config and align coverage threshold docs ([#174](https://github.com/tazo90/next-openapi-gen/issues/174)) ([98987f5](https://github.com/tazo90/next-openapi-gen/commit/98987f526884136ec835fb58653ec591cfe349e1)) by [@martijn00](https://github.com/martijn00)
 
 ### 🔨 Chores
 
-* drop redundant packageManager pins on internal packages ([#175](https://github.com/tazo90/next-openapi-gen/issues/175)) ([7f345e9](https://github.com/tazo90/next-openapi-gen/commit/7f345e951e90c7045ae3277b8dd36471112cccf3)) by [@martijn00](https://github.com/martijn00)
-* refresh agent skills for current Next.js and toolchain workflows ([#172](https://github.com/tazo90/next-openapi-gen/issues/172)) ([cd2d533](https://github.com/tazo90/next-openapi-gen/commit/cd2d533c9cfe4ecc04be95bba575290de201d820)) by [@martijn00](https://github.com/martijn00)
-* tighten TypeScript, Oxlint, Oxfmt, and Knip configs ([#180](https://github.com/tazo90/next-openapi-gen/issues/180)) ([bb35cbb](https://github.com/tazo90/next-openapi-gen/commit/bb35cbb56a8bca8a0a4f826e445a584bb97b535f)) by [@martijn00](https://github.com/martijn00)
-* upgrade Next.js to 16.3 and enable partial prefetching ([#173](https://github.com/tazo90/next-openapi-gen/issues/173)) ([850d0df](https://github.com/tazo90/next-openapi-gen/commit/850d0df482a9ae6ee755141d47d6cb604182882d)) by [@martijn00](https://github.com/martijn00)
+- drop redundant packageManager pins on internal packages ([#175](https://github.com/tazo90/next-openapi-gen/issues/175)) ([7f345e9](https://github.com/tazo90/next-openapi-gen/commit/7f345e951e90c7045ae3277b8dd36471112cccf3)) by [@martijn00](https://github.com/martijn00)
+- refresh agent skills for current Next.js and toolchain workflows ([#172](https://github.com/tazo90/next-openapi-gen/issues/172)) ([cd2d533](https://github.com/tazo90/next-openapi-gen/commit/cd2d533c9cfe4ecc04be95bba575290de201d820)) by [@martijn00](https://github.com/martijn00)
+- tighten TypeScript, Oxlint, Oxfmt, and Knip configs ([#180](https://github.com/tazo90/next-openapi-gen/issues/180)) ([bb35cbb](https://github.com/tazo90/next-openapi-gen/commit/bb35cbb56a8bca8a0a4f826e445a584bb97b535f)) by [@martijn00](https://github.com/martijn00)
+- upgrade Next.js to 16.3 and enable partial prefetching ([#173](https://github.com/tazo90/next-openapi-gen/issues/173)) ([850d0df](https://github.com/tazo90/next-openapi-gen/commit/850d0df482a9ae6ee755141d47d6cb604182882d)) by [@martijn00](https://github.com/martijn00)
 
 ## [1.7.3](https://github.com/tazo90/next-openapi-gen/compare/v1.7.2...v1.7.3) (2026-08-06)
 

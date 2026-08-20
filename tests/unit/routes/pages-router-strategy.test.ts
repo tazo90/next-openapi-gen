@@ -321,6 +321,7 @@ describe("PagesRouterStrategy", () => {
 
     const addRoute = vi.fn<AddRoute>();
     strategy.processFile(filePath, addRoute);
+    strategy.processFile(filePath, addRoute);
 
     expect(addRoute).toHaveBeenCalledWith(
       "GET",
@@ -399,8 +400,10 @@ describe("PagesRouterStrategy", () => {
     fs.writeFileSync(filePath, "export default async function handler() {}");
 
     vi.resetModules();
-    vi.doMock("@workspace/openapi-core/shared/utils.js", () => ({
+    vi.doMock("@workspace/openapi-core/shared/jsdoc.js", () => ({
       parseJSDocBlock: vi.fn<ParseJSDocBlockMock>(),
+    }));
+    vi.doMock("@workspace/openapi-core/shared/parse-typescript.js", () => ({
       parseTypeScriptFile: vi.fn<ParseTypeScriptFileMock>(() => ({
         comments: undefined,
       })),
@@ -423,7 +426,8 @@ describe("PagesRouterStrategy", () => {
     mockedStrategy.processFile(filePath, addRoute);
 
     expect(addRoute).not.toHaveBeenCalled();
-    vi.doUnmock("@workspace/openapi-core/shared/utils.js");
+    vi.doUnmock("@workspace/openapi-core/shared/jsdoc.js");
+    vi.doUnmock("@workspace/openapi-core/shared/parse-typescript.js");
     vi.doUnmock("@workspace/openapi-core/shared/babel-traverse.js");
     vi.resetModules();
   });
@@ -438,8 +442,10 @@ describe("PagesRouterStrategy", () => {
     const parseJSDocBlock = vi.fn<ParseJSDocBlockMock>(() => ({
       method: "GET",
     }));
-    vi.doMock("@workspace/openapi-core/shared/utils.js", () => ({
+    vi.doMock("@workspace/openapi-core/shared/jsdoc.js", () => ({
       parseJSDocBlock,
+    }));
+    vi.doMock("@workspace/openapi-core/shared/parse-typescript.js", () => ({
       parseTypeScriptFile: vi.fn<ParseTypeScriptFileMock>(() => ({
         comments: [
           {
@@ -471,7 +477,8 @@ describe("PagesRouterStrategy", () => {
     expect(addRoute).toHaveBeenCalledWith("GET", filePath, {
       method: "GET",
     });
-    vi.doUnmock("@workspace/openapi-core/shared/utils.js");
+    vi.doUnmock("@workspace/openapi-core/shared/jsdoc.js");
+    vi.doUnmock("@workspace/openapi-core/shared/parse-typescript.js");
     vi.doUnmock("@workspace/openapi-core/shared/babel-traverse.js");
     vi.resetModules();
   });

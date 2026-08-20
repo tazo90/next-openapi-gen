@@ -177,7 +177,7 @@ function indexDeclaration(
         t.isBooleanLiteral(init) ||
         t.isNullLiteral(init)
       ) {
-        index.constLiterals.set(name, init as t.Literal);
+        index.constLiterals.set(name, init);
       } else if (t.isArrowFunctionExpression(init) || t.isFunctionExpression(init)) {
         index.functions.set(name, init);
       }

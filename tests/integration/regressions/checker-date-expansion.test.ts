@@ -32,7 +32,7 @@ describe("Date properties resolved through a TypeScript checker", () => {
 
   it("does not leak Date prototype methods into properties", () => {
     const schema = processor.findSchemaDefinition("AuditedRecord", "");
-    const createdAt = schema.properties?.createdAt as Record<string, unknown> | undefined;
+    const createdAt = schema.properties?.createdAt;
 
     expect(createdAt?.properties).toBeUndefined();
     expect(createdAt?.required).toBeUndefined();

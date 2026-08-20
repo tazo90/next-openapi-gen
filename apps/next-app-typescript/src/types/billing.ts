@@ -12,7 +12,7 @@
  * Role identifiers derived from an `as const` map.
  * Exercises `typeof ROLE_MAP[keyof typeof ROLE_MAP]` enum inference.
  */
-export const ROLE_MAP = {
+const ROLE_MAP = {
   OWNER: "owner",
   BILLING_MANAGER: "billing_manager",
   VIEWER: "viewer",

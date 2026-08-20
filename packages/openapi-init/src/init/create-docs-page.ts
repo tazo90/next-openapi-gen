@@ -57,6 +57,25 @@ export function getDocsPageRelativePath(framework: InitFramework, docsUrl: strin
         "routes",
         `${routeSegments.length > 0 ? routeSegments.join(".") : "_index"}.tsx`,
       );
+    case "remix":
+      return path.join(
+        "app",
+        "routes",
+        `${routeSegments.length > 0 ? routeSegments.join(".") : "_index"}.tsx`,
+      );
+    case "sveltekit":
+      return path.join("src", "routes", ...routeSegments, "+page.svelte");
+    case "nuxt":
+      return path.join("pages", `${routeSegments.join("/") || "index"}.vue`);
+    case "astro":
+      return path.join("src", "pages", `${routeSegments.join("/") || "index"}.astro`);
+    case "hono":
+    case "express":
+      return path.join("src", "api-docs.ts");
+    default: {
+      const exhaustive: never = framework;
+      throw new Error(`Unknown init framework "${String(exhaustive)}"`);
+    }
   }
 }
 

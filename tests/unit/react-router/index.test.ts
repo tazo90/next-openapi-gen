@@ -15,6 +15,8 @@ vi.mock("@workspace/openapi-core/core/watch.js", () => ({
   watchProject,
 }));
 
+import { createReactRouterFrameworkSource } from "@workspace/openapi-framework-react-router";
+
 import { createReactRouterOpenApiPlugin } from "../../../packages/next-openapi-gen/src/react-router/index.ts";
 
 describe("createReactRouterOpenApiPlugin", () => {
@@ -27,16 +29,24 @@ describe("createReactRouterOpenApiPlugin", () => {
       configPath: "next-openapi.config.ts",
     });
 
+    expect(plugin.name).toBe("next-openapi-gen");
+
     await plugin.buildStart();
     await plugin.configureServer();
 
     expect(generateProject).toHaveBeenCalledWith(
       expect.objectContaining({
+        adapters: expect.objectContaining({
+          createFrameworkSource: createReactRouterFrameworkSource,
+        }),
         configPath: "next-openapi.config.ts",
       }),
     );
     expect(watchProject).toHaveBeenCalledWith(
       expect.objectContaining({
+        adapters: expect.objectContaining({
+          createFrameworkSource: createReactRouterFrameworkSource,
+        }),
         configPath: "next-openapi.config.ts",
       }),
     );

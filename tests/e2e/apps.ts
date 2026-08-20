@@ -9,6 +9,12 @@ type E2EAppName =
   | "next-app-mixed-schemas"
   | "tanstack-app"
   | "react-router-app"
+  | "remix-app"
+  | "sveltekit-app"
+  | "nuxt-app"
+  | "astro-app"
+  | "hono-app"
+  | "express-app"
   | "next-app-adapter"
   | "next-app-next-config"
   | "next-app-ts-config";
@@ -173,6 +179,84 @@ const E2E_APPS: readonly E2EAppConfig[] = [
     startCommand:
       "pnpm --dir apps/react-router-app exec vite preview --host localhost --port 3109 --strictPort",
     title: "React Router API",
+  },
+  {
+    name: "remix-app",
+    appDir: "apps/remix-app",
+    buildCommand: "pnpm --dir apps/remix-app run build",
+    docsPath: "/api-docs",
+    docsText: ["Remix API", "Download OpenAPI Document"],
+    generateCommand: "pnpm --dir apps/remix-app run generate",
+    openApiFile: "apps/remix-app/public/openapi.json",
+    openApiPaths: ["/api/users/{id}"],
+    port: 3113,
+    startCommand: "pnpm --dir apps/remix-app run start",
+    title: "Remix API",
+  },
+  {
+    name: "sveltekit-app",
+    appDir: "apps/sveltekit-app",
+    buildCommand: "pnpm --dir apps/sveltekit-app run build",
+    docsPath: "/api-docs",
+    docsText: ["SvelteKit API", "Download OpenAPI Document"],
+    generateCommand: "pnpm --dir apps/sveltekit-app run generate",
+    openApiFile: "apps/sveltekit-app/public/openapi.json",
+    openApiPaths: ["/api/users/{id}"],
+    port: 3114,
+    startCommand: "pnpm --dir apps/sveltekit-app run start",
+    title: "SvelteKit API",
+  },
+  {
+    name: "nuxt-app",
+    appDir: "apps/nuxt-app",
+    buildCommand: "pnpm --dir apps/nuxt-app run build",
+    docsPath: "/api-docs",
+    docsText: ["Nuxt API", "Download OpenAPI Document"],
+    generateCommand: "pnpm --dir apps/nuxt-app run generate",
+    openApiFile: "apps/nuxt-app/public/openapi.json",
+    openApiPaths: ["/users/{id}"],
+    port: 3115,
+    startCommand: "pnpm --dir apps/nuxt-app run start",
+    title: "Nuxt API",
+  },
+  {
+    name: "astro-app",
+    appDir: "apps/astro-app",
+    buildCommand: "pnpm --dir apps/astro-app run build",
+    docsPath: "/api-docs",
+    docsText: ["Astro API", "Download OpenAPI Document"],
+    generateCommand: "pnpm --dir apps/astro-app run generate",
+    openApiFile: "apps/astro-app/public/openapi.json",
+    openApiPaths: ["/users/{id}"],
+    port: 3116,
+    startCommand: "pnpm --dir apps/astro-app run start",
+    title: "Astro API",
+  },
+  {
+    name: "hono-app",
+    appDir: "apps/hono-app",
+    buildCommand: "pnpm --dir apps/hono-app run build",
+    docsPath: "/api-docs",
+    docsText: ["Hono API", "Download OpenAPI Document"],
+    generateCommand: "pnpm --dir apps/hono-app run generate",
+    openApiFile: "apps/hono-app/public/openapi.json",
+    openApiPaths: ["/users/{id}"],
+    port: 3117,
+    startCommand: "pnpm --dir apps/hono-app run start",
+    title: "Hono API",
+  },
+  {
+    name: "express-app",
+    appDir: "apps/express-app",
+    buildCommand: "pnpm --dir apps/express-app run build",
+    docsPath: "/api-docs",
+    docsText: ["Express API", "Download OpenAPI Document"],
+    generateCommand: "pnpm --dir apps/express-app run generate",
+    openApiFile: "apps/express-app/public/openapi.json",
+    openApiPaths: ["/users/{id}"],
+    port: 3118,
+    startCommand: "pnpm --dir apps/express-app run start",
+    title: "Express API",
   },
   {
     name: "next-app-adapter",

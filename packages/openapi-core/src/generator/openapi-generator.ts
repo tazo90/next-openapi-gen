@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 
-import { DEFAULT_GENERATE_TEMPLATE_PATH } from "../config/defaults.js";
+import { DEFAULT_JSON_TEMPLATE_PATH } from "../config/defaults.js";
 import { normalizeOpenApiConfig } from "../config/normalize.js";
 import type { GenerationAdapters } from "../core/adapters.js";
 import type { NextOpenApiConfigFile } from "../core/config/types.js";
@@ -39,7 +39,7 @@ export class OpenApiGenerator {
   constructor(opts: OpenApiGeneratorOptions) {
     const templatePath = opts.config
       ? undefined
-      : path.resolve(opts.templatePath ?? DEFAULT_GENERATE_TEMPLATE_PATH);
+      : path.resolve(opts.templatePath ?? DEFAULT_JSON_TEMPLATE_PATH);
     this.template = opts.config ? toTemplate(opts.config) : readOpenApiTemplate(templatePath!);
     this.config = this.getConfig();
     this.runtime = opts.runtime;

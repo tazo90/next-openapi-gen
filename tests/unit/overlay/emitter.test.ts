@@ -70,7 +70,7 @@ actions:
           files: ["./overlays/generate.yaml"],
         },
       });
-      const artifacts = await createOverlayEmitter().emit(context as never);
+      const artifacts = await createOverlayEmitter().emit(context);
 
       expect(context.openapiDocument.info.title).toBe("Public API");
       expect(artifacts).toEqual([
@@ -97,7 +97,7 @@ actions:
       await createOverlayEmitter().emit(
         createEmitterContext(root, {
           generate: { files: ["./overlays/**/*.yaml"] },
-        }) as never,
+        }),
       );
 
       expect(fs.readFileSync(path.join(root, "public", "overlay.yaml"), "utf8")).toContain(
@@ -121,6 +121,98 @@ actions:
           }) as never,
         ),
       ).rejects.toThrow(/Invalid Overlay document/);
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it("skips apply when targetFormat does not match the OpenAPI document", async () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-overlay-format-"));
+    try {
+      fs.mkdirSync(path.join(root, "overlays"), { recursive: true });
+      fs.writeFileSync(
+        path.join(root, "overlays", "asyncapi.yaml"),
+        `overlay: 1.2.0
+info:
+  title: Events
+  version: 1.0.0
+targetFormat: asyncapi
+actions:
+  - target: "$.info"
+    update:
+      title: Should not apply
+`,
+      );
+
+      const context = createEmitterContext(root, {
+        version: "1.2.0",
+        apply: ["./overlays/asyncapi.yaml"],
+      });
+      const artifacts = await createOverlayEmitter().emit(context);
+
+      expect(context.openapiDocument.info.title).toBe("Internal API");
+      expect(artifacts).toEqual([]);
+      expect(context.diagnostics.getAll()).toEqual([
+        expect.objectContaining({
+          code: "OVERLAY_TARGET_FORMAT_MISMATCH",
+          severity: "error",
+        }),
+      ]);
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it("writes $self and merged reusable actions for Overlay 1.2 generate", async () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-overlay-12-"));
+    try {
+      fs.mkdirSync(path.join(root, "overlays"), { recursive: true });
+      fs.writeFileSync(
+        path.join(root, "overlays", "first.yaml"),
+        `overlay: 1.2.0
+info:
+  title: Generated
+  version: 1.0.0
+components:
+  actions:
+    updateTitle:
+      fields:
+        update:
+          title: Public
+actions:
+  - $ref: "#/components/actions/updateTitle"
+    target: "$.info"
+`,
+      );
+      fs.writeFileSync(
+        path.join(root, "overlays", "second.yaml"),
+        `overlay: 1.2.0
+info:
+  title: Extra
+  version: 1.0.0
+components:
+  actions:
+    updateDescription:
+      fields:
+        update:
+          description: Partner
+actions:
+  - $ref: "#/components/actions/updateDescription"
+    target: "$.info"
+`,
+      );
+
+      const context = createEmitterContext(root, {
+        version: "1.2.0",
+        generate: { files: ["./overlays/*.yaml"] },
+      });
+      await createOverlayEmitter().emit(context);
+
+      const generated = fs.readFileSync(path.join(root, "public", "overlay.yaml"), "utf8");
+      expect(generated).toContain("overlay: 1.2.0");
+      expect(generated).toContain("$self:");
+      expect(generated).toContain("updateTitle:");
+      expect(generated).toContain("updateDescription:");
     } finally {
       fs.rmSync(root, { recursive: true, force: true });
     }

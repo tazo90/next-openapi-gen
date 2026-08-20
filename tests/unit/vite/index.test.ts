@@ -15,6 +15,8 @@ vi.mock("@workspace/openapi-core/core/watch.js", () => ({
   watchProject,
 }));
 
+import { createTanStackFrameworkSource } from "@workspace/openapi-framework-tanstack";
+
 import { createViteOpenApiPlugin } from "../../../packages/next-openapi-gen/src/vite/index.ts";
 
 describe("createViteOpenApiPlugin", () => {
@@ -27,16 +29,24 @@ describe("createViteOpenApiPlugin", () => {
       configPath: "next-openapi.config.ts",
     });
 
+    expect(plugin.name).toBe("next-openapi-gen");
+
     await plugin.buildStart();
     await plugin.configureServer();
 
     expect(generateProject).toHaveBeenCalledWith(
       expect.objectContaining({
+        adapters: expect.objectContaining({
+          createFrameworkSource: createTanStackFrameworkSource,
+        }),
         configPath: "next-openapi.config.ts",
       }),
     );
     expect(watchProject).toHaveBeenCalledWith(
       expect.objectContaining({
+        adapters: expect.objectContaining({
+          createFrameworkSource: createTanStackFrameworkSource,
+        }),
         configPath: "next-openapi.config.ts",
       }),
     );

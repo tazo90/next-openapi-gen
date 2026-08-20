@@ -1,0 +1,21 @@
+{
+  "name": "remix-app",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node -e \"process.exit(0)\"",
+    "check": "pnpm format:check && pnpm lint",
+    "dev": "PORT=3113 DOCS_TITLE=\"Remix API\" node server.mjs",
+    "format": "oxfmt --config ../../oxfmt.config.ts --ignore-path ../../.gitignore .",
+    "format:check": "oxfmt --config ../../oxfmt.config.ts --ignore-path ../../.gitignore --check .",
+    "generate": "pnpm exec openapi-gen generate",
+    "lint": "oxlint --config ../../oxlint.config.ts . --ignore-path ../../.gitignore --deny-warnings",
+    "start": "PORT=3113 DOCS_TITLE=\"Remix API\" node server.mjs"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "next-openapi-gen": "workspace:*",
+    "typescript": "catalog:"
+  }
+}

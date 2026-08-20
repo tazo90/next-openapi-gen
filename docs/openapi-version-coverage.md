@@ -5,7 +5,7 @@ This document describes how `next-openapi-gen` supports OpenAPI `3.0`, `3.1`, `3
 Feature status uses three buckets:
 
 - `generated`: emitted directly from route metadata, TypeScript types, or Zod schemas
-- `template/custom`: preserved from `next.openapi.json` or `schemaFiles`
+- `template/custom`: preserved from `openapi-gen.config.ts` or `schemaFiles`
 - `validated`: covered by version-aware tests and schema validation
 
 ## Shared Strategy
@@ -15,7 +15,7 @@ Feature status uses three buckets:
 - OpenAPI `3.2` builds on the `3.1` schema model because `3.2` is backward-compatible with `3.1`.
 - The root `openapi` field is the only version selector; `next-openapi-gen` derives the internal target version from that string.
 - Explicit `@response` metadata wins over inferred responses.
-- Comma-separated `@auth` metadata emits alternative security requirements, one scheme per entry. Richer `securitySchemes` modeling still comes from templates or custom OpenAPI fragments.
+- `@auth` and `@security` emit operation security requirements: comma is OR, semicolon is AND, and scopes attach after the first `:`. Referenced built-in presets (`bearer`, `basic`, `apikey`) emit default scheme objects when `components.securitySchemes` does not already define them. OAuth/OIDC flow objects still come from templates or custom OpenAPI fragments.
 - TypeScript checker support is used selectively for App Router response inference and path-alias/module resolution. The checker runs through the project-installed TypeScript compiler when available, uses TypeScript 7's native API when exposed, and otherwise falls back to the bundled TypeScript 6 compatibility API while supporting consumer TypeScript `>=5.9 <8`.
 - Zod schemas still default to AST conversion, but selected Zod 4 constructs can use a runtime-assisted export path so request and response variants diverge only when the emitted schemas actually differ.
 
@@ -28,15 +28,15 @@ Feature status uses three buckets:
 
 ## OpenAPI 3.0 Baseline
 
-| Area                                                                                                                                            | Status                                      | Notes                                                                                                                      |
-| ----------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| Root document fields valid for the target version (`info`, `servers`, `security`, `tags`, `externalDocs`, `paths`, etc.)                        | `template/custom`, `validated`              | Generator preserves version-valid template fields instead of dropping them during finalization.                            |
-| Components (`schemas`, `responses`, `parameters`, `requestBodies`, `headers`, `examples`, `links`, `callbacks`, `pathItems`, `securitySchemes`) | `generated`, `template/custom`, `validated` | Generated coverage remains strongest for `schemas`, `responses`, and operation-level parameter/request/response objects.   |
-| Parameters (`path`, `query`, `header`, `cookie`) with schema/content                                                                            | `generated`, `template/custom`, `validated` | Generated parameters now preserve richer schema fields instead of only `type/enum/description`.                            |
-| Request/response media objects                                                                                                                  | `generated`, `template/custom`, `validated` | Inline and referenced bodies are preserved and normalized per target version.                                              |
-| Error response components and security requirements                                                                                             | `generated`, `template/custom`, `validated` | Route metadata generates operation security requirements; richer scheme objects are preserved from templates/custom files. |
-| Links, callbacks, reusable examples, path items                                                                                                 | `template/custom`, `validated`              | Preserved from templates and custom schema files.                                                                          |
-| App Router response inference                                                                                                                   | `generated`, `validated`                    | Typed `NextResponse.json(...)` / `Response.json(...)` responses can be inferred when `@response` is absent.                |
+| Area                                                                                                                                            | Status                                      | Notes                                                                                                                                                                              |
+| ----------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Root document fields valid for the target version (`info`, `servers`, `security`, `tags`, `externalDocs`, `paths`, etc.)                        | `template/custom`, `validated`              | Generator preserves version-valid template fields instead of dropping them during finalization.                                                                                    |
+| Components (`schemas`, `responses`, `parameters`, `requestBodies`, `headers`, `examples`, `links`, `callbacks`, `pathItems`, `securitySchemes`) | `generated`, `template/custom`, `validated` | Generated coverage remains strongest for `schemas`, `responses`, and operation-level parameter/request/response objects.                                                           |
+| Parameters (`path`, `query`, `header`, `cookie`) with schema/content                                                                            | `generated`, `template/custom`, `validated` | Generated parameters now preserve richer schema fields instead of only `type/enum/description`.                                                                                    |
+| Request/response media objects                                                                                                                  | `generated`, `template/custom`, `validated` | Inline and referenced bodies are preserved and normalized per target version.                                                                                                      |
+| Error response components and security requirements                                                                                             | `generated`, `template/custom`, `validated` | Route metadata generates operation security (OR/AND/scopes) and default objects for the three built-in presets. OAuth/OIDC flow objects are preserved from templates/custom files. |
+| Links, callbacks, reusable examples, path items                                                                                                 | `template/custom`, `validated`              | Preserved from templates and custom schema files.                                                                                                                                  |
+| App Router response inference                                                                                                                   | `generated`, `validated`                    | Typed `NextResponse.json(...)` / `Response.json(...)` responses can be inferred when `@response` is absent.                                                                        |
 
 ## OpenAPI 3.1 Additions
 

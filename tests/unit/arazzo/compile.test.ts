@@ -46,6 +46,29 @@ describe("Arazzo compile", () => {
     ]);
   });
 
+  it("leaves steps without operationId unchanged and accepts a file path", () => {
+    const diagnostics = new DiagnosticsCollector();
+    const compiled = compileArazzoDescription(
+      {
+        arazzo: "1.1.0",
+        info: { title: "Purchase", version: "1.0.0" },
+        sourceDescriptions: [{ name: "openapi", type: "openapi", url: "./openapi.json" }],
+        workflows: [
+          {
+            workflowId: "purchaseOrder",
+            steps: [{ stepId: "wait" }],
+          },
+        ],
+      },
+      ir,
+      diagnostics,
+      "workflows/purchase.arazzo.yaml",
+    );
+
+    expect(compiled.workflows[0]?.steps[0]).toEqual({ stepId: "wait" });
+    expect(diagnostics.getAll()).toEqual([]);
+  });
+
   it("reports unknown operationIds", () => {
     const diagnostics = new DiagnosticsCollector();
     compileArazzoDescription(

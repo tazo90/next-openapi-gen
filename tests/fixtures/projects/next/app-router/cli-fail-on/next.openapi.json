@@ -1,0 +1,14 @@
+{
+  "openapi": "3.2.0",
+  "info": {
+    "title": "CLI fail-on fixture",
+    "version": "1.0.0"
+  },
+  "apiDir": "./src/app/api",
+  "schemaDir": "./src",
+  "schemaType": "typescript",
+  "outputDir": "./public",
+  "outputFile": "openapi.json",
+  "includeOpenApiRoutes": false,
+  "debug": false
+}

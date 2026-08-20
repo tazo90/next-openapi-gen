@@ -57,8 +57,8 @@ export function parseGenericTypeString(
     return null;
   }
 
-  const baseTypeName = match[1]?.trim() || "";
-  const typeArgsString = match[2]?.trim() || "";
+  const baseTypeName = (match[1] as string).trim();
+  const typeArgsString = (match[2] as string).trim();
 
   return {
     baseTypeName,
@@ -226,8 +226,6 @@ export function getExampleForParam(
   switch (paramName.toLowerCase()) {
     case "slug":
       return "slug";
-    case "uuid":
-      return "123e4567-e89b-12d3-a456-426614174000";
     case "username":
       return "johndoe";
     case "email":

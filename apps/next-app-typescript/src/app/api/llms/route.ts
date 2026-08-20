@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import "@/types/llms";
 
 /**
  * GET /api/llms

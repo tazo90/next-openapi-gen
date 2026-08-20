@@ -2,22 +2,76 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
   inferResponsesForExport,
   inferResponsesForExports,
 } from "@workspace/openapi-core/routes/typescript-response-inference.js";
+import * as typescriptProject from "@workspace/openapi-core/shared/typescript-project.js";
 import { clearTypeScriptProjectCache } from "@workspace/openapi-core/shared/typescript-project.js";
-import { clearTypeScriptRuntimeCache } from "@workspace/openapi-core/shared/typescript-runtime.js";
+import {
+  clearTypeScriptRuntimeCache,
+  TypeScriptUnavailableError,
+} from "@workspace/openapi-core/shared/typescript-runtime.js";
 
 describe("TypeScript response inference", () => {
   const roots: string[] = [];
 
   afterEach(() => {
+    vi.restoreAllMocks();
     clearTypeScriptProjectCache();
     clearTypeScriptRuntimeCache();
     roots.splice(0).forEach((root) => fs.rmSync(root, { recursive: true, force: true }));
+  });
+
+  it("returns an empty map when TypeScript is unavailable", () => {
+    vi.spyOn(typescriptProject, "getTypeScriptAdapter").mockImplementation(() => {
+      throw new TypeScriptUnavailableError({
+        packagePath: "/virtual/typescript",
+        support: "too-old",
+        version: "4.9.5",
+        ts: undefined,
+      });
+    });
+
+    expect(inferResponsesForExports("/virtual/route.ts", ["GET"]).size).toBe(0);
+    expect(inferResponsesForExport("/virtual/route.ts", "GET")).toEqual({
+      responses: [],
+      diagnostics: [],
+    });
+  });
+
+  it("covers leftover unexpected errors, redirects, empty handlers, and cache reuse", () => {
+    vi.spyOn(typescriptProject, "getTypeScriptAdapter").mockImplementation(() => {
+      throw new Error("boom");
+    });
+    expect(() => inferResponsesForExports("/virtual/route.ts", ["GET"])).toThrow("boom");
+    vi.restoreAllMocks();
+
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-response-leftover-"));
+    roots.push(root);
+    const routeFile = path.join(root, "route.ts");
+    fs.writeFileSync(
+      routeFile,
+      `
+export function GET() {
+  return Response.redirect("/next", 308);
+}
+
+export function POST() {}
+
+export const PATCH = () => new Response(null, { status: 204 });
+`,
+    );
+
+    expect(inferResponsesForExport(routeFile, "GET").responses).toEqual(
+      expect.arrayContaining([expect.objectContaining({ statusCode: "308" })]),
+    );
+    expect(inferResponsesForExport(routeFile, "POST").responses).toEqual([]);
+    expect(inferResponsesForExports(routeFile, ["GET", "POST", "MISSING"]).get("GET")).toEqual(
+      inferResponsesForExport(routeFile, "GET"),
+    );
   });
 
   it("collects multiple typed return branches with status codes", () => {
@@ -236,6 +290,38 @@ export async function GET(flag: boolean) {
     expect(result.size).toBe(0);
   });
 
+  it("infers NextResponse, array payloads, and Date fields", () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-response-next-"));
+    roots.push(root);
+
+    const routeFile = path.join(root, "route.ts");
+    fs.writeFileSync(
+      routeFile,
+      `type Item = { id: string; createdAt: Date };
+
+export async function GET() {
+  return NextResponse.json([{ id: "1", createdAt: new Date() }] satisfies Item[]);
+}
+
+export async function POST() {
+  return NextResponse.json({ id: "1", createdAt: new Date() } satisfies Item, { status: 201 });
+}
+`,
+    );
+
+    const getResult = inferResponsesForExport(routeFile, "GET");
+    const postResult = inferResponsesForExport(routeFile, "POST");
+
+    expect(getResult.responses[0]).toMatchObject({
+      contentType: "application/json",
+      source: "typescript",
+    });
+    expect(postResult.responses[0]).toMatchObject({
+      statusCode: "201",
+      source: "typescript",
+    });
+  });
+
   it("infers redirect status codes from Response.redirect calls", () => {
     const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-response-redirect-"));
     roots.push(root);
@@ -257,6 +343,191 @@ export async function GET(flag: boolean) {
         source: "typescript",
       },
     ]);
+  });
+
+  it("covers signature inference, unresolved returns, and inline schema branches", () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-response-branches-"));
+    roots.push(root);
+
+    const routeFile = path.join(root, "route.ts");
+    fs.writeFileSync(
+      routeFile,
+      `
+type User = { id: string };
+type Item = { name: string };
+interface Wrapper<T> { data: T }
+
+export async function typed(): Promise<Wrapper<User>> {
+  throw new Error("no return");
+}
+
+export const expression = async function () {
+  return Response.json({ ok: true as const, count: 1 as const, flag: false as const });
+};
+
+export async function GET() {
+  if (Date.now() > 0) {
+    return NextResponse.redirect("https://example.com");
+  }
+  return Response.redirect("https://example.com", { status: 308 });
+}
+
+export async function POST() {
+  const payload = { id: "1" };
+  return payload;
+}
+
+export async function PUT() {
+  const payload: {
+    name: string;
+    nickname: string | null;
+    tags: [string, string];
+    extras: Record<string, number>;
+    optional?: string;
+  } = {
+    name: "Ada",
+    nickname: null,
+    tags: ["a", "b"],
+    extras: { count: 1 },
+  };
+  return Response.json(payload);
+}
+
+export async function PATCH() {
+  return Response.json({ kind: \`user-\${"1"}\` });
+}
+
+export async function DELETE() {
+  return Response.json({ id: "1" });
+  return Response.json({ id: "1" });
+}
+
+function hidden() {
+  return Response.json({ hidden: true });
+}
+`,
+    );
+
+    expect(inferResponsesForExport(routeFile, "typed").responses).toEqual([
+      expect.objectContaining({ typeName: "User", source: "typescript" }),
+    ]);
+    expect(inferResponsesForExport(routeFile, "expression").responses[0]).toMatchObject({
+      contentType: "application/json",
+      source: "typescript",
+    });
+    expect(inferResponsesForExport(routeFile, "GET").responses).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ statusCode: "302", source: "typescript" }),
+        expect.objectContaining({ statusCode: "308", source: "typescript" }),
+      ]),
+    );
+    expect(inferResponsesForExport(routeFile, "POST").diagnostics[0]?.code).toBe(
+      "response-inference-unresolved",
+    );
+    const putSchema = inferResponsesForExport(routeFile, "PUT").responses[0]?.schema as {
+      properties?: Record<string, unknown>;
+    };
+    expect(putSchema?.properties).toMatchObject({
+      name: { type: "string" },
+      nickname: expect.objectContaining({ nullable: true }),
+    });
+    expect(inferResponsesForExport(routeFile, "PATCH").responses[0]?.schema).toMatchObject({
+      type: "object",
+    });
+    expect(inferResponsesForExport(routeFile, "DELETE").responses).toHaveLength(1);
+    expect(inferResponsesForExport(routeFile, "hidden").responses).toEqual([]);
+    expect(inferResponsesForExports(routeFile, ["missing"]).size).toBe(0);
+  });
+
+  it("infers leftover named arrays, empty json, 204, and optional-only objects", () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-response-named-"));
+    roots.push(root);
+    const routeFile = path.join(root, "route.ts");
+    fs.writeFileSync(
+      routeFile,
+      `
+type User = { id: string };
+type OptionalUser = { nick?: string };
+type Dictionary = { [key: string]: number };
+const NextResponse = { json: Response.json.bind(Response) };
+
+export function GET() {
+  return Response.json();
+}
+
+export function POST() {
+  return NextResponse.json({ id: "1" } as User);
+}
+
+export function PUT() {
+  return new Response("", { status: 204 });
+}
+
+export function PATCH() {
+  return Response.json({ nick: "ada" } as OptionalUser);
+}
+
+export function DELETE() {
+  return Response.json({ count: 1 } as Dictionary);
+}
+
+export async function HEAD(): Promise<User[]> {
+  return [{ id: "1" }];
+}
+
+export function OPTIONS() {
+  return Response.json({ id: "1" } as User);
+}
+`,
+    );
+
+    expect(inferResponsesForExport(routeFile, "GET").responses[0]).toMatchObject({
+      statusCode: "200",
+    });
+    expect(inferResponsesForExport(routeFile, "POST").responses[0]).toBeDefined();
+    expect(inferResponsesForExport(routeFile, "PUT").responses[0]).toMatchObject({
+      statusCode: "204",
+    });
+    expect(inferResponsesForExport(routeFile, "PATCH").responses[0]).toBeDefined();
+    expect(inferResponsesForExport(routeFile, "DELETE").responses[0]).toBeDefined();
+    expect(inferResponsesForExport(routeFile, "HEAD").responses[0]).toBeDefined();
+    expect(inferResponsesForExport(routeFile, "OPTIONS").responses[0]).toBeDefined();
+  });
+
+  it("infers leftover literal, tuple, array, and nullable union responses", () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-response-literals-"));
+    roots.push(root);
+    const routeFile = path.join(root, "route.ts");
+    fs.writeFileSync(
+      routeFile,
+      `
+export function GET() {
+  return Response.json({
+    label: "ok" as const,
+    count: 2 as const,
+    enabled: true as const,
+    note: \`user-\${"id"}\`,
+    tags: ["a", "b"] as [string, string],
+    scores: [1, 2],
+    empty: null,
+    maybe: null as string | null,
+  });
+}
+`,
+    );
+
+    const schema = inferResponsesForExport(routeFile, "GET").responses[0]?.schema;
+    expect(schema).toMatchObject({
+      type: "object",
+      properties: {
+        label: { type: "string", enum: ["ok"] },
+        count: { type: "number", enum: [2] },
+        enabled: { type: "boolean" },
+        note: { type: "string" },
+        tags: { type: "array" },
+        scores: { type: "array" },
+      },
+    });
   });
 });
 

@@ -28,7 +28,11 @@ type RenderUiTemplateOptions = {
 };
 
 export function resolveUiTemplatePath(framework: InitFramework, templateFile: string): string {
-  return path.join(uiTemplatesDir, getUiFrameworkDirectory(framework), templateFile);
+  return path.join(
+    uiTemplatesDir,
+    getUiFrameworkDirectory(framework),
+    getUiTemplateFileName(framework, templateFile),
+  );
 }
 
 export function renderUiTemplate(
@@ -47,6 +51,30 @@ export function renderUiTemplate(
     .replaceAll("__NEXT_OPENAPI_GEN_ROUTE_PATH__", options.routePath);
 }
 
+export function getUiTemplateFileName(framework: InitFramework, templateFile: string): string {
+  const base = templateFile.replace(/\.tsx$/, "");
+  switch (framework) {
+    case "sveltekit":
+      return `${base}.svelte`;
+    case "nuxt":
+      return `${base}.vue`;
+    case "astro":
+      return `${base}.astro`;
+    case "hono":
+    case "express":
+      return `${base}.ts`;
+    case "next":
+    case "tanstack":
+    case "react-router":
+    case "remix":
+      return templateFile;
+    default: {
+      const exhaustive: never = framework;
+      throw new Error(`Unknown init framework "${String(exhaustive)}"`);
+    }
+  }
+}
+
 function getUiFrameworkDirectory(framework: InitFramework) {
   switch (framework) {
     case "next":
@@ -55,5 +83,21 @@ function getUiFrameworkDirectory(framework: InitFramework) {
       return "tanstack";
     case "react-router":
       return "reactrouter";
+    case "remix":
+      return "remix";
+    case "sveltekit":
+      return "sveltekit";
+    case "nuxt":
+      return "nuxt";
+    case "astro":
+      return "astro";
+    case "hono":
+      return "hono";
+    case "express":
+      return "express";
+    default: {
+      const exhaustive: never = framework;
+      throw new Error(`Unknown init framework "${String(exhaustive)}"`);
+    }
   }
 }

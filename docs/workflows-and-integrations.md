@@ -19,6 +19,13 @@ generation to happen as part of local dev or build hooks.
 - `next-openapi-gen/react-router`: best for React Router projects that want a
   framework-specific plugin import. It uses the React Router framework adapters
   directly.
+- `next-openapi-gen/remix` and `next-openapi-gen/sveltekit`: Vite plugins for
+  Remix and SvelteKit.
+- `next-openapi-gen/nuxt`: Nuxt module that generates before the Nitro build.
+- `next-openapi-gen/astro`: Astro integration that injects the Vite plugin.
+- `next-openapi-gen/hono`: Vite plugin for Hono apps.
+- `next-openapi-gen/express`: `generateExpressOpenApi()` helper. Express has no
+  Next-style adapter; use the CLI or call the helper from `listen`.
 
 ### Next.js
 
@@ -71,6 +78,46 @@ export default defineConfig({
 
 If your React Router app already standardizes on the shared Vite integration
 surface, the checked-in example app shows that path too.
+
+### Remix and SvelteKit
+
+```ts
+import { createRemixOpenApiPlugin } from "next-openapi-gen/remix";
+import { defineConfig } from "vite";
+
+export default defineConfig({
+  plugins: [createRemixOpenApiPlugin()],
+});
+```
+
+SvelteKit uses `createSvelteKitOpenApiPlugin` from `next-openapi-gen/sveltekit`.
+
+### Nuxt
+
+```ts
+import { createNuxtOpenApiModule } from "next-openapi-gen/nuxt";
+
+export default defineNuxtConfig({
+  modules: [createNuxtOpenApiModule()],
+});
+```
+
+### Astro
+
+```ts
+import { createAstroOpenApiIntegration } from "next-openapi-gen/astro";
+import { defineConfig } from "astro/config";
+
+export default defineConfig({
+  integrations: [createAstroOpenApiIntegration()],
+});
+```
+
+### Hono and Express
+
+Hono can attach `createHonoOpenApiPlugin` from `next-openapi-gen/hono` in Vite.
+Express stays CLI-first, or call `generateExpressOpenApi()` from
+`next-openapi-gen/express` before `listen`.
 
 ### Route scanning only vs framework hooks
 
@@ -229,6 +276,30 @@ Common examples include:
 If a tool accepts a standard OpenAPI file, it can usually consume the generated
 `openapi.json`.
 
+### Client SDK generation after the spec write
+
+`clientSdk` runs an external generator after the spec is written so you do not
+have to remember a second command. This project does not ship a client
+generator; it invokes the tool you already use.
+
+[`../apps/next-app-ts-config`](../apps/next-app-ts-config) is the checked-in
+golden path: a typed `clientSdk` entry plus
+`scripts/generate-typescript-client.mjs`, a thin Node wrapper with the contract
+`wrapper <spec-path> <output-dir>`. The wrapper translates that contract to
+`openapi-generator-cli` (`typescript-fetch`).
+
+Default `pnpm generate` leaves the entry disabled so CI and local generate stay
+free of Java. Install `@openapitools/openapi-generator-cli` in the app (it
+needs a JRE), then:
+
+```bash
+cd apps/next-app-ts-config
+GENERATE_CLIENT_SDK=1 pnpm generate
+```
+
+See [Client SDK generation](./configuration-reference.md#client-sdk-generation)
+for the command shape, cache-reuse rule, and security notes.
+
 ## Keeping docs current in development and CI
 
 Two common patterns work well:
@@ -271,10 +342,16 @@ Choose an example app based on your use case:
   support
 - [../apps/tanstack-app](../apps/tanstack-app) for TanStack Router parity
 - [../apps/react-router-app](../apps/react-router-app) for React Router parity
+- [../apps/remix-app](../apps/remix-app) for Remix file-route parity
+- [../apps/sveltekit-app](../apps/sveltekit-app) for SvelteKit `+server` parity
+- [../apps/nuxt-app](../apps/nuxt-app) for Nuxt/Nitro filename-method parity
+- [../apps/astro-app](../apps/astro-app) for Astro endpoint parity
+- [../apps/hono-app](../apps/hono-app) for Hono call-expression parity
+- [../apps/express-app](../apps/express-app) for Express call-expression parity
 - [../apps/next-app-next-config](../apps/next-app-next-config),
   [../apps/next-app-ts-config](../apps/next-app-ts-config), and
   [../apps/next-app-adapter](../apps/next-app-adapter) for config and adapter
-  integration paths
+  integration paths. `next-app-ts-config` also demonstrates `clientSdk`.
 
 For the broader coverage map that shows what each example is meant to prove, see
 [example-app-coverage-plan](./example-app-coverage-plan.md).

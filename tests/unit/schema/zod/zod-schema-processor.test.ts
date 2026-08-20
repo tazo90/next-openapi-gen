@@ -14,7 +14,7 @@ describe("ZodSchemaProcessor", () => {
         type: "string",
       })),
     };
-    const processor = new ZodSchemaProcessor(converter as never);
+    const processor = new ZodSchemaProcessor(converter);
 
     expect(processor.kind).toBe("zod");
     expect(processor.getDefinedSchemas()).toEqual({

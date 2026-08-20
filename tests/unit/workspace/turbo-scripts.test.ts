@@ -67,6 +67,27 @@ describe("workspace Turbo script ownership", () => {
     expect(turboConfig.tasks["//#knip:ci"]?.dependsOn).toEqual(["next-openapi-gen#build"]);
   });
 
+  it("builds the public CLI before coverage so shipped-bin integration tests can run", () => {
+    const packageJson = JSON.parse(
+      fs.readFileSync(path.join(workspaceRoot, "package.json"), "utf8"),
+    ) as {
+      scripts: Record<string, string>;
+    };
+    const turboConfig = JSON.parse(
+      fs.readFileSync(path.join(workspaceRoot, "turbo.json"), "utf8"),
+    ) as {
+      tasks: Record<string, { dependsOn?: string[] }>;
+    };
+
+    expect(packageJson.scripts["test:coverage"]).toContain(
+      "pnpm exec turbo run build --filter=next-openapi-gen...",
+    );
+    expect(turboConfig.tasks["test:coverage"]?.dependsOn).toEqual([
+      "transit",
+      "next-openapi-gen#build",
+    ]);
+  });
+
   it("keeps the public CLI bins pointed at a committed wrapper", () => {
     const packageJson = JSON.parse(
       fs.readFileSync(

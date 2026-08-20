@@ -45,5 +45,5 @@ The generator still relies primarily on static AST analysis, but it now uses a s
 
 - The generator preserves the strongest OpenAPI-representable base schema for transforms and refinements, but it does not serialize arbitrary runtime predicates.
 - The runtime-assisted Zod 4 export path is intentionally selective. It currently targets features such as `coerce`, `pipe`, `templateLiteral`, `stringbool`, and static `.meta(...)` payloads, while the broader converter still runs through AST analysis.
-- `@auth` metadata currently emits alternative security requirements for comma-separated values. Combined requirements and advanced scheme fields should still be modeled in templates or reusable OpenAPI fragments.
+- `@auth` and `@security` generate operation requirements: comma is OR, semicolon is AND, and `Scheme:scope1,scope2` or `Scheme:scope1|scope2` attaches scopes. Referenced built-in presets emit default `http` / `apiKey` scheme objects when missing. OAuth and OIDC flow objects still belong in templates or `schemaFiles`.
 - Response inference is selective and best-effort. It supports named response types, inline object responses, multiple return paths, and `204` responses, but explicit `@response` tags remain the most deterministic option when stable component names matter.

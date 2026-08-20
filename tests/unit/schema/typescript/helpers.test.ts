@@ -52,12 +52,14 @@ describe("TypeScript schema helpers", () => {
       description: "display name",
       nullable: true,
     });
+    expect(extractKeysFromLiteralType(t.tsNumberKeyword())).toEqual([]);
     expect(extractKeysFromLiteralType(t.tsLiteralType(t.stringLiteral("slug")))).toEqual(["slug"]);
     expect(
       extractKeysFromLiteralType(
         t.tsUnionType([
           t.tsLiteralType(t.stringLiteral("a")),
           t.tsLiteralType(t.stringLiteral("b")),
+          t.tsLiteralType(t.numericLiteral(1)),
         ]),
       ),
     ).toEqual(["a", "b"]);
@@ -189,6 +191,38 @@ describe("TypeScript schema helpers", () => {
     ).toBe("11111111-1111-1111-1111-111111111111");
     // An empty enum carries no usable value, so the heuristics still apply.
     expect(getExampleForParam("custom", { type: "string", enum: [] })).toBe("example");
+    expect(splitGenericTypeArguments("User,")).toEqual(["User"]);
+    expect(getExampleForParam("username")).toBe("johndoe");
+    expect(getExampleForParam("email")).toBe("user@example.com");
+    expect(getExampleForParam("name")).toBe("name");
+    expect(getExampleForParam("page")).toBe(1);
+    expect(getExampleForParam("custom", { type: [] })).toBe("example");
+    expect(getExampleForParam("custom", { type: ["null"] })).toBe("example");
+    expect(getExampleForParam("custom", { type: ["number", "null"] })).toBe(1);
+    expect(createFormDataSchema({ type: "object", properties: {} })).toEqual({
+      type: "object",
+      properties: {},
+    });
+    expect(
+      createFormDataSchema({
+        type: "object",
+        properties: {
+          avatar: { type: "object", description: "user file" },
+        },
+      }).properties?.avatar,
+    ).toMatchObject({ type: "string", contentMediaType: "application/octet-stream" });
+    expect(createMultipartEncoding(undefined)).toBeUndefined();
+    expect(createMultipartEncoding({ type: "object" })).toBeUndefined();
+    expect(
+      createMultipartEncoding({
+        type: "object",
+        properties: {
+          photo: { type: "string", format: "binary" },
+          tags: { type: "array", items: { type: "string", format: "binary" } },
+          nested: { type: "object", properties: { file: { type: "string" } } },
+        },
+      }),
+    ).toBeTruthy();
     expect(detectContentType("UserBody", "text/plain")).toBe("text/plain");
     expect(detectContentType("MultipartFormData")).toBe("multipart/form-data");
     expect(detectContentType("UserBody")).toBe("application/json");

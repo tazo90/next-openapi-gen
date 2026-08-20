@@ -3,9 +3,26 @@ import { createRequire } from "module";
 import os from "os";
 import path from "path";
 
+import {
+  getNativeTypeArguments,
+  isNativeArrayType,
+  isNativeTupleType,
+  resolveNodeHandle,
+  typeToOpenApiSchema,
+} from "./native-typescript-schema.js";
+import type {
+  NativeAstModule,
+  NativeCheckerApi,
+  NativeNode,
+  NativeProject,
+  NativeProjectApi,
+  NativeSignature,
+  NativeSymbol,
+  NativeSyncModule,
+  NativeType,
+} from "./native-typescript-types.js";
 import { findTypeScriptConfigFile } from "./tsconfig-file.js";
 import type { Diagnostic, InferredResponseDefinition, OpenAPIDefinition } from "./types.js";
-import { isDateType } from "./typescript-adapter.js";
 import type {
   InferredRouteResponses,
   TypeScriptCompilerAdapter,
@@ -14,126 +31,6 @@ import type {
 import type { NativeTypeScriptRuntime } from "./typescript-runtime.js";
 
 const moduleRequire = createRequire(import.meta.url);
-
-type NativeProject = {
-  configPath: string | null;
-  project: NativeProjectApi;
-  syntheticConfigRoot?: string;
-  snapshot: NativeSnapshotApi;
-};
-
-type NativeProjectApi = {
-  checker: NativeCheckerApi;
-  compilerOptions: Record<string, unknown>;
-  configFileName: string;
-  program: {
-    getSourceFile(file: string): NativeNode | undefined;
-  };
-};
-
-type NativeSnapshotApi = {
-  dispose(): void;
-  getDefaultProjectForFile(file: string): NativeProjectApi | undefined;
-  getProject(configFileName: string): NativeProjectApi | undefined;
-  getProjects(): readonly NativeProjectApi[];
-};
-
-type NativeCheckerApi = {
-  getAliasedSymbol?(symbol: NativeSymbol): NativeSymbol;
-  getApparentType?(type: NativeType): NativeType | undefined;
-  getDeclaredTypeOfSymbol(symbol: NativeSymbol): NativeType | undefined;
-  getPropertiesOfType(type: NativeType): readonly NativeSymbol[];
-  getIndexInfosOfType(type: NativeType): readonly { keyType: NativeType; valueType: NativeType }[];
-  getReturnTypeOfSignature(signature: NativeSignature): NativeType | undefined;
-  getShorthandAssignmentValueSymbol(node: NativeNode): NativeSymbol | undefined;
-  getSignatureFromDeclaration?(node: NativeNode): NativeSignature | undefined;
-  getSignaturesOfType(type: NativeType, kind: number): readonly NativeSignature[];
-  getSymbolAtLocation(node: NativeNode): NativeSymbol | undefined;
-  getTypeArguments(type: NativeType): readonly NativeType[];
-  getTypeAtLocation(node: NativeNode): NativeType | undefined;
-  getTypeOfSymbol(symbol: NativeSymbol): NativeType | undefined;
-  getTypeOfSymbolAtLocation(symbol: NativeSymbol, location: NativeNode): NativeType | undefined;
-  isArrayLikeType(type: NativeType): boolean;
-  isArrayType?(type: NativeType): boolean;
-  isTupleType?(type: NativeType): boolean;
-  resolveName(
-    name: string,
-    meaning: number,
-    location?: NativeNode,
-    excludeGlobals?: boolean,
-  ): NativeSymbol | undefined;
-  typeToString(type: NativeType): string;
-};
-
-type NativeNode = {
-  arguments?: readonly NativeNode[];
-  body?: NativeNode;
-  declarationList?: { declarations: readonly NativeNode[] };
-  declarations?: readonly NativeNode[];
-  elements?: readonly NativeNode[];
-  expression?: NativeNode;
-  fileName?: string;
-  forEachChild<T>(visitor: (node: NativeNode) => T | undefined): T | undefined;
-  getSourceFile(): { fileName: string };
-  getText?(sourceFile?: NativeNode): string;
-  initializer?: NativeNode;
-  kind: number;
-  modifierFlags?: number;
-  name?: NativeNode;
-  node?: NativeNode;
-  operand?: NativeNode;
-  operator?: number;
-  parent?: NativeNode;
-  pos: number;
-  properties?: readonly NativeNode[];
-  statements?: readonly NativeNode[];
-  text?: string;
-  valueDeclaration?: NativeNode;
-};
-
-type NativeSignature = Record<string, unknown>;
-
-type NativeSymbol = {
-  declarations?: readonly NativeNodeHandle[];
-  flags: number;
-  getExportSymbol?(): NativeSymbol | undefined;
-  name: string;
-  valueDeclaration?: NativeNodeHandle;
-};
-
-type NativeNodeHandle = NativeNode | { resolve(project: NativeProjectApi): NativeNode | undefined };
-
-type NativeType = {
-  flags: number;
-  objectFlags?: number;
-  getAliasSymbol?(): NativeSymbol | undefined;
-  getStringIndexType?(): NativeType | undefined;
-  getSymbol?(): NativeSymbol | undefined;
-  getTypes?(): readonly NativeType[] | undefined;
-  isNumberLiteralType?(): boolean;
-  isStringLiteralType?(): boolean;
-  value?: string | number | boolean | bigint;
-};
-
-type NativeSyncModule = {
-  API: new (options?: { cwd?: string }) => {
-    close(): void;
-    parseConfigFile(file: string): { fileNames: string[]; options: Record<string, unknown> };
-    updateSnapshot(params?: {
-      openProject?: string;
-      fileChanges?: { changed?: string[]; created?: string[]; deleted?: string[] };
-    }): NativeSnapshotApi;
-  };
-  ModifierFlags: Record<string, number | undefined>;
-  ObjectFlags: Record<string, number | undefined>;
-  SignatureKind: Record<string, number | undefined>;
-  SymbolFlags: Record<string, number | undefined>;
-  TypeFlags: Record<string, number | undefined>;
-};
-
-type NativeAstModule = Record<string, unknown> & {
-  SyntaxKind: Record<string, number | undefined>;
-};
 
 export function createNativeTypeScriptAdapter({
   packagePath,
@@ -808,13 +705,16 @@ class NativeTypeScriptAdapter implements TypeScriptCompilerAdapter {
     type: NativeType,
     checker: NativeCheckerApi,
   ): string | undefined {
-    const firstTypeArgument = this.getTypeArguments(type, checker)[0];
+    const firstTypeArgument = getNativeTypeArguments(type, checker)[0];
     return firstTypeArgument ? this.extractNamedType(firstTypeArgument, checker) : undefined;
   }
 
   private extractNamedType(type: NativeType, checker: NativeCheckerApi): string | undefined {
-    if (this.isNativeArrayType(type, checker) || this.isNativeTupleType(type, checker)) {
-      const elementType = this.getTypeArguments(type, checker)[0];
+    if (
+      isNativeArrayType(type, checker, this.sync.ObjectFlags) ||
+      isNativeTupleType(type, checker, this.sync.ObjectFlags)
+    ) {
+      const elementType = getNativeTypeArguments(type, checker)[0];
       const elementName = elementType ? this.extractNamedType(elementType, checker) : undefined;
       return elementName ? `${elementName}[]` : undefined;
     }
@@ -838,216 +738,18 @@ class NativeTypeScriptAdapter implements TypeScriptCompilerAdapter {
     project: NativeProjectApi,
     seen: Set<string>,
   ): OpenAPIDefinition {
-    if (isDateType(type, checker)) {
-      return { type: "string", format: "date-time" };
-    }
-
-    const typeFlags = this.sync.TypeFlags;
-    const primitiveLikeFlags =
-      (typeFlags.StringLike ?? 0) |
-      (typeFlags.NumberLike ?? 0) |
-      (typeFlags.BooleanLike ?? 0) |
-      (typeFlags.BooleanLiteral ?? 0) |
-      (typeFlags.TemplateLiteral ?? 0) |
-      (typeFlags.Null ?? 0) |
-      (typeFlags.Undefined ?? 0);
-    const apparentType = checker.getApparentType?.(type);
-    if (
-      apparentType &&
-      !(type.flags & primitiveLikeFlags) &&
-      apparentType !== type &&
-      checker.getPropertiesOfType(apparentType).length > 0
-    ) {
-      type = apparentType;
-    }
-
-    const seenKey = checker.typeToString(type);
-    if (seen.has(seenKey)) {
-      return { type: "object" };
-    }
-
-    const trivialFlags =
-      primitiveLikeFlags |
-      (typeFlags.Any ?? 0) |
-      (typeFlags.Never ?? 0) |
-      (typeFlags.Unknown ?? 0) |
-      (typeFlags.Void ?? 0);
-    if (!(type.flags & trivialFlags)) {
-      seen.add(seenKey);
-    }
-
-    if (this.isStringLiteralType(type)) {
-      return { type: "string", enum: [String(type.value)] };
-    }
-
-    if (this.isNumberLiteralType(type)) {
-      return { type: "number", enum: [Number(type.value)] };
-    }
-
-    if (type.flags & (typeFlags.BooleanLiteral ?? 0)) {
-      return { type: "boolean", enum: [checker.typeToString(type) === "true"] };
-    }
-
-    if (type.flags & (typeFlags.TemplateLiteral ?? 0)) {
-      return { type: "string" };
-    }
-
-    if (type.flags & (typeFlags.StringLike ?? 0)) {
-      return { type: "string" };
-    }
-    if (type.flags & (typeFlags.NumberLike ?? 0)) {
-      return { type: "number" };
-    }
-    if (type.flags & (typeFlags.BooleanLike ?? 0)) {
-      return { type: "boolean" };
-    }
-    if (type.flags & (typeFlags.Null ?? 0)) {
-      return { type: "null" };
-    }
-
-    if (this.isUnionType(type)) {
-      const unionTypes = type.getTypes?.() ?? [];
-      const nullable = unionTypes.some((member) => Boolean(member.flags & (typeFlags.Null ?? 0)));
-      const nonNullTypes = unionTypes.filter((member) => !(member.flags & (typeFlags.Null ?? 0)));
-      const allLiterals = nonNullTypes.every(
-        (member) =>
-          this.isStringLiteralType(member) ||
-          this.isNumberLiteralType(member) ||
-          Boolean(member.flags & (typeFlags.BooleanLiteral ?? 0)),
-      );
-      if (allLiterals && nonNullTypes.length > 0) {
-        const enumValues = nonNullTypes.map((member) => {
-          if (this.isStringLiteralType(member)) {
-            return String(member.value);
-          }
-
-          if (this.isNumberLiteralType(member)) {
-            return Number(member.value);
-          }
-
-          return checker.typeToString(member) === "true";
-        });
-        const valueType = typeof enumValues[0];
-        return {
-          type: valueType === "number" ? "number" : valueType === "boolean" ? "boolean" : "string",
-          enum: enumValues,
-          ...(nullable ? { nullable: true } : {}),
-        };
-      }
-
-      if (nullable && nonNullTypes.length === 1 && nonNullTypes[0]) {
-        return {
-          ...this.typeToOpenApiSchema(nonNullTypes[0], checker, project, seen),
-          nullable: true,
-        };
-      }
-
-      return {
-        oneOf: nonNullTypes.map((member) =>
-          this.typeToOpenApiSchema(member, checker, project, seen),
-        ),
-      };
-    }
-
-    if (this.isNativeTupleType(type, checker)) {
-      const itemTypes = this.getTypeArguments(type, checker);
-      return {
-        type: "array",
-        prefixItems: itemTypes.map((itemType) =>
-          this.typeToOpenApiSchema(itemType, checker, project, seen),
-        ),
-        items: false,
-        minItems: itemTypes.length,
-        maxItems: itemTypes.length,
-      };
-    }
-
-    if (this.isNativeArrayType(type, checker)) {
-      const elementType = this.getTypeArguments(type, checker)[0];
-      return {
-        type: "array",
-        items: elementType
-          ? this.typeToOpenApiSchema(elementType, checker, project, seen)
-          : { type: "object" },
-      };
-    }
-
-    const properties = checker.getPropertiesOfType(type);
-    if (properties.length > 0) {
-      const schemaProperties: Record<string, OpenAPIDefinition> = {};
-      const required: string[] = [];
-      for (const property of properties) {
-        const propertyDeclaration = resolveNodeHandle(
-          property.valueDeclaration ?? property.declarations?.[0],
-          project,
-        );
-        if (!propertyDeclaration) {
-          continue;
-        }
-
-        const propertyType =
-          checker.getTypeOfSymbol(property) ??
-          checker.getTypeOfSymbolAtLocation(property, propertyDeclaration);
-        if (propertyType) {
-          schemaProperties[property.name] = this.typeToOpenApiSchema(
-            propertyType,
-            checker,
-            project,
-            seen,
-          );
-        }
-        if (!(property.flags & (this.sync.SymbolFlags.Optional ?? 0))) {
-          required.push(property.name);
-        }
-      }
-
-      return required.length > 0
-        ? { type: "object", properties: schemaProperties, required }
-        : { type: "object", properties: schemaProperties };
-    }
-
-    const indexInfos = checker.getIndexInfosOfType(type);
-    const numberIndexInfo = indexInfos.find(
-      (indexInfo) => checker.typeToString(indexInfo.keyType) === "number",
-    );
-    if (numberIndexInfo) {
-      return {
-        type: "array",
-        items: this.typeToOpenApiSchema(numberIndexInfo.valueType, checker, project, seen),
-      };
-    }
-
-    const stringIndexInfo = indexInfos.find(
-      (indexInfo) => checker.typeToString(indexInfo.keyType) === "string",
-    );
-    if (stringIndexInfo) {
-      return {
-        type: "object",
-        additionalProperties: this.typeToOpenApiSchema(
-          stringIndexInfo.valueType,
-          checker,
-          project,
-          seen,
-        ),
-      };
-    }
-
-    return { type: "object" };
+    return typeToOpenApiSchema(type, checker, project, seen, {
+      objectFlags: this.sync.ObjectFlags,
+      symbolFlags: this.sync.SymbolFlags,
+      typeFlags: this.sync.TypeFlags,
+    });
   }
 
   private unwrapPromiseType(type: NativeType, checker: NativeCheckerApi): NativeType {
     if (type.getSymbol?.()?.name === "Promise") {
-      return this.getTypeArguments(type, checker)[0] ?? type;
+      return getNativeTypeArguments(type, checker)[0] ?? type;
     }
     return type;
-  }
-
-  private getTypeArguments(type: NativeType, checker: NativeCheckerApi): readonly NativeType[] {
-    try {
-      return checker.getTypeArguments(type);
-    } catch {
-      return [];
-    }
   }
 
   private is(name: string, node: NativeNode | undefined): boolean {
@@ -1064,43 +766,6 @@ class NativeTypeScriptAdapter implements TypeScriptCompilerAdapter {
       this.is("TemplateHead", node) ||
       this.is("TemplateMiddle", node) ||
       this.is("TemplateTail", node)
-    );
-  }
-
-  private isStringLiteralType(type: NativeType): boolean {
-    return Boolean(
-      type.isStringLiteralType?.() ?? type.flags & (this.sync.TypeFlags.StringLiteral ?? 0),
-    );
-  }
-
-  private isNumberLiteralType(type: NativeType): boolean {
-    return Boolean(
-      type.isNumberLiteralType?.() ?? type.flags & (this.sync.TypeFlags.NumberLiteral ?? 0),
-    );
-  }
-
-  private isUnionType(type: NativeType): boolean {
-    return Boolean(type.flags & (this.sync.TypeFlags.Union ?? 0));
-  }
-
-  private isNativeArrayType(type: NativeType, checker: NativeCheckerApi): boolean {
-    const arrayByMethod = checker.isArrayType?.(type);
-    if (typeof arrayByMethod === "boolean") {
-      return arrayByMethod;
-    }
-
-    return checker.isArrayLikeType(type) && !this.isNativeTupleType(type, checker);
-  }
-
-  private isNativeTupleType(type: NativeType, checker: NativeCheckerApi): boolean {
-    const tupleByMethod = checker.isTupleType?.(type);
-    if (typeof tupleByMethod === "boolean") {
-      return tupleByMethod;
-    }
-
-    return (
-      Boolean(type.objectFlags && type.objectFlags & (this.sync.ObjectFlags.Tuple ?? 0)) ||
-      checker.typeToString(type).startsWith("[")
     );
   }
 
@@ -1176,25 +841,6 @@ function disposeNativeProject(project: NativeProject): void {
 
 function isWithinConfigProject(filePath: string, configPath: string): boolean {
   return !path.relative(path.dirname(configPath), filePath).startsWith("..");
-}
-
-function resolveNodeHandle(
-  handle: NativeNodeHandle | undefined,
-  project: NativeProjectApi,
-): NativeNode | undefined {
-  if (!handle) {
-    return undefined;
-  }
-
-  if (isNativeNode(handle)) {
-    return handle;
-  }
-
-  return handle.resolve(project);
-}
-
-function isNativeNode(handle: NativeNodeHandle): handle is NativeNode {
-  return "forEachChild" in handle && "getSourceFile" in handle;
 }
 
 function resolveFileModule(importPath: string, fromFilePath: string): string | null {

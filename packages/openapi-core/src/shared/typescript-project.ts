@@ -15,6 +15,11 @@ import {
   type TypeScriptRuntime,
 } from "./typescript-runtime.js";
 
+export type TypeScriptCompilerHostFactory = (
+  ts: TypeScriptRuntime,
+  compilerOptions: ts.CompilerOptions,
+) => ts.CompilerHost;
+
 type TypeScriptProject = {
   ts: TypeScriptRuntime;
   typescriptPath: string;
@@ -22,7 +27,19 @@ type TypeScriptProject = {
   program: ts.Program;
   checker: ts.TypeChecker;
   compilerOptions: ts.CompilerOptions;
+  host: ts.CompilerHost;
 };
+
+export type TypeScriptProjectOptions = {
+  createCompilerHost?: TypeScriptCompilerHostFactory | undefined;
+};
+
+function createDefaultCompilerHost(
+  ts: TypeScriptRuntime,
+  compilerOptions: ts.CompilerOptions,
+): ts.CompilerHost {
+  return ts.createCompilerHost(compilerOptions, true);
+}
 
 const projectCache = new Map<string, TypeScriptProject>();
 const adapterCache = new Map<string, TypeScriptCompilerAdapter>();
@@ -54,7 +71,10 @@ export function getTypeScriptAdapter(filePath: string): TypeScriptCompilerAdapte
   return classicAdapter;
 }
 
-export function getTypeScriptProject(filePath: string): TypeScriptProject {
+export function getTypeScriptProject(
+  filePath: string,
+  options: TypeScriptProjectOptions = {},
+): TypeScriptProject {
   const absoluteFilePath = path.resolve(filePath);
   const runtime = resolveTypeScriptRuntime(absoluteFilePath);
   const ts = runtime.ts;
@@ -69,9 +89,22 @@ export function getTypeScriptProject(filePath: string): TypeScriptProject {
     return cachedProject;
   }
 
+  const createCompilerHost = options.createCompilerHost ?? createDefaultCompilerHost;
   const project = configPath
-    ? createConfiguredProject(configPath, ts, runtime.packagePath, runtime.version)
-    : createSingleFileProject(absoluteFilePath, ts, runtime.packagePath, runtime.version);
+    ? createConfiguredProject(
+        configPath,
+        ts,
+        runtime.packagePath,
+        runtime.version,
+        createCompilerHost,
+      )
+    : createSingleFileProject(
+        absoluteFilePath,
+        ts,
+        runtime.packagePath,
+        runtime.version,
+        createCompilerHost,
+      );
   projectCache.set(cacheKey, project);
   return project;
 }
@@ -169,17 +202,29 @@ function invalidateClassicTypeScriptProject(filePath: string): void {
   }
 
   const configPath = findTypeScriptConfigFile(absoluteFilePath);
-  projectCache.delete(`${runtime.packagePath}:${configPath || absoluteFilePath}`);
+  const cacheKey = `${runtime.packagePath}:${configPath || absoluteFilePath}`;
+  const cachedProject = projectCache.get(cacheKey);
+  if (!cachedProject) {
+    return;
+  }
+
+  const program = cachedProject.ts.createProgram({
+    rootNames: [...cachedProject.program.getRootFileNames()],
+    options: cachedProject.compilerOptions,
+    host: cachedProject.host,
+    oldProgram: cachedProject.program,
+  });
+  cachedProject.program = program;
+  cachedProject.checker = program.getTypeChecker();
 }
 
 function resolveClassicTypeScriptModule(importPath: string, fromFilePath: string): string | null {
   const project = getTypeScriptProject(fromFilePath);
-  const resolutionHost = project.ts.createCompilerHost(project.compilerOptions, true);
   const resolvedModule = project.ts.resolveModuleName(
     importPath,
     path.resolve(fromFilePath),
     project.compilerOptions,
-    resolutionHost,
+    project.host,
   ).resolvedModule;
 
   if (!resolvedModule?.resolvedFileName) {
@@ -499,6 +544,7 @@ function createConfiguredProject(
   ts: TypeScriptRuntime,
   typescriptPath: string,
   typescriptVersion: string,
+  createCompilerHost: TypeScriptCompilerHostFactory,
 ): TypeScriptProject {
   const configFile = ts.readConfigFile(configPath, ts.sys.readFile);
   const parsedConfig = ts.parseJsonConfigFileContent(
@@ -506,9 +552,11 @@ function createConfiguredProject(
     ts.sys,
     path.dirname(configPath),
   );
+  const host = createCompilerHost(ts, parsedConfig.options);
   const program = ts.createProgram({
     rootNames: parsedConfig.fileNames,
     options: parsedConfig.options,
+    host,
   });
 
   return {
@@ -518,6 +566,7 @@ function createConfiguredProject(
     program,
     checker: program.getTypeChecker(),
     compilerOptions: parsedConfig.options,
+    host,
   };
 }
 
@@ -526,6 +575,7 @@ function createSingleFileProject(
   ts: TypeScriptRuntime,
   typescriptPath: string,
   typescriptVersion: string,
+  createCompilerHost: TypeScriptCompilerHostFactory,
 ): TypeScriptProject {
   const compilerOptions: ts.CompilerOptions = {
     allowJs: false,
@@ -534,9 +584,11 @@ function createSingleFileProject(
     moduleResolution: ts.ModuleResolutionKind.Bundler,
     target: getBestEffortScriptTarget(ts),
   };
+  const host = createCompilerHost(ts, compilerOptions);
   const program = ts.createProgram({
     rootNames: [filePath],
     options: compilerOptions,
+    host,
   });
 
   return {
@@ -546,5 +598,6 @@ function createSingleFileProject(
     program,
     checker: program.getTypeChecker(),
     compilerOptions,
+    host,
   };
 }

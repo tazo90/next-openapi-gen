@@ -1,5 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 
+import "../../../schemas/user";
+
 /**
  * Get all users
  * @summary List users

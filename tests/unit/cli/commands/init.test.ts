@@ -31,6 +31,22 @@ function createExecMock(): ExecMock {
   });
 }
 
+const IDENTIFIER_KEY = /^(\s*)([A-Za-z_$][\w$]*):/gm;
+
+function readInitConfig(filePath: string): Record<string, unknown> {
+  const source = fs.readFileSync(filePath, "utf8");
+  if (filePath.endsWith(".json")) {
+    return JSON.parse(source) as Record<string, unknown>;
+  }
+
+  const match = /defineConfig\((\{[\s\S]*\})\);\s*$/.exec(source);
+  if (!match?.[1]) {
+    throw new Error(`Could not parse defineConfig from ${filePath}`);
+  }
+
+  return JSON.parse(match[1].replace(IDENTIFIER_KEY, '$1"$2":')) as Record<string, unknown>;
+}
+
 async function loadInitModule(execMock: ExecMock, spinner: SpinnerMock, setupMocks?: () => void) {
   vi.resetModules();
   vi.doUnmock("fs-extra");
@@ -74,9 +90,7 @@ describe("init command", () => {
         await init({});
       });
 
-      const template = JSON.parse(
-        fs.readFileSync(path.join(project.root, "next.openapi.json"), "utf8"),
-      ) as {
+      const template = readInitConfig(path.join(project.root, "openapi-gen.config.ts")) as {
         docsUrl: string;
         framework: {
           kind: string;
@@ -169,10 +183,10 @@ describe("init command", () => {
           }));
         });
 
-        await init({});
+        await expect(init({})).rejects.toThrow("disk full");
       });
 
-      expect(fs.existsSync(path.join(project.root, "next.openapi.json"))).toBe(true);
+      expect(fs.existsSync(path.join(project.root, "openapi-gen.config.ts"))).toBe(true);
       expect(execMock).not.toHaveBeenCalled();
     } finally {
       project.cleanup();
@@ -245,9 +259,7 @@ describe("init command", () => {
         });
       });
 
-      const template = JSON.parse(
-        fs.readFileSync(path.join(project.root, "next.openapi.json"), "utf8"),
-      ) as {
+      const template = readInitConfig(path.join(project.root, "openapi-gen.config.ts")) as {
         apiDir: string;
         framework: {
           kind: string;
@@ -300,6 +312,7 @@ describe("init command", () => {
             getErrorMessage: vi.fn<(error: unknown) => string>((error) => String(error)),
             getOutputPath: vi.fn<() => string>(() => outputPath),
             installDependencies,
+            serializeOpenApiTemplate: vi.fn<() => string>(() => "{}"),
           }));
         });
 
@@ -340,9 +353,7 @@ describe("init command", () => {
         });
       });
 
-      const template = JSON.parse(
-        fs.readFileSync(path.join(project.root, "next.openapi.json"), "utf8"),
-      ) as {
+      const template = readInitConfig(path.join(project.root, "openapi-gen.config.ts")) as {
         apiDir: string;
         framework: {
           kind: string;

@@ -255,4 +255,64 @@ export async function GET() {}`,
     expect(writeSpy).toHaveBeenCalledWith(expect.stringContaining("missing-query-params-type"));
     expect(writeSpy).toHaveBeenCalledWith(expect.stringContaining("warning: 1"));
   });
+
+  it("fails on error diagnostics and ignores them when fail-on is never", async () => {
+    const spinner = {
+      start: vi.fn<MockFn>().mockReturnThis(),
+      succeed: vi.fn<MockFn>(),
+    };
+    const generateProject = vi.fn<MockFn>(async () => ({
+      artifacts: [{ path: "/tmp/openapi.json" }],
+      diagnostics: [
+        {
+          code: "invalid-response",
+          severity: "error",
+          message: "Response schema is missing.",
+        },
+        {
+          code: "inferred-query",
+          severity: "info",
+          message: "Query parameters were inferred.",
+        },
+      ],
+      diagnosticsFailOn: "error",
+      outputFile: "/tmp/openapi.json",
+    }));
+
+    const { generate } = await loadGenerateModule(spinner, () => {
+      vi.doMock("@workspace/openapi-core", () => ({
+        generateProject,
+        watchProject: vi.fn<MockFn>(),
+      }));
+    });
+
+    await expect(generate({ failOn: "error" })).rejects.toThrow(
+      "OpenAPI generation failed because diagnostics matched --fail-on error.",
+    );
+    await expect(generate({ failOn: "never" })).resolves.toBeUndefined();
+  });
+
+  it("treats missing diagnostics as empty and rejects unknown fail-on values", async () => {
+    const spinner = {
+      start: vi.fn<MockFn>().mockReturnThis(),
+      succeed: vi.fn<MockFn>(),
+    };
+    const generateProject = vi.fn<MockFn>(async () => ({
+      artifacts: [{ path: "/tmp/openapi.json" }],
+      diagnosticsFailOn: "never",
+      outputFile: "/tmp/openapi.json",
+    }));
+
+    const { generate } = await loadGenerateModule(spinner, () => {
+      vi.doMock("@workspace/openapi-core", () => ({
+        generateProject,
+        watchProject: vi.fn<MockFn>(),
+      }));
+    });
+
+    await expect(generate({})).resolves.toBeUndefined();
+    await expect(generate({ failOn: "info" as never })).rejects.toThrow(
+      "OpenAPI generation failed because diagnostics matched --fail-on info.",
+    );
+  });
 });

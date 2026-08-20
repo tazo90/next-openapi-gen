@@ -18,6 +18,12 @@
     { "path": "../openapi-framework-next" },
     { "path": "../openapi-framework-tanstack" },
     { "path": "../openapi-framework-react-router" },
+    { "path": "../openapi-framework-remix" },
+    { "path": "../openapi-framework-sveltekit" },
+    { "path": "../openapi-framework-nuxt" },
+    { "path": "../openapi-framework-astro" },
+    { "path": "../openapi-framework-hono" },
+    { "path": "../openapi-framework-express" },
     { "path": "../openapi-arazzo" },
     { "path": "../openapi-overlay" }
   ]

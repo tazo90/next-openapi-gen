@@ -7,13 +7,15 @@ import {
   measurePerformance,
   type GenerationPerformanceProfile,
 } from "@workspace/openapi-core/core/performance.js";
-import { collectHandlerInsights } from "@workspace/openapi-core/frameworks/shared/handler-insights.js";
 import type { RouterStrategy } from "@workspace/openapi-core/routes/router-strategy.js";
 import { HTTP_METHODS } from "@workspace/openapi-core/routes/router-strategy.js";
 import { inferResponsesForExports } from "@workspace/openapi-core/routes/typescript-response-inference.js";
 import { traverse } from "@workspace/openapi-core/shared/babel-traverse.js";
+import { extractJSDocComments } from "@workspace/openapi-core/shared/jsdoc.js";
+import { parseTypeScriptFile } from "@workspace/openapi-core/shared/parse-typescript.js";
 import type { DataTypes, OpenApiConfig } from "@workspace/openapi-core/shared/types.js";
-import { extractJSDocComments, parseTypeScriptFile } from "@workspace/openapi-core/shared/utils.js";
+
+import { analyzeHandler } from "./app-router-inference.js";
 
 type CachedFileContent = {
   content: string;
@@ -227,159 +229,8 @@ export class AppRouterStrategy implements RouterStrategy {
   private analyzeHandler(
     dataTypes: DataTypes,
     handlerNode: t.Node,
-  ):
-    | { kind: "direct"; dataTypes: DataTypes }
-    | {
-        kind: "needs-checker";
-        dataTypes: DataTypes;
-        inferredQueryParamNames: string[];
-        inferredResponseType: string;
-      } {
-    const handlerInsights = collectHandlerInsights(handlerNode, {
-      hasPathParams: Boolean(dataTypes.pathParamsType?.trim()),
-    });
-    const {
-      inferredBodyType,
-      inferredPathParamsType,
-      inferredQueryParamNames,
-      inferredQueryParamsType,
-      inferredResponses,
-      handlerDiagnostics,
-      requiresTypeScriptChecker,
-    } = handlerInsights;
-    const inferredDataTypes: DataTypes = {
-      ...dataTypes,
-      ...(inferredBodyType && !dataTypes.bodyType ? { inferredBodyType } : {}),
-      ...(inferredPathParamsType && !dataTypes.pathParamsType ? { inferredPathParamsType } : {}),
-      ...(inferredQueryParamsType && !dataTypes.paramsType ? { inferredQueryParamsType } : {}),
-      ...(inferredQueryParamNames.length > 0 ? { inferredQueryParamNames } : {}),
-      ...(handlerDiagnostics.length > 0
-        ? { diagnostics: [...(dataTypes.diagnostics ?? []), ...handlerDiagnostics] }
-        : {}),
-    };
-    if (dataTypes.responseType || dataTypes.responseItemType || dataTypes.successCode === "204") {
-      return {
-        kind: "direct",
-        dataTypes: inferredDataTypes,
-      };
-    }
-
-    const inferredResponseType = this.inferResponseTypeFromHandler(handlerNode);
-    if (inferredResponseType && !requiresTypeScriptChecker) {
-      return {
-        kind: "direct",
-        dataTypes: {
-          ...inferredDataTypes,
-          responseType: inferredResponseType,
-        },
-      };
-    }
-
-    if (!requiresTypeScriptChecker && !inferredResponseType) {
-      return {
-        kind: "direct",
-        dataTypes: {
-          ...inferredDataTypes,
-          ...(inferredResponses.length > 0 ? { inferredResponses } : {}),
-        },
-      };
-    }
-
-    return {
-      kind: "needs-checker",
-      dataTypes: inferredDataTypes,
-      inferredQueryParamNames,
-      inferredResponseType,
-    };
-  }
-
-  private inferResponseTypeFromHandler(handlerNode: t.Node): string {
-    const functionLike = this.getFunctionLikeNode(handlerNode);
-    if (
-      functionLike &&
-      (t.isFunctionDeclaration(functionLike) || t.isFunctionExpression(functionLike))
-    ) {
-      return this.inferResponseTypeFromAnnotation(
-        this.getReturnTypeAnnotation(functionLike.returnType),
-      );
-    }
-
-    if (functionLike && t.isArrowFunctionExpression(functionLike)) {
-      return this.inferResponseTypeFromAnnotation(
-        this.getReturnTypeAnnotation(functionLike.returnType),
-      );
-    }
-
-    return "";
-  }
-  private getFunctionLikeNode(
-    handlerNode: t.Node,
-  ): t.FunctionDeclaration | t.FunctionExpression | t.ArrowFunctionExpression | null {
-    if (t.isFunctionDeclaration(handlerNode) || t.isFunctionExpression(handlerNode)) {
-      return handlerNode;
-    }
-
-    if (t.isVariableDeclarator(handlerNode) && t.isArrowFunctionExpression(handlerNode.init)) {
-      return handlerNode.init;
-    }
-
-    return null;
-  }
-  private getReturnTypeAnnotation(
-    returnType: t.Noop | t.TSTypeAnnotation | t.TypeAnnotation | null | undefined,
-  ): t.TSType | null | undefined {
-    if (returnType && t.isTSTypeAnnotation(returnType)) {
-      return returnType.typeAnnotation;
-    }
-
-    return undefined;
-  }
-
-  private inferResponseTypeFromAnnotation(typeNode: t.TSType | null | undefined): string {
-    if (!typeNode) {
-      return "";
-    }
-
-    if (t.isTSTypeReference(typeNode)) {
-      const typeName = this.getTypeReferenceName(typeNode.typeName);
-      const typeParams = typeNode.typeParameters?.params ?? [];
-
-      if (typeName === "Promise" && typeParams[0]) {
-        return this.inferResponseTypeFromAnnotation(typeParams[0]);
-      }
-
-      if (typeName === "NextResponse" && typeParams[0]) {
-        return this.stringifyTypeNode(typeParams[0]);
-      }
-    }
-
-    return "";
-  }
-
-  private getTypeReferenceName(typeName: t.TSEntityName): string {
-    if (t.isIdentifier(typeName)) {
-      return typeName.name;
-    }
-
-    return typeName.right.name;
-  }
-
-  private stringifyTypeNode(typeNode: t.TSType): string {
-    if (t.isTSTypeReference(typeNode)) {
-      const typeName = this.getTypeReferenceName(typeNode.typeName);
-      const typeParams = typeNode.typeParameters?.params ?? [];
-      if (typeParams.length === 0) {
-        return typeName;
-      }
-
-      return `${typeName}<${typeParams.map((param) => this.stringifyTypeNode(param)).join(", ")}>`;
-    }
-
-    if (t.isTSArrayType(typeNode)) {
-      return `${this.stringifyTypeNode(typeNode.elementType)}[]`;
-    }
-
-    return "";
+  ): ReturnType<typeof analyzeHandler> {
+    return analyzeHandler(dataTypes, handlerNode);
   }
 
   private readFile(filePath: string): string {

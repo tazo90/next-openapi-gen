@@ -53,6 +53,30 @@
       "types": "./dist/vite/index.d.ts",
       "default": "./dist/vite/index.js"
     },
+    "./remix": {
+      "types": "./dist/remix/index.d.ts",
+      "default": "./dist/remix/index.js"
+    },
+    "./sveltekit": {
+      "types": "./dist/sveltekit/index.d.ts",
+      "default": "./dist/sveltekit/index.js"
+    },
+    "./nuxt": {
+      "types": "./dist/nuxt/index.d.ts",
+      "default": "./dist/nuxt/index.js"
+    },
+    "./astro": {
+      "types": "./dist/astro/index.d.ts",
+      "default": "./dist/astro/index.js"
+    },
+    "./hono": {
+      "types": "./dist/hono/index.d.ts",
+      "default": "./dist/hono/index.js"
+    },
+    "./express": {
+      "types": "./dist/express/index.d.ts",
+      "default": "./dist/express/index.js"
+    },
     "./package.json": "./package.json"
   },
   "publishConfig": {
@@ -77,20 +101,25 @@
     "@babel/traverse": "catalog:",
     "@babel/types": "catalog:",
     "commander": "catalog:",
+    "cross-spawn": "catalog:",
     "fs-extra": "catalog:",
     "js-yaml": "catalog:",
     "ora": "catalog:",
-    "typescript": "npm:@typescript/typescript6@6.0.2"
+    "typescript": "catalog:typescript-classic"
   },
   "devDependencies": {
     "@types/node": "catalog:",
-    "@workspace/openapi-arazzo": "workspace:*",
     "@workspace/openapi-cli": "workspace:*",
     "@workspace/openapi-core": "workspace:*",
+    "@workspace/openapi-framework-astro": "workspace:*",
+    "@workspace/openapi-framework-express": "workspace:*",
+    "@workspace/openapi-framework-hono": "workspace:*",
     "@workspace/openapi-framework-next": "workspace:*",
+    "@workspace/openapi-framework-nuxt": "workspace:*",
     "@workspace/openapi-framework-react-router": "workspace:*",
+    "@workspace/openapi-framework-remix": "workspace:*",
+    "@workspace/openapi-framework-sveltekit": "workspace:*",
     "@workspace/openapi-framework-tanstack": "workspace:*",
-    "@workspace/openapi-overlay": "workspace:*",
     "conventional-changelog-cli": "catalog:",
     "np": "catalog:",
     "oxfmt": "catalog:",

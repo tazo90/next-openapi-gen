@@ -4,6 +4,7 @@
   "globalEnv": [
     "CI",
     "COVERAGE_SCOPE",
+    "DOCS_TITLE",
     "E2E_APP",
     "EXPOSE_TESTING_API",
     "FORCE_COLOR",
@@ -11,7 +12,10 @@
     "GENERATOR_BENCH_OUTPUT",
     "NEXT_OPENAPI_GEN_TIMING",
     "NODE_ENV",
-    "PATH"
+    "PATH",
+    "PAYMENT_WEBHOOK_SECRET",
+    "PORT",
+    "WEBHOOK_SECRET"
   ],
   "tasks": {
     "//#knip": {
@@ -27,14 +31,14 @@
       "outputs": []
     },
     "//#test:integration": {
-      "dependsOn": ["transit"],
+      "dependsOn": ["transit", "next-openapi-gen#build"],
       "outputs": []
     },
     "//#transit": {
       "dependsOn": ["^transit"]
     },
     "test:coverage": {
-      "dependsOn": ["transit"],
+      "dependsOn": ["transit", "next-openapi-gen#build"],
       "outputs": ["coverage/**"]
     },
     "//#test:unit": {
@@ -64,7 +68,7 @@
     },
     "generate": {
       "dependsOn": ["^build"],
-      "env": ["OPENAPI_GEN_CACHE"],
+      "env": ["GENERATE_CLIENT_SDK", "OPENAPI_GEN_CACHE"],
       "inputs": [
         "$TURBO_DEFAULT$",
         "next.openapi.json",
@@ -73,6 +77,7 @@
         "openapi-gen.config.mts",
         "next-openapi.config.ts",
         "next-openapi.config.mts",
+        "scripts/**",
         "src/**"
       ],
       "outputs": ["public/openapi.json", ".openapi-gen/**"]

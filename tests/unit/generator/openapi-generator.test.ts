@@ -2,11 +2,22 @@ import fs from "node:fs";
 import path from "node:path";
 
 import { OpenApiGenerator } from "next-openapi-gen";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { createTempProject, writeOpenApiTemplate } from "../../helpers/test-project.js";
 
 describe("OpenApiGenerator", () => {
+  const previousTiming = process.env.NEXT_OPENAPI_GEN_TIMING;
+
+  afterEach(() => {
+    if (previousTiming === undefined) {
+      delete process.env.NEXT_OPENAPI_GEN_TIMING;
+    } else {
+      process.env.NEXT_OPENAPI_GEN_TIMING = previousTiming;
+    }
+    vi.restoreAllMocks();
+  });
+
   it("applies config defaults from a minimal template", () => {
     const project = createTempProject("nxog-generator-defaults-");
 
@@ -398,5 +409,36 @@ components:
     } finally {
       project.cleanup();
     }
+  });
+
+  it("logs generation timings when NEXT_OPENAPI_GEN_TIMING is set", () => {
+    const project = createTempProject("nxog-generator-timing-");
+
+    try {
+      const templatePath = writeOpenApiTemplate(project.root, {});
+      const previousCwd = process.cwd();
+      process.chdir(project.root);
+      process.env.NEXT_OPENAPI_GEN_TIMING = "1";
+      const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
+
+      try {
+        const generator = new OpenApiGenerator({ templatePath });
+        generator.generate();
+
+        expect(log.mock.calls.some((call) => String(call[0]).includes("Generation timings"))).toBe(
+          true,
+        );
+      } finally {
+        process.chdir(previousCwd);
+      }
+    } finally {
+      project.cleanup();
+    }
+  });
+
+  it("wraps unreadable OpenAPI template files", () => {
+    expect(() => new OpenApiGenerator({ templatePath: "/no/such/openapi-template.json" })).toThrow(
+      /Failed to read OpenAPI template at \/no\/such\/openapi-template\.json/,
+    );
   });
 });

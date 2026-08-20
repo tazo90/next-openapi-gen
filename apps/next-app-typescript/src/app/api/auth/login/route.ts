@@ -1,3 +1,5 @@
+import "@/types/auth";
+
 /**
  * Authenticate as a user.
  * @description Login a user

@@ -1,6 +1,6 @@
 import * as t from "@babel/types";
 
-import type { OpenApiSchema } from "../../shared/types.js";
+import type { Diagnostic, OpenApiSchema } from "../../shared/types.js";
 import { applyNullableWrapper } from "./nullability.js";
 import { applyZodStringFormat } from "./string-formats.js";
 
@@ -30,6 +30,7 @@ export type PrimitiveHelperContext = {
   resolveConstArrayValues?: (name: string) => (string | number)[] | null;
   /** Resolve an identifier referring to a `z.object({...})` (or equivalent) call. */
   resolveObjectSchemaNode?: (name: string) => t.CallExpression | null;
+  addDiagnostic?: (diagnostic: Diagnostic) => void;
   /** The name of the local zod import binding — defaults to `"z"`. */
   zodLocalName?: string;
 };
@@ -42,6 +43,19 @@ function isProcessableZodNode(
     | undefined,
 ): node is ProcessableZodNode {
   return !!node && !t.isArgumentPlaceholder(node);
+}
+
+function addUnresolvedEnumDiagnostic(
+  context: PrimitiveHelperContext,
+  zodType: string,
+  name: string,
+): void {
+  context.addDiagnostic?.({
+    code: "unresolved-zod-enum",
+    severity: "warning",
+    message: `Unable to resolve values for ${zodType} identifier "${name}"; approximated as a string schema.`,
+    metadata: { name },
+  });
 }
 
 export function processZodLiteral(
@@ -96,7 +110,7 @@ export function processZodLiteral(
   // Unwrap `as const` / `satisfies` wrappers
   if (t.isTSAsExpression(arg) || t.isTSSatisfiesExpression(arg)) {
     return processZodLiteral(
-      { ...node, arguments: [arg.expression, ...node.arguments.slice(1)] } as t.CallExpression,
+      { ...node, arguments: [arg.expression, ...node.arguments.slice(1)] },
       context,
     );
   }
@@ -133,6 +147,7 @@ export function processZodDiscriminatedUnion(
   context?: PrimitiveHelperContext,
 ): OpenApiSchema {
   if (node.arguments.length < 2) {
+    addMalformedDiscriminatedUnionDiagnostic(context, "expected discriminator and variants");
     return { type: "object" };
   }
 
@@ -144,9 +159,13 @@ export function processZodDiscriminatedUnion(
     const val = context.resolveLiteralValue(first.name);
     if (typeof val === "string") discriminator = val;
   }
+  if (!discriminator) {
+    addMalformedDiscriminatedUnionDiagnostic(context, "discriminator must resolve to a string");
+  }
 
   const schemasArray = resolveArrayOfSchemas(node.arguments[1]);
   if (!schemasArray) {
+    addMalformedDiscriminatedUnionDiagnostic(context, "variants must be an inline array");
     return { type: "object" };
   }
 
@@ -155,6 +174,7 @@ export function processZodDiscriminatedUnion(
     .map((element) => processNode(element));
 
   if (schemas.length === 0) {
+    addMalformedDiscriminatedUnionDiagnostic(context, "variants array must not be empty");
     return { type: "object" };
   }
 
@@ -190,6 +210,18 @@ export function processZodDiscriminatedUnion(
     discriminator: discriminatorObj,
     oneOf: schemas,
   };
+}
+
+function addMalformedDiscriminatedUnionDiagnostic(
+  context: PrimitiveHelperContext | undefined,
+  reason: string,
+): void {
+  context?.addDiagnostic?.({
+    code: "malformed-zod-discriminated-union",
+    severity: "warning",
+    message: `Malformed z.discriminatedUnion() was approximated as an object schema: ${reason}.`,
+    metadata: { reason },
+  });
 }
 
 function extractRefFromSchema(schema: OpenApiSchema): string | undefined {
@@ -788,9 +820,13 @@ export function processZodPrimitiveNode(
           const valueType = typeof resolved[0] === "number" ? "number" : "string";
           schema = { type: valueType, enum: resolved };
         } else {
+          addUnresolvedEnumDiagnostic(context, zodType, node.arguments[0].name);
           schema = { type: "string" };
         }
       } else {
+        if (node.arguments.length > 0 && t.isIdentifier(node.arguments[0])) {
+          addUnresolvedEnumDiagnostic(context, zodType, node.arguments[0].name);
+        }
         schema = { type: "string" };
       }
       break;

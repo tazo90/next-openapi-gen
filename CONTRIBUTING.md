@@ -28,6 +28,11 @@ Please be respectful and constructive in all interactions.
 
 ## Getting Started
 
+### Requirements
+
+- Node.js `>=24`
+- Corepack with the repository-pinned pnpm version (`pnpm@11.9.0`)
+
 ### 1. Fork and Clone
 
 ```bash
@@ -39,10 +44,13 @@ cd next-openapi-gen
 ### 2. Install Dependencies
 
 ```bash
+corepack enable
 pnpm install
 ```
 
-This repository uses a pnpm workspace, so running `pnpm install` at the repository root installs dependencies for the root package and all example apps.
+Run workspace commands from the repository root. pnpm installs all packages and
+example apps; Turborepo then schedules package dependencies and caches build
+tasks.
 
 Git hooks are installed automatically during `pnpm install` with `simple-git-hooks`.
 
@@ -215,22 +223,24 @@ When you create a PR, a template will guide you through:
 
 ```text
 next-openapi-gen/
-├── apps/                     # Example Next.js apps
-│   ├── next-app-zod/
-│   └── types/                # Shared ambient typings for examples
+├── apps/                               # Next.js, TanStack, and React Router examples
 ├── packages/
-│   ├── next-openapi-gen/
-│   │   ├── src/              # CLI source
-│   │   └── dist/             # CLI build output (ignored)
-│   ├── next-config/          # Shared Next.js config for example apps
-│   ├── oxfmt-config/
-│   ├── oxlint-config/
-│   └── typescript-config/
+│   ├── openapi-core/                   # Generator, config, routes, and schemas
+│   ├── openapi-cli/                    # Command implementation
+│   ├── openapi-init/                   # Init flow and docs UI templates
+│   ├── openapi-framework-next/         # Next.js adapter
+│   ├── openapi-framework-tanstack/     # TanStack/Vite adapter
+│   ├── openapi-framework-react-router/ # React Router adapter
+│   ├── openapi-arazzo/                 # Arazzo emitter
+│   ├── openapi-overlay/                # Overlay emitter
+│   ├── next-openapi-gen/               # Public compatibility facade and binary
+│   ├── next-config/                    # Shared example-app config
+│   └── *-config/                       # Shared TypeScript and Oxc configs
 ├── tests/
-│   ├── unit/                 # Isolated Vitest coverage
-│   ├── integration/          # Filesystem and workspace Vitest coverage
-│   ├── e2e/                  # Playwright coverage against example apps
-│   └── fixtures/             # Shared test fixtures
+│   ├── unit/                           # Isolated Vitest coverage
+│   ├── integration/                    # Project-style generator coverage
+│   ├── e2e/                            # Playwright example-app matrix
+│   └── fixtures/                       # Checked-in project fixtures
 └── turbo.json
 ```
 
@@ -240,20 +250,25 @@ next-openapi-gen/
 # Build the workspace with Turborepo
 pnpm build
 
-# Build just the published CLI package (with its workspace dependencies)
+# Build internal packages without example apps
+pnpm build:packages
+
+# Build the public package and all of its workspace dependencies
 pnpm exec turbo run build --filter=next-openapi-gen...
 
-# Rebuild the CLI package in watch mode
-pnpm --filter next-openapi-gen exec tsc --watch
+# Run all package type checks through project references
+pnpm typecheck:packages
 ```
 
 ### Editor Setup
 
-This repository commits workspace defaults in `.vscode/` so contributors and agents use the same TypeScript SDK, Oxc formatter, and common tasks in VS Code or Cursor.
+This repository commits workspace defaults in `.vscode/` so contributors and
+agents use the same TypeScript SDK and Oxc formatter in VS Code or Cursor.
 
 - Install the recommended `oxc.oxc-vscode` extension
 - Use the workspace TypeScript version when prompted
-- Use the committed `check`, `test`, and `build` tasks if you prefer running scripts from the editor
+- Run checks through the root `package.json` scripts; the repository does not
+  define custom VS Code tasks
 
 ### Testing
 
@@ -273,8 +288,11 @@ pnpm test:watch
 # Coverage report for unit + integration tests
 pnpm test:coverage
 
-# Run the Playwright suite against next-app-zod
+# Run the full Playwright example-app matrix
 pnpm test:e2e
+
+# Run one app's E2E project
+pnpm test:e2e:next-app-zod
 ```
 
 ### Knip
@@ -329,38 +347,23 @@ pnpm unlink --global next-openapi-gen
 
 ### For Maintainers
 
-We use [`np`](https://github.com/sindresorhus/np) for interactive releases with automatic changelog generation.
+The root release script uses [`np`](https://github.com/sindresorhus/np) for
+versioning and changelog updates, then builds, packs, and publishes the public
+`next-openapi-gen` facade.
 
 #### Creating a Release
 
 ```bash
-pnpm run release
+# Verify first; the release script intentionally does not rerun the full suite
+pnpm verify
+
+# Interactive version, changelog, tag, and npm publish flow
+pnpm release
 ```
 
-This will:
-
-1. ✅ Run tests
-2. ✅ Build the project
-3. ✅ Prompt you to select version (patch/minor/major)
-4. ✅ Auto-generate CHANGELOG.md from commits
-5. ✅ Update package.json version
-6. ✅ Create git tag
-7. ✅ Push to GitHub
-8. ✅ Publish to npm
-9. ✅ Create GitHub Release
-
-#### Manual Version Selection
-
-```bash
-# Specific version
-pnpm exec np 1.0.0
-
-# Beta release
-pnpm exec np 1.0.0-beta.1
-
-# Only tag, skip npm publish
-pnpm exec np --no-publish
-```
+`scripts/publish.mjs` strips workspace-only development dependencies from the
+temporary package metadata, copies the root README, force-builds the public
+package, packs it, publishes the tarball, and restores the working files.
 
 #### Version Bump Guidelines
 

@@ -4,6 +4,7 @@ import {
   generateErrorResponsesFromConfig,
 } from "../generator/error-responses.js";
 import { createDocumentFromTemplate, getTemplateServerUrl } from "../openapi/document.js";
+import { ensureBuiltinSecuritySchemes } from "../openapi/security-schemes.js";
 import { getOpenApiVersionProcessor } from "../openapi/version-processor.js";
 import { sortPathDefinitions } from "../routes/path-sort.js";
 import { RouteProcessor } from "../routes/route-processor.js";
@@ -67,7 +68,7 @@ export function runGenerationOrchestrator({
   profile.prepareTemplateMs = performance.now() - phaseStartedAt;
 
   phaseStartedAt = performance.now();
-  const schemaFiles = config.schemaFiles ?? [];
+  const schemaFiles = config.schemaFiles!;
   if (schemaFiles.length > 0) {
     const customOpenApiFragments = loadCustomOpenApiFragments(schemaFiles);
     mergeDocumentFragment(document, customOpenApiFragments);
@@ -98,8 +99,8 @@ export function runGenerationOrchestrator({
 
   hooks?.routesDiscovered?.({
     config,
-    paths: document.paths ?? {},
-    tags: document.tags ?? [],
+    paths: document.paths,
+    tags: document.tags!,
     diagnostics: diagnostics.getAll(),
   });
 
@@ -148,7 +149,7 @@ export function runGenerationOrchestrator({
   const internalSchemas = schemaProcessor.getInternalSchemas();
   const patternExcludedNames = matchExcludePatterns(
     Object.keys(mergedSchemas),
-    config.excludeSchemas ?? [],
+    config.excludeSchemas!,
   );
   const allExcludedSchemas = {
     ...routeProcessor.getCachedInternalSchemas(),
@@ -171,6 +172,7 @@ export function runGenerationOrchestrator({
   profile.mergeSchemasMs = performance.now() - phaseStartedAt;
 
   phaseStartedAt = performance.now();
+  ensureBuiltinSecuritySchemes(document, config.authPresets);
   const finalizedDocument = getOpenApiVersionProcessor(config.openapiVersion).finalize(document);
   profile.finalizeDocumentMs = performance.now() - phaseStartedAt;
   profile.totalMs = performance.now() - generationStartedAt;
@@ -221,11 +223,11 @@ function mergeDocumentFragment(document: OpenApiDocument, fragment: Partial<Open
     }
 
     if (isRecord(existingValue) && isRecord(value)) {
-      document[key as keyof OpenApiDocument] = mergeRecord(existingValue, value) as never;
+      document[key as keyof OpenApiDocument] = mergeRecord(existingValue, value);
       continue;
     }
 
-    document[key as keyof OpenApiDocument] = structuredClone(value) as never;
+    document[key as keyof OpenApiDocument] = structuredClone(value);
   }
 }
 

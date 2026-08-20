@@ -14,6 +14,7 @@ import {
   returnsZodSchemaNode,
   walkTypeScriptFiles,
 } from "@workspace/openapi-core/schema/zod/prescan.js";
+import { IGNORED_SOURCE_DIRECTORIES } from "@workspace/openapi-core/shared/ignored-directories.js";
 import { parseTypeScriptFile } from "@workspace/openapi-core/shared/utils.js";
 
 describe("Zod prescan helpers", () => {
@@ -70,6 +71,11 @@ describe("Zod prescan helpers", () => {
     fs.writeFileSync(path.join(root, "a.ts"), "");
     fs.writeFileSync(path.join(root, "nested", "b.tsx"), "");
     fs.writeFileSync(path.join(root, "ignore.js"), "");
+    for (const ignoredDir of IGNORED_SOURCE_DIRECTORIES) {
+      const directory = path.join(root, ignoredDir);
+      fs.mkdirSync(directory, { recursive: true });
+      fs.writeFileSync(path.join(directory, "ignored.ts"), "");
+    }
 
     const files: string[] = [];
     walkTypeScriptFiles(root, fs, (filePath) => {
@@ -248,5 +254,41 @@ describe("Zod prescan helpers", () => {
         isZodSchema,
       }),
     ).toBeNull();
+  });
+
+  it("covers leftover infer mappings and if/else factory returns", () => {
+    const inferAst = parseTypeScriptFile(`
+      export type User = z.infer<UserSchema>;
+      export type Empty = z.infer;
+    `);
+    expect(extractTypeMappingsFromAST(inferAst)).toEqual({});
+
+    const isZodSchema = (node: t.Node) =>
+      t.isCallExpression(node) &&
+      t.isMemberExpression(node.callee) &&
+      t.isIdentifier(node.callee.object, { name: "z" });
+
+    const ifElse = parseTypeScriptFile(`
+      export function makeIfElse(cond: boolean) {
+        if (cond) return z.object({});
+        else return z.string();
+      }
+      export function makeBlocks(cond: boolean) {
+        if (cond) {
+          return z.object({});
+        } else {
+          return z.string();
+        }
+      }
+      export const makeFn = function makeFn() {
+        return z.boolean();
+      };
+    `);
+    const makeIfElse = findFunctionInAST(ifElse, "makeIfElse");
+    const makeBlocks = findFunctionInAST(ifElse, "makeBlocks");
+    const makeFn = findFunctionInAST(ifElse, "makeFn");
+    expect(makeIfElse && returnsZodSchemaNode(makeIfElse, isZodSchema)).toBe(true);
+    expect(makeBlocks && returnsZodSchemaNode(makeBlocks, isZodSchema)).toBe(true);
+    expect(makeFn && returnsZodSchemaNode(makeFn, isZodSchema)).toBe(true);
   });
 });

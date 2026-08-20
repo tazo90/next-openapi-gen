@@ -76,7 +76,7 @@ workflows: []
       const artifacts = await createArazzoEmitter().emit(
         createEmitterContext(root, {
           files: ["./arazzo/**/*.yaml"],
-        }) as never,
+        }),
       );
       const output = fs.readFileSync(path.join(root, "public", "arazzo.yaml"), "utf8");
 
@@ -100,7 +100,7 @@ workflows: []
         createEmitterContext(root, {
           version: "1.0.0",
           files: ["./arazzo/**/*.yaml"],
-        }) as never,
+        }),
       );
       const output = fs.readFileSync(path.join(root, "public", "arazzo.yaml"), "utf8");
 

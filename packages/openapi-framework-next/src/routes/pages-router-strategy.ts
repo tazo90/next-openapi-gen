@@ -11,8 +11,9 @@ import { applyHandlerInsightsToDataTypes } from "@workspace/openapi-core/framewo
 import type { RouterStrategy } from "@workspace/openapi-core/routes/router-strategy.js";
 import { HTTP_METHODS } from "@workspace/openapi-core/routes/router-strategy.js";
 import { traverse } from "@workspace/openapi-core/shared/babel-traverse.js";
+import { parseJSDocBlock } from "@workspace/openapi-core/shared/jsdoc.js";
+import { parseTypeScriptFile } from "@workspace/openapi-core/shared/parse-typescript.js";
 import type { DataTypes, OpenApiConfig } from "@workspace/openapi-core/shared/types.js";
-import { parseJSDocBlock, parseTypeScriptFile } from "@workspace/openapi-core/shared/utils.js";
 
 type CachedFileContent = {
   content: string;

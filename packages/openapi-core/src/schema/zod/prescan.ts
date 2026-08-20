@@ -5,6 +5,7 @@ import type { NodePath } from "@babel/traverse";
 import * as t from "@babel/types";
 
 import { traverse } from "../../shared/babel-traverse.js";
+import { IGNORED_SOURCE_DIRECTORIES } from "../../shared/ignored-directories.js";
 import { processImports } from "./import-processor.js";
 
 type FileAccess = {
@@ -67,7 +68,9 @@ export function walkTypeScriptFiles(
     const stats = fileAccess.statSync(filePath);
 
     if (stats.isDirectory()) {
-      walkTypeScriptFiles(filePath, fileAccess, visitFile);
+      if (!IGNORED_SOURCE_DIRECTORIES.has(file)) {
+        walkTypeScriptFiles(filePath, fileAccess, visitFile);
+      }
     } else if (file.endsWith(".ts") || file.endsWith(".tsx")) {
       visitFile(filePath);
     }

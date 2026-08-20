@@ -12,7 +12,7 @@ export default defineConfig({
   openapi: "3.2.0",
   outputFile: "openapi.json",
   overlay: {
-    version: "1.1.0",
+    version: "1.2.0",
     apply: ["./overlays/public.overlay.yaml"],
     generate: {
       files: ["./overlays/src/**/*.yaml"],
@@ -27,11 +27,22 @@ in order. `target` (and Overlay 1.1 `copy`) use an RFC 9535 JSONPath subset:
 child, index, wildcard, slice, descendant, and simple `?(@.prop == value)`
 filters.
 
-| Feature             | 1.0                                     | 1.1                       |
-| ------------------- | --------------------------------------- | ------------------------- |
-| `update` / `remove` | yes                                     | yes                       |
-| `copy`              | omitted with `OVERLAY_COPY_UNSUPPORTED` | yes                       |
-| Reusable Actions    | not implemented                         | Overlay 1.2, out of scope |
+Overlay 1.2 reusable actions live under `components.actions` and are referenced
+from `actions` with a same-document `$ref` plus a required `target`. Optional
+`targetFormat` (`openapi` | `asyncapi` | `arazzo`, or an absolute URI) follows
+the still-open OAI Overlay draft for declaring the target document kind. A
+reserved value that disagrees with the generated OpenAPI document emits
+`OVERLAY_TARGET_FORMAT_MISMATCH` and skips that apply file. `applyOverlay`
+itself stays format-agnostic, so the same JSONPath engine can update AsyncAPI
+or Arazzo JSON when called directly. AsyncAPI documents are not generated.
+
+| Feature           | 1.0                                              | 1.1                        | 1.2                           |
+| ----------------- | ------------------------------------------------ | -------------------------- | ----------------------------- |
+| `update`/`remove` | yes                                              | yes                        | yes                           |
+| `copy`            | omitted with `OVERLAY_COPY_UNSUPPORTED`          | yes                        | yes                           |
+| `$self`           | omitted with `OVERLAY_SELF_UNSUPPORTED`          | omitted with the same code | yes                           |
+| Reusable actions  | inlined with `OVERLAY_REUSABLE_ACTION_INLINED`   | inlined with the same code | `components.actions` + `$ref` |
+| `targetFormat`    | omitted with `OVERLAY_TARGET_FORMAT_UNSUPPORTED` | omitted with the same code | yes (OAI draft)               |
 
 See `apps/next-app-zod/overlays/public.overlay.yaml` for a sample that removes
-`/webhooks/payment` from the published spec.
+`/webhooks/payment` from the published spec with a reusable action.

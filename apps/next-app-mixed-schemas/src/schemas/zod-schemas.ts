@@ -10,12 +10,12 @@ export const UserSchema = z.object({
   createdAt: z.date().describe("Account creation date"),
 });
 
-export const CreateUserSchema = UserSchema.omit({
+const CreateUserSchema = UserSchema.omit({
   id: true,
   createdAt: true,
 });
 
-export const UpdateUserSchema = UserSchema.partial().omit({
+const UpdateUserSchema = UserSchema.partial().omit({
   id: true,
   createdAt: true,
 });
@@ -30,7 +30,7 @@ export const ProductSchema = z.object({
   tags: z.array(z.string()).optional().describe("Product tags"),
 });
 
-export const CreateProductSchema = ProductSchema.omit({ id: true });
+const CreateProductSchema = ProductSchema.omit({ id: true });
 
 export const WebhookEndpointSchema = z.object({
   id: z.string().uuid().describe("Webhook endpoint identifier"),
@@ -49,7 +49,7 @@ export const CreateWebhookEndpointSchema = WebhookEndpointSchema.omit({
   status: true,
 });
 
-export const WebhookEventSchema = z.object({
+const WebhookEventSchema = z.object({
   id: z.string().describe("Webhook event identifier"),
   type: z.enum(["invoice.paid", "project.archived", "user.invited"]).describe("Webhook event type"),
   occurredAt: z.string().datetime().describe("When the event occurred"),

@@ -26,7 +26,17 @@ export type GeneratorWatchConfig = {
 
 export type DocsEmitterConfig = {
   enabled?: boolean | undefined;
-  framework?: "next" | "vite" | "react-router" | undefined;
+  framework?:
+    | "next"
+    | "vite"
+    | "react-router"
+    | "remix"
+    | "sveltekit"
+    | "nuxt"
+    | "astro"
+    | "hono"
+    | "express"
+    | undefined;
 };
 
 export type GeneratorHooks = {

@@ -50,7 +50,7 @@ describe("normalizeOpenApiConfig", () => {
         kind: FrameworkKind.Tanstack,
       },
       schemaType: "typescript",
-    } as never);
+    });
 
     expect(config.openapiVersion).toBe("3.3-preview");
     expect(config.framework).toEqual({
@@ -73,7 +73,7 @@ describe("normalizeOpenApiConfig", () => {
       next: {
         adapterPath: "./custom-adapter.ts",
       },
-    } as never);
+    });
 
     expect(config.framework).toEqual({
       kind: FrameworkKind.Nextjs,
@@ -95,7 +95,7 @@ describe("normalizeOpenApiConfig", () => {
         kind: FrameworkKind.ReactRouter,
         adapterPath: "./framework-source.ts",
       },
-    } as never);
+    });
 
     expect(config.framework).toEqual({
       kind: FrameworkKind.ReactRouter,
@@ -113,7 +113,7 @@ describe("normalizeOpenApiConfig", () => {
       framework: {
         kind: "react-router",
       },
-    } as never);
+    });
 
     expect(config.framework).toEqual({
       kind: FrameworkKind.ReactRouter,
@@ -121,26 +121,54 @@ describe("normalizeOpenApiConfig", () => {
     });
   });
 
+  it("normalizes the new file-based and call-expression framework kinds", () => {
+    expect(
+      normalizeOpenApiConfig({
+        info: { title: "Fixture", version: "1.0.0" },
+        framework: { kind: "remix" },
+      }).framework.kind,
+    ).toBe(FrameworkKind.Remix);
+    expect(
+      normalizeOpenApiConfig({
+        info: { title: "Fixture", version: "1.0.0" },
+        framework: { kind: FrameworkKind.Hono, adapterPath: "./src/index.ts" },
+      }).framework,
+    ).toEqual({
+      kind: FrameworkKind.Hono,
+      adapterPath: "./src/index.ts",
+      modulePath: "./src/index.ts",
+    });
+  });
+
+  it("throws for unknown framework kinds instead of falling back to Next.js", () => {
+    expect(() =>
+      normalizeOpenApiConfig({
+        info: { title: "Fixture", version: "1.0.0" },
+        framework: { kind: "fastify" as never },
+      }),
+    ).toThrow(/Unknown framework kind "fastify"/);
+  });
+
   it("infers OpenAPI versions from the template version string", () => {
     expect(
       normalizeOpenApiConfig({
         openapi: "3.1.0",
         info: { title: "Fixture", version: "1.0.0", description: "Fixture" },
-      } as never).openapiVersion,
+      }).openapiVersion,
     ).toBe("3.1");
 
     expect(
       normalizeOpenApiConfig({
         openapi: "3.3-preview",
         info: { title: "Fixture", version: "1.0.0", description: "Fixture" },
-      } as never).openapiVersion,
+      }).openapiVersion,
     ).toBe("3.3-preview");
 
     expect(
       normalizeOpenApiConfig({
         openapi: "3.3.0-preview",
         info: { title: "Fixture", version: "1.0.0", description: "Fixture" },
-      } as never).openapiVersion,
+      }).openapiVersion,
     ).toBe("3.3-preview");
   });
 
@@ -149,7 +177,7 @@ describe("normalizeOpenApiConfig", () => {
       normalizeOpenApiConfig({
         openapi: "4.0.0",
         info: { title: "Fixture", version: "1.0.0", description: "Fixture" },
-      } as never).openapiVersion,
+      }).openapiVersion,
     ).toBe("3.2");
   });
 
@@ -160,7 +188,7 @@ describe("normalizeOpenApiConfig", () => {
         version: "1.0.0",
         description: "Fixture",
       },
-    } as never);
+    });
 
     expect(config.openapiVersion).toBe("3.0");
   });
@@ -169,14 +197,14 @@ describe("normalizeOpenApiConfig", () => {
     expect(
       normalizeOpenApiConfig({
         info: { title: "Fixture", version: "1.0.0" },
-      } as never).cache,
+      }).cache,
     ).toBe(true);
 
     expect(
       normalizeOpenApiConfig({
         info: { title: "Fixture", version: "1.0.0" },
         cache: false,
-      } as never).cache,
+      }).cache,
     ).toBe(false);
   });
 
@@ -186,7 +214,7 @@ describe("normalizeOpenApiConfig", () => {
       info: { title: "Fixture", version: "1.0.0" },
       arazzo: { version: "1.1.0", files: ["./arazzo/**/*.yaml"] },
       overlay: { version: "1.1.0", apply: ["./overlays/public.overlay.yaml"] },
-    } as never);
+    });
 
     expect(config.openapiVersion).toBe("3.2");
     expect(config.arazzo).toEqual({ version: "1.1.0", files: ["./arazzo/**/*.yaml"] });

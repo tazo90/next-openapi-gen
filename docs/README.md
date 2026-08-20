@@ -7,13 +7,17 @@ This folder contains the longer-form guides that support the main
 
 - [Getting started and configuration](./getting-started.md): framework-aware
   setup, config naming, watch mode, and integration entrypoints
+- [Complete configuration reference](./configuration-reference.md): every
+  public field, defaults, client SDK generation, hooks, docs artifacts, and
+  cache side effects
 - [JSDoc reference](./jsdoc-reference.md): route tags, multipart encoding, and
   query serialization behavior
 - [Arazzo workflows](./arazzo.md): compile workflow files against generated
   `operationId`s
 - [OpenAPI Overlay](./overlay.md): apply or generate Overlay documents
 - [Workflows and integrations](./workflows-and-integrations.md): Next.js,
-  TanStack Router, React Router, schema migration, and downstream OpenAPI use
+  TanStack Router, React Router, Remix, SvelteKit, Nuxt, Astro, Hono, Express,
+  schema migration, and downstream OpenAPI use
 - [FAQ and troubleshooting](./faq.md)
 
 ## Coverage and support matrices

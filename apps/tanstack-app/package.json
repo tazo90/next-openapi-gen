@@ -9,7 +9,7 @@
     "dev": "vite dev",
     "format": "oxfmt --config ../../oxfmt.config.ts --ignore-path ../../.gitignore .",
     "format:check": "oxfmt --config ../../oxfmt.config.ts --ignore-path ../../.gitignore --check .",
-    "generate": "pnpm exec next-openapi-gen generate",
+    "generate": "pnpm exec openapi-gen generate",
     "lint": "oxlint --type-aware --config ../../oxlint.config.ts . --ignore-path ../../.gitignore --deny-warnings",
     "lint:fix": "oxlint --type-aware --config ../../oxlint.config.ts . --ignore-path ../../.gitignore --fix --deny-warnings",
     "start": "vite preview"
@@ -26,7 +26,6 @@
     "@types/react": "catalog:tanstack",
     "@types/react-dom": "catalog:tanstack",
     "@vitejs/plugin-react": "catalog:tanstack",
-    "ajv": "catalog:",
     "next-openapi-gen": "workspace:*",
     "typescript": "catalog:",
     "vite": "catalog:tanstack"

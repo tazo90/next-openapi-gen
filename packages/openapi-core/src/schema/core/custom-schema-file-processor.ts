@@ -100,7 +100,7 @@ function getOpenApiFragment(parsed: unknown): Partial<OpenApiDocument> {
   }
 
   if (isRecord(parsed.components) || isRecord(parsed.paths) || isRecord(parsed.webhooks)) {
-    return parsed as Partial<OpenApiDocument>;
+    return parsed;
   }
 
   const schemas = getSchemaRecord(parsed);
@@ -147,11 +147,11 @@ function mergeOpenApiFragments(
     }
 
     if (isRecord(existingValue) && isRecord(value)) {
-      merged[key as keyof OpenApiDocument] = mergeRecords(existingValue, value) as never;
+      merged[key as keyof OpenApiDocument] = mergeRecords(existingValue, value);
       continue;
     }
 
-    merged[key as keyof OpenApiDocument] = structuredClone(value) as never;
+    merged[key as keyof OpenApiDocument] = structuredClone(value);
   }
 
   return merged;

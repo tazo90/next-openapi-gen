@@ -5,7 +5,7 @@ import { z } from "zod";
  * Internal admin schema – should NEVER appear in the public OpenAPI spec.
  *
  * To keep this route (and its schema) out of the generated spec, restrict
- * apiDir in next.openapi.json to the public subdirectory, e.g.:
+ * apiDir in openapi-gen.config.ts to the public subdirectory, e.g.:
  *
  *   "apiDir": "./src/app/api/public"
  *

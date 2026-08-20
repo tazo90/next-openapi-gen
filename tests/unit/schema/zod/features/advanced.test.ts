@@ -54,6 +54,38 @@ describe("Zod features › advanced types", () => {
     });
   });
 
+  it("covers remaining primitive and collection helpers through the converter", () => {
+    expect(convert("z.float32()", roots)).toMatchObject({ type: "number", format: "float" });
+    expect(convert("z.float64()", roots)).toMatchObject({ type: "number", format: "double" });
+    expect(convert("z.int32()", roots)).toMatchObject({ type: "integer", format: "int32" });
+    expect(convert("z.uint32()", roots)).toMatchObject({ type: "integer", minimum: 0 });
+    expect(convert("z.uint64()", roots)).toMatchObject({ type: "integer", format: "int64" });
+    expect(convert("z.file()", roots)).toMatchObject({ type: "string" });
+    expect(convert("z.nan()", roots)).toMatchObject({ type: "number" });
+    expect(convert("z.void()", roots)).toMatchObject({ type: "null" });
+    expect(convert("z.never()", roots)).toMatchObject({ not: {} });
+    expect(convert("z.set(z.string())", roots)).toMatchObject({
+      type: "array",
+      uniqueItems: true,
+    });
+    expect(convert("z.map(z.string(), z.number())", roots)).toMatchObject({
+      type: "object",
+    });
+    expect(convert("z.partialRecord(z.string(), z.boolean())", roots)).toMatchObject({
+      type: "object",
+    });
+    expect(convert("z.templateLiteral(['id-', z.string()])", roots)).toMatchObject({
+      type: "string",
+      pattern: expect.stringContaining("id-"),
+    });
+    expect(convert("z.strictObject({ id: z.string() })", roots)).toMatchObject({
+      additionalProperties: false,
+    });
+    expect(convert("z.looseObject({ id: z.string() })", roots)).toMatchObject({
+      additionalProperties: true,
+    });
+  });
+
   it("z.null() and z.undefined() map to null-typed schemas", () => {
     expect(convert("z.null()", roots)).toMatchObject({ type: "null" });
     const undef = convert("z.undefined()", roots);
