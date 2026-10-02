@@ -1,3 +1,14 @@
+# [1.9.0](https://github.com/tazo90/next-openapi-gen/compare/v1.8.2...v1.9.0) (2026-10-02)
+
+
+### 🐛 Bug Fixes
+
+* **release:** pin angular preset to v8 for changelog generation ([#197](https://github.com/tazo90/next-openapi-gen/issues/197)) ([8f20baf](https://github.com/tazo90/next-openapi-gen/commit/8f20baf56b1e9f0ca6b44d232cf07155b6a28355)) by [@tazo90](https://github.com/tazo90)
+
+* support TypeScript 7.1 snapshot API and dedupe TanStack router ([#191](https://github.com/tazo90/next-openapi-gen/issues/191)) ([68baf42](https://github.com/tazo90/next-openapi-gen/commit/68baf425aa288f766e7fc48e3ed8dbe905d60688)) by [@tazo90](https://github.com/tazo90)
+
+* **zod:** resolve spread elements in enum arrays instead of dropping them ([#184](https://github.com/tazo90/next-openapi-gen/issues/184)) ([eff0af8](https://github.com/tazo90/next-openapi-gen/commit/eff0af818d3c3eb30ad2de9d40c3faa64d83a4f6)) by [@thelgason](https://github.com/thelgason)
+
 ## [1.8.2](https://github.com/tazo90/next-openapi-gen/compare/v1.8.1...v1.8.2) (2026-09-16)
 
 ### 🐛 Bug Fixes
