@@ -1312,6 +1312,51 @@ describe("NativeTypeScriptAdapter", () => {
       );
     });
 
+    it("creates snapshots through the TypeScript 7.1 createSnapshot API", () => {
+      const temp = setupTempProject();
+      fs.mkdirSync(path.join(temp.root, "src", "models"), { recursive: true });
+      fs.writeFileSync(
+        path.join(temp.root, "src", "models", "user.ts"),
+        "export type User = { id: string };\n",
+      );
+      temp.fake.setProject({ baseUrl: ".", paths: { "@/*": ["./src/*"] } });
+      const project = temp.fake.project;
+      const configuredProjects: string[] = [];
+      class SnapshotFirstAPI {
+        close(): void {}
+        createSnapshot(_params?: { openProject?: string }) {
+          return {
+            dispose() {},
+            getConfiguredProject(configFileName: string) {
+              configuredProjects.push(configFileName);
+              return project;
+            },
+            getProject() {
+              throw new Error("getProject expects a project id");
+            },
+            getDefaultProjectForFile: () => undefined,
+            getProjects: () => [],
+          };
+        }
+        updateSnapshot(): never {
+          throw new Error("Cannot update an inactive snapshot");
+        }
+      }
+      const adapter = createNativeTypeScriptAdapter({
+        packagePath: temp.root,
+        runtime: {
+          ...temp.fake.runtime,
+          sync: { ...temp.fake.runtime.sync, API: SnapshotFirstAPI },
+        },
+        version: "7.1.0-dev",
+      });
+
+      expect(adapter.resolveModule("@/models/user", temp.routeFile)).toBe(
+        path.join(temp.root, "src", "models", "user.ts"),
+      );
+      expect(configuredProjects).toEqual([path.join(temp.root, "tsconfig.json")]);
+    });
+
     it("returns null for unmapped bare specifiers", () => {
       const temp = setupTempProject();
       temp.fake.setProject({ paths: {} });

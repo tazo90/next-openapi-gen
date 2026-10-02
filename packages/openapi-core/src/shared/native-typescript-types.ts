@@ -16,6 +16,7 @@ export type NativeProjectApi = {
 
 export type NativeSnapshotApi = {
   dispose(): void;
+  getConfiguredProject?(configFileName: string): NativeProjectApi | undefined;
   getDefaultProjectForFile(file: string): NativeProjectApi | undefined;
   getProject(configFileName: string): NativeProjectApi | undefined;
   getProjects(): readonly NativeProjectApi[];
@@ -100,14 +101,19 @@ export type NativeType = {
   value?: string | number | boolean | bigint;
 };
 
+export type NativeSnapshotParams = {
+  openProject?: string;
+  fileChanges?: { changed?: string[]; created?: string[]; deleted?: string[] };
+};
+
 export type NativeSyncModule = {
   API: new (options?: { cwd?: string }) => {
     close(): void;
     parseConfigFile(file: string): { fileNames: string[]; options: Record<string, unknown> };
-    updateSnapshot(params?: {
-      openProject?: string;
-      fileChanges?: { changed?: string[]; created?: string[]; deleted?: string[] };
-    }): NativeSnapshotApi;
+    /** TypeScript 7.1+: `updateSnapshot` now requires a base snapshot. */
+    createSnapshot?(params?: NativeSnapshotParams): NativeSnapshotApi;
+    /** TypeScript 7.0: creates a fresh snapshot from params alone. */
+    updateSnapshot(params?: NativeSnapshotParams): NativeSnapshotApi;
   };
   ModifierFlags: Record<string, number | undefined>;
   ObjectFlags: Record<string, number | undefined>;
