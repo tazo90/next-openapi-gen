@@ -436,6 +436,35 @@ describe("SymbolResolver", () => {
     expect(resolver.resolveEnumValues("/app/enums.ts", "EMPTY_ENUM")).toBeNull();
   });
 
+  it("follows spread elements in const arrays and refuses partial results", () => {
+    const graph = new Map<string, string>([
+      [
+        "/app/lists.ts",
+        `
+          import { OTHER } from "./other";
+          const BASE = ["a", "b"] as const;
+          export const MIXED = [...BASE, "z"] as const;
+          export const ALL = [...BASE, ...OTHER] as const;
+          export const WITH_CALL = [...BASE, ...compute()] as const;
+          export const LOOP_A = [...LOOP_B, "a"] as const;
+          export const LOOP_B = [...LOOP_A, "b"] as const;
+        `,
+      ],
+      ["/app/other.ts", `export const OTHER = ["c", "d"] as const;`],
+    ]);
+    const resolver = new SymbolResolver({
+      existsSync: (filePath: string) => graph.has(filePath),
+      readFileSync: (filePath: string) => graph.get(filePath) ?? "",
+    });
+
+    expect(resolver.resolveEnumValues("/app/lists.ts", "MIXED")).toEqual(["a", "b", "z"]);
+    expect(resolver.resolveEnumValues("/app/lists.ts", "ALL")).toEqual(["a", "b", "c", "d"]);
+    expect(resolver.resolveConstArrayValues("/app/lists.ts", "ALL")).toEqual(["a", "b", "c", "d"]);
+    expect(resolver.resolveEnumValues("/app/lists.ts", "WITH_CALL")).toBeNull();
+    expect(resolver.resolveConstArrayValues("/app/lists.ts", "WITH_CALL")).toBeNull();
+    expect(resolver.resolveEnumValues("/app/lists.ts", "LOOP_A")).toBeNull();
+  });
+
   it("follows default imports and misses through re-export graphs", () => {
     const graph = new Map<string, string>([
       [

@@ -435,12 +435,8 @@ export class SymbolResolver {
     // 3. `as const` arrays
     const constArr = index.constArrays.get(name);
     if (constArr) {
-      const values: (string | number)[] = [];
-      for (const element of constArr.elements) {
-        if (t.isStringLiteral(element)) values.push(element.value);
-        else if (t.isNumericLiteral(element)) values.push(element.value);
-      }
-      if (values.length > 0) return values;
+      const values = this.readArrayValues(constArr, filePath, new Set([constArr]));
+      return values && values.length > 0 ? values : null;
     }
 
     // 4. Follow named imports
@@ -527,27 +523,58 @@ export class SymbolResolver {
 
   /** Return the literal string/number values of a const array declarator, following imports. */
   public resolveConstArrayValues(filePath: string, name: string): (string | number)[] | null {
-    const arr = this.resolveConstArrayNode(filePath, name);
-    if (!arr) return null;
+    const declaration = this.resolveConstArrayDeclaration(filePath, name, new Set());
+    if (!declaration) return null;
+    const values = this.readArrayValues(
+      declaration.node,
+      declaration.filePath,
+      new Set([declaration.node]),
+    );
+    return values && values.length > 0 ? values : null;
+  }
+
+  /**
+   * Literal values of a const array, following `...NAME` spreads of other const arrays.
+   * `null` when any element is not static, so a partial list is never reported as complete.
+   */
+  private readArrayValues(
+    array: t.ArrayExpression,
+    filePath: string,
+    expanding: Set<t.ArrayExpression>,
+  ): (string | number)[] | null {
     const values: (string | number)[] = [];
-    for (const element of arr.elements) {
-      if (t.isStringLiteral(element)) values.push(element.value);
-      else if (t.isNumericLiteral(element)) values.push(element.value);
+    for (const element of array.elements) {
+      if (t.isStringLiteral(element) || t.isNumericLiteral(element)) {
+        values.push(element.value);
+      } else if (t.isSpreadElement(element) && t.isIdentifier(element.argument)) {
+        const spread = this.resolveConstArrayDeclaration(
+          filePath,
+          element.argument.name,
+          new Set(),
+        );
+        if (!spread || expanding.has(spread.node)) return null;
+        expanding.add(spread.node);
+        const spreadValues = this.readArrayValues(spread.node, spread.filePath, expanding);
+        expanding.delete(spread.node);
+        if (!spreadValues) return null;
+        values.push(...spreadValues);
+      } else {
+        return null;
+      }
     }
-    return values.length > 0 ? values : null;
+    return values;
   }
 
   /** Return the raw AST node for a const array declarator, following imports. */
   public resolveConstArrayNode(filePath: string, name: string): t.ArrayExpression | null {
-    const visited = new Set<string>();
-    return this.resolveConstArrayNodeInternal(filePath, name, visited);
+    return this.resolveConstArrayDeclaration(filePath, name, new Set())?.node ?? null;
   }
 
-  private resolveConstArrayNodeInternal(
+  private resolveConstArrayDeclaration(
     filePath: string,
     name: string,
     visited: Set<string>,
-  ): t.ArrayExpression | null {
+  ): { node: t.ArrayExpression; filePath: string } | null {
     if (visited.has(filePath)) return null;
     visited.add(filePath);
 
@@ -555,7 +582,7 @@ export class SymbolResolver {
     if (!index) return null;
 
     const local = index.constArrays.get(name);
-    if (local) return local;
+    if (local) return { node: local, filePath };
 
     const imports = this.getImports(filePath);
     const importInfo = imports?.get(name);
@@ -563,7 +590,7 @@ export class SymbolResolver {
       const resolved = this.resolveImportPath(filePath, importInfo.source);
       if (resolved) {
         const targetName = importInfo.importedName === "default" ? name : importInfo.importedName;
-        const result = this.resolveConstArrayNodeInternal(resolved, targetName, visited);
+        const result = this.resolveConstArrayDeclaration(resolved, targetName, visited);
         if (result) return result;
       }
     }
@@ -572,7 +599,7 @@ export class SymbolResolver {
     if (reExport) {
       const resolved = this.resolveImportPath(filePath, reExport.source);
       if (resolved) {
-        const result = this.resolveConstArrayNodeInternal(resolved, reExport.importedName, visited);
+        const result = this.resolveConstArrayDeclaration(resolved, reExport.importedName, visited);
         if (result) return result;
       }
     }
@@ -580,7 +607,7 @@ export class SymbolResolver {
     for (const starSrc of index.exportsStar) {
       const resolved = this.resolveImportPath(filePath, starSrc);
       if (!resolved) continue;
-      const result = this.resolveConstArrayNodeInternal(resolved, name, visited);
+      const result = this.resolveConstArrayDeclaration(resolved, name, visited);
       if (result) return result;
     }
 

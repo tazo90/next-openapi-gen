@@ -862,7 +862,7 @@ describe("Zod node helpers", () => {
     ).toMatchObject({ allOf: expect.any(Array) });
     expect(
       processZodPrimitiveNode(getFirstInitializer("z.enum([])") as t.CallExpression, context),
-    ).toEqual({ type: "string", enum: [] });
+    ).toEqual({ type: "string" });
     expect(isOptionalUnionCall(getFirstInitializer("z.union()") as t.CallExpression)).toBe(false);
     expect(
       isOptionalUnionCall(

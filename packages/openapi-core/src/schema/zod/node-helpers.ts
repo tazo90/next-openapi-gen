@@ -48,14 +48,39 @@ function isProcessableZodNode(
 function addUnresolvedEnumDiagnostic(
   context: PrimitiveHelperContext,
   zodType: string,
-  name: string,
+  name: string | undefined,
 ): void {
   context.addDiagnostic?.({
     code: "unresolved-zod-enum",
     severity: "warning",
-    message: `Unable to resolve values for ${zodType} identifier "${name}"; approximated as a string schema.`,
-    metadata: { name },
+    message: name
+      ? `Unable to resolve values for ${zodType} identifier "${name}"; approximated as a string schema.`
+      : `Unable to resolve values for ${zodType}; approximated as a string schema.`,
+    ...(name ? { metadata: { name } } : {}),
   });
+}
+
+/**
+ * Values of an inline `z.enum([...])` array. Spreads of named const arrays are resolved;
+ * any other non-literal element makes the whole array unresolved.
+ */
+function readEnumArrayValues(
+  array: t.ArrayExpression,
+  context: PrimitiveHelperContext,
+): { values: (string | number)[] } | { unresolved: string | undefined } {
+  const values: (string | number)[] = [];
+  for (const element of array.elements) {
+    if (t.isStringLiteral(element) || t.isNumericLiteral(element)) {
+      values.push(element.value);
+    } else if (t.isSpreadElement(element) && t.isIdentifier(element.argument)) {
+      const spread = context.resolveEnumValues?.(element.argument.name);
+      if (!spread) return { unresolved: element.argument.name };
+      values.push(...spread);
+    } else {
+      return { unresolved: element && t.isIdentifier(element) ? element.name : undefined };
+    }
+  }
+  return { values };
 }
 
 export function processZodLiteral(
@@ -782,17 +807,16 @@ export function processZodPrimitiveNode(
     case "nativeEnum":
     case "enum":
       if (node.arguments.length > 0 && t.isArrayExpression(node.arguments[0])) {
-        const enumValues = node.arguments[0].elements
-          .filter((el) => t.isStringLiteral(el) || t.isNumericLiteral(el))
-          // @ts-ignore
-          .map((el) => el.value);
-        const firstValue = enumValues[0];
-        const valueType = typeof firstValue;
-
-        schema = {
-          type: valueType === "number" ? "number" : "string",
-          enum: enumValues,
-        };
+        const read = readEnumArrayValues(node.arguments[0], context);
+        if ("values" in read && read.values.length > 0) {
+          schema = {
+            type: typeof read.values[0] === "number" ? "number" : "string",
+            enum: read.values,
+          };
+        } else {
+          if ("unresolved" in read) addUnresolvedEnumDiagnostic(context, zodType, read.unresolved);
+          schema = { type: "string" };
+        }
       } else if (node.arguments.length > 0 && t.isObjectExpression(node.arguments[0])) {
         const enumValues: Array<string | number> = [];
         node.arguments[0].properties.forEach((prop) => {
