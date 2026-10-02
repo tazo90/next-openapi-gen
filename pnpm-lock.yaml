@@ -140,8 +140,8 @@ catalogs:
       version: 4.4.3
   nextjs:
     '@next/playwright':
-      specifier: 16.3.1
-      version: 16.3.1
+      specifier: 16.3.7
+      version: 16.3.7
     '@types/react':
       specifier: ^19.2.18
       version: 19.2.18
@@ -247,7 +247,7 @@ importers:
         version: 21.2.0
       '@next/playwright':
         specifier: catalog:nextjs
-        version: 16.3.1(@playwright/test@1.62.1)
+        version: 16.3.7(@playwright/test@1.62.1)
       '@playwright/test':
         specifier: 'catalog:'
         version: 1.62.1
@@ -2355,8 +2355,8 @@ packages:
   '@next/env@16.3.1':
     resolution: {integrity: sha512-35G3xwkQUb2oETSDjFXGrVugknoayLFBh7vSE+yAcl9IP2zT9wyGwq7297AYHR11kJld807t5f8AJBs6WBzXsQ==}
 
-  '@next/playwright@16.3.1':
-    resolution: {integrity: sha512-C5HQHjCg9clH66Zdvd860bOfXeBE45z4dBYxeDC3RpkG7H/7RvslVT8RkT62JqUASOqocJxo9cLyq7C4AI8MFQ==}
+  '@next/playwright@16.3.7':
+    resolution: {integrity: sha512-y2xz3ciuOE9WiIj4OImG+DIH8TejwFMWL8r6ew24REviz8NUViFgJGOpK6d86+s5sSlDqw/7fBgfJE4+mKBteA==}
     peerDependencies:
       '@playwright/test': '>=1.0.0'
     peerDependenciesMeta:
@@ -8737,7 +8737,7 @@ snapshots:
 
   '@next/env@16.3.1': {}
 
-  '@next/playwright@16.3.1(@playwright/test@1.62.1)':
+  '@next/playwright@16.3.7(@playwright/test@1.62.1)':
     optionalDependencies:
       '@playwright/test': 1.62.1
 
