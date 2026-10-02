@@ -11,7 +11,7 @@ catalog:
   "@commitlint/types": ^21.2.0
   "@playwright/test": ^1.62.1
   "@scalar/api-reference-react": ^0.9.63
-  "@seriousme/openapi-schema-validator": ^2.9.1
+  "@seriousme/openapi-schema-validator": ^2.11.0
   "@tailwindcss/postcss": ^4.3.3
   "@types/babel__traverse": ^7.28.0
   "@types/fs-extra": ^11.0.4
