@@ -38,7 +38,7 @@ catalog:
   oxlint-tsgolint: ^7.0.2001
   postcss: ^8.5.26
   postgres: ^3.4.9
-  simple-git-hooks: ^2.13.1
+  simple-git-hooks: ^2.14.0
   swagger-ui-react: ^5.32.13
   tailwindcss: ^4.3.3
   tsup: ^8.5.1
