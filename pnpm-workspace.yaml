@@ -98,6 +98,10 @@ packageExtensions:
   "knip@*":
     dependencies:
       "@types/minimist": "*"
+  # Pin the preset to v8: v9 uses JS function templates that conventional-changelog-writer@8 cannot render.
+  "conventional-changelog-preset-loader@*":
+    dependencies:
+      conventional-changelog-angular: ^8.3.1
 
 allowBuilds:
   "@scarf/scarf": false
