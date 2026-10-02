@@ -10,6 +10,10 @@ updates:
       include: "scope"
     labels:
       - "dependencies"
+    groups:
+      tanstack:
+        patterns:
+          - "@tanstack/*"
 
   - package-ecosystem: "github-actions"
     directory: "/"

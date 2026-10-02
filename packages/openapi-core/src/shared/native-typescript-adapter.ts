@@ -218,9 +218,14 @@ class NativeTypeScriptAdapter implements TypeScriptCompilerAdapter {
       syntheticConfigRoot = createSyntheticSingleFileProject(absoluteFilePath);
       projectConfigPath = path.join(syntheticConfigRoot, "tsconfig.json");
     }
-    const snapshot = this.api.updateSnapshot({ openProject: projectConfigPath });
+    const snapshotParams = { openProject: projectConfigPath };
+    const snapshot = this.api.createSnapshot
+      ? this.api.createSnapshot(snapshotParams)
+      : this.api.updateSnapshot(snapshotParams);
     const project =
-      snapshot.getProject(projectConfigPath) ??
+      (snapshot.getConfiguredProject
+        ? snapshot.getConfiguredProject(projectConfigPath)
+        : snapshot.getProject(projectConfigPath)) ??
       snapshot.getDefaultProjectForFile(absoluteFilePath) ??
       snapshot.getProjects()[0];
     if (!project) {

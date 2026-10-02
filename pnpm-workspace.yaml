@@ -70,7 +70,7 @@ catalogs:
     react-router: ^8.4.0
     vite: ^8.2.1
   tanstack:
-    "@tanstack/react-router": ^1.170.29
+    "@tanstack/react-router": ^1.170.40
     "@tanstack/react-start": ^1.168.59
     "@types/react": ^19.2.18
     "@types/react-dom": ^19.2.4
