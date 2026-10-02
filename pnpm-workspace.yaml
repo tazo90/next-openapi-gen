@@ -27,7 +27,7 @@ catalog:
   drizzle-orm: ^0.45.2
   drizzle-zod: ^0.8.3
   eslint-plugin-turbo: ^2.10.10
-  fs-extra: ^11.4.0
+  fs-extra: ^11.4.1
   js-yaml: ^5.3.0
   knip: ^6.32.2
   lint-staged: ^17.3.0
