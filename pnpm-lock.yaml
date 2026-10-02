@@ -22,8 +22,8 @@ catalogs:
       specifier: ^21.2.2
       version: 21.2.2
     '@commitlint/types':
-      specifier: ^21.2.0
-      version: 21.2.0
+      specifier: ^21.2.3
+      version: 21.2.3
     '@playwright/test':
       specifier: ^1.62.1
       version: 1.62.1
@@ -244,7 +244,7 @@ importers:
         version: 21.2.2
       '@commitlint/types':
         specifier: 'catalog:'
-        version: 21.2.0
+        version: 21.2.3
       '@next/playwright':
         specifier: catalog:nextjs
         version: 16.3.7(@playwright/test@1.62.1)
@@ -1688,8 +1688,8 @@ packages:
     resolution: {integrity: sha512-Y5gmQ+KxzqCrBFJfLvFEPvvwD3LDiNZoTT2yeFBm96M8qhmqSzQc5DvX3rheAaAMjyIvMXOCLS/mWfdpONsjyQ==}
     engines: {node: '>=22.12.0'}
 
-  '@commitlint/types@21.2.0':
-    resolution: {integrity: sha512-7zVFCDB2reMvJH5dmbKnOQPjZEvjdJTH8jc0U/PIPU1r3/+vf5pD1HlfitV2MWsWXrvu7u39iY1lyLUPOaN0Gw==}
+  '@commitlint/types@21.2.3':
+    resolution: {integrity: sha512-sGEA473TlCvhCGNoTBY9OXZVWdscIXdGt0dm8EpB+2MRfmt8LNh/X56P/T3nCtEB+eH5qGEa3odphSAoUxSfSQ==}
     engines: {node: '>=22.12.0'}
 
   '@conventional-changelog/git-client@2.7.0':
@@ -8087,7 +8087,7 @@ snapshots:
       '@commitlint/lint': 21.2.2
       '@commitlint/load': 21.2.2(@types/node@26.2.0)(typescript@7.0.2)
       '@commitlint/read': 21.2.1(conventional-commits-parser@7.1.2)
-      '@commitlint/types': 21.2.0
+      '@commitlint/types': 21.2.3
       tinyexec: 1.2.4
       yargs: 18.0.0
     transitivePeerDependencies:
@@ -8098,29 +8098,29 @@ snapshots:
 
   '@commitlint/config-conventional@21.2.2':
     dependencies:
-      '@commitlint/types': 21.2.0
+      '@commitlint/types': 21.2.3
       conventional-changelog-conventionalcommits: 10.3.0
 
   '@commitlint/config-validator@21.2.0':
     dependencies:
-      '@commitlint/types': 21.2.0
+      '@commitlint/types': 21.2.3
       ajv: 8.20.0
 
   '@commitlint/ensure@21.2.0':
     dependencies:
-      '@commitlint/types': 21.2.0
+      '@commitlint/types': 21.2.3
       es-toolkit: 1.48.1
 
   '@commitlint/execute-rule@21.0.1': {}
 
   '@commitlint/format@21.2.2':
     dependencies:
-      '@commitlint/types': 21.2.0
+      '@commitlint/types': 21.2.3
       picocolors: 1.1.1
 
   '@commitlint/is-ignored@21.2.2':
     dependencies:
-      '@commitlint/types': 21.2.0
+      '@commitlint/types': 21.2.3
       semver: 7.8.5
 
   '@commitlint/lint@21.2.2':
@@ -8128,14 +8128,14 @@ snapshots:
       '@commitlint/is-ignored': 21.2.2
       '@commitlint/parse': 21.2.2
       '@commitlint/rules': 21.2.2
-      '@commitlint/types': 21.2.0
+      '@commitlint/types': 21.2.3
 
   '@commitlint/load@21.2.2(@types/node@26.2.0)(typescript@7.0.2)':
     dependencies:
       '@commitlint/config-validator': 21.2.0
       '@commitlint/execute-rule': 21.0.1
       '@commitlint/resolve-extends': 21.2.2
-      '@commitlint/types': 21.2.0
+      '@commitlint/types': 21.2.3
       cosmiconfig: 9.0.2(typescript@7.0.2)
       cosmiconfig-typescript-loader: 6.3.0(@types/node@26.2.0)(cosmiconfig@9.0.2(typescript@7.0.2))(typescript@7.0.2)
       es-toolkit: 1.48.1
@@ -8149,14 +8149,14 @@ snapshots:
 
   '@commitlint/parse@21.2.2':
     dependencies:
-      '@commitlint/types': 21.2.0
+      '@commitlint/types': 21.2.3
       conventional-changelog-angular: 9.3.0
       conventional-commits-parser: 7.1.2
 
   '@commitlint/read@21.2.1(conventional-commits-parser@7.1.2)':
     dependencies:
       '@commitlint/top-level': 21.2.0
-      '@commitlint/types': 21.2.0
+      '@commitlint/types': 21.2.3
       '@conventional-changelog/git-client': 3.1.2(conventional-commits-parser@7.1.2)
       tinyexec: 1.2.4
     transitivePeerDependencies:
@@ -8166,7 +8166,7 @@ snapshots:
   '@commitlint/resolve-extends@21.2.2':
     dependencies:
       '@commitlint/config-validator': 21.2.0
-      '@commitlint/types': 21.2.0
+      '@commitlint/types': 21.2.3
       es-toolkit: 1.48.1
       global-directory: 5.0.0
       resolve-from: 5.0.0
@@ -8176,7 +8176,7 @@ snapshots:
       '@commitlint/ensure': 21.2.0
       '@commitlint/message': 21.2.0
       '@commitlint/to-lines': 21.0.1
-      '@commitlint/types': 21.2.0
+      '@commitlint/types': 21.2.3
 
   '@commitlint/to-lines@21.0.1': {}
 
@@ -8184,7 +8184,7 @@ snapshots:
     dependencies:
       escalade: 3.2.0
 
-  '@commitlint/types@21.2.0':
+  '@commitlint/types@21.2.3':
     dependencies:
       conventional-commits-parser: 7.1.2
       picocolors: 1.1.1
