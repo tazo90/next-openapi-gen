@@ -85,8 +85,8 @@ catalogs:
       specifier: ^2.10.10
       version: 2.10.10
     fs-extra:
-      specifier: ^11.4.0
-      version: 11.4.0
+      specifier: ^11.4.1
+      version: 11.4.1
     js-yaml:
       specifier: ^5.3.0
       version: 5.3.0
@@ -1008,7 +1008,7 @@ importers:
         version: 7.0.6
       fs-extra:
         specifier: 'catalog:'
-        version: 11.4.0
+        version: 11.4.1
       js-yaml:
         specifier: 'catalog:'
         version: 5.3.0
@@ -1136,7 +1136,7 @@ importers:
         version: 15.0.0
       fs-extra:
         specifier: 'catalog:'
-        version: 11.4.0
+        version: 11.4.1
       ora:
         specifier: 'catalog:'
         version: 9.4.1
@@ -1173,7 +1173,7 @@ importers:
         version: 7.0.6
       fs-extra:
         specifier: 'catalog:'
-        version: 11.4.0
+        version: 11.4.1
       js-yaml:
         specifier: 'catalog:'
         version: 5.3.0
@@ -1393,7 +1393,7 @@ importers:
         version: link:../openapi-core
       fs-extra:
         specifier: 'catalog:'
-        version: 11.4.0
+        version: 11.4.1
     devDependencies:
       '@types/fs-extra':
         specifier: 'catalog:'
@@ -1752,11 +1752,11 @@ packages:
 
   '@esbuild-kit/core-utils@3.3.2':
     resolution: {integrity: sha512-sPRAnw9CdSsRmEtnsl2WXWdyquogVpB3yZ3dgwJfe8zrOzTsV7cJvmwrKVa+0ma5BoiGJ+BoqkMvawbayKUsqQ==}
-    deprecated: 'Merged into tsx: https://tsx.is'
+    deprecated: 'Merged into tsx: https://tsx.hirok.io'
 
   '@esbuild-kit/esm-loader@2.6.5':
     resolution: {integrity: sha512-FxEMIkJKnodyA1OaCUoEvbYRkoZlLZ4d/eXFu9Fh8CbBBgP5EmZxrfTRyN0qpXZ4vOvqnE5YdRdcrmUUXuU+dA==}
-    deprecated: 'Merged into tsx: https://tsx.is'
+    deprecated: 'Merged into tsx: https://tsx.hirok.io'
 
   '@esbuild/aix-ppc64@0.28.2':
     resolution: {integrity: sha512-XExcO+dvLKvVtNTibSTBej1NCAbaGhWn9Ww1ZPx80qsahhPFe/8jgWP0IchNe0F3HwkU7n8ejhH8bjonqht8mQ==}
@@ -5214,8 +5214,8 @@ packages:
   fraction.js@5.3.4:
     resolution: {integrity: sha512-1X1NTtiJphryn/uLQz3whtY6jK3fTqoE3ohKs0tT+Ujr1W59oopxmoEh7Lu5p6vBaPbgoM0bzveAW4Qi5RyWDQ==}
 
-  fs-extra@11.4.0:
-    resolution: {integrity: sha512-EQsFzMUJkCKGr1ePqlYADkIUmHW1s3ZXr5Yqy6wbGrfUCphpl2maM/kyOIRA2HpP3AaFQTZXD4ldjek+nccddA==}
+  fs-extra@11.4.1:
+    resolution: {integrity: sha512-KYAb4c9BJQI6QqGKthV68OHe0badztdXJWKo0WtBA9IuCFPTKvE5ZdUBglP833aMjhaSPNO4A5j/EkzZtGlKjA==}
     engines: {node: '>=14.14'}
 
   fsevents@2.3.2:
@@ -11845,7 +11845,7 @@ snapshots:
 
   fraction.js@5.3.4: {}
 
-  fs-extra@11.4.0:
+  fs-extra@11.4.1:
     dependencies:
       graceful-fs: 4.2.11
       jsonfile: 6.2.1
