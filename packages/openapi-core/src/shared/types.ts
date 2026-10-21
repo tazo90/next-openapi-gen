@@ -423,17 +423,23 @@ export interface ErrorTemplateConfig {
   template: JsonValue;
   codes: Record<string, ErrorCodeConfig>;
   variables?: Record<string, string>;
+  /** Media type of every generated error response. Defaults to `application/json`. */
+  contentType?: string;
 }
 
 export interface ErrorCodeConfig {
   description: string;
   httpStatus?: number;
   variables?: Record<string, string>;
+  /** Overrides `errorConfig.contentType` for this code, e.g. `application/problem+json`. */
+  contentType?: string;
 }
 
 export interface ErrorDefinition {
   description: string;
   schema: OpenApiSchema;
+  /** Media type of the response. Defaults to `application/json`. */
+  contentType?: string;
 }
 
 export type {

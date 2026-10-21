@@ -391,6 +391,31 @@ sets once in your config:
 You can then override the default set per route with `@responseSet` or add
 individual extra responses with `@add`.
 
+Error responses are generated as `application/json` by default. To describe
+errors as [RFC 9457](https://www.rfc-editor.org/rfc/rfc9457) problem details,
+set `contentType` on `errorConfig`. A code can override it with its own
+`contentType`:
+
+```ts
+errorConfig: {
+  contentType: "application/problem+json",
+  template: {
+    type: "object",
+    properties: {
+      type: { type: "string", format: "uri-reference" },
+      title: { type: "string", example: "{{TITLE}}" },
+      status: { type: "integer" },
+    },
+  },
+  codes: {
+    "404": { description: "Not found", variables: { TITLE: "Not Found" } },
+    "500": { description: "Server error", contentType: "application/json" },
+  },
+}
+```
+
+Entries in `errorDefinitions` accept the same `contentType` field.
+
 ## Ignoring routes
 
 There are two common ways to keep internal or incomplete endpoints out of the
