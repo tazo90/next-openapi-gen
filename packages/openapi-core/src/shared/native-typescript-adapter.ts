@@ -605,13 +605,32 @@ class NativeTypeScriptAdapter implements TypeScriptCompilerAdapter {
     }
 
     const returnType = project.checker.getReturnTypeOfSignature(signature);
-    const typeName = returnType
-      ? this.extractNamedResponseType(
-          this.unwrapPromiseType(returnType, project.checker),
-          project.checker,
-        )
+    const unwrappedType = returnType
+      ? this.unwrapPromiseType(returnType, project.checker)
       : undefined;
-    return typeName ? { typeName, source: "typescript" } : undefined;
+    if (!unwrappedType) {
+      return undefined;
+    }
+
+    const typeName = this.extractNamedResponseType(unwrappedType, project.checker);
+    if (typeName) {
+      return { typeName, source: "typescript" };
+    }
+
+    const genericResponseType = getNativeTypeArguments(unwrappedType, project.checker)[0];
+    if (genericResponseType && this.isGenericInstantiation(genericResponseType, project.checker)) {
+      return {
+        schema: this.typeToOpenApiSchema(
+          genericResponseType,
+          project.checker,
+          project,
+          new Set<string>(),
+        ),
+        source: "typescript",
+      };
+    }
+
+    return undefined;
   }
 
   private getFunctionLikeNode(node: NativeNode): NativeNode | undefined {
@@ -724,6 +743,10 @@ class NativeTypeScriptAdapter implements TypeScriptCompilerAdapter {
       return elementName ? `${elementName}[]` : undefined;
     }
 
+    if (this.isGenericInstantiation(type, checker)) {
+      return undefined;
+    }
+
     const aliasName = type.getAliasSymbol?.()?.name;
     if (aliasName && isUsableTypeName(aliasName) && !isIgnoredRuntimeType(aliasName)) {
       return aliasName;
@@ -735,6 +758,17 @@ class NativeTypeScriptAdapter implements TypeScriptCompilerAdapter {
     }
 
     return undefined;
+  }
+
+  /**
+   * True for an instantiated generic such as `Page<Note>` or `Box<Note>`. The name alone
+   * (`Page`) would resolve to the unbound generic, so these are expanded inline instead.
+   */
+  private isGenericInstantiation(type: NativeType, checker: NativeCheckerApi): boolean {
+    return (
+      (type.getAliasTypeArguments?.()?.length ?? 0) > 0 ||
+      getNativeTypeArguments(type, checker).length > 0
+    );
   }
 
   private typeToOpenApiSchema(
