@@ -5,7 +5,12 @@ import { logger } from "../../shared/logger.js";
 import type { SymbolResolver } from "../../shared/symbol-resolver.js";
 import type { ContentType, OpenAPIDefinition } from "../../shared/types.js";
 import { extractFunctionParameters, extractFunctionReturnType } from "./function-nodes.js";
-import { extractKeysFromLiteralType, getPropertyOptions, isDateNode } from "./helpers.js";
+import {
+  extractKeysFromLiteralType,
+  getPropertyOptions,
+  isDateNode,
+  mergePropertyOptions,
+} from "./helpers.js";
 import { resolveUtilityTypeReference } from "./utility-types.js";
 
 export type TypeNodeSchemaHost = {
@@ -554,10 +559,10 @@ export function resolveTypeNodeSchema(host: TypeNodeSchemaHost, node: any): Open
         const key = member.key;
         const propName = t.isIdentifier(key) ? key.name : t.isStringLiteral(key) ? key.value : null;
         if (!propName) return;
-        const property = {
-          ...resolveTypeNodeSchema(host, member.typeAnnotation?.typeAnnotation),
-          ...getPropertyOptions(member, host.contentType),
-        };
+        const property = mergePropertyOptions(
+          resolveTypeNodeSchema(host, member.typeAnnotation?.typeAnnotation),
+          getPropertyOptions(member, host.contentType),
+        );
         // `readonly foo: string` — surface it in the emitted schema.
         if (member.readonly === true) property.readOnly = true;
         // Allow property-level `@openapi-override { ... }` JSDoc to merge raw OpenAPI into

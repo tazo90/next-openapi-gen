@@ -275,6 +275,52 @@ describe("SchemaProcessor", () => {
     expect(lookupSpy).toHaveBeenCalledWith("CreateUserInput", "body");
   });
 
+  it("promotes number properties tagged @format int32 or int64 to integer", () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-schema-processor-integer-"));
+    roots.push(root);
+
+    fs.writeFileSync(
+      path.join(root, "schemas.ts"),
+      [
+        "export type PageQuery = {",
+        "  /** @format int32 */",
+        "  limit?: number;",
+        "  /** @format int64 */",
+        "  cursor: number;",
+        "  /** @format float */",
+        "  ratio: number;",
+        "  total: number;",
+        "};",
+        "",
+        "export interface PageInfo {",
+        "  /** Items on this page @format int32 */",
+        "  count: number;",
+        "}",
+        "",
+        "export type Envelope<T> = {",
+        "  /** @format int32 */",
+        "  count: number;",
+        "  data: T;",
+        "};",
+      ].join("\n"),
+    );
+
+    const processor = new SchemaProcessor(root, "typescript");
+
+    expect(processor.findSchemaDefinition("PageQuery", "params").properties).toEqual({
+      limit: { type: "integer", format: "int32" },
+      cursor: { type: "integer", format: "int64" },
+      ratio: { type: "number", format: "float" },
+      total: { type: "number" },
+    });
+    expect(processor.findSchemaDefinition("PageInfo", "response").properties).toEqual({
+      count: { type: "integer", format: "int32", description: "Items on this page" },
+    });
+    expect(
+      processor.findSchemaDefinition("Envelope<PageInfo>", "response").properties?.count,
+    ).toEqual({ type: "integer", format: "int32" });
+  });
+
   it("resolves generic type aliases from schema files", () => {
     const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-schema-processor-generics-"));
     roots.push(root);
