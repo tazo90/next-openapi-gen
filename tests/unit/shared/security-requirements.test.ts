@@ -2,14 +2,34 @@ import { describe, expect, it } from "vitest";
 
 import {
   applyAuthPresets,
+  isPublicSecurity,
   parseSecurityRequirementList,
 } from "@workspace/openapi-core/shared/security-requirements.js";
 import { DEFAULT_AUTH_PRESET_REPLACEMENTS } from "@workspace/openapi-core/shared/spec.js";
+
+describe("isPublicSecurity", () => {
+  it("is true only when every requirement is empty", () => {
+    expect(isPublicSecurity([{}])).toBe(true);
+    expect(isPublicSecurity([])).toBe(false);
+    expect(isPublicSecurity([{}, { bearer: [] }])).toBe(false);
+  });
+});
 
 describe("parseSecurityRequirementList", () => {
   it("returns no requirements for empty or whitespace input", () => {
     expect(parseSecurityRequirementList("")).toEqual([]);
     expect(parseSecurityRequirementList("   ")).toEqual([]);
+  });
+
+  it("turns a lone none alternative into the empty requirement", () => {
+    expect(parseSecurityRequirementList("none")).toEqual([{}]);
+    expect(parseSecurityRequirementList(" None ")).toEqual([{}]);
+    expect(parseSecurityRequirementList("bearer, none")).toEqual([{ bearer: [] }, {}]);
+  });
+
+  it("keeps none as a scheme name when it carries scopes or is combined", () => {
+    expect(parseSecurityRequirementList("none:read")).toEqual([{ none: ["read"] }]);
+    expect(parseSecurityRequirementList("none;bearer")).toEqual([{ none: [], bearer: [] }]);
   });
 
   it("treats comma-separated schemes as alternative requirements", () => {

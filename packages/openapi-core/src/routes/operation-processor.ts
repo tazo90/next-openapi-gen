@@ -3,7 +3,11 @@ import { measurePerformance } from "../core/performance.js";
 import type { DiagnosticsCollector } from "../diagnostics/collector.js";
 import { createMultipartEncoding } from "../schema/typescript/helpers.js";
 import type { SchemaProcessor } from "../schema/typescript/schema-processor.js";
-import { applyAuthPresets, parseSecurityRequirementList } from "../shared/security-requirements.js";
+import {
+  applyAuthPresets,
+  isPublicSecurity,
+  parseSecurityRequirementList,
+} from "../shared/security-requirements.js";
 import {
   applyParameterExamples,
   deepMerge,
@@ -118,10 +122,16 @@ export class OperationProcessor {
       definition.deprecated = true;
     }
 
-    if (explicitSecurity && explicitSecurity.length > 0) {
-      definition.security = applyAuthPresets(explicitSecurity, this.authPresets);
-    } else if (auth) {
-      definition.security = applyAuthPresets(parseSecurityRequirementList(auth), this.authPresets);
+    const securityRequirements =
+      explicitSecurity && explicitSecurity.length > 0
+        ? explicitSecurity
+        : auth
+          ? parseSecurityRequirementList(auth)
+          : undefined;
+    if (securityRequirements && securityRequirements.length > 0) {
+      definition.security = isPublicSecurity(securityRequirements)
+        ? []
+        : applyAuthPresets(securityRequirements, this.authPresets);
     }
 
     if (servers && servers.length > 0) {
