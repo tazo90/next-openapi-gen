@@ -77,12 +77,21 @@ describe("generator error response helpers", () => {
             type: "object",
             properties: {
               code: { example: "AUTH_EXPIRED" },
-              status: { example: "401" },
+              status: { example: 401 },
             },
           },
         },
       },
     });
+  });
+
+  it("emits HTTP_STATUS as a number when it is the whole value and as text when embedded", () => {
+    expect(
+      processTemplateVariables(
+        { status: "{{HTTP_STATUS}}", title: "HTTP {{HTTP_STATUS}}", code: "{{ERROR_CODE}}" },
+        { HTTP_STATUS: "404", ERROR_CODE: "404" },
+      ),
+    ).toEqual({ status: 404, title: "HTTP 404", code: "404" });
   });
 
   it("no-ops when the document has no responses section", () => {
