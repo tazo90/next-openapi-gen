@@ -482,10 +482,10 @@ type LoginBody = {
 
 Both forms support the same set of JSDoc tags:
 
-| Tag        | Effect on the generated property schema                                          |
-| ---------- | -------------------------------------------------------------------------------- |
-| `@example` | Sets `example` — JSON-parsed when possible (strings, numbers, booleans, objects) |
-| `@format`  | Sets `format` (e.g. `date-time`, `email`, `uri`)                                 |
+| Tag        | Effect on the generated property schema                                                                    |
+| ---------- | ---------------------------------------------------------------------------------------------------------- |
+| `@example` | Sets `example` — JSON-parsed when possible (strings, numbers, booleans, objects)                           |
+| `@format`  | Sets `format` (e.g. `date-time`, `email`, `uri`); `int32` / `int64` on a `number` also set `type: integer` |
 
 ```ts
 type Health = {

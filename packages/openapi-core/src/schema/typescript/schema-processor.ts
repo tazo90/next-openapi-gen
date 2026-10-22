@@ -39,6 +39,7 @@ import {
   extractKeysFromLiteralType,
   getExampleForParam,
   getPropertyOptions,
+  mergePropertyOptions,
   getSchemaProcessorErrorMessage,
   normalizeSchemaDirs,
   normalizeSchemaTypes,
@@ -690,10 +691,10 @@ export class SchemaProcessor {
               const propName = member.key.name;
               const options = getPropertyOptions(member, this.contentType);
 
-              const property = {
-                ...this.resolveTSNodeType(member.typeAnnotation?.typeAnnotation),
-                ...options,
-              };
+              const property = mergePropertyOptions(
+                this.resolveTSNodeType(member.typeAnnotation?.typeAnnotation),
+                options,
+              );
 
               applyPropertyOpenApiOverride(member, property);
               properties[propName] = property;

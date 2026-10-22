@@ -5,6 +5,7 @@ import type { ContentType, OpenAPIDefinition } from "../../shared/types.js";
 import {
   createTypeReferenceFromString,
   getPropertyOptions,
+  mergePropertyOptions,
   parseGenericTypeString,
 } from "./helpers.js";
 
@@ -216,14 +217,14 @@ export function resolveTypeWithSubstitution(
     node.members.forEach((member: any) => {
       if (t.isTSPropertySignature(member) && t.isIdentifier(member.key)) {
         const propName = member.key.name;
-        properties[propName] = {
-          ...resolveTypeWithSubstitution(
+        properties[propName] = mergePropertyOptions(
+          resolveTypeWithSubstitution(
             host,
             member.typeAnnotation?.typeAnnotation,
             typeParameterMap,
           ),
-          ...getPropertyOptions(member, host.contentType),
-        };
+          getPropertyOptions(member, host.contentType),
+        );
         if (!member.optional) {
           required.push(propName);
         }
@@ -241,14 +242,14 @@ export function resolveTypeWithSubstitution(
     node.body.forEach((member: any) => {
       if (t.isTSPropertySignature(member) && t.isIdentifier(member.key)) {
         const propName = member.key.name;
-        properties[propName] = {
-          ...resolveTypeWithSubstitution(
+        properties[propName] = mergePropertyOptions(
+          resolveTypeWithSubstitution(
             host,
             member.typeAnnotation?.typeAnnotation,
             typeParameterMap,
           ),
-          ...getPropertyOptions(member, host.contentType),
-        };
+          getPropertyOptions(member, host.contentType),
+        );
         if (!member.optional) {
           required.push(propName);
         }
