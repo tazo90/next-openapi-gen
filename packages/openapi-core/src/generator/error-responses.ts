@@ -38,6 +38,8 @@ export function processTemplateVariables(
   return JSON.parse(result) as OpenApiSchemaLike;
 }
 
+const DEFAULT_ERROR_CONTENT_TYPE = "application/json";
+
 export function guessHttpStatus(errorCode: string): number {
   const numericCode = parseInt(errorCode);
   if (numericCode >= 100 && numericCode < 600) {
@@ -57,7 +59,7 @@ export function createErrorResponseComponent(errorDef: ErrorDefinition): OpenApi
   return {
     description: errorDef.description,
     content: {
-      "application/json": {
+      [errorDef.contentType || DEFAULT_ERROR_CONTENT_TYPE]: {
         schema: errorDef.schema,
       },
     },
@@ -68,7 +70,7 @@ export function generateErrorResponsesFromConfig(
   document: OpenApiDocument,
   errorConfig: ErrorTemplateConfig,
 ): void {
-  const { template, codes, variables: globalVars = {} } = errorConfig;
+  const { template, codes, variables: globalVars = {}, contentType } = errorConfig;
   const responses = document.components?.responses;
   if (!responses) {
     return;
@@ -87,7 +89,7 @@ export function generateErrorResponsesFromConfig(
     responses[httpStatus] = {
       description: config.description,
       content: {
-        "application/json": {
+        [config.contentType || contentType || DEFAULT_ERROR_CONTENT_TYPE]: {
           schema: processTemplateVariables(template, allVariables),
         },
       },
