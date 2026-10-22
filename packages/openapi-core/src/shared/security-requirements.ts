@@ -25,6 +25,10 @@ const SCHEME_NAME_RE = /^[A-Za-z][A-Za-z0-9._-]*/;
  * Comma separates alternative requirement objects (OR). Semicolon groups
  * schemes in one object (AND). After the first `:`, `,` and `|` are scopes
  * until `;` or the end of the tag.
+ *
+ * A lone `none` alternative is the OpenAPI "no authentication" requirement and
+ * becomes an empty object, so `none` on its own opts an operation out of the
+ * document-level `security` and `bearer,none` makes authentication optional.
  */
 export function parseSecurityRequirementList(raw: string): OpenApiSecurityRequirement[] {
   const requirements: OpenApiSecurityRequirement[] = [];
@@ -39,7 +43,15 @@ export function parseSecurityRequirementList(raw: string): OpenApiSecurityRequir
   };
 
   const pushCurrent = (): void => {
-    if (Object.keys(current).length > 0) {
+    const schemes = Object.keys(current);
+    if (
+      schemes.length === 1 &&
+      schemes[0]?.toLowerCase() === "none" &&
+      !current[schemes[0]]?.length
+    ) {
+      requirements.push({});
+      current = {};
+    } else if (schemes.length > 0) {
       requirements.push(current);
       current = {};
     }
@@ -93,6 +105,11 @@ export function parseSecurityRequirementList(raw: string): OpenApiSecurityRequir
 
   pushCurrent();
   return requirements;
+}
+
+/** True when every requirement is empty, i.e. the operation is explicitly public. */
+export function isPublicSecurity(requirements: OpenApiSecurityRequirement[]): boolean {
+  return requirements.length > 0 && requirements.every((entry) => Object.keys(entry).length === 0);
 }
 
 export function applyAuthPresets(
