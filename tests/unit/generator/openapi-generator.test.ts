@@ -365,6 +365,40 @@ components:
     }
   });
 
+  it("emits error responses with the configured errorConfig content types", () => {
+    const project = createTempProject("nxog-generator-problem-json-");
+
+    try {
+      const templatePath = writeOpenApiTemplate(project.root, {
+        errorConfig: {
+          contentType: "application/problem+json",
+          template: { type: "object", properties: { title: { type: "string" } } },
+          codes: {
+            NOT_FOUND: { description: "Not found", httpStatus: 404 },
+            TEAPOT: { description: "Teapot", httpStatus: 418, contentType: "application/json" },
+          },
+        },
+      });
+      const previousCwd = process.cwd();
+      process.chdir(project.root);
+
+      try {
+        const spec = new OpenApiGenerator({ templatePath }).generate();
+
+        expect(Object.keys(spec.components?.responses?.["404"]?.content ?? {})).toEqual([
+          "application/problem+json",
+        ]);
+        expect(Object.keys(spec.components?.responses?.["418"]?.content ?? {})).toEqual([
+          "application/json",
+        ]);
+      } finally {
+        process.chdir(previousCwd);
+      }
+    } finally {
+      project.cleanup();
+    }
+  });
+
   it("builds manual error response components from errorDefinitions", () => {
     const project = createTempProject("nxog-generator-manual-errors-");
 

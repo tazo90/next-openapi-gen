@@ -85,6 +85,78 @@ describe("generator error response helpers", () => {
     });
   });
 
+  it("uses errorConfig.contentType for every generated error response", () => {
+    const document = { components: { responses: {} } };
+
+    generateErrorResponsesFromConfig(document, {
+      contentType: "application/problem+json",
+      template: { type: "object" },
+      codes: {
+        "404": { description: "Not found" },
+        "409": { description: "Conflict" },
+      },
+    });
+
+    expect(Object.keys(document.components.responses["404"].content)).toEqual([
+      "application/problem+json",
+    ]);
+    expect(Object.keys(document.components.responses["409"].content)).toEqual([
+      "application/problem+json",
+    ]);
+  });
+
+  it("lets a per-code contentType override errorConfig.contentType", () => {
+    const document = { components: { responses: {} } };
+
+    generateErrorResponsesFromConfig(document, {
+      contentType: "application/problem+json",
+      template: { type: "object" },
+      codes: {
+        "404": { description: "Not found" },
+        "500": { description: "Boom", contentType: "text/plain" },
+      },
+    });
+
+    expect(Object.keys(document.components.responses["404"].content)).toEqual([
+      "application/problem+json",
+    ]);
+    expect(Object.keys(document.components.responses["500"].content)).toEqual(["text/plain"]);
+  });
+
+  it("falls back to application/json for a per-code override without a global default", () => {
+    const document = { components: { responses: {} } };
+
+    generateErrorResponsesFromConfig(document, {
+      template: { type: "object" },
+      codes: {
+        "404": { description: "Not found" },
+        "422": { description: "Invalid", contentType: "application/problem+json" },
+      },
+    });
+
+    expect(Object.keys(document.components.responses["404"].content)).toEqual(["application/json"]);
+    expect(Object.keys(document.components.responses["422"].content)).toEqual([
+      "application/problem+json",
+    ]);
+  });
+
+  it("uses ErrorDefinition.contentType for manual error responses", () => {
+    expect(
+      createErrorResponseComponent({
+        description: "Conflict",
+        schema: { type: "object" },
+        contentType: "application/problem+json",
+      }),
+    ).toEqual({
+      description: "Conflict",
+      content: {
+        "application/problem+json": {
+          schema: { type: "object" },
+        },
+      },
+    });
+  });
+
   it("no-ops when the document has no responses section", () => {
     expect(() =>
       generateErrorResponsesFromConfig(
