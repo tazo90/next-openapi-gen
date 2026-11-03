@@ -488,10 +488,10 @@ type LoginBody = {
 
 Both forms support the same set of JSDoc tags:
 
-| Tag        | Effect on the generated property schema                                          |
-| ---------- | -------------------------------------------------------------------------------- |
-| `@example` | Sets `example` — JSON-parsed when possible (strings, numbers, booleans, objects) |
-| `@format`  | Sets `format` (e.g. `date-time`, `email`, `uri`)                                 |
+| Tag        | Effect on the generated property schema                                                                    |
+| ---------- | ---------------------------------------------------------------------------------------------------------- |
+| `@example` | Sets `example` — JSON-parsed when possible (strings, numbers, booleans, objects)                           |
+| `@format`  | Sets `format` (e.g. `date-time`, `email`, `uri`); `int32` / `int64` on a `number` also set `type: integer` |
 
 ```ts
 type Health = {
@@ -620,6 +620,8 @@ export async function PUT() {
 - If `@response` is present, it is authoritative.
 - If `@response` is absent, App Router handlers can infer typed
   `NextResponse.json(...)` or `Response.json(...)` returns.
+- An inferred instantiated generic such as `Page<Note>` is expanded inline with its
+  type arguments applied; the bare generic name is never emitted as a `$ref`.
 - Inference is best-effort, not a replacement for explicit documentation when
   you need exact component names and response metadata.
 

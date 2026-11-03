@@ -13,6 +13,7 @@ import {
   isDateNode,
   isDateObject,
   isDateString,
+  mergePropertyOptions,
   normalizeSchemaDirs,
   normalizeSchemaTypes,
   parseGenericTypeString,
@@ -20,6 +21,25 @@ import {
 } from "@workspace/openapi-core/schema/typescript/helpers.js";
 
 describe("TypeScript schema helpers", () => {
+  it("promotes number to integer for int32 and int64 formats only", () => {
+    expect(mergePropertyOptions({ type: "number" }, { format: "int32" })).toEqual({
+      type: "integer",
+      format: "int32",
+    });
+    expect(mergePropertyOptions({ type: "number" }, { format: "int64" })).toEqual({
+      type: "integer",
+      format: "int64",
+    });
+    expect(mergePropertyOptions({ type: "number" }, { format: "double" })).toEqual({
+      type: "number",
+      format: "double",
+    });
+    expect(mergePropertyOptions({ type: "string" }, { format: "int32" })).toEqual({
+      type: "string",
+      format: "int32",
+    });
+  });
+
   it("parses and reconstructs generic type strings", () => {
     expect(normalizeSchemaTypes("typescript")).toEqual(["typescript"]);
     expect(normalizeSchemaDirs("./src")).toEqual(["./src"]);

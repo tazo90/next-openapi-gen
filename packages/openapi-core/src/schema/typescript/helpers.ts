@@ -161,6 +161,24 @@ function parsePropertyComment(
   return result;
 }
 
+const INTEGER_FORMATS = new Set(["int32", "int64"]);
+
+/**
+ * Lay the JSDoc-derived property options over the schema resolved from the type.
+ * `int32` / `int64` are formats of `integer`, so a `number` property tagged with
+ * either one is promoted to `integer` instead of emitting `number` + `int32`.
+ */
+export function mergePropertyOptions<T extends { type?: unknown }>(
+  schema: T,
+  options: PropertyOptions,
+): T & PropertyOptions {
+  const merged: T & PropertyOptions = { ...schema, ...options };
+  if (merged.type === "number" && merged.format && INTEGER_FORMATS.has(merged.format)) {
+    merged.type = "integer";
+  }
+  return merged;
+}
+
 export function getPropertyOptions(node: any, contentType: ContentType): PropertyOptions {
   const isOptional = !!node.optional;
   const options: PropertyOptions = {};

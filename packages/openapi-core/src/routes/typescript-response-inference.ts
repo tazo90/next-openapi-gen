@@ -244,7 +244,11 @@ function inferResponseFromExpression(
   if (ts.isCallExpression(expression)) {
     const calleeText = expression.expression.getText(sourceFile);
     if (calleeText === "NextResponse.json" || calleeText === "Response.json") {
-      const responseType = extractNamedResponseType(checker.getTypeAtLocation(expression), checker);
+      const responseType = extractNamedResponseType(
+        checker.getTypeAtLocation(expression),
+        checker,
+        ts,
+      );
       const type = expression.arguments[0]
         ? checker.getTypeAtLocation(expression.arguments[0])
         : undefined;
@@ -300,15 +304,23 @@ function inferResponseFromSignature(
 
   let returnType = checker.getReturnTypeOfSignature(signature);
   returnType = unwrapPromiseType(returnType, checker);
-  const typeName = extractNamedResponseType(returnType, checker);
-  if (!typeName) {
-    return undefined;
+  const typeName = extractNamedResponseType(returnType, checker, ts);
+  if (typeName) {
+    return {
+      typeName,
+      source: "typescript",
+    };
   }
 
-  return {
-    typeName,
-    source: "typescript",
-  };
+  const genericResponseType = checker.getTypeArguments(returnType as ts.TypeReference)[0];
+  if (genericResponseType && isGenericInstantiation(genericResponseType, checker, ts)) {
+    return {
+      schema: typeToOpenApiSchema(genericResponseType, checker, new Set<string>(), ts),
+      source: "typescript",
+    };
+  }
+
+  return undefined;
 }
 
 function getFunctionLikeNode(
@@ -397,7 +409,7 @@ function toSchemaCandidate(
   checker: ts.TypeChecker,
   ts: TypeScriptRuntime,
 ): Pick<InferredResponseDefinition, "typeName" | "schema"> {
-  const typeName = extractNamedType(type, checker);
+  const typeName = extractNamedType(type, checker, ts);
   if (typeName) {
     return { typeName };
   }
@@ -405,21 +417,50 @@ function toSchemaCandidate(
   return { schema: typeToOpenApiSchema(type, checker, new Set<string>(), ts) };
 }
 
-function extractNamedResponseType(type: ts.Type, checker: ts.TypeChecker): string | undefined {
+function extractNamedResponseType(
+  type: ts.Type,
+  checker: ts.TypeChecker,
+  ts: TypeScriptRuntime,
+): string | undefined {
   const typeArguments = checker.getTypeArguments(type as ts.TypeReference);
   const firstTypeArgument = typeArguments[0];
   if (firstTypeArgument) {
-    return extractNamedType(firstTypeArgument, checker);
+    return extractNamedType(firstTypeArgument, checker, ts);
   }
 
   return undefined;
 }
 
-function extractNamedType(type: ts.Type, checker: ts.TypeChecker): string | undefined {
+/**
+ * True for an instantiated generic such as `Page<Note>` or `Box<Note>`. The name alone
+ * (`Page`) would resolve to the unbound generic, so these are expanded inline instead.
+ */
+function isGenericInstantiation(type: ts.Type, checker: ts.TypeChecker, ts: TypeScriptRuntime) {
+  if (type.aliasTypeArguments?.length) {
+    return true;
+  }
+
+  const objectType = type as ts.ObjectType;
+  return Boolean(
+    type.flags & ts.TypeFlags.Object &&
+    objectType.objectFlags & ts.ObjectFlags.Reference &&
+    checker.getTypeArguments(type as ts.TypeReference).length > 0,
+  );
+}
+
+function extractNamedType(
+  type: ts.Type,
+  checker: ts.TypeChecker,
+  ts: TypeScriptRuntime,
+): string | undefined {
   if (checker.isArrayType(type) || checker.isTupleType(type)) {
     const elementType = checker.getTypeArguments(type as ts.TypeReference)[0];
-    const elementName = elementType ? extractNamedType(elementType, checker) : undefined;
+    const elementName = elementType ? extractNamedType(elementType, checker, ts) : undefined;
     return elementName ? `${elementName}[]` : undefined;
+  }
+
+  if (isGenericInstantiation(type, checker, ts)) {
+    return undefined;
   }
 
   const aliasName = type.aliasSymbol?.getName();
