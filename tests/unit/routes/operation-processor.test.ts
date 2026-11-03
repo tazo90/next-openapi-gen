@@ -806,6 +806,40 @@ describe("OperationProcessor", () => {
     ]);
   });
 
+  it("emits an empty security array for @auth none and @security none", () => {
+    const schemaProcessor = {
+      getSchemaContent: vi.fn<MockFn>(() => ({
+        params: undefined,
+        pathParams: undefined,
+        body: undefined,
+        responses: undefined,
+      })),
+      createRequestParamsSchema: vi.fn<MockFn>(() => []),
+      createDefaultPathParamsSchema: vi.fn<MockFn>(),
+      detectContentType: vi.fn<MockFn>(),
+      createResponseSchema: vi.fn<MockFn>(() => ({})),
+      ensureSchemaResolved: vi.fn<MockFn>(),
+      getSchemaReferenceName: vi.fn<MockFn>((name: string) => name),
+    };
+    const responseProcessor = {
+      supportsRequestBody: vi.fn<MockFn>(() => false),
+      processResponses: vi.fn<MockFn>(() => ({})),
+    };
+    const processor = new OperationProcessor(schemaProcessor, responseProcessor);
+
+    const viaAuth = processor.processOperation("GET", "/a", { tag: "A", auth: "none" });
+    expect(viaAuth.definition.security).toEqual([]);
+
+    const viaSecurity = processor.processOperation("GET", "/b", { tag: "B", security: [{}] });
+    expect(viaSecurity.definition.security).toEqual([]);
+
+    const optional = processor.processOperation("GET", "/c", { tag: "C", auth: "bearer,none" });
+    expect(optional.definition.security).toEqual([{ BearerAuth: [] }, {}]);
+
+    const unannotated = processor.processOperation("GET", "/d", { tag: "D" });
+    expect(unannotated.definition).not.toHaveProperty("security");
+  });
+
   it("emits combined @auth requirements with default presets", () => {
     const schemaProcessor = {
       getSchemaContent: vi.fn<MockFn>(() => ({

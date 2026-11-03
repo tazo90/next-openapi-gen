@@ -221,6 +221,12 @@ export default defineConfig({
 });
 ```
 
+`@auth none` (or `@security none`) marks an operation as public by emitting
+`security: []`, which overrides a document-level `security` requirement.
+`@auth bearer,none` makes authentication optional (`[{ BearerAuth: [] }, {}]`).
+Operations without `@auth` or `@security` emit no `security` field and inherit
+the document-level requirement.
+
 Unknown values (e.g. `@auth MyCustomScheme`) are passed through unchanged
 regardless of preset configuration. Default objects are emitted only for the
 three built-in presets (or their remapped names) when they are referenced and
