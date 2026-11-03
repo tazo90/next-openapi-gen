@@ -1,3 +1,19 @@
+# [1.10.0](https://github.com/tazo90/next-openapi-gen/compare/v1.9.0...v1.10.0) (2026-11-03)
+
+
+### ✨ Features
+
+* add contentType option for generated error responses ([#203](https://github.com/tazo90/next-openapi-gen/issues/203)) ([0a9352f](https://github.com/tazo90/next-openapi-gen/commit/0a9352fe1b19fbc1f3b0fc4549e0f3a3fcd7ff4b)) by [@mridang](https://github.com/mridang)
+* support [@auth](https://github.com/auth) none to mark operations as public ([#206](https://github.com/tazo90/next-openapi-gen/issues/206)) ([cb7aea8](https://github.com/tazo90/next-openapi-gen/commit/cb7aea83b3d87ef61447f29042cee2dae5c25ffb)) by [@mridang](https://github.com/mridang)
+
+
+### 🐛 Bug Fixes
+
+* emit error template HTTP_STATUS examples as integers ([#204](https://github.com/tazo90/next-openapi-gen/issues/204)) ([d3aea87](https://github.com/tazo90/next-openapi-gen/commit/d3aea87a32a428a160d9eea23237c1a1ebc82144)) by [@mridang](https://github.com/mridang)
+* emit integer for number properties tagged [@format](https://github.com/format) int32 or int64 ([#208](https://github.com/tazo90/next-openapi-gen/issues/208)) ([cc978a5](https://github.com/tazo90/next-openapi-gen/commit/cc978a5aeb071ac770daa7fb4c2bdd4e6ceb89ff)) by [@mridang](https://github.com/mridang)
+* expand instantiated generics in inferred response types ([#210](https://github.com/tazo90/next-openapi-gen/issues/210)) ([a67b8ee](https://github.com/tazo90/next-openapi-gen/commit/a67b8ee61f45b97b4a721a6ec85bb74bde43dec5)) by [@mridang](https://github.com/mridang)
+* format CHANGELOG to unblock CI quality job ([#212](https://github.com/tazo90/next-openapi-gen/issues/212)) ([b3aad45](https://github.com/tazo90/next-openapi-gen/commit/b3aad45a9b3244c6f6a1e9e00c223f6e7961af30)) by [@tazo90](https://github.com/tazo90)
+
 # [1.9.0](https://github.com/tazo90/next-openapi-gen/compare/v1.8.2...v1.9.0) (2026-10-02)
 
 ### 🐛 Bug Fixes
