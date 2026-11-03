@@ -77,12 +77,30 @@ describe("generator error response helpers", () => {
             type: "object",
             properties: {
               code: { example: "AUTH_EXPIRED" },
-              status: { example: "401" },
+              status: { example: 401 },
             },
           },
         },
       },
     });
+  });
+
+  it("emits HTTP_STATUS as a number when it is the whole value and as text when embedded", () => {
+    expect(
+      processTemplateVariables(
+        { status: "{{HTTP_STATUS}}", title: "HTTP {{HTTP_STATUS}}", code: "{{ERROR_CODE}}" },
+        { HTTP_STATUS: "404", ERROR_CODE: "404" },
+      ),
+    ).toEqual({ status: 404, title: "HTTP 404", code: "404" });
+  });
+
+  it("keeps HTTP_STATUS as a string when it is used as an object key", () => {
+    expect(
+      processTemplateVariables(
+        { properties: { "{{HTTP_STATUS}}": { example: "{{HTTP_STATUS}}" } } },
+        { HTTP_STATUS: "404" },
+      ),
+    ).toEqual({ properties: { "404": { example: 404 } } });
   });
 
   it("uses errorConfig.contentType for every generated error response", () => {

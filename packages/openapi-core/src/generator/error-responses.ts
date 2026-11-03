@@ -31,6 +31,14 @@ export function processTemplateVariables(
 ): OpenApiSchemaLike {
   let result = JSON.stringify(template);
 
+  // `HTTP_STATUS` is always a number, so a value that is nothing but the placeholder
+  // (`"example": "{{HTTP_STATUS}}"`) becomes a JSON number rather than the string "404".
+  // Object keys (always followed by `:` in stringified JSON) stay strings.
+  const httpStatus = variables.HTTP_STATUS;
+  if (httpStatus !== undefined && /^\d+$/.test(httpStatus)) {
+    result = result.replace(/"\{\{HTTP_STATUS\}\}"(?!:)/g, httpStatus);
+  }
+
   Object.entries(variables).forEach(([key, value]) => {
     result = result.replace(new RegExp(`{{${key}}}`, "g"), value);
   });

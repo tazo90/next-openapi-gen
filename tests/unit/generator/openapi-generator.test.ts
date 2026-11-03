@@ -130,7 +130,7 @@ describe("OpenApiGenerator", () => {
                   },
                   status: {
                     type: "integer",
-                    example: "401",
+                    example: 401,
                   },
                 },
               },
