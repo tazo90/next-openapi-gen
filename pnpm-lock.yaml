@@ -97,8 +97,8 @@ catalogs:
       specifier: ^17.6.0
       version: 17.6.0
     np:
-      specifier: ^12.0.1
-      version: 12.0.1
+      specifier: ^12.1.1
+      version: 12.1.1
     ora:
       specifier: ^9.4.1
       version: 9.4.1
@@ -1060,7 +1060,7 @@ importers:
         version: 5.0.0(conventional-commits-filter@5.0.0)
       np:
         specifier: 'catalog:'
-        version: 12.0.1(@types/node@26.2.0)(@typescript/typescript6@6.0.2)
+        version: 12.1.1(@types/node@26.2.0)(@typescript/typescript6@6.0.2)
       oxfmt:
         specifier: 'catalog:'
         version: 0.63.0
@@ -6227,10 +6227,6 @@ packages:
     resolution: {integrity: sha512-bjdr2xW1dBCMsMGGsUeqM4eFI60m94+szhxWys+B1ztIt6gWSfeGBdSVCIawezeHYLYn0j6zrsXdQS/JllBzww==}
     engines: {node: '>=6'}
 
-  minimatch@10.2.5:
-    resolution: {integrity: sha512-MULkVLfKGYDFYejP07QOurDLLQpcjk7Fw+7jXS2R2czRQzR56yHRveU5NDJEOviH+hETZKSkIk5c+T23GjFUMg==}
-    engines: {node: 18 || 20 || >=22}
-
   minimatch@10.2.6:
     resolution: {integrity: sha512-vpLQEs+VLCr1nU0BXS07maYoFwlDAH0gngQuuttxIwutDFEMHq2blX+8vpgxDdK3J1PwjCJiep77OitTZ4Ll1A==}
     engines: {node: 18 || 20 || >=22}
@@ -6328,8 +6324,8 @@ packages:
     resolution: {integrity: sha512-RWk+PI433eESQ7ounYxIp67CYuVsS1uYSonX3kA6ps/3LWfjVQa/ptEg6Y3T6uAMq1mWpX9PQ+qx+QaHpsc7gQ==}
     engines: {node: ^20.17.0 || >=22.9.0}
 
-  np@12.0.1:
-    resolution: {integrity: sha512-BRT4/T8hOfY0+0ZlXC2JO+gPjPYoo9mQVw4D51+L6Aq3PX3aHwgD5lfNpbAUBHa3fZUbkhAUR3RlS00cLubRTw==}
+  np@12.1.1:
+    resolution: {integrity: sha512-rv6prgwTlBMQSvWFw72ny5jm+T4zr5YDCsigoPsafekTZVZhu6BdLOnLon33TdMoJVAOI6ylct7G+jzYfWpZKA==}
     engines: {bun: '>=1', git: '>=2.11.0', node: '>=22', npm: '>=10', pnpm: '>=11', yarn: '>=1.7.0'}
     hasBin: true
 
@@ -12271,7 +12267,7 @@ snapshots:
 
   ignore-walk@8.0.0:
     dependencies:
-      minimatch: 10.2.5
+      minimatch: 10.2.6
 
   ignore@5.3.2: {}
 
@@ -13131,10 +13127,6 @@ snapshots:
     dependencies:
       lodash: 4.18.1
 
-  minimatch@10.2.5:
-    dependencies:
-      brace-expansion: 5.0.9
-
   minimatch@10.2.6:
     dependencies:
       brace-expansion: 5.0.9
@@ -13228,7 +13220,7 @@ snapshots:
       semver: 7.8.5
       validate-npm-package-license: 3.0.4
 
-  np@12.0.1(@types/node@26.2.0)(@typescript/typescript6@6.0.2):
+  np@12.1.1(@types/node@26.2.0)(@typescript/typescript6@6.0.2):
     dependencies:
       chalk: 5.6.2
       chalk-template: 1.1.2
@@ -13236,7 +13228,6 @@ snapshots:
       cosmiconfig: 9.0.2(@typescript/typescript6@6.0.2)
       del: 8.0.1
       escape-goat: 4.0.0
-      escape-string-regexp: 5.0.0
       execa: 9.6.1
       exit-hook: 5.1.0
       github-url-from-git: 1.5.0
