@@ -93,6 +93,7 @@ export type NativeType = {
   flags: number;
   objectFlags?: number;
   getAliasSymbol?(): NativeSymbol | undefined;
+  getAliasTypeArguments?(): readonly NativeType[] | undefined;
   getStringIndexType?(): NativeType | undefined;
   getSymbol?(): NativeSymbol | undefined;
   getTypes?(): readonly NativeType[] | undefined;

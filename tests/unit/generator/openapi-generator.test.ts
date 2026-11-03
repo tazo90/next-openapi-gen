@@ -4,7 +4,11 @@ import path from "node:path";
 import { OpenApiGenerator } from "next-openapi-gen";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { createTempProject, writeOpenApiTemplate } from "../../helpers/test-project.js";
+import {
+  createTempProject,
+  writeAppRoute,
+  writeOpenApiTemplate,
+} from "../../helpers/test-project.js";
 
 describe("OpenApiGenerator", () => {
   const previousTiming = process.env.NEXT_OPENAPI_GEN_TIMING;
@@ -356,6 +360,85 @@ components:
             url: "https://example.com",
             description: "Primary",
           },
+        ]);
+      } finally {
+        process.chdir(previousCwd);
+      }
+    } finally {
+      project.cleanup();
+    }
+  });
+
+  it("emits security: [] only for operations annotated with @auth none", () => {
+    const project = createTempProject("nxog-generator-public-operation-");
+
+    try {
+      writeAppRoute(
+        project.root,
+        ["health"],
+        `/**
+ * Health check
+ * @auth none
+ * @openapi
+ */
+export async function GET() {
+  return Response.json({ ok: true });
+}
+
+/**
+ * Reset health
+ * @openapi
+ */
+export async function DELETE() {
+  return Response.json({ ok: true });
+}
+`,
+      );
+      const templatePath = writeOpenApiTemplate(project.root, {
+        security: [{ BearerAuth: [] }],
+      });
+      const previousCwd = process.cwd();
+      process.chdir(project.root);
+
+      try {
+        const spec = new OpenApiGenerator({ templatePath }).generate();
+
+        expect(spec.security).toEqual([{ BearerAuth: [] }]);
+        expect(spec.paths?.["/health"]?.get?.security).toEqual([]);
+        expect(spec.paths?.["/health"]?.delete).not.toHaveProperty("security");
+      } finally {
+        process.chdir(previousCwd);
+      }
+    } finally {
+      project.cleanup();
+    }
+  });
+
+  it("emits error responses with the configured errorConfig content types", () => {
+    const project = createTempProject("nxog-generator-problem-json-");
+
+    try {
+      const templatePath = writeOpenApiTemplate(project.root, {
+        errorConfig: {
+          contentType: "application/problem+json",
+          template: { type: "object", properties: { title: { type: "string" } } },
+          codes: {
+            NOT_FOUND: { description: "Not found", httpStatus: 404 },
+            TEAPOT: { description: "Teapot", httpStatus: 418, contentType: "application/json" },
+          },
+        },
+      });
+      const previousCwd = process.cwd();
+      process.chdir(project.root);
+
+      try {
+        const spec = new OpenApiGenerator({ templatePath }).generate();
+
+        expect(Object.keys(spec.components?.responses?.["404"]?.content ?? {})).toEqual([
+          "application/problem+json",
+        ]);
+        expect(Object.keys(spec.components?.responses?.["418"]?.content ?? {})).toEqual([
+          "application/json",
         ]);
       } finally {
         process.chdir(previousCwd);

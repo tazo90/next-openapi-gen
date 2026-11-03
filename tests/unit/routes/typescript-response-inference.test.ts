@@ -322,6 +322,95 @@ export async function POST() {
     });
   });
 
+  it("expands instantiated generics instead of naming the unbound generic", () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-response-generic-"));
+    roots.push(root);
+
+    const routeFile = path.join(root, "route.ts");
+    fs.writeFileSync(
+      routeFile,
+      `type Page<T> = { items: T[]; total: number };
+interface Box<T> { value: T }
+type Note = { id: string };
+
+export async function GET() {
+  return Response.json({ items: [], total: 0 } as Page<Note>);
+}
+
+export async function POST() {
+  return Response.json({ value: { id: "1" } } as Box<Note>, { status: 201 });
+}
+
+export async function PUT() {
+  return Response.json([] as Note[]);
+}
+`,
+    );
+
+    const pageSchema = {
+      type: "object",
+      properties: {
+        items: {
+          type: "array",
+          items: { type: "object", properties: { id: { type: "string" } }, required: ["id"] },
+        },
+        total: { type: "number" },
+      },
+      required: ["items", "total"],
+    };
+
+    expect(inferResponsesForExport(routeFile, "GET").responses).toEqual([
+      {
+        schema: pageSchema,
+        statusCode: "200",
+        contentType: "application/json",
+        source: "typescript",
+      },
+    ]);
+    expect(inferResponsesForExport(routeFile, "POST").responses[0]).toMatchObject({
+      statusCode: "201",
+      schema: {
+        type: "object",
+        properties: {
+          value: { type: "object", properties: { id: { type: "string" } }, required: ["id"] },
+        },
+        required: ["value"],
+      },
+    });
+    expect(inferResponsesForExport(routeFile, "PUT").responses[0]).toMatchObject({
+      typeName: "Note[]",
+    });
+  });
+
+  it("expands a generic declared on the handler's NextResponse return type", () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-response-generic-signature-"));
+    roots.push(root);
+
+    const routeFile = path.join(root, "route.ts");
+    fs.writeFileSync(
+      routeFile,
+      `declare class NextResponse<T> { private body: T }
+type Page<T> = { items: T[]; total: number };
+
+export async function GET(): Promise<NextResponse<Page<string>>> {
+  return null as never;
+}
+`,
+    );
+
+    const [response] = inferResponsesForExport(routeFile, "GET").responses;
+
+    expect(response?.typeName).toBeUndefined();
+    expect(response?.schema).toEqual({
+      type: "object",
+      properties: {
+        items: { type: "array", items: { type: "string" } },
+        total: { type: "number" },
+      },
+      required: ["items", "total"],
+    });
+  });
+
   it("infers redirect status codes from Response.redirect calls", () => {
     const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-response-redirect-"));
     roots.push(root);

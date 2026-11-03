@@ -7,7 +7,7 @@ catalog:
   "@babel/traverse": ^7.29.8
   "@babel/types": ^7.29.8
   "@commitlint/cli": ^21.2.2
-  "@commitlint/config-conventional": ^21.2.2
+  "@commitlint/config-conventional": ^21.2.3
   "@commitlint/types": ^21.2.3
   "@playwright/test": ^1.62.1
   "@scalar/api-reference-react": ^0.9.63
@@ -26,12 +26,12 @@ catalog:
   drizzle-kit: ^0.31.10
   drizzle-orm: ^0.45.2
   drizzle-zod: ^0.8.3
-  eslint-plugin-turbo: ^2.10.10
+  eslint-plugin-turbo: ^2.11.6
   fs-extra: ^11.4.1
   js-yaml: ^5.3.0
   knip: ^6.32.2
   lint-staged: ^17.6.0
-  np: ^12.0.1
+  np: ^12.1.1
   ora: ^9.4.1
   oxfmt: ^0.63.0
   oxlint: ^1.78.0
@@ -42,7 +42,7 @@ catalog:
   swagger-ui-react: ^5.32.13
   tailwindcss: ^4.3.3
   tsup: ^8.5.1
-  turbo: ^2.10.10
+  turbo: ^2.11.6
   typescript: 7.0.2
   vitest: ^4.1.10
   zod: ^4.4.3
@@ -70,8 +70,8 @@ catalogs:
     react-router: ^8.4.0
     vite: ^8.2.1
   tanstack:
-    "@tanstack/react-router": ^1.170.40
-    "@tanstack/react-start": ^1.168.59
+    "@tanstack/react-router": ^1.170.41
+    "@tanstack/react-start": ^1.168.60
     "@types/react": ^19.2.18
     "@types/react-dom": ^19.2.4
     "@vitejs/plugin-react": ^6.0.5
