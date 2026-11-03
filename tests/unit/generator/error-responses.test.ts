@@ -94,6 +94,15 @@ describe("generator error response helpers", () => {
     ).toEqual({ status: 404, title: "HTTP 404", code: "404" });
   });
 
+  it("keeps HTTP_STATUS as a string when it is used as an object key", () => {
+    expect(
+      processTemplateVariables(
+        { properties: { "{{HTTP_STATUS}}": { example: "{{HTTP_STATUS}}" } } },
+        { HTTP_STATUS: "404" },
+      ),
+    ).toEqual({ properties: { "404": { example: 404 } } });
+  });
+
   it("uses errorConfig.contentType for every generated error response", () => {
     const document = { components: { responses: {} } };
 
