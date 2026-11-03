@@ -15,6 +15,7 @@ export const ignorePatterns = [
   "**/test-results/**",
   "**/next-env.d.ts",
   "**/public/openapi.json",
+  "CHANGELOG.md",
   "apps/react-router-app/.react-router/**",
   "packages/next-openapi-gen/templates/**",
   "packages/openapi-init/templates/**",
