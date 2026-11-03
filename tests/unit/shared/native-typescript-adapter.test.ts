@@ -129,6 +129,7 @@ type FakeType = {
   indexInfos?: { keyType: FakeType; valueType: FakeType }[];
   getSymbol?: () => { name: string } | undefined;
   getAliasSymbol?: () => { name: string } | undefined;
+  getAliasTypeArguments?: () => FakeType[] | undefined;
   getTypes?: () => FakeType[] | undefined;
   isStringLiteralType?: () => boolean;
   isNumberLiteralType?: () => boolean;
@@ -380,6 +381,7 @@ describe("NativeTypeScriptAdapter", () => {
     value?: string | number | boolean;
     symbolName?: string;
     aliasName?: string;
+    aliasTypeArguments?: FakeType[];
     isStringLiteral?: boolean;
     isNumberLiteral?: boolean;
     isUnion?: boolean;
@@ -420,6 +422,9 @@ describe("NativeTypeScriptAdapter", () => {
     }
     if (opts.aliasName !== undefined) {
       type.getAliasSymbol = () => ({ name: opts.aliasName as string });
+    }
+    if (opts.aliasTypeArguments !== undefined) {
+      type.getAliasTypeArguments = () => opts.aliasTypeArguments;
     }
     if (opts.isUnion && opts.unionTypes) {
       type.getTypes = () => opts.unionTypes;
@@ -947,6 +952,86 @@ describe("NativeTypeScriptAdapter", () => {
 
       expect(response?.typeName).toBe("User");
       expect(response?.source).toBe("typescript");
+    });
+
+    it("expands a generic alias returned from the signature instead of naming the unbound generic", () => {
+      const temp = setupTempProject();
+      const routeFile = temp.routeFile;
+
+      const body = node("Block");
+      withForEachChild(body, [node("ArrowFunction", {})]);
+
+      const getFn = fnDecl("GET", body);
+      const sourceFile = node("FunctionDeclaration");
+      sourceFile.statements = [getFn];
+      temp.fake.setSourceFile(routeFile, sourceFile);
+
+      const user = makeType({ flags: 0, label: "User", symbolName: "User" });
+      const page = makeType({
+        flags: 0,
+        label: "Page<User>",
+        aliasName: "Page",
+        aliasTypeArguments: [user],
+        properties: [
+          {
+            name: "total",
+            flags: 0,
+            type: makeType({ flags: TypeFlags.NumberLike, label: "number" }),
+          },
+        ],
+      });
+      const nextResponse = makeType({
+        flags: 0,
+        label: "NextResponse<Page<User>>",
+        symbolName: "NextResponse",
+        typeArguments: [page],
+      });
+
+      temp.fake.setChecker({
+        getSignatureFromDeclaration(): unknown {
+          return { id: "sig" };
+        },
+        getReturnTypeOfSignature(): FakeType {
+          return nextResponse;
+        },
+        getTypeAtLocation: () => makeType({ flags: 0 }),
+        getTypeArguments(type: FakeType): FakeType[] {
+          return type.typeArguments ?? [];
+        },
+        getPropertiesOfType(type: FakeType): {
+          name: string;
+          flags: number;
+          type: FakeType;
+          valueDeclaration?: FakeNode;
+          declarations?: FakeNode[];
+        }[] {
+          return (type.properties ?? []).map((property) => ({
+            name: property.name,
+            flags: property.flags,
+            type: property.type,
+            valueDeclaration: stubDeclaration(routeFile),
+            declarations: [stubDeclaration(routeFile)],
+          }));
+        },
+        getTypeOfSymbol: () => makeType({ flags: TypeFlags.NumberLike, label: "number" }),
+        getTypeOfSymbolAtLocation: () => makeType({ flags: TypeFlags.NumberLike, label: "number" }),
+        typeToString: (type: FakeType) => type.label ?? "object",
+      });
+
+      const adapter = createNativeTypeScriptAdapter({
+        packagePath: temp.root,
+        runtime: temp.fake.runtime,
+        version: "7.0.1-rc",
+      });
+
+      const response = adapter.inferResponsesForExports(routeFile, ["GET"]).get("GET")
+        ?.responses[0];
+
+      expect(response?.typeName).toBeUndefined();
+      expect(response).toMatchObject({
+        source: "typescript",
+        schema: { type: "object", properties: { total: { type: "number" } } },
+      });
     });
 
     it("returns empty results when no requested exports are present in the source file", () => {

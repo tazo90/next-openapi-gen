@@ -614,6 +614,8 @@ export async function PUT() {
 - If `@response` is present, it is authoritative.
 - If `@response` is absent, App Router handlers can infer typed
   `NextResponse.json(...)` or `Response.json(...)` returns.
+- An inferred instantiated generic such as `Page<Note>` is expanded inline with its
+  type arguments applied; the bare generic name is never emitted as a `$ref`.
 - Inference is best-effort, not a replacement for explicit documentation when
   you need exact component names and response metadata.
 
