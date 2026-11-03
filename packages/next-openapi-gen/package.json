@@ -94,7 +94,7 @@
     "test": "pnpm --dir ../.. test:unit && pnpm --dir ../.. test:integration",
     "test:coverage": "pnpm --dir ../.. test:coverage:next-openapi-gen",
     "typecheck": "tsc --noEmit",
-    "version": "conventional-changelog -p angular -i ../../CHANGELOG.md -s -n ../../.changelogrc.cjs && git add ../../CHANGELOG.md"
+    "version": "conventional-changelog -p angular -i ../../CHANGELOG.md -s -n ../../.changelogrc.cjs && pnpm -w exec oxfmt --config ./oxfmt.config.ts CHANGELOG.md && git add ../../CHANGELOG.md"
   },
   "dependencies": {
     "@babel/parser": "catalog:",
