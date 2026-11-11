@@ -31,6 +31,7 @@ const RESPONSE_SINGLE_RE = /@response\s+([^\n\r@]+)/;
 const INTERNAL_FLAG_RE = /@internal\b/;
 const SCHEMA_FALSE_RE = /@schema\s+false\b/;
 const COMMENT_STAR_RE = /\*\s*/g;
+const DESCRIPTION_RE = /@description[ \t]*([\s\S]*?)(?=\n\s*@\w|$)/;
 
 const boundedTagRegexCache = new Map<string, RegExp>();
 const lineValueRegexCache = new Map<string, RegExp>();
@@ -95,7 +96,7 @@ export function parseJSDocBlock(commentValue: string, filePath?: string): DataTy
     result.summary = explicitSummary;
   }
 
-  result.description = extractLineValue(normalizedComment, "@description");
+  result.description = extractDescription(normalizedComment);
   result.tagSummary = extractLineValue(normalizedComment, "@tagSummary");
   result.tagDescription = extractLineValue(normalizedComment, "@tagDescription");
   result.tagKind = extractLineValue(normalizedComment, "@tagKind");
@@ -789,6 +790,19 @@ export function extractSchemaIdFromComments(
     if (id) return id;
   }
   return null;
+}
+
+/**
+ * `@description` runs until the next line that starts a tag, as in JSDoc, so a long
+ * description can wrap across lines. Line breaks are kept; Markdown renders them as spaces.
+ */
+function extractDescription(commentValue: string): string {
+  const value = commentValue.match(DESCRIPTION_RE)?.[1] ?? "";
+  return value
+    .split("\n")
+    .map((line) => line.trim())
+    .join("\n")
+    .trim();
 }
 
 function extractLineValue(commentValue: string, tag: string): string {
