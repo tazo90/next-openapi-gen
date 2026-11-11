@@ -3197,6 +3197,32 @@
             },
             "description": "Free-form key/value metadata"
           },
+          "paymentId": {
+            "type": "string",
+            "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+            "description": "Payment identifier"
+          },
+          "userId": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UserId"
+              }
+            ],
+            "description": "User the payment belongs to"
+          },
+          "amountMinor": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "multipleOf": 1,
+            "description": "Amount in the smallest currency unit"
+          },
+          "currency": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 3,
+            "pattern": "^[A-Z]{3}$",
+            "description": "ISO-4217 currency code"
+          },
           "type": {
             "type": "string",
             "enum": [
@@ -3223,6 +3249,10 @@
           "idempotencyKey",
           "deliveredAt",
           "apiVersion",
+          "paymentId",
+          "userId",
+          "amountMinor",
+          "currency",
           "type",
           "failureCode",
           "retriable"
@@ -3350,6 +3380,32 @@
             },
             "description": "Free-form key/value metadata"
           },
+          "paymentId": {
+            "type": "string",
+            "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+            "description": "Payment identifier"
+          },
+          "userId": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UserId"
+              }
+            ],
+            "description": "User the payment belongs to"
+          },
+          "amountMinor": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "multipleOf": 1,
+            "description": "Amount in the smallest currency unit"
+          },
+          "currency": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 3,
+            "pattern": "^[A-Z]{3}$",
+            "description": "ISO-4217 currency code"
+          },
           "type": {
             "type": "string",
             "enum": [
@@ -3367,6 +3423,10 @@
           "idempotencyKey",
           "deliveredAt",
           "apiVersion",
+          "paymentId",
+          "userId",
+          "amountMinor",
+          "currency",
           "type",
           "refundedAmountMinor"
         ]
@@ -3444,6 +3504,32 @@
             },
             "description": "Free-form key/value metadata"
           },
+          "paymentId": {
+            "type": "string",
+            "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+            "description": "Payment identifier"
+          },
+          "userId": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UserId"
+              }
+            ],
+            "description": "User the payment belongs to"
+          },
+          "amountMinor": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "multipleOf": 1,
+            "description": "Amount in the smallest currency unit"
+          },
+          "currency": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 3,
+            "pattern": "^[A-Z]{3}$",
+            "description": "ISO-4217 currency code"
+          },
           "type": {
             "type": "string",
             "enum": [
@@ -3461,6 +3547,10 @@
           "idempotencyKey",
           "deliveredAt",
           "apiVersion",
+          "paymentId",
+          "userId",
+          "amountMinor",
+          "currency",
           "type",
           "receiptUrl"
         ]

@@ -36,6 +36,9 @@ function host() {
     resolveLiteralValue() {
       return undefined;
     },
+    resolveSchemaRef(schema: OpenApiSchema) {
+      return schema;
+    },
     resolveNumericArg() {
       return undefined;
     },
