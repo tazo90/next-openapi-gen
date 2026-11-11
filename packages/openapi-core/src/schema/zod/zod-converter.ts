@@ -1050,6 +1050,7 @@ export class ZodSchemaConverter {
       resolveLiteralValue: (name: string) => this.resolveLiteralValue(name),
       resolveConstArrayValues: (name: string) => this.resolveConstArrayValues(name),
       resolveObjectSchemaNode: (name: string) => this.resolveObjectSchemaNode(name),
+      getComponentSchema: (componentName: string) => this.zodSchemas[componentName] ?? null,
       addDiagnostic: (diagnostic: Diagnostic) => {
         this.diagnostics?.add({
           ...diagnostic,
