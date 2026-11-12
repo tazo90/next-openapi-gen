@@ -142,9 +142,21 @@ describe("applyZodChainMethod leftover branches", () => {
       resolveLiteralValue(name: string) {
         return name === "DEFAULT_STATUS" ? "draft" : undefined;
       },
-      extractStaticJsonValue(node: t.Node) {
-        if (t.isStringLiteral(node)) {
+      extractStaticJsonValue(node: t.Node): unknown {
+        if (t.isStringLiteral(node) || t.isNumericLiteral(node) || t.isBooleanLiteral(node)) {
           return node.value;
+        }
+        if (t.isNullLiteral(node)) {
+          return null;
+        }
+        if (t.isObjectExpression(node)) {
+          return Object.fromEntries(
+            node.properties.map((property) => {
+              const { key, value } = property as t.ObjectProperty;
+              const name = t.isIdentifier(key) ? key.name : (key as t.StringLiteral).value;
+              return [name, this.extractStaticJsonValue(value)];
+            }),
+          );
         }
         return undefined;
       },
@@ -199,7 +211,7 @@ describe("applyZodChainMethod leftover branches", () => {
           ]),
         ]),
       ),
-    ).toMatchObject({ default: { ok: true, count: 1, label: "x" } });
+    ).toMatchObject({ default: { ok: true, count: 1, label: "x", skip: null } });
     expect(applyZodChainMethod(converter, { type: "string" }, "default", call("default"))).toEqual({
       type: "string",
     });

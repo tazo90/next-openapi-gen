@@ -317,33 +317,11 @@ export function applyZodChainMethod(
         } else if (t.isIdentifier(defaultArg)) {
           const val = converter.resolveLiteralValue(defaultArg.name);
           if (val !== undefined) schema.default = val as OpenApiSchema["default"];
-        } else if (t.isObjectExpression(defaultArg)) {
-          // Try to create a default object, but this might not be complete
-          const defaultObj: Record<string, string | number | boolean> = {};
-          defaultArg.properties.forEach((prop) => {
-            if (
-              t.isObjectProperty(prop) &&
-              (t.isIdentifier(prop.key) || t.isStringLiteral(prop.key)) &&
-              (t.isStringLiteral(prop.value) ||
-                t.isNumericLiteral(prop.value) ||
-                t.isBooleanLiteral(prop.value))
-            ) {
-              const key = t.isIdentifier(prop.key) ? prop.key.name : prop.key.value;
-              const value = t.isStringLiteral(prop.value)
-                ? prop.value.value
-                : t.isNumericLiteral(prop.value)
-                  ? prop.value.value
-                  : t.isBooleanLiteral(prop.value)
-                    ? prop.value.value
-                    : null;
-
-              if (key !== null && value !== null) {
-                defaultObj[key] = value;
-              }
-            }
-          });
-
-          schema.default = defaultObj;
+        } else if (t.isObjectExpression(defaultArg) || t.isArrayExpression(defaultArg)) {
+          // Left out when any part can't be read statically: a partial default
+          // could contradict the schema's own `required`.
+          const value = converter.extractStaticJsonValue(defaultArg);
+          if (value !== undefined) schema.default = value as OpenApiSchema["default"];
         }
       }
       break;
