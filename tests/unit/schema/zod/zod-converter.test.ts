@@ -824,6 +824,28 @@ export const EnvelopeSchema = createEnvelope({
         items: { $ref: "#/components/schemas/ApiErrorIssue" },
       });
     });
+
+    it("finds a schema whose .meta({ id }) is also the name of its z.infer type, once stored", () => {
+      const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-zod-meta-id-alias-"));
+      roots.push(root);
+
+      fs.writeFileSync(
+        path.join(root, "schemas.ts"),
+        [
+          'import { z } from "zod";',
+          'export const addressSchema = z.object({ city: z.string() }).meta({ id: "Address" });',
+          "export type Address = z.infer<typeof addressSchema>;",
+        ].join("\n"),
+      );
+
+      const converter = new ZodSchemaConverter(root);
+      converter.convertZodSchemaToOpenApi("addressSchema");
+      converter.convertZodSchemaToOpenApi("Address");
+
+      const expected = { type: "object", properties: { city: { type: "string" } } };
+      expect(converter.convertZodSchemaToOpenApi("addressSchema")).toMatchObject(expected);
+      expect(converter.convertZodSchemaToOpenApi("Address")).toMatchObject(expected);
+    });
   });
 
   describe("constant reference resolution in chain methods", () => {
