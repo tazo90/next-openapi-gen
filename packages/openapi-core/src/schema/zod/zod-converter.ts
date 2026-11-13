@@ -344,6 +344,8 @@ export class ZodSchemaConverter {
     const conversionStartedAt = performance.now();
     this.currentContentType = contentType || "response";
     const requestingFilePath = this.currentFilePath;
+    const requestingAST = this.currentAST;
+    const requestingImports = this.currentImports;
 
     if (!this.hasPreScanned) {
       measurePerformance(this.performanceProfile, "zodPreScanMs", () => {
@@ -453,6 +455,13 @@ export class ZodSchemaConverter {
       // Remove from processing set
       this.processingSchemas.delete(schemaName);
       this.applyTypeAliasComponent(requestedSchemaName, schemaName, mappedSchemaName);
+      // Nested lookups process other files; restore the requesting file's context so
+      // later identifiers in it still resolve through its own imports.
+      if (requestingFilePath && requestingAST && requestingImports) {
+        this.currentFilePath = requestingFilePath;
+        this.currentAST = requestingAST;
+        this.currentImports = requestingImports;
+      }
     }
   }
 
