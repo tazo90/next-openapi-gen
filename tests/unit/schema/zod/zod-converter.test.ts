@@ -705,6 +705,43 @@ export const EnvelopeSchema = createEnvelope({
     });
   });
 
+  describe("schemas imported from outside schemaDir", () => {
+    it("converts a schema the requesting file imports from another directory", () => {
+      const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-zod-imported-outside-"));
+      roots.push(root);
+      fs.mkdirSync(path.join(root, "schemas"));
+      fs.mkdirSync(path.join(root, "shared"));
+
+      fs.writeFileSync(
+        path.join(root, "shared", "address.ts"),
+        [
+          'import { z } from "zod";',
+          "export const addressSchema = z.object({ city: z.string() });",
+        ].join("\n"),
+      );
+      fs.writeFileSync(
+        path.join(root, "schemas", "customers.ts"),
+        [
+          'import { z } from "zod";',
+          'import { addressSchema } from "../shared/address";',
+          "export const customerSchema = z.object({ name: z.string(), address: addressSchema });",
+        ].join("\n"),
+      );
+
+      const converter = new ZodSchemaConverter(path.join(root, "schemas"));
+      converter.convertZodSchemaToOpenApi("customerSchema");
+
+      expect(converter.zodSchemas["customerSchema"]?.properties?.address).toEqual({
+        $ref: "#/components/schemas/addressSchema",
+      });
+      expect(converter.zodSchemas["addressSchema"]).toMatchObject({
+        type: "object",
+        properties: { city: { type: "string" } },
+        required: ["city"],
+      });
+    });
+  });
+
   describe("schemas composed from named schemas", () => {
     it("merges the properties of a named schema passed to .merge()", () => {
       const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-zod-merge-named-"));

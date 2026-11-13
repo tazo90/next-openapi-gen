@@ -343,6 +343,7 @@ export class ZodSchemaConverter {
   ): OpenApiSchema | null {
     const conversionStartedAt = performance.now();
     this.currentContentType = contentType || "response";
+    const requestingFilePath = this.currentFilePath;
 
     if (!this.hasPreScanned) {
       measurePerformance(this.performanceProfile, "zodPreScanMs", () => {
@@ -427,6 +428,13 @@ export class ZodSchemaConverter {
           logger.debug(`Found Zod schema '${schemaName}' in route file: ${routeFile}`);
           return routeSchema;
         }
+      }
+
+      // Fallback for a schema the requesting file imports from a module outside
+      // schemaDir and the route files.
+      const importedFrom = this.findImportedSchemaFile(requestingFilePath, schemaName);
+      if (importedFrom) {
+        this.processFileForZodSchema(importedFrom, schemaName);
       }
 
       // Return the schema if found, or null if not
@@ -1497,6 +1505,23 @@ export class ZodSchemaConverter {
       }
     }
     return undefined;
+  }
+
+  /**
+   * The file that declares `schemaName` when `fromFilePath` imports it under that same
+   * name, or null when it doesn't.
+   */
+  private findImportedSchemaFile(
+    fromFilePath: string | undefined,
+    schemaName: string,
+  ): string | null {
+    if (!fromFilePath) return null;
+    const declaration = this.symbolResolver.resolveDeclaration(fromFilePath, schemaName);
+    if (!declaration || declaration.filePath === fromFilePath) return null;
+    const node = declaration.node;
+    const declaresSchemaName =
+      t.isVariableDeclarator(node) && t.isIdentifier(node.id) && node.id.name === schemaName;
+    return declaresSchemaName ? declaration.filePath : null;
   }
 
   /**
