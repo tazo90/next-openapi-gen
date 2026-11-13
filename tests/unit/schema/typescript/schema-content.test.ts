@@ -12,6 +12,32 @@ import {
 } from "@workspace/openapi-core/schema/typescript/schema-content.js";
 
 describe("TypeScript schema content helpers", () => {
+  it("does not require a query parameter whose schema has a default", () => {
+    const params = createRequestParamsSchema({
+      required: ["page", "limit", "q"],
+      properties: {
+        page: { type: "number", minimum: 1, default: 1 },
+        limit: { type: "number", default: 20 },
+        q: { type: "string" },
+      },
+    });
+
+    expect(params.map(({ name, required }) => [name, required])).toEqual([
+      ["page", false],
+      ["limit", false],
+      ["q", true],
+    ]);
+  });
+
+  it("keeps a path parameter required even when its schema has a default", () => {
+    const [param] = createRequestParamsSchema(
+      { required: ["id"], properties: { id: { type: "string", default: "me" } } },
+      true,
+    );
+
+    expect(param?.required).toBe(true);
+  });
+
   it("creates response maps for refs and inline schemas", () => {
     expect(
       createMultipleResponsesSchema({
