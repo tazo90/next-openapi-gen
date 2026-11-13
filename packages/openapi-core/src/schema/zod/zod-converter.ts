@@ -800,19 +800,15 @@ export class ZodSchemaConverter {
         VariableDeclarator: (path: NodePath<t.VariableDeclarator>) => {
           if (shouldSkip(path)) return;
           if (t.isIdentifier(path.node.id) && path.node.id.name === schemaName && path.node.init) {
-            // Check if this is any Zod schema (including chained calls)
-            if (this.isZodSchema(path.node.init)) {
-              const schema = this.processZodNode(path.node.init);
-              const overrideId = this.extractMetaIdFromNode(path.node.init);
-              if (overrideId) {
-                this.applyMetaIdOverride(schemaName, schema, overrideId, filePath);
-              } else {
-                this.storeResolvedSchema(schemaName, schema);
-              }
-              return;
+            // A Zod schema, or one derived from another (`base.extend(...)`), which
+            // can carry its own `.meta({ id })` too.
+            const schema = this.processZodNode(path.node.init);
+            const overrideId = this.extractMetaIdFromNode(path.node.init);
+            if (overrideId) {
+              this.applyMetaIdOverride(schemaName, schema, overrideId, filePath);
+            } else {
+              this.storeResolvedSchema(schemaName, schema);
             }
-
-            this.storeResolvedSchema(schemaName, this.processZodNode(path.node.init));
           }
         },
 

@@ -731,6 +731,43 @@ export const EnvelopeSchema = createEnvelope({
       expect(converter.zodSchemas["Audio"]).not.toHaveProperty("id");
     });
 
+    it("uses the id and meta of a schema derived from another one", () => {
+      const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-zod-meta-id-derived-"));
+      roots.push(root);
+
+      fs.writeFileSync(
+        path.join(root, "schemas.ts"),
+        [
+          'import { z } from "zod";',
+          "export const orderSchema = z",
+          "  .object({ id: z.string(), total: z.number() })",
+          '  .meta({ id: "Order", description: "An order" });',
+          "export const orderLineSchema = orderSchema",
+          "  .extend({ sku: z.string() })",
+          '  .meta({ id: "OrderLine", description: "An order with its line" });',
+          "export const newOrderSchema = orderSchema",
+          "  .omit({ id: true })",
+          '  .meta({ id: "NewOrder", description: "An order to create" });',
+        ].join("\n"),
+      );
+
+      const converter = new ZodSchemaConverter(root);
+      converter.convertZodSchemaToOpenApi("orderLineSchema");
+      converter.convertZodSchemaToOpenApi("newOrderSchema");
+
+      expect(converter.zodSchemas["OrderLine"]).toMatchObject({
+        description: "An order with its line",
+        properties: { id: { type: "string" }, total: { type: "number" }, sku: { type: "string" } },
+      });
+      expect(converter.zodSchemas["NewOrder"]).toMatchObject({
+        description: "An order to create",
+        properties: { total: { type: "number" } },
+      });
+      expect(converter.zodSchemas["NewOrder"]?.properties).not.toHaveProperty("id");
+      expect(converter.zodSchemas).not.toHaveProperty("orderLineSchema");
+      expect(converter.zodSchemas).not.toHaveProperty("newOrderSchema");
+    });
+
     it("preserves old behaviour when no .meta({ id }) is present", () => {
       const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-zod-meta-id-none-"));
       roots.push(root);
