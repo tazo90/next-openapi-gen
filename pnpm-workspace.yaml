@@ -41,7 +41,7 @@ catalog:
   simple-git-hooks: ^2.14.0
   swagger-ui-react: ^5.32.13
   tailwindcss: ^4.3.3
-  tsup: ^8.5.1
+  tsup: ^9.0.0
   turbo: ^2.11.6
   typescript: 7.0.2
   vitest: ^4.1.10
