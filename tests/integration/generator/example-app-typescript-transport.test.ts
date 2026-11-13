@@ -141,7 +141,10 @@ describe("next-app-typescript transport and session generation", () => {
 
     try {
       expect(spec.paths?.["/products"]?.post).toMatchObject({
-        description: "Demonstrates ReturnType and Parameters utility types",
+        description:
+          "Demonstrates ReturnType and Parameters utility types\n" +
+          "Request body type is inferred from createProduct function parameters.\n" +
+          "Response type is inferred from createProduct return type.",
         responses: {
           200: {
             content: {

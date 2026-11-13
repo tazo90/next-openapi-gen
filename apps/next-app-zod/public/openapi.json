@@ -8688,7 +8688,7 @@
       "post": {
         "operationId": "zodCreateSubscription",
         "summary": "Create subscription",
-        "description": "Registers a callback URL that will receive signed payment events.",
+        "description": "Registers a callback URL that will receive signed payment events.\nUses `@callback` to declare the out-of-band webhook contract and\n`@link` so clients can follow up to the created subscription.",
         "tags": [
           "Integrations",
           "Webhooks"

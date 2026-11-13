@@ -100,6 +100,39 @@ describe("jsdoc", () => {
     });
   });
 
+  it("reads a @description that wraps across lines up to the next tag", () => {
+    const data = getExportCommentData(`
+      /**
+       * Create an order
+       * @description Validates the cart, reserves stock for every line and
+       * charges the saved card. A payment that needs confirmation leaves the
+       * order \`pending\` until the provider calls back.
+       * @tag Orders
+       * @openapi
+       */
+      export async function POST() {}
+    `);
+
+    expect(data?.description).toBe(
+      "Validates the cart, reserves stock for every line and\n" +
+        "charges the saved card. A payment that needs confirmation leaves the\n" +
+        "order `pending` until the provider calls back.",
+    );
+    expect(data?.tag).toBe("Orders");
+
+    // A description that starts on the line after the tag, and one with an `@` mid-line.
+    const nextLine = getExportCommentData(`
+      /**
+       * @description
+       * Mail support@example.com
+       * for access.
+       * @openapi
+       */
+      export async function GET() {}
+    `);
+    expect(nextLine?.description).toBe("Mail support@example.com\nfor access.");
+  });
+
   it("returns empty metadata when no JSDoc is attached", () => {
     const data = getExportCommentData("export const GET = async () => {};");
 
