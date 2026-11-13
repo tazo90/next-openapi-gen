@@ -785,8 +785,12 @@ function downgradeSchemaForOpenApi30(schema: OpenApiSchema, mediaTypeName?: stri
     const baseBranch = nextSchema.anyOf.find((item) => item.type !== "null");
     if (nullableBranch && baseBranch) {
       const { anyOf: _anyOf, ...outerMeta } = nextSchema;
+      // OpenAPI 3.0 ignores the siblings of a `$ref`, so `nullable` must sit
+      // next to an `allOf` that wraps it.
       nextSchema = {
-        ...structuredClone(baseBranch),
+        ...(baseBranch.$ref
+          ? { allOf: [structuredClone(baseBranch)] }
+          : structuredClone(baseBranch)),
         ...outerMeta,
         nullable: true,
       };

@@ -840,6 +840,35 @@ describe("OpenAPI version processor", () => {
     });
     expect(upgraded.components?.schemas?.Required?.enum).toEqual(["open", "closed"]);
   });
+
+  it("wraps a nullable $ref in allOf, since OpenAPI 3.0 ignores a $ref's siblings", () => {
+    const finalized = getOpenApiVersionProcessor("3.0").finalize(
+      createDocumentFromTemplate({
+        openapi: "3.2.0",
+        info: { title: "Fixture", version: "1.0.0" },
+        components: {
+          schemas: {
+            Address: { type: "object", properties: { city: { type: "string" } } },
+            Customer: {
+              type: "object",
+              properties: {
+                address: {
+                  anyOf: [{ $ref: "#/components/schemas/Address" }, { type: "null" }],
+                  description: "Where to ship",
+                },
+              },
+            },
+          },
+        },
+      }),
+    );
+
+    expect(finalized.components?.schemas?.Customer?.properties?.address).toEqual({
+      allOf: [{ $ref: "#/components/schemas/Address" }],
+      description: "Where to ship",
+      nullable: true,
+    });
+  });
 });
 
 type OpenApiSchemaWithDiscriminator = {
