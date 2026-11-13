@@ -55,6 +55,7 @@ export function applyZodChainMethod(
   node: t.CallExpression,
 ): OpenApiSchema {
   switch (methodName) {
+    case "exactOptional":
     case "optional":
       // optional means T | undefined — not in required array, no nullable flag
       // Required array exclusion is handled by hasOptionalMethod() in processZodObject()

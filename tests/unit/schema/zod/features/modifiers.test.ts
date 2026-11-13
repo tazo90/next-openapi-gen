@@ -15,6 +15,36 @@ describe("Zod features › modifiers", () => {
     expect(convert("z.optional(z.string())", roots)).toMatchObject({ type: "string" });
   });
 
+  it(".exactOptional() on a property is optional, like .optional()", () => {
+    const schema = convert(
+      `z.object({
+        id: z.string(),
+        name: z.string().min(1).exactOptional(),
+      })`,
+      roots,
+    );
+
+    expect(schema).toMatchObject({
+      type: "object",
+      properties: { id: { type: "string" }, name: { type: "string", minLength: 1 } },
+      required: ["id"],
+    });
+  });
+
+  it("z.exactOptional(inner) processes the inner schema and is optional on its object", () => {
+    expect(convert("z.exactOptional(z.string())", roots)).toMatchObject({ type: "string" });
+
+    const schema = convert(
+      `z.object({
+        id: z.string(),
+        name: z.exactOptional(z.string()),
+      })`,
+      roots,
+    );
+
+    expect(schema).toMatchObject({ required: ["id"] });
+  });
+
   it("z.nullable(inner) applies nullable to the inner schema", () => {
     expect(convert("z.nullable(z.string())", roots)).toMatchObject({
       type: "string",

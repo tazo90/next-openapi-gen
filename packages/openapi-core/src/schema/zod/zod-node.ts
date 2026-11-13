@@ -169,7 +169,10 @@ export function convertZodNode(converter: ZodNodeHost, node: t.Node): OpenApiSch
       return converter.processZodDiscriminatedUnion(node);
     } else if (methodName === "literal" && node.arguments.length > 0) {
       return converter.processZodLiteral(node);
-    } else if (methodName === "optional" && node.arguments.length > 0) {
+    } else if (
+      (methodName === "optional" || methodName === "exactOptional") &&
+      node.arguments.length > 0
+    ) {
       const firstArgument = node.arguments[0];
       if (!firstArgument || t.isArgumentPlaceholder(firstArgument)) {
         return { type: "object" };
@@ -219,6 +222,7 @@ export function convertZodNode(converter: ZodNodeHost, node: t.Node): OpenApiSch
 
       // Apply method-specific transformations
       switch (methodName) {
+        case "exactOptional":
         case "optional":
           // optional means T | undefined — not in required array, no nullable flag
           break;
