@@ -1,3 +1,27 @@
+# [1.11.0](https://github.com/tazo90/next-openapi-gen/compare/v1.10.0...v1.11.0) (2026-11-13)
+
+
+### 🐛 Bug Fixes
+
+* **core:** evaluate unary minus and plus in constant initializers ([#243](https://github.com/tazo90/next-openapi-gen/issues/243)) ([1cc0884](https://github.com/tazo90/next-openapi-gen/commit/1cc08842d940dfe1bbde137fa8789b1bc1019138))
+* **core:** only resolve module candidates that are files ([#239](https://github.com/tazo90/next-openapi-gen/issues/239)) ([903fb90](https://github.com/tazo90/next-openapi-gen/commit/903fb90650fb62537ff6cbb43bbea5ac9740ee4d))
+* exclude generated CHANGELOG from oxfmt ([#213](https://github.com/tazo90/next-openapi-gen/issues/213)) ([74c171b](https://github.com/tazo90/next-openapi-gen/commit/74c171b7b076673475908567e68a78c397a8482d))
+* **jsdoc:** read a [@description](https://github.com/description) that wraps across lines up to the next tag ([#224](https://github.com/tazo90/next-openapi-gen/issues/224)) ([0a34c62](https://github.com/tazo90/next-openapi-gen/commit/0a34c62f65bae1cdacf51e30f968a2a526d4d785))
+* **openapi:** list null in a nullable schema's enum ([#230](https://github.com/tazo90/next-openapi-gen/issues/230)) ([3ee7412](https://github.com/tazo90/next-openapi-gen/commit/3ee7412b7e3b573333dc38f813b11f8d9a068be3))
+* **openapi:** wrap a nullable $ref in allOf for OpenAPI 3.0 ([#233](https://github.com/tazo90/next-openapi-gen/issues/233)) ([3224f34](https://github.com/tazo90/next-openapi-gen/commit/3224f34fe91d119d79352fa4dbfe2e49ccefa19e))
+* **params:** do not require a query parameter whose schema has a default ([#240](https://github.com/tazo90/next-openapi-gen/issues/240)) ([f8cf0e9](https://github.com/tazo90/next-openapi-gen/commit/f8cf0e9c27434d92488247865bcc565343179de9))
+* **typescript:** follow a params $ref chain to the referenced schema's properties ([#241](https://github.com/tazo90/next-openapi-gen/issues/241)) ([a95a0ca](https://github.com/tazo90/next-openapi-gen/commit/a95a0cad1c44959058760b5e1ecaa6fdc246af66))
+* **typescript:** keep the next property's JSDoc and {[@link](https://github.com/link)} out of a property's description ([#220](https://github.com/tazo90/next-openapi-gen/issues/220)) ([895ee32](https://github.com/tazo90/next-openapi-gen/commit/895ee3226a875263b3caf16b6bc66d19e3011858))
+* **zod:** apply .meta({ id }) to a schema derived from another one ([#226](https://github.com/tazo90/next-openapi-gen/issues/226)) ([904f13c](https://github.com/tazo90/next-openapi-gen/commit/904f13cd218263580cd036742b785513a1cb7403))
+* **zod:** convert a schema imported from outside schemaDir ([#237](https://github.com/tazo90/next-openapi-gen/issues/237)) ([07aa52c](https://github.com/tazo90/next-openapi-gen/commit/07aa52c8fb6d0d2659dbfeecca242349990e7be2))
+* **zod:** convert every schema a file imports from outside schemaDir ([#245](https://github.com/tazo90/next-openapi-gen/issues/245)) ([16d3efb](https://github.com/tazo90/next-openapi-gen/commit/16d3efb6a555e327344b271a98e2a74c0f2034b3))
+* **zod:** do not treat runtime parse calls as schema declarations ([#244](https://github.com/tazo90/next-openapi-gen/issues/244)) ([b5ff80c](https://github.com/tazo90/next-openapi-gen/commit/b5ff80c082001f3705ed7ae114a2b25b31b283a9))
+* **zod:** find a schema whose .meta({ id }) is also its z.infer type's name ([#234](https://github.com/tazo90/next-openapi-gen/issues/234)) ([8ae5802](https://github.com/tazo90/next-openapi-gen/commit/8ae5802bd48ac435f128e2ecdfa591357a986111))
+* **zod:** keep a .default() object or array whole ([#238](https://github.com/tazo90/next-openapi-gen/issues/238)) ([2911161](https://github.com/tazo90/next-openapi-gen/commit/2911161653913b2cf444c7ffc4fb7539ce3fa402))
+* **zod:** map a discriminated union's named variants to their literals ([#222](https://github.com/tazo90/next-openapi-gen/issues/222)) ([eecfe7d](https://github.com/tazo90/next-openapi-gen/commit/eecfe7d159080454f7f6886b5ac9c0ea4fdf01d8))
+* **zod:** resolve a named schema's $ref by component name in merge and extend ([#228](https://github.com/tazo90/next-openapi-gen/issues/228)) ([cd5ce6b](https://github.com/tazo90/next-openapi-gen/commit/cd5ce6bb3ea790cc0866589dfd42c5bd4652a0de))
+* **zod:** treat exactOptional like optional ([#242](https://github.com/tazo90/next-openapi-gen/issues/242)) ([99e9393](https://github.com/tazo90/next-openapi-gen/commit/99e9393d1df1d3f1efb68073596619c1a765d001))
+
 # [1.10.0](https://github.com/tazo90/next-openapi-gen/compare/v1.9.0...v1.10.0) (2026-11-03)
 
 
