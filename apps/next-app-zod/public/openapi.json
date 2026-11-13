@@ -215,7 +215,11 @@
       "ApiResponseSchema": {
         "type": "object",
         "discriminator": {
-          "propertyName": "status"
+          "propertyName": "status",
+          "mapping": {
+            "success": "#/components/schemas/SuccessResponseSchema",
+            "error": "#/components/schemas/ErrorResponseSchema"
+          }
         },
         "oneOf": [
           {
@@ -3144,7 +3148,12 @@
       "PaymentEvent": {
         "type": "object",
         "discriminator": {
-          "propertyName": "type"
+          "propertyName": "type",
+          "mapping": {
+            "payment.succeeded": "#/components/schemas/PaymentSucceededEvent",
+            "payment.failed": "#/components/schemas/PaymentFailedEvent",
+            "payment.refunded": "#/components/schemas/PaymentRefundedEvent"
+          }
         },
         "oneOf": [
           {
@@ -3297,7 +3306,12 @@
       "PaymentMethodSchema": {
         "type": "object",
         "discriminator": {
-          "propertyName": "type"
+          "propertyName": "type",
+          "mapping": {
+            "credit_card": "#/components/schemas/CreditCardPaymentSchema",
+            "paypal": "#/components/schemas/PayPalPaymentSchema",
+            "bank_transfer": "#/components/schemas/BankTransferPaymentSchema"
+          }
         },
         "oneOf": [
           {
