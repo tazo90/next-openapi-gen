@@ -804,6 +804,42 @@ describe("OpenAPI version processor", () => {
     expect(for30.paths?.["/ops"]?.get?.responses?.["204"]).toBe("not-a-response");
     expect(for30.components?.securitySchemes?.invalid).toBe("not-a-scheme");
   });
+
+  it("lists null in a nullable schema's enum, so null passes the enum too", () => {
+    const document = () =>
+      createDocumentFromTemplate({
+        openapi: "3.0.0",
+        info: { title: "Fixture", version: "1.0.0" },
+        paths: {},
+        components: {
+          schemas: {
+            Status: { type: "string", enum: ["open", "closed"], nullable: true },
+            StatusOrNull: {
+              anyOf: [{ type: "string", enum: ["open", "closed"] }, { type: "null" }],
+            },
+            Required: { type: "string", enum: ["open", "closed"] },
+          },
+        },
+      });
+
+    const downgraded = getOpenApiVersionProcessor("3.0").finalize(document());
+    expect(downgraded.components?.schemas?.Status).toMatchObject({
+      enum: ["open", "closed", null],
+      nullable: true,
+    });
+    expect(downgraded.components?.schemas?.StatusOrNull).toMatchObject({
+      enum: ["open", "closed", null],
+      nullable: true,
+    });
+    expect(downgraded.components?.schemas?.Required?.enum).toEqual(["open", "closed"]);
+
+    const upgraded = getOpenApiVersionProcessor("3.1").finalize(document());
+    expect(upgraded.components?.schemas?.Status).toMatchObject({
+      type: ["string", "null"],
+      enum: ["open", "closed", null],
+    });
+    expect(upgraded.components?.schemas?.Required?.enum).toEqual(["open", "closed"]);
+  });
 });
 
 type OpenApiSchemaWithDiscriminator = {

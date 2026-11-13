@@ -683,6 +683,16 @@ function transformSchema(
   return nextSchema;
 }
 
+/**
+ * An `enum` constrains a nullable schema too: unless it lists `null`, a `null` value fails
+ * it whatever `nullable` or `type` allow.
+ */
+function addNullToEnum(schema: OpenApiSchema): void {
+  if (Array.isArray(schema.enum) && !schema.enum.includes(null)) {
+    schema.enum = [...schema.enum, null];
+  }
+}
+
 function upgradeSchemaForOpenApi31(schema: OpenApiSchema, mediaTypeName?: string): OpenApiSchema {
   let nextSchema = structuredClone(schema);
 
@@ -691,8 +701,10 @@ function upgradeSchemaForOpenApi31(schema: OpenApiSchema, mediaTypeName?: string
 
     if (typeof nextSchema.type === "string") {
       nextSchema.type = [...new Set([nextSchema.type, "null"])];
+      addNullToEnum(nextSchema);
     } else if (Array.isArray(nextSchema.type)) {
       nextSchema.type = [...new Set([...nextSchema.type, "null"])];
+      addNullToEnum(nextSchema);
     } else {
       const baseSchema = structuredClone(nextSchema);
       delete baseSchema.nullable;
@@ -779,6 +791,10 @@ function downgradeSchemaForOpenApi30(schema: OpenApiSchema, mediaTypeName?: stri
         nullable: true,
       };
     }
+  }
+
+  if (nextSchema.nullable === true) {
+    addNullToEnum(nextSchema);
   }
 
   if (typeof nextSchema.exclusiveMinimum === "number") {
