@@ -395,4 +395,56 @@ describe("TypeScript schema content helpers", () => {
       responses: {},
     });
   });
+
+  it("follows a params $ref chain to the referenced schema's properties", () => {
+    const openapiDefinitions: Record<string, any> = {
+      Params: { $ref: "#/components/schemas/Middle" },
+      Middle: { $ref: "#/components/schemas/Base" },
+    };
+    const findSchemaDefinition = vi.fn<(name: string, kind: string) => unknown>((name) => {
+      if (name === "Base") {
+        openapiDefinitions.Base = {
+          type: "object",
+          properties: { limit: { type: "number" } },
+        };
+      }
+      return openapiDefinitions[name];
+    });
+
+    const result = getSchemaContent(
+      {
+        tag: { type: "string" },
+        paramsType: "Params",
+        querystringType: "",
+        pathParamsType: "",
+        bodyType: "",
+        responseType: "",
+      },
+      { openapiDefinitions, schemaTypes: ["zod"], findSchemaDefinition },
+    );
+
+    expect(findSchemaDefinition).toHaveBeenCalledWith("Base", "params");
+    expect(result.params.properties).toEqual({ limit: { type: "number" } });
+  });
+
+  it("stops following a params $ref cycle", () => {
+    const openapiDefinitions: Record<string, any> = {
+      A: { $ref: "#/components/schemas/B" },
+      B: { $ref: "#/components/schemas/A" },
+    };
+
+    const result = getSchemaContent(
+      {
+        tag: { type: "string" },
+        paramsType: "A",
+        querystringType: "",
+        pathParamsType: "",
+        bodyType: "",
+        responseType: "",
+      },
+      { openapiDefinitions, schemaTypes: ["zod"], findSchemaDefinition: () => undefined },
+    );
+
+    expect(result.params.properties).toBeUndefined();
+  });
 });
