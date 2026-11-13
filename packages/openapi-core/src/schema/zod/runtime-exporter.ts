@@ -154,6 +154,7 @@ export class ZodRuntimeExporter {
         return this.buildIntersection(node);
       case "tuple":
         return this.buildTuple(node);
+      case "exactOptional":
       case "optional":
       case "nullable":
       case "nullish": {
@@ -165,7 +166,7 @@ export class ZodRuntimeExporter {
         if (!innerSchema) {
           return null;
         }
-        if (helper === "optional") {
+        if (helper === "optional" || helper === "exactOptional") {
           return innerSchema.optional();
         }
         if (helper === "nullable") {
@@ -365,6 +366,7 @@ export class ZodRuntimeExporter {
     node: t.CallExpression,
   ): z.ZodTypeAny | null {
     switch (methodName) {
+      case "exactOptional":
       case "optional":
         return schema.optional();
       case "nullable":

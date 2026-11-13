@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 
-import { cleanup, convert } from "./_helpers.js";
+import { cleanup, convert, convertFromFile } from "./_helpers.js";
 
 describe("Zod features › unions and intersections", () => {
   const roots: string[] = [];
@@ -48,6 +48,39 @@ describe("Zod features › unions and intersections", () => {
     });
     expect((schema as { discriminator?: unknown }).discriminator).toMatchObject({
       propertyName: "kind",
+    });
+  });
+
+  it("z.discriminatedUnion of named schemas maps each value to its component", () => {
+    // Named variants are emitted as `$ref`s, which carry no properties: the literal must
+    // come from the referenced component, or clients key the union by component name.
+    const schema = convertFromFile(
+      {
+        "shapes.ts": `
+          import { z } from "zod";
+          export const circleSchema = z.object({ kind: z.literal("circle"), radius: z.number() });
+          export const squareSchema = z
+            .object({ kind: z.literal("square"), side: z.number() })
+            .meta({ id: "Square" });
+          export const shapeSchema = z.discriminatedUnion("kind", [circleSchema, squareSchema]);
+        `,
+      },
+      { file: "shapes.ts", exportName: "shapeSchema" },
+      roots,
+    );
+    expect(schema).toEqual({
+      type: "object",
+      discriminator: {
+        propertyName: "kind",
+        mapping: {
+          circle: "#/components/schemas/circleSchema",
+          square: "#/components/schemas/Square",
+        },
+      },
+      oneOf: [
+        { $ref: "#/components/schemas/circleSchema" },
+        { $ref: "#/components/schemas/Square" },
+      ],
     });
   });
 

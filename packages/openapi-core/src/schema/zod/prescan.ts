@@ -100,12 +100,23 @@ export function collectImportMetadata(ast: t.File): {
   return metadata;
 }
 
+// These methods run a schema against a value and return data, so a call to one ends the schema chain.
+const ZOD_RUNTIME_METHODS = new Set(["parse", "safeParse", "parseAsync", "safeParseAsync", "spa"]);
+
 export function isZodSchemaNode(
   node: t.Node,
   drizzleZodImports: Set<string>,
   zodLocalName: string = "z",
 ): boolean {
   if (t.isCallExpression(node)) {
+    if (
+      t.isMemberExpression(node.callee) &&
+      t.isIdentifier(node.callee.property) &&
+      ZOD_RUNTIME_METHODS.has(node.callee.property.name)
+    ) {
+      return false;
+    }
+
     if (t.isIdentifier(node.callee) && drizzleZodImports.has(node.callee.name)) {
       return true;
     }

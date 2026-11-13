@@ -147,6 +147,32 @@ describe("TypeScript and Zod regression scenarios", () => {
         example: 123.45,
       });
     });
+
+    it("does not give an undocumented property the next property's comment", () => {
+      // Babel also attaches a property's leading comment as the previous property's
+      // trailing comment, so a property without its own comment took the next one's.
+      const processor = new SchemaProcessor(
+        path.join(process.cwd(), "tests", "fixtures", "ts-property-jsdoc"),
+        "typescript",
+      );
+
+      const properties = processor.findSchemaDefinition("CellResponse", "").properties ?? {};
+      const descriptions = Object.fromEntries(
+        Object.entries(properties).map(([name, schema]) => [name, schema.description]),
+      );
+
+      expect(descriptions).toEqual({
+        col: "Column label.",
+        value: undefined,
+        instructions: "Per-cell prompt override.",
+        row: undefined,
+        updatedAt: "ISO 8601 timestamp of the last edit.",
+        status: "Cell lifecycle status.",
+        error: undefined,
+        fillId: "The in-flight fill, if any (see `ActiveFill`).",
+        source: "Where the value came from: [a source](https://example.com/sources).",
+      });
+    });
   });
 
   describe("Zod fixtures", () => {

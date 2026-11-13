@@ -12,6 +12,32 @@ import {
 } from "@workspace/openapi-core/schema/typescript/schema-content.js";
 
 describe("TypeScript schema content helpers", () => {
+  it("does not require a query parameter whose schema has a default", () => {
+    const params = createRequestParamsSchema({
+      required: ["page", "limit", "q"],
+      properties: {
+        page: { type: "number", minimum: 1, default: 1 },
+        limit: { type: "number", default: 20 },
+        q: { type: "string" },
+      },
+    });
+
+    expect(params.map(({ name, required }) => [name, required])).toEqual([
+      ["page", false],
+      ["limit", false],
+      ["q", true],
+    ]);
+  });
+
+  it("keeps a path parameter required even when its schema has a default", () => {
+    const [param] = createRequestParamsSchema(
+      { required: ["id"], properties: { id: { type: "string", default: "me" } } },
+      true,
+    );
+
+    expect(param?.required).toBe(true);
+  });
+
   it("creates response maps for refs and inline schemas", () => {
     expect(
       createMultipleResponsesSchema({
@@ -394,5 +420,57 @@ describe("TypeScript schema content helpers", () => {
       body: {},
       responses: {},
     });
+  });
+
+  it("follows a params $ref chain to the referenced schema's properties", () => {
+    const openapiDefinitions: Record<string, any> = {
+      Params: { $ref: "#/components/schemas/Middle" },
+      Middle: { $ref: "#/components/schemas/Base" },
+    };
+    const findSchemaDefinition = vi.fn<(name: string, kind: string) => unknown>((name) => {
+      if (name === "Base") {
+        openapiDefinitions.Base = {
+          type: "object",
+          properties: { limit: { type: "number" } },
+        };
+      }
+      return openapiDefinitions[name];
+    });
+
+    const result = getSchemaContent(
+      {
+        tag: { type: "string" },
+        paramsType: "Params",
+        querystringType: "",
+        pathParamsType: "",
+        bodyType: "",
+        responseType: "",
+      },
+      { openapiDefinitions, schemaTypes: ["zod"], findSchemaDefinition },
+    );
+
+    expect(findSchemaDefinition).toHaveBeenCalledWith("Base", "params");
+    expect(result.params.properties).toEqual({ limit: { type: "number" } });
+  });
+
+  it("stops following a params $ref cycle", () => {
+    const openapiDefinitions: Record<string, any> = {
+      A: { $ref: "#/components/schemas/B" },
+      B: { $ref: "#/components/schemas/A" },
+    };
+
+    const result = getSchemaContent(
+      {
+        tag: { type: "string" },
+        paramsType: "A",
+        querystringType: "",
+        pathParamsType: "",
+        bodyType: "",
+        responseType: "",
+      },
+      { openapiDefinitions, schemaTypes: ["zod"], findSchemaDefinition: () => undefined },
+    );
+
+    expect(result.params.properties).toBeUndefined();
   });
 });

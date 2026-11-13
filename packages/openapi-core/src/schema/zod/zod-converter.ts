@@ -85,6 +85,7 @@ const SUPPORTED_ZOD_HELPERS = new Set([
   "email",
   "emoji",
   "enum",
+  "exactOptional",
   "extend",
   "file",
   "float32",
@@ -178,6 +179,7 @@ const SUPPORTED_ZOD_CHAIN_METHODS = new Set([
   "email",
   "emoji",
   "endsWith",
+  "exactOptional",
   "extend",
   "finite",
   "guid",
@@ -493,10 +495,20 @@ export class ZodSchemaConverter {
       return aliasRef;
     }
 
-    const normalizedName = this.typeToSchemaMapping[schemaName] ?? schemaName;
+    const normalizedName = this.resolveStoredSchemaName(schemaName);
     return (
       this.schemaVariantRefs.get(this.getVariantKey(normalizedName, contentType)) ?? normalizedName
     );
+  }
+
+  /**
+   * The name `zodSchemas` keys a schema by. A `.meta({ id })` that is also the name of
+   * the schema's `z.infer` alias maps the two names to each other, so a name that is
+   * already stored is kept rather than mapped back to the variable.
+   */
+  private resolveStoredSchemaName(schemaName: string): string {
+    if (this.zodSchemas[schemaName]) return schemaName;
+    return this.typeToSchemaMapping[schemaName] ?? schemaName;
   }
 
   private getVariantKey(schemaName: string, contentType: ContentType): string {
@@ -508,7 +520,7 @@ export class ZodSchemaConverter {
     contentType: ContentType = this.currentContentType,
     allowBaseFallback: boolean = true,
   ): OpenApiSchema | null {
-    const normalizedName = this.typeToSchemaMapping[schemaName] ?? schemaName;
+    const normalizedName = this.resolveStoredSchemaName(schemaName);
     const explicitReferenceName = this.schemaVariantRefs.get(
       this.getVariantKey(normalizedName, contentType),
     );
@@ -527,7 +539,7 @@ export class ZodSchemaConverter {
     schema: OpenApiSchema,
     contentType: ContentType = this.currentContentType,
   ): string {
-    const normalizedName = this.typeToSchemaMapping[schemaName] ?? schemaName;
+    const normalizedName = this.resolveStoredSchemaName(schemaName);
     const schemaUsesRuntimeExport = this.currentSchemaUsedRuntimeExport;
     this.currentSchemaUsedRuntimeExport = false;
     if (schemaUsesRuntimeExport) {
@@ -808,19 +820,15 @@ export class ZodSchemaConverter {
         VariableDeclarator: (path: NodePath<t.VariableDeclarator>) => {
           if (shouldSkip(path)) return;
           if (t.isIdentifier(path.node.id) && path.node.id.name === schemaName && path.node.init) {
-            // Check if this is any Zod schema (including chained calls)
-            if (this.isZodSchema(path.node.init)) {
-              const schema = this.processZodNode(path.node.init);
-              const overrideId = this.extractMetaIdFromNode(path.node.init);
-              if (overrideId) {
-                this.applyMetaIdOverride(schemaName, schema, overrideId, filePath);
-              } else {
-                this.storeResolvedSchema(schemaName, schema);
-              }
-              return;
+            // A Zod schema, or one derived from another (`base.extend(...)`), which
+            // can carry its own `.meta({ id })` too.
+            const schema = this.processZodNode(path.node.init);
+            const overrideId = this.extractMetaIdFromNode(path.node.init);
+            if (overrideId) {
+              this.applyMetaIdOverride(schemaName, schema, overrideId, filePath);
+            } else {
+              this.storeResolvedSchema(schemaName, schema);
             }
-
-            this.storeResolvedSchema(schemaName, this.processZodNode(path.node.init));
           }
         },
 
@@ -1058,6 +1066,7 @@ export class ZodSchemaConverter {
       resolveLiteralValue: (name: string) => this.resolveLiteralValue(name),
       resolveConstArrayValues: (name: string) => this.resolveConstArrayValues(name),
       resolveObjectSchemaNode: (name: string) => this.resolveObjectSchemaNode(name),
+      getComponentSchema: (componentName: string) => this.zodSchemas[componentName] ?? null,
       addDiagnostic: (diagnostic: Diagnostic) => {
         this.diagnostics?.add({
           ...diagnostic,
@@ -1812,6 +1821,25 @@ export class ZodSchemaConverter {
     }
   }
 
+  /**
+   * The schema a `#/components/schemas/<name>` reference points to, or `schema` itself
+   * when it isn't a reference or can't be resolved. Looked up by component name first,
+   * as `zodSchemas` is keyed: a `.meta({ id })` component can share its name with a
+   * `z.infer` alias that maps back to the variable, which `getStoredSchema` would follow.
+   */
+  resolveSchemaRef(schema: OpenApiSchema): OpenApiSchema {
+    if (!schema.$ref) return schema;
+    const name = schema.$ref.replace("#/components/schemas/", "");
+    if (!this.zodSchemas[name] && !this.getStoredSchema(name)) {
+      this.convertZodSchemaToOpenApi(name);
+    }
+    const resolved = this.zodSchemas[name] ?? this.getStoredSchema(name);
+    if (!resolved) {
+      logger.debug(`Could not resolve schema reference: ${name}`);
+    }
+    return resolved ?? schema;
+  }
+
   private mergeExtendedObject(
     baseSchemaResult: OpenApiSchema,
     shapeArg: t.Node | t.SpreadElement | t.ArgumentPlaceholder,
@@ -1820,19 +1848,7 @@ export class ZodSchemaConverter {
       return baseSchemaResult;
     }
 
-    let baseSchema = baseSchemaResult;
-    if (baseSchemaResult.$ref) {
-      const schemaName = baseSchemaResult.$ref.replace("#/components/schemas/", "");
-      if (!this.getStoredSchema(schemaName)) {
-        logger.debug(`[extend] Base schema ${schemaName} not found, attempting to convert it`);
-        this.convertZodSchemaToOpenApi(schemaName);
-      }
-      if (this.getStoredSchema(schemaName)) {
-        baseSchema = this.getStoredSchema(schemaName)!;
-      } else {
-        logger.debug(`Could not resolve reference for extend: ${schemaName}`);
-      }
-    }
+    const baseSchema = this.resolveSchemaRef(baseSchemaResult);
 
     const extendNode = t.callExpression(
       t.memberExpression(t.identifier(this.getCurrentZodLocalName()), t.identifier("object")),

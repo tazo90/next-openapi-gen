@@ -472,7 +472,7 @@ export class DrizzleZodProcessor {
     if (t.isCallExpression(node) && t.isMemberExpression(node.callee)) {
       const methodName = t.isIdentifier(node.callee.property) ? node.callee.property.name : null;
 
-      if (methodName === "optional" || methodName === "nullish") {
+      if (methodName === "optional" || methodName === "exactOptional" || methodName === "nullish") {
         return true;
       }
 
@@ -674,6 +674,7 @@ export class DrizzleZodProcessor {
         result.type = "integer";
         break;
 
+      case "exactOptional":
       case "optional":
         // Handled by isFieldOptional check, no schema modification needed
         break;

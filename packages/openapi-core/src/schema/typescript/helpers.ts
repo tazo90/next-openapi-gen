@@ -119,6 +119,15 @@ export function extractKeysFromLiteralType(node: any): string[] {
   return [];
 }
 
+/** A URL target stays a link; a code symbol has nowhere to link to. */
+function renderLinkTag(_: string, target: string, label: string): string {
+  const text = label.trim();
+  if (/^[a-z][a-z\d+.-]*:\/\//i.test(target)) {
+    return text ? `[${text}](${target})` : `<${target}>`;
+  }
+  return text || `\`${target}\``;
+}
+
 function parsePropertyComment(
   commentValue: string,
 ): Omit<PropertyOptions, "required" | "nullable"> {
@@ -128,7 +137,10 @@ function parsePropertyComment(
     .map((line) => line.replace(/^\s*\*\s?/, "").trim())
     .filter((line) => line.length > 0)
     .join(" ")
-    .trim();
+    .trim()
+    // `{@link Target}` / `{@link Target | label}` are inline tags, not block tags:
+    // render them as Markdown so the unknown-tag strip below does not cut the rest.
+    .replace(/\{@link(?:code|plain)?\s+([^\s|}]+)\s*\|?\s*([^}]*)\}/g, renderLinkTag);
 
   const result: Omit<PropertyOptions, "required" | "nullable"> = {};
   let remaining = text;
@@ -200,11 +212,15 @@ export function getPropertyOptions(node: any, contentType: ContentType): Propert
   //
   // Strategy: prefer CommentBlock leading unconditionally; accept CommentLine leading
   // only when there are no trailing comments (meaning it is a real "above" comment,
-  // not a Babel-duplicated artifact); fall back to the first trailing comment.
+  // not a Babel-duplicated artifact); fall back to a trailing comment on the line the
+  // property ends on. A trailing comment on a later line is the next property's
+  // (style 2 or 3), so an undocumented property must not take it.
   const leadingComment = node.leadingComments?.findLast(
     (c: { type: string }) => c.type === "CommentBlock" || !node.trailingComments?.length,
   );
-  const trailingComment = node.trailingComments?.[0];
+  const trailingComment = node.trailingComments?.find(
+    (c: { loc?: { start: { line: number } } }) => c.loc?.start.line === node.loc?.end.line,
+  );
   const sourceComment = leadingComment ?? trailingComment;
   if (sourceComment) {
     Object.assign(options, parsePropertyComment(sourceComment.value));

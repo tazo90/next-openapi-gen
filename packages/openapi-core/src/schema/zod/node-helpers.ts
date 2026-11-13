@@ -30,6 +30,8 @@ export type PrimitiveHelperContext = {
   resolveConstArrayValues?: (name: string) => (string | number)[] | null;
   /** Resolve an identifier referring to a `z.object({...})` (or equivalent) call. */
   resolveObjectSchemaNode?: (name: string) => t.CallExpression | null;
+  /** The converted schema a `#/components/schemas/<name>` reference points to. */
+  getComponentSchema?: (componentName: string) => OpenApiSchema | null;
   addDiagnostic?: (diagnostic: Diagnostic) => void;
   /** The name of the local zod import binding — defaults to `"z"`. */
   zodLocalName?: string;
@@ -213,11 +215,19 @@ export function processZodDiscriminatedUnion(
   // Build a discriminator.mapping by extracting each variant's literal discriminator value
   // from its `properties[discriminator].enum`. When the variant is emitted as `$ref`, point
   // the mapping entry at the ref; otherwise skip (inline schemas don't round-trip via mapping).
+  // A `$ref` carries no properties of its own, so the literal is read from the component it
+  // points to. Without a mapping, the values default to the component names.
   const mapping: Record<string, string> = {};
   for (const variant of schemas) {
     const variantRef = extractRefFromSchema(variant);
     if (!variantRef) continue;
-    const literal = extractDiscriminatorLiteral(variant, discriminator);
+    const componentName = variantRef.slice(variantRef.lastIndexOf("/") + 1);
+    const literal =
+      extractDiscriminatorLiteral(variant, discriminator) ??
+      extractDiscriminatorLiteral(
+        context?.getComponentSchema?.(componentName) ?? {},
+        discriminator,
+      );
     if (typeof literal === "string") {
       mapping[literal] = variantRef;
     }
@@ -472,7 +482,7 @@ function isZodLocalBinding(name: string, zodLocalName: string = "z"): boolean {
 
 function isZodFunctionalWrapper(
   node: t.CallExpression,
-  methodName: "optional" | "nullable" | "nullish",
+  methodName: "optional" | "exactOptional" | "nullable" | "nullish",
   zodLocalName: string = "z",
 ): boolean {
   if (!t.isMemberExpression(node.callee) || !t.isIdentifier(node.callee.property)) {
@@ -515,6 +525,9 @@ export function hasOptionalMethod(node: t.CallExpression, zodLocalName: string =
   if (isZodFunctionalWrapper(node, "optional", zodLocalName)) {
     return true;
   }
+  if (isZodFunctionalWrapper(node, "exactOptional", zodLocalName)) {
+    return true;
+  }
   if (isZodFunctionalWrapper(node, "nullish", zodLocalName)) {
     return true;
   }
@@ -522,7 +535,9 @@ export function hasOptionalMethod(node: t.CallExpression, zodLocalName: string =
   if (
     t.isMemberExpression(node.callee) &&
     t.isIdentifier(node.callee.property) &&
-    (node.callee.property.name === "optional" || node.callee.property.name === "nullish")
+    (node.callee.property.name === "optional" ||
+      node.callee.property.name === "exactOptional" ||
+      node.callee.property.name === "nullish")
   ) {
     return true;
   }
@@ -535,7 +550,10 @@ export function hasOptionalMethod(node: t.CallExpression, zodLocalName: string =
 }
 
 export function isOptionalCall(node: t.CallExpression, zodLocalName: string = "z"): boolean {
-  if (isZodFunctionalWrapper(node, "optional", zodLocalName)) {
+  if (
+    isZodFunctionalWrapper(node, "optional", zodLocalName) ||
+    isZodFunctionalWrapper(node, "exactOptional", zodLocalName)
+  ) {
     return true;
   }
 
@@ -543,7 +561,7 @@ export function isOptionalCall(node: t.CallExpression, zodLocalName: string = "z
     t.isCallExpression(node) &&
     t.isMemberExpression(node.callee) &&
     t.isIdentifier(node.callee.property) &&
-    node.callee.property.name === "optional"
+    (node.callee.property.name === "optional" || node.callee.property.name === "exactOptional")
   ) {
     return true;
   }

@@ -11081,7 +11081,7 @@
       "post": {
         "operationId": "post-products",
         "summary": "Create product",
-        "description": "Demonstrates ReturnType and Parameters utility types",
+        "description": "Demonstrates ReturnType and Parameters utility types\nRequest body type is inferred from createProduct function parameters.\nResponse type is inferred from createProduct return type.",
         "tags": [
           "Products",
           "Commerce"
@@ -11257,7 +11257,7 @@
       "get": {
         "operationId": "get-products-{id}",
         "summary": "Get Product by ID",
-        "description": "Demonstrates Awaited<ReturnType<typeof func>> utility type support",
+        "description": "Demonstrates Awaited<ReturnType<typeof func>> utility type support\nThis endpoint showcases the main bug fix from issue #53.\nThe response type is automatically inferred from the getProductById function.",
         "tags": [
           "Products"
         ],
@@ -11294,7 +11294,7 @@
       "patch": {
         "operationId": "patch-products-{id}",
         "summary": "Update Product Stock",
-        "description": "Demonstrates Awaited<ReturnType<typeof func>> with async functions",
+        "description": "Demonstrates Awaited<ReturnType<typeof func>> with async functions\nUpdates the stock status of a product.\nResponse type is automatically inferred from updateStock function and wrapped in ApiResponse.",
         "tags": [
           "Products"
         ],
@@ -11466,7 +11466,7 @@
       "get": {
         "operationId": "get-products-{id}-summary",
         "summary": "Get Product Summary",
-        "description": "Demonstrates simple Awaited<ReturnType<>> pattern",
+        "description": "Demonstrates simple Awaited<ReturnType<>> pattern\nReturns only name and price of the product.\nType is automatically inferred from getProductSummary function.",
         "tags": [
           "Products"
         ],

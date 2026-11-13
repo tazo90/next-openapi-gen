@@ -41,7 +41,7 @@ catalog:
   simple-git-hooks: ^2.14.0
   swagger-ui-react: ^5.32.13
   tailwindcss: ^4.3.3
-  tsup: ^8.5.1
+  tsup: ^9.0.0
   turbo: ^2.11.6
   typescript: 7.0.2
   vitest: ^4.1.10
@@ -55,7 +55,7 @@ catalogs:
   typescript-classic:
     typescript: npm:@typescript/typescript6@6.0.2
   nextjs:
-    "@next/playwright": 16.3.7
+    "@next/playwright": 16.4.3
     "@types/react": ^19.2.18
     "@types/react-dom": ^19.2.4
     next: 16.3.1
@@ -67,7 +67,7 @@ catalogs:
     "@vitejs/plugin-react": ^6.0.5
     react: 19.2.8
     react-dom: 19.2.8
-    react-router: ^8.4.0
+    react-router: ^8.5.1
     vite: ^8.2.1
   tanstack:
     "@tanstack/react-router": ^1.170.41

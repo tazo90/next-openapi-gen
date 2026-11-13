@@ -179,6 +179,57 @@ describe("TypeScript schema helpers", () => {
     });
   });
 
+  it("ignores a trailing comment that starts below the property", () => {
+    // `value: string;\n/** Next property's doc */` — Babel attaches the JSDoc as
+    // `value`'s trailing comment too, but it documents the next property.
+    const loc = (line: number) => ({ start: { line }, end: { line } });
+    const value = t.tsPropertySignature(
+      t.identifier("value"),
+      t.tsTypeAnnotation(t.tsStringKeyword()),
+    );
+    value.loc = loc(2) as never;
+    value.trailingComments = [
+      { type: "CommentBlock", value: "* Next property's doc ", loc: loc(3) },
+    ] as never;
+    expect(getPropertyOptions(value, "response")).toEqual({});
+
+    const inline = t.tsPropertySignature(
+      t.identifier("status"),
+      t.tsTypeAnnotation(t.tsStringKeyword()),
+    );
+    inline.loc = loc(2) as never;
+    inline.trailingComments = [
+      { type: "CommentLine", value: " lifecycle status", loc: loc(2) },
+    ] as never;
+    expect(getPropertyOptions(inline, "response")).toEqual({ description: "lifecycle status" });
+  });
+
+  it("renders inline {@link} tags in a property comment as text", () => {
+    const withComment = (value: string) => {
+      const prop = t.tsPropertySignature(
+        t.identifier("x"),
+        t.tsTypeAnnotation(t.tsStringKeyword()),
+      );
+      prop.leadingComments = [{ type: "CommentBlock", value }] as never;
+      return getPropertyOptions(prop, "response");
+    };
+
+    expect(withComment("* The fill, if any (see {@link ActiveFill}). ")).toEqual({
+      description: "The fill, if any (see `ActiveFill`).",
+    });
+    expect(withComment("* Read {@linkcode Docs | the docs} first @example 1 ")).toEqual({
+      description: "Read the docs first",
+      example: 1,
+    });
+    expect(
+      withComment(
+        "* See {@link https://example.com/a | the guide} or {@link https://example.com/b}. ",
+      ),
+    ).toEqual({
+      description: "See [the guide](https://example.com/a) or <https://example.com/b>.",
+    });
+  });
+
   it("detects dates, examples, content types, and form-data conversion", () => {
     expect(isDateString(t.stringLiteral("2026-03-27T10:00:00Z"))).toBe(true);
     expect(isDateObject(t.newExpression(t.identifier("Date"), []))).toBe(true);

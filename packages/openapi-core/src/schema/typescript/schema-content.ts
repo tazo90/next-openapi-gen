@@ -73,7 +73,9 @@ export function createRequestParamsSchema(
       const param: ParamSchema = {
         in: resolvedIn,
         name,
-        required: isPathLike ? true : requiredProperties.has(name) || !!value.required,
+        required: isPathLike
+          ? true
+          : (requiredProperties.has(name) || !!value.required) && value.default === undefined,
       };
 
       if (value.content) {
@@ -295,7 +297,16 @@ export function getSchemaContent(
     context.findSchemaDefinition(baseResponseType, "response");
   }
 
-  const params = paramsType ? context.openapiDefinitions[paramsType] || {} : {};
+  let params = paramsType ? context.openapiDefinitions[paramsType] || {} : {};
+  const seenParamRefs = new Set<string>();
+  while (params.$ref && !params.properties && !seenParamRefs.has(params.$ref)) {
+    seenParamRefs.add(params.$ref);
+    const refName = params.$ref.replace("#/components/schemas/", "");
+    if (!context.openapiDefinitions[refName]) {
+      context.findSchemaDefinition(refName, "params");
+    }
+    params = context.openapiDefinitions[refName] || {};
+  }
   const querystring = baseQuerystringType
     ? context.openapiDefinitions[baseQuerystringType] || {}
     : {};

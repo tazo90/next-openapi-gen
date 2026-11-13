@@ -220,6 +220,44 @@ describe("ZodSchemaConverter", () => {
     ]);
   });
 
+  it("does not report runtime parse calls in refine and transform callbacks as unknown chain methods", () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-zod-converter-runtime-"));
+    roots.push(root);
+
+    const schemaFile = path.join(root, "schemas.ts");
+    fs.writeFileSync(
+      schemaFile,
+      [
+        'import { z } from "zod";',
+        "const itemSchema = z.object({ id: z.string() });",
+        "const isValid = (value: unknown) => itemSchema.safeParse(value).success;",
+        "export const ListSchema = z.array(z.unknown()).transform((items) => items.filter(isValid));",
+        "export const RefinedSchema = z",
+        "  .unknown()",
+        "  .refine((value) => itemSchema.safeParse(value).success)",
+        "  .refine((value) => itemSchema.parse(value) !== undefined);",
+        "export const NameSchema = z.string().min(1);",
+        "function check(value: unknown) {",
+        "  const parsed = itemSchema.safeParse(value);",
+        "  const inline = z.string().safeParse(value);",
+        "  const other = z.array(itemSchema).parseAsync(value);",
+        "  return parsed.success && inline.success && other;",
+        "}",
+      ].join("\n"),
+    );
+
+    const diagnostics = new DiagnosticsCollector();
+    const converter = new ZodSchemaConverter(root, undefined, undefined, diagnostics);
+
+    converter.preprocessAllSchemasInFile(schemaFile);
+    expect(converter.convertZodSchemaToOpenApi("ListSchema")).toEqual({ type: "array", items: {} });
+    expect(converter.convertZodSchemaToOpenApi("NameSchema")).toEqual({
+      type: "string",
+      minLength: 1,
+    });
+    expect(diagnostics.getAll().filter((entry) => entry.code === "unknown-zod-method")).toEqual([]);
+  });
+
   it("emits diagnostics for unresolved enums and malformed discriminated unions", () => {
     const diagnostics = new DiagnosticsCollector();
     const converter = new ZodSchemaConverter(process.cwd(), undefined, undefined, diagnostics);
@@ -704,6 +742,60 @@ export const EnvelopeSchema = createEnvelope({
     });
   });
 
+  describe("schemas composed from named schemas", () => {
+    it("merges the properties of a named schema passed to .merge()", () => {
+      const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-zod-merge-named-"));
+      roots.push(root);
+
+      fs.writeFileSync(
+        path.join(root, "schemas.ts"),
+        [
+          'import { z } from "zod";',
+          "export const orderPathSchema = z.object({ orderId: z.string() });",
+          'export const shippingSchema = z.object({ carrier: z.string(), method: z.enum(["air", "ground"]) });',
+          "export const shipOrderSchema = orderPathSchema.merge(shippingSchema);",
+        ].join("\n"),
+      );
+
+      const converter = new ZodSchemaConverter(root);
+      converter.convertZodSchemaToOpenApi("shipOrderSchema");
+
+      expect(converter.zodSchemas["shipOrderSchema"]).toMatchObject({
+        type: "object",
+        properties: {
+          orderId: { type: "string" },
+          carrier: { type: "string" },
+          method: { type: "string", enum: ["air", "ground"] },
+        },
+        required: ["orderId", "carrier", "method"],
+      });
+    });
+
+    it("extends a base whose .meta({ id }) is also the name of its z.infer type", () => {
+      const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-zod-extend-alias-id-"));
+      roots.push(root);
+
+      fs.writeFileSync(
+        path.join(root, "schemas.ts"),
+        [
+          'import { z } from "zod";',
+          'export const orderSchema = z.object({ id: z.string(), total: z.number() }).meta({ id: "Order" });',
+          "export type Order = z.infer<typeof orderSchema>;",
+          "export const orderLineSchema = orderSchema.extend({ sku: z.string() });",
+        ].join("\n"),
+      );
+
+      const converter = new ZodSchemaConverter(root);
+      converter.convertZodSchemaToOpenApi("orderLineSchema");
+
+      expect(converter.zodSchemas["orderLineSchema"]).toMatchObject({
+        type: "object",
+        properties: { id: { type: "string" }, total: { type: "number" }, sku: { type: "string" } },
+        required: ["id", "total", "sku"],
+      });
+    });
+  });
+
   describe(".meta({ id }) component name override", () => {
     it("uses the id as the component name for an exported schema", () => {
       const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-zod-meta-id-export-"));
@@ -766,6 +858,43 @@ export const EnvelopeSchema = createEnvelope({
         description: "An audio file",
       });
       expect(converter.zodSchemas["Audio"]).not.toHaveProperty("id");
+    });
+
+    it("uses the id and meta of a schema derived from another one", () => {
+      const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-zod-meta-id-derived-"));
+      roots.push(root);
+
+      fs.writeFileSync(
+        path.join(root, "schemas.ts"),
+        [
+          'import { z } from "zod";',
+          "export const orderSchema = z",
+          "  .object({ id: z.string(), total: z.number() })",
+          '  .meta({ id: "Order", description: "An order" });',
+          "export const orderLineSchema = orderSchema",
+          "  .extend({ sku: z.string() })",
+          '  .meta({ id: "OrderLine", description: "An order with its line" });',
+          "export const newOrderSchema = orderSchema",
+          "  .omit({ id: true })",
+          '  .meta({ id: "NewOrder", description: "An order to create" });',
+        ].join("\n"),
+      );
+
+      const converter = new ZodSchemaConverter(root);
+      converter.convertZodSchemaToOpenApi("orderLineSchema");
+      converter.convertZodSchemaToOpenApi("newOrderSchema");
+
+      expect(converter.zodSchemas["OrderLine"]).toMatchObject({
+        description: "An order with its line",
+        properties: { id: { type: "string" }, total: { type: "number" }, sku: { type: "string" } },
+      });
+      expect(converter.zodSchemas["NewOrder"]).toMatchObject({
+        description: "An order to create",
+        properties: { total: { type: "number" } },
+      });
+      expect(converter.zodSchemas["NewOrder"]?.properties).not.toHaveProperty("id");
+      expect(converter.zodSchemas).not.toHaveProperty("orderLineSchema");
+      expect(converter.zodSchemas).not.toHaveProperty("newOrderSchema");
     });
 
     it("preserves old behaviour when no .meta({ id }) is present", () => {
@@ -860,6 +989,28 @@ export const EnvelopeSchema = createEnvelope({
         type: "array",
         items: { $ref: "#/components/schemas/ApiErrorIssue" },
       });
+    });
+
+    it("finds a schema whose .meta({ id }) is also the name of its z.infer type, once stored", () => {
+      const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-zod-meta-id-alias-"));
+      roots.push(root);
+
+      fs.writeFileSync(
+        path.join(root, "schemas.ts"),
+        [
+          'import { z } from "zod";',
+          'export const addressSchema = z.object({ city: z.string() }).meta({ id: "Address" });',
+          "export type Address = z.infer<typeof addressSchema>;",
+        ].join("\n"),
+      );
+
+      const converter = new ZodSchemaConverter(root);
+      converter.convertZodSchemaToOpenApi("addressSchema");
+      converter.convertZodSchemaToOpenApi("Address");
+
+      const expected = { type: "object", properties: { city: { type: "string" } } };
+      expect(converter.convertZodSchemaToOpenApi("addressSchema")).toMatchObject(expected);
+      expect(converter.convertZodSchemaToOpenApi("Address")).toMatchObject(expected);
     });
   });
 
