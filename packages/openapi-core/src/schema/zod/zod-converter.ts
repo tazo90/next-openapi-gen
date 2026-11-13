@@ -485,10 +485,20 @@ export class ZodSchemaConverter {
       return aliasRef;
     }
 
-    const normalizedName = this.typeToSchemaMapping[schemaName] ?? schemaName;
+    const normalizedName = this.resolveStoredSchemaName(schemaName);
     return (
       this.schemaVariantRefs.get(this.getVariantKey(normalizedName, contentType)) ?? normalizedName
     );
+  }
+
+  /**
+   * The name `zodSchemas` keys a schema by. A `.meta({ id })` that is also the name of
+   * the schema's `z.infer` alias maps the two names to each other, so a name that is
+   * already stored is kept rather than mapped back to the variable.
+   */
+  private resolveStoredSchemaName(schemaName: string): string {
+    if (this.zodSchemas[schemaName]) return schemaName;
+    return this.typeToSchemaMapping[schemaName] ?? schemaName;
   }
 
   private getVariantKey(schemaName: string, contentType: ContentType): string {
@@ -500,7 +510,7 @@ export class ZodSchemaConverter {
     contentType: ContentType = this.currentContentType,
     allowBaseFallback: boolean = true,
   ): OpenApiSchema | null {
-    const normalizedName = this.typeToSchemaMapping[schemaName] ?? schemaName;
+    const normalizedName = this.resolveStoredSchemaName(schemaName);
     const explicitReferenceName = this.schemaVariantRefs.get(
       this.getVariantKey(normalizedName, contentType),
     );
@@ -519,7 +529,7 @@ export class ZodSchemaConverter {
     schema: OpenApiSchema,
     contentType: ContentType = this.currentContentType,
   ): string {
-    const normalizedName = this.typeToSchemaMapping[schemaName] ?? schemaName;
+    const normalizedName = this.resolveStoredSchemaName(schemaName);
     const schemaUsesRuntimeExport = this.currentSchemaUsedRuntimeExport;
     this.currentSchemaUsedRuntimeExport = false;
     if (schemaUsesRuntimeExport) {
