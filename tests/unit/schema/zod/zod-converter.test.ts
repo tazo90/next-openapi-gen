@@ -740,6 +740,52 @@ export const EnvelopeSchema = createEnvelope({
         required: ["city"],
       });
     });
+
+    it("converts every schema a file imports from other directories", () => {
+      const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-zod-imported-outside-many-"));
+      roots.push(root);
+      fs.mkdirSync(path.join(root, "schemas"));
+      fs.mkdirSync(path.join(root, "shared"));
+      fs.mkdirSync(path.join(root, "contact"));
+
+      fs.writeFileSync(
+        path.join(root, "shared", "address.ts"),
+        [
+          'import { z } from "zod";',
+          "export const addressSchema = z.object({ city: z.string() });",
+        ].join("\n"),
+      );
+      fs.writeFileSync(
+        path.join(root, "contact", "phone.ts"),
+        [
+          'import { z } from "zod";',
+          "export const phoneSchema = z.object({ number: z.string() });",
+        ].join("\n"),
+      );
+      fs.writeFileSync(
+        path.join(root, "schemas", "customers.ts"),
+        [
+          'import { z } from "zod";',
+          'import { addressSchema } from "../shared/address";',
+          'import { phoneSchema } from "../contact/phone";',
+          "export const customerSchema = z.object({ address: addressSchema, phone: phoneSchema });",
+        ].join("\n"),
+      );
+
+      const converter = new ZodSchemaConverter(path.join(root, "schemas"));
+      converter.convertZodSchemaToOpenApi("customerSchema");
+
+      expect(converter.zodSchemas["customerSchema"]?.properties).toEqual({
+        address: { $ref: "#/components/schemas/addressSchema" },
+        phone: { $ref: "#/components/schemas/phoneSchema" },
+      });
+      expect(converter.zodSchemas["addressSchema"]).toMatchObject({
+        properties: { city: { type: "string" } },
+      });
+      expect(converter.zodSchemas["phoneSchema"]).toMatchObject({
+        properties: { number: { type: "string" } },
+      });
+    });
   });
 
   describe("schemas composed from named schemas", () => {
