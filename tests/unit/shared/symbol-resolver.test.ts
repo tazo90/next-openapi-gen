@@ -65,6 +65,28 @@ describe("SymbolResolver", () => {
     expect(resolver.getImports("/app/user.ts")?.get("Status")?.source).toBe("./schemas");
   });
 
+  it("evaluates unary minus and plus on numeric constants", () => {
+    const resolver = new SymbolResolver({
+      existsSync: (filePath: string) => filePath === "/lib/limits.ts",
+      readFileSync: () => `
+        export const MIN = -1;
+        export const PLUS = +5;
+        export const NEGATED_LIMIT = -MIN;
+        export const NEGATIVE_BYTES = -(2 * 1024);
+        export const NOT_A_NUMBER = -"x";
+        export const PLUS_TEXT = +"7";
+      `,
+    });
+
+    expect(resolver.resolveLiteral("/lib/limits.ts", "MIN")).toBe(-1);
+    expect(resolver.resolveLiteral("/lib/limits.ts", "PLUS")).toBe(5);
+    expect(resolver.resolveLiteral("/lib/limits.ts", "NEGATED_LIMIT")).toBe(1);
+    expect(resolver.resolveLiteral("/lib/limits.ts", "NEGATIVE_BYTES")).toBe(-2048);
+    expect(resolver.resolveLiteral("/lib/limits.ts", "NOT_A_NUMBER")).toBeUndefined();
+    expect(resolver.resolveLiteral("/lib/limits.ts", "PLUS_TEXT")).toBeUndefined();
+    expect(resolver.evaluateExpression(undefined, parseExpression("-3 + 5"))).toBe(2);
+  });
+
   it("resolves imports, re-exports, declarations, and cache invalidation", () => {
     const graph = new Map<string, string>([
       [

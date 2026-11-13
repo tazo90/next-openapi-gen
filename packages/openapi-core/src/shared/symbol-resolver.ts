@@ -336,6 +336,14 @@ export class SymbolResolver {
       return this.evaluateArithmetic(filePath, node, visited, depth);
     }
 
+    if (t.isUnaryExpression(node) && (node.operator === "-" || node.operator === "+")) {
+      const value = this.evaluateNode(filePath, node.argument, visited, depth + 1);
+      if (typeof value !== "number") {
+        return undefined;
+      }
+      return node.operator === "-" ? -value : value;
+    }
+
     if (t.isTemplateLiteral(node)) {
       let result = "";
       for (const [position, quasi] of node.quasis.entries()) {
