@@ -73,7 +73,9 @@ export function createRequestParamsSchema(
       const param: ParamSchema = {
         in: resolvedIn,
         name,
-        required: isPathLike ? true : requiredProperties.has(name) || !!value.required,
+        required: isPathLike
+          ? true
+          : (requiredProperties.has(name) || !!value.required) && value.default === undefined,
       };
 
       if (value.content) {
