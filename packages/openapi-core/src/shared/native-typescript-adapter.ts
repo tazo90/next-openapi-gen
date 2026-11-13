@@ -960,7 +960,10 @@ function resolveFileCandidate(basePath: string): string | null {
     path.join(basePath, "index.jsx"),
   ];
   return (
-    candidates.find((candidate) => fs.existsSync(candidate) && !candidate.endsWith(".d.ts")) ?? null
+    candidates.find(
+      (candidate) =>
+        fs.existsSync(candidate) && fs.statSync(candidate).isFile() && !candidate.endsWith(".d.ts"),
+    ) ?? null
   );
 }
 

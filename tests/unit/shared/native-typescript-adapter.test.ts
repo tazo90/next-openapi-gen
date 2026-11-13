@@ -1367,6 +1367,35 @@ describe("NativeTypeScriptAdapter", () => {
       );
     });
 
+    it("resolves a directory specifier to its index file instead of the directory", () => {
+      const temp = setupTempProject();
+      fs.mkdirSync(path.join(temp.root, "src", "schemas"), { recursive: true });
+      fs.writeFileSync(path.join(temp.root, "src", "schemas", "index.ts"), "export const a = 1;\n");
+      const adapter = createNativeTypeScriptAdapter({
+        packagePath: temp.root,
+        runtime: temp.fake.runtime,
+        version: "7.0.1-rc",
+      });
+
+      expect(adapter.resolveModule("./schemas", temp.routeFile)).toBe(
+        path.join(temp.root, "src", "schemas", "index.ts"),
+      );
+    });
+
+    it("skips a directory that is named like a file candidate", () => {
+      const temp = setupTempProject();
+      fs.mkdirSync(path.join(temp.root, "src", "models.ts"), { recursive: true });
+      fs.mkdirSync(path.join(temp.root, "src", "empty"), { recursive: true });
+      const adapter = createNativeTypeScriptAdapter({
+        packagePath: temp.root,
+        runtime: temp.fake.runtime,
+        version: "7.0.1-rc",
+      });
+
+      expect(adapter.resolveModule("./models.ts", temp.routeFile)).toBeNull();
+      expect(adapter.resolveModule("./empty", temp.routeFile)).toBeNull();
+    });
+
     it("returns null when no file candidate matches", () => {
       const temp = setupTempProject();
       const adapter = createNativeTypeScriptAdapter({
