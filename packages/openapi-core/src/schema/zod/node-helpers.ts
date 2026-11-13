@@ -472,7 +472,7 @@ function isZodLocalBinding(name: string, zodLocalName: string = "z"): boolean {
 
 function isZodFunctionalWrapper(
   node: t.CallExpression,
-  methodName: "optional" | "nullable" | "nullish",
+  methodName: "optional" | "exactOptional" | "nullable" | "nullish",
   zodLocalName: string = "z",
 ): boolean {
   if (!t.isMemberExpression(node.callee) || !t.isIdentifier(node.callee.property)) {
@@ -515,6 +515,9 @@ export function hasOptionalMethod(node: t.CallExpression, zodLocalName: string =
   if (isZodFunctionalWrapper(node, "optional", zodLocalName)) {
     return true;
   }
+  if (isZodFunctionalWrapper(node, "exactOptional", zodLocalName)) {
+    return true;
+  }
   if (isZodFunctionalWrapper(node, "nullish", zodLocalName)) {
     return true;
   }
@@ -522,7 +525,9 @@ export function hasOptionalMethod(node: t.CallExpression, zodLocalName: string =
   if (
     t.isMemberExpression(node.callee) &&
     t.isIdentifier(node.callee.property) &&
-    (node.callee.property.name === "optional" || node.callee.property.name === "nullish")
+    (node.callee.property.name === "optional" ||
+      node.callee.property.name === "exactOptional" ||
+      node.callee.property.name === "nullish")
   ) {
     return true;
   }
@@ -535,7 +540,10 @@ export function hasOptionalMethod(node: t.CallExpression, zodLocalName: string =
 }
 
 export function isOptionalCall(node: t.CallExpression, zodLocalName: string = "z"): boolean {
-  if (isZodFunctionalWrapper(node, "optional", zodLocalName)) {
+  if (
+    isZodFunctionalWrapper(node, "optional", zodLocalName) ||
+    isZodFunctionalWrapper(node, "exactOptional", zodLocalName)
+  ) {
     return true;
   }
 
@@ -543,7 +551,7 @@ export function isOptionalCall(node: t.CallExpression, zodLocalName: string = "z
     t.isCallExpression(node) &&
     t.isMemberExpression(node.callee) &&
     t.isIdentifier(node.callee.property) &&
-    node.callee.property.name === "optional"
+    (node.callee.property.name === "optional" || node.callee.property.name === "exactOptional")
   ) {
     return true;
   }
