@@ -1784,6 +1784,25 @@ export class ZodSchemaConverter {
     }
   }
 
+  /**
+   * The schema a `#/components/schemas/<name>` reference points to, or `schema` itself
+   * when it isn't a reference or can't be resolved. Looked up by component name first,
+   * as `zodSchemas` is keyed: a `.meta({ id })` component can share its name with a
+   * `z.infer` alias that maps back to the variable, which `getStoredSchema` would follow.
+   */
+  resolveSchemaRef(schema: OpenApiSchema): OpenApiSchema {
+    if (!schema.$ref) return schema;
+    const name = schema.$ref.replace("#/components/schemas/", "");
+    if (!this.zodSchemas[name] && !this.getStoredSchema(name)) {
+      this.convertZodSchemaToOpenApi(name);
+    }
+    const resolved = this.zodSchemas[name] ?? this.getStoredSchema(name);
+    if (!resolved) {
+      logger.debug(`Could not resolve schema reference: ${name}`);
+    }
+    return resolved ?? schema;
+  }
+
   private mergeExtendedObject(
     baseSchemaResult: OpenApiSchema,
     shapeArg: t.Node | t.SpreadElement | t.ArgumentPlaceholder,
@@ -1792,19 +1811,7 @@ export class ZodSchemaConverter {
       return baseSchemaResult;
     }
 
-    let baseSchema = baseSchemaResult;
-    if (baseSchemaResult.$ref) {
-      const schemaName = baseSchemaResult.$ref.replace("#/components/schemas/", "");
-      if (!this.getStoredSchema(schemaName)) {
-        logger.debug(`[extend] Base schema ${schemaName} not found, attempting to convert it`);
-        this.convertZodSchemaToOpenApi(schemaName);
-      }
-      if (this.getStoredSchema(schemaName)) {
-        baseSchema = this.getStoredSchema(schemaName)!;
-      } else {
-        logger.debug(`Could not resolve reference for extend: ${schemaName}`);
-      }
-    }
+    const baseSchema = this.resolveSchemaRef(baseSchemaResult);
 
     const extendNode = t.callExpression(
       t.memberExpression(t.identifier(this.getCurrentZodLocalName()), t.identifier("object")),

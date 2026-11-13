@@ -667,6 +667,60 @@ export const EnvelopeSchema = createEnvelope({
     });
   });
 
+  describe("schemas composed from named schemas", () => {
+    it("merges the properties of a named schema passed to .merge()", () => {
+      const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-zod-merge-named-"));
+      roots.push(root);
+
+      fs.writeFileSync(
+        path.join(root, "schemas.ts"),
+        [
+          'import { z } from "zod";',
+          "export const orderPathSchema = z.object({ orderId: z.string() });",
+          'export const shippingSchema = z.object({ carrier: z.string(), method: z.enum(["air", "ground"]) });',
+          "export const shipOrderSchema = orderPathSchema.merge(shippingSchema);",
+        ].join("\n"),
+      );
+
+      const converter = new ZodSchemaConverter(root);
+      converter.convertZodSchemaToOpenApi("shipOrderSchema");
+
+      expect(converter.zodSchemas["shipOrderSchema"]).toMatchObject({
+        type: "object",
+        properties: {
+          orderId: { type: "string" },
+          carrier: { type: "string" },
+          method: { type: "string", enum: ["air", "ground"] },
+        },
+        required: ["orderId", "carrier", "method"],
+      });
+    });
+
+    it("extends a base whose .meta({ id }) is also the name of its z.infer type", () => {
+      const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-zod-extend-alias-id-"));
+      roots.push(root);
+
+      fs.writeFileSync(
+        path.join(root, "schemas.ts"),
+        [
+          'import { z } from "zod";',
+          'export const orderSchema = z.object({ id: z.string(), total: z.number() }).meta({ id: "Order" });',
+          "export type Order = z.infer<typeof orderSchema>;",
+          "export const orderLineSchema = orderSchema.extend({ sku: z.string() });",
+        ].join("\n"),
+      );
+
+      const converter = new ZodSchemaConverter(root);
+      converter.convertZodSchemaToOpenApi("orderLineSchema");
+
+      expect(converter.zodSchemas["orderLineSchema"]).toMatchObject({
+        type: "object",
+        properties: { id: { type: "string" }, total: { type: "number" }, sku: { type: "string" } },
+        required: ["id", "total", "sku"],
+      });
+    });
+  });
+
   describe(".meta({ id }) component name override", () => {
     it("uses the id as the component name for an exported schema", () => {
       const root = fs.mkdtempSync(path.join(os.tmpdir(), "nxog-zod-meta-id-export-"));

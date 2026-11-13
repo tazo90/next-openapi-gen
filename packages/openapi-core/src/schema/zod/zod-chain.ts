@@ -23,6 +23,7 @@ export type ZodChainHost = {
   mergeExtendedObject: (base: OpenApiSchema, arg: t.Node | undefined) => OpenApiSchema;
   mergePipeSchema: (schema: OpenApiSchema, piped: OpenApiSchema) => OpenApiSchema;
   processZodNode: (node: t.Node) => OpenApiSchema;
+  resolveSchemaRef: (schema: OpenApiSchema) => OpenApiSchema;
   reportUnresolvedArgument: (methodName: string, argument: t.Node | undefined) => void;
   resolveLiteralValue: (name: string) => unknown;
   resolveNumericArg: (node: t.Node | undefined) => number | undefined;
@@ -518,7 +519,7 @@ export function applyZodChainMethod(
       // In Zod 4 this is equivalent to `.extend(other.shape)`.
       const firstArgument = node.arguments[0];
       if (firstArgument && !t.isArgumentPlaceholder(firstArgument)) {
-        const other = converter.processZodNode(firstArgument);
+        const other = converter.resolveSchemaRef(converter.processZodNode(firstArgument));
         if (other && other.type === "object" && other.properties) {
           schema.properties = { ...schema.properties, ...other.properties };
           if (other.required && other.required.length > 0) {
