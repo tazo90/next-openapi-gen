@@ -10,7 +10,7 @@ catalog:
   "@commitlint/config-conventional": ^21.2.3
   "@commitlint/types": ^21.2.3
   "@playwright/test": ^1.62.1
-  "@scalar/api-reference-react": ^0.9.63
+  "@scalar/api-reference-react": ^0.9.90
   "@seriousme/openapi-schema-validator": ^2.11.0
   "@tailwindcss/postcss": ^4.3.5
   "@types/babel__traverse": ^7.28.0
